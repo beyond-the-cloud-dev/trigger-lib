@@ -1,8 +1,8 @@
 {
-  "name": "salesforce-repo",
+  "name": "trigger-lib",
   "private": true,
   "version": "1.0.0",
-  "description": "Salesforce Repo",
+  "description": "Trigger Lib",
   "scripts": {
     "lint": "eslint **/{aura,lwc}/**",
     "test": "npm run test:unit",

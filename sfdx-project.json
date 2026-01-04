@@ -7,6 +7,10 @@
       "default": true,
       "package": "trigger-lib",
       "versionDescription": ""
+    },
+    {
+      "path": "examples",
+      "default": false
     }
   ],
   "name": "trigger-lib",

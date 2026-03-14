@@ -35,10 +35,19 @@ public with sharing class TriggerOrchestrator {
 
     // Implementations
 
-    public static void run() {
+    public static void run(Object orchestrator) {
+        // if (orchestrator instanceof TriggerOrchestrator.BeforeInsert) {
+        //     TriggerOrchestrator.BeforeInsert beforeInsertOrchestrator = (TriggerOrchestrator.BeforeInsert) orchestrator;
+        //     beforeInsertOrchestrator.beforeInsertHandlers();
+        // }
+        // if (orchestrator instanceof TriggerOrchestrator.AfterInsert) {
+        //     TriggerOrchestrator.AfterInsert afterInsertOrchestrator = (TriggerOrchestrator.AfterInsert) orchestrator;
+        //     afterInsertOrchestrator.afterInsertHandlers();
+        // }
         // TODO Adapter to a common interface
         switch on System.Trigger.operationType {
             when BEFORE_INSERT {
+                // if (orchestrator instanceof TriggerOrchestrator.BeforeInsert) {
                 // logic for before insert
             }
             when BEFORE_UPDATE {

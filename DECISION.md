@@ -1,0 +1,1 @@
+- Minimal metadata records. Just for enable and disable. Behavior can be overriden via additional records.

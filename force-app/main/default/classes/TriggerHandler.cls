@@ -1,42 +1,42 @@
 public with sharing class TriggerHandler {
     public interface BeforeInsert { 
-        Boolean qualifyOnBeforeInsertWhen(Record record);
-        void beforeInsert(List<SObject> newRecords); 
+        Boolean qualifyOnBeforeInsertWhen(SObject record);
+        void beforeInsert(SObject record); 
     }
         
     public interface AfterInsert {
-        Boolean isQualifiedAfterInsert(Record record);
-        void afterInsert(List<SObject> newRecords);
+        Boolean isQualifiedAfterInsert(SObject record);
+        void afterInsert(SObject record);
     }
 
     public interface BeforeUpdate {
-        Boolean isQualifiedBeforeUpdate(Record record);
-        void beforeUpdate(List<SObject> newRecords, List<SObject> oldRecords);
+        Boolean isQualifiedBeforeUpdate(SObject record);
+        void beforeUpdate(SObject newRecord, SObject oldRecord);
     }
 
     public interface AfterUpdate {
-        Boolean isQualifiedAfterUpdate(Record record);
-        void afterUpdate(List<SObject> newRecords, List<SObject> oldRecords);
+        Boolean isQualifiedAfterUpdate(SObject record);
+        void afterUpdate(SObject newRecord, SObject oldRecord);
     }
 
     public interface BeforeDelete {
-        Boolean isQualifiedBeforeDelete(Record record);
-        void beforeDelete(List<SObject> oldRecords);
+        Boolean isQualifiedBeforeDelete(SObject record);
+        void beforeDelete(SObject oldRecord);
     }
 
     public interface AfterDelete {
-        Boolean isQualifiedAfterDelete(Record record);
-        void afterDelete(List<SObject> oldRecords);
+        Boolean isQualifiedAfterDelete(SObject record);
+        void afterDelete(SObject oldRecord);
     }
 
     public interface BeforeUndelete {
-        Boolean isQualifiedBeforeUndelete(Record record);
-        void beforeUndelete(List<SObject> newRecords);
+        Boolean isQualifiedBeforeUndelete(SObject record);
+        void beforeUndelete(SObject newRecord);
     }
 
     public interface AfterUndelete {
-        Boolean isQualifiedAfterUndelete(Record record);
-        void afterUndelete(List<SObject> newRecords);
+        Boolean isQualifiedAfterUndelete(SObject record);
+        void afterUndelete(SObject newRecord);
     }
 
     public interface Record {
@@ -67,7 +67,7 @@ public with sharing class TriggerHandler {
 
     // TODO Allow for custom query to enrich data, because there can be some conditions
     public interface RelationshipEnrichment {
-        Map<SObjectField, SelectEntity> getFieldsToPull(); // TODO: Change method name
+        Map<SObjectField, SelectEntity> enrichParentRelationships();
     }
 
     public interface SelectEntity {

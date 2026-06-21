@@ -15,5 +15,6 @@ public with sharing class ContactTriggerHandler implements TriggerHandler.Relati
 
     public void onBeforeInsert(SObject record) {
         Contact contact = (Contact) record;
+        contact.Description = 'This contact was created by a trigger handler.';
     }
 }

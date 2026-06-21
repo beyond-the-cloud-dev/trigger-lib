@@ -1,4 +1,10 @@
 public with sharing class TriggerHandler {
+    public static FieldSelection FieldSelection {
+        get {
+            return new SelectionClass(); //TODO rename it
+        }
+    }
+
     public interface BeforeInsert { 
         Boolean qualifiesForBeforeInsertWhen(TriggerHandler.Record record);
         void onBeforeInsert(SObject record); 
@@ -43,11 +49,8 @@ public with sharing class TriggerHandler {
         Map<SObjectField, FieldSelection> fieldsToEnrich();
     }
 
-    public static FieldSelection FieldSelection {
-        get {
-            return new SelectionClass(); //TODO rename it
-        }
-    }
+    // TODO Maybe additional interfaces
+    // set required permissions, bypass permission, etc 
 
     public interface Record {
         Boolean isRecordTypeEqual(String recordTypeDeveloperName);
@@ -85,7 +88,8 @@ public with sharing class TriggerHandler {
         Boolean lessThan(SObjectField field, Object value);
         Boolean lessThanOrEqualTo(SObjectField field, Object value);
 
-        SObject getSObject();
+        SObject getNewSObject();
+        SObject getOldSObject();
     }
 
     public interface FieldSelection {
@@ -169,4 +173,138 @@ public with sharing class TriggerHandler {
             return this;
         }
     } 
+
+    public class RecordImpl implements TriggerHandler.Record { // TODO rename the class
+        private SObject newRecord;
+        private SObject oldRecord;
+
+        public RecordImpl(SObject record) {
+            this.newRecord = record;
+        }
+
+        public RecordImpl(SObject newRecord, SObject oldRecord) {
+            this.newRecord = newRecord;
+            this.oldRecord = oldRecord;
+        }
+
+        public Boolean isRecordTypeEqual(String recordTypeDeveloperName) {
+            return false;
+        }
+
+        public Boolean isRecordTypeNotEqual(String recordTypeDeveloperName) {
+            return false;
+        }
+
+        public Boolean equals(SObjectField field, Object value) {
+            return false;
+        }
+
+        public Boolean doesNotEqual(SObjectField field, Object value) {
+            return false;
+        }
+
+        public Boolean contains(SObjectField field, Object value) {
+            return false;
+        }
+
+        public Boolean doesNotContain(SObjectField field, Object value) {
+            return false;
+        }
+
+        public Boolean contains(SObjectField field, Iterable<Object> values) {
+            return false;
+        }
+
+        public Boolean doesNotContain(SObjectField field, Iterable<Object> values) {
+            return false;
+        }
+
+        public Boolean startsWith(SObjectField field, Object value) {
+            return false;
+        }
+
+        public Boolean endsWith(SObjectField field, Object value) {
+            return false;
+        }
+
+        public Boolean isNull(SObjectField field) {
+            return false;
+        }
+
+        public Boolean isNotNull(SObjectField field) {
+            return false;
+        }
+
+        public Boolean isEmpty(SObjectField field) {
+            return false;
+        }
+
+        public Boolean isNotEmpty(SObjectField field) {
+            return false;
+        }
+
+        public Boolean isBlank(SObjectField field) {
+            return false;
+        }
+
+        public Boolean isNotBlank(SObjectField field) {
+            return false;
+        }
+
+        public Boolean isChanged(SObjectField field) {
+            return false;
+        }
+
+        public Boolean isAnyChanged(Iterable<SObjectField> fields) {
+            return false;
+        }
+
+        public Boolean areAllChanged(Iterable<SObjectField> fields) {
+            return false;
+        }
+
+        public Boolean isChangedTo(SObjectField field, Object value) {
+            return false;
+        }
+
+        public Boolean isChangedFrom(SObjectField field, Object value) {
+            return false;
+        }
+
+        public Boolean isChangedFromTo(SObjectField field, Object fromValue, Object toValue) {
+            return false;
+        }
+
+        public Boolean isTrue(SObjectField field) {
+            return false;
+        }
+
+        public Boolean isFalse(SObjectField field) {
+            return false;
+        }
+
+        public Boolean greaterThan(SObjectField field, Object value) {
+            return false;
+        }
+
+        public Boolean greaterThanOrEqualTo(SObjectField field, Object value) {
+            return false;
+        }
+
+        public Boolean lessThan(SObjectField field, Object value) {
+            return false;
+        }
+
+        public Boolean lessThanOrEqualTo(SObjectField field, Object value) {
+            return false;
+        }
+
+        public SObject getNewSObject() {
+            return this.newRecord;
+        }
+
+        public SObject getOldSObject() {
+            return this.oldRecord;
+        }
+    }
 }

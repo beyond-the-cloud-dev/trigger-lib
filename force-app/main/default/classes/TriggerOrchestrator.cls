@@ -1,7 +1,4 @@
 public with sharing class TriggerOrchestrator {
-    // TODO Maybe each interface should return more complex builder, not only list of handlers
-    // that builder could set required permissions, bypass permission, etc, but maybe it should be on handler level? 
-
     public interface BeforeInsert { 
         List<TriggerHandler.BeforeInsert> beforeInsertHandlers();
     }
@@ -34,40 +31,154 @@ public with sharing class TriggerOrchestrator {
         List<TriggerHandler.AfterUndelete> afterUndeleteHandlers();
     }
 
+    // TODO Additional interface for master condition eg. RT = A so each team can have their own orchestators
+
     // Implementations
 
     public static void run(Object orchestrator) {
-        // if (orchestrator instanceof TriggerOrchestrator.BeforeInsert) {
-        //     TriggerOrchestrator.BeforeInsert beforeInsertOrchestrator = (TriggerOrchestrator.BeforeInsert) orchestrator;
-        //     beforeInsertOrchestrator.beforeInsertHandlers();
-        // }
-        // if (orchestrator instanceof TriggerOrchestrator.AfterInsert) {
-        //     TriggerOrchestrator.AfterInsert afterInsertOrchestrator = (TriggerOrchestrator.AfterInsert) orchestrator;
-        //     afterInsertOrchestrator.afterInsertHandlers();
-        // }
-        // TODO Adapter to a common interface
+        // TODO Maybe Adapter to a common interface if possible
         switch on System.Trigger.operationType {
             when BEFORE_INSERT {
-                // if (orchestrator instanceof TriggerOrchestrator.BeforeInsert) {
-                // logic for before insert
-            }
-            when BEFORE_UPDATE {
-                // logic for before update
+                runBeforeInsert(orchestrator);
             }
             when AFTER_INSERT {
-                // logic for after insert
+                runAfterInsert(orchestrator);
+            }
+            when BEFORE_UPDATE {
+                runBeforeUpdate(orchestrator);
             }
             when AFTER_UPDATE {
-                // logic for after update
+                runAfterUpdate(orchestrator);
             }
             when BEFORE_DELETE {
-                // logic for before delete
+                runBeforeDelete(orchestrator);
             }
             when AFTER_DELETE {
-                // logic for after delete
+                runAfterDelete(orchestrator);
             }
             when AFTER_UNDELETE {
-                // logic for after undelete
+                runAfterUndelete(orchestrator);
+            }
+            when else {
+                // throw new TODO Called outside of trigger context, or not supported operation type
+            }
+        }
+    }
+
+    private static void runBeforeInsert(Object orchestrator) {
+        if (!(orchestrator instanceof TriggerOrchestrator.BeforeInsert)) {
+            return;
+        }
+
+        TriggerOrchestrator.BeforeInsert beforeInsertOrchestrator = (TriggerOrchestrator.BeforeInsert) orchestrator;
+
+        for (TriggerHandler.BeforeInsert handler : beforeInsertOrchestrator.beforeInsertHandlers()) {
+            for (SObject record : Trigger.new) {
+                if (handler.qualifiesForBeforeInsertWhen(new TriggerHandler.RecordImpl(record))) {
+                    handler.onBeforeInsert(record);
+                }
+            }
+        }
+    }
+
+    private static void runAfterInsert(Object orchestrator) {
+        if (!(orchestrator instanceof TriggerOrchestrator.AfterInsert)) {
+            return;
+        }
+
+        TriggerOrchestrator.AfterInsert afterInsertOrchestrator = (TriggerOrchestrator.AfterInsert) orchestrator;
+
+        for (TriggerHandler.AfterInsert handler : afterInsertOrchestrator.afterInsertHandlers()) {
+            for (SObject record : Trigger.new) {
+                if (handler.qualifiesForAfterInsertWhen(new TriggerHandler.RecordImpl(record))) {
+                    handler.onAfterInsert(record);
+                }
+            }
+        }
+    }
+
+    private static void runBeforeUpdate(Object orchestrator) { 
+        if (!(orchestrator instanceof TriggerOrchestrator.BeforeUpdate)) {
+            return;
+        }
+
+        TriggerOrchestrator.BeforeUpdate beforeUpdateOrchestrator = (TriggerOrchestrator.BeforeUpdate) orchestrator;
+
+        for (TriggerHandler.BeforeUpdate handler : beforeUpdateOrchestrator.beforeUpdateHandlers()) {
+            for (Integer i = 0; i < Trigger.new.size(); i++) {
+                SObject newRecord = Trigger.new[i];
+                SObject oldRecord = Trigger.old[i];
+
+                if (handler.qualifiesForBeforeUpdateWhen(new TriggerHandler.RecordImpl(newRecord, oldRecord))) {
+                    handler.onBeforeUpdate(newRecord, oldRecord);
+                }
+            }
+        }   
+    }
+
+    private static void runAfterUpdate(Object orchestrator) { 
+        if (!(orchestrator instanceof TriggerOrchestrator.AfterUpdate)) {
+            return;
+        }
+
+        TriggerOrchestrator.AfterUpdate afterUpdateOrchestrator = (TriggerOrchestrator.AfterUpdate) orchestrator;
+
+        for (TriggerHandler.AfterUpdate handler : afterUpdateOrchestrator.afterUpdateHandlers()) {
+            for (Integer i = 0; i < Trigger.new.size(); i++) {
+                SObject newRecord = Trigger.new[i];
+                SObject oldRecord = Trigger.old[i];
+
+                if (handler.qualifiesForAfterUpdateWhen(new TriggerHandler.RecordImpl(newRecord, oldRecord))) {
+                    handler.onAfterUpdate(newRecord, oldRecord);
+                }
+            }
+        }   
+    }
+
+    private static void runBeforeDelete(Object orchestrator) {
+        if (!(orchestrator instanceof TriggerOrchestrator.BeforeDelete)) {
+            return;
+        }
+
+        TriggerOrchestrator.BeforeDelete beforeDeleteOrchestrator = (TriggerOrchestrator.BeforeDelete) orchestrator;
+
+        for (TriggerHandler.BeforeDelete handler : beforeDeleteOrchestrator.beforeDeleteHandlers()) {
+            for (SObject record : Trigger.old) {
+                if (handler.qualifiesForBeforeDeleteWhen(new TriggerHandler.RecordImpl(record))) {
+                    handler.onBeforeDelete(record);
+                }
+            }
+        }
+    }
+
+    private static void runAfterDelete(Object orchestrator) {
+        if (!(orchestrator instanceof TriggerOrchestrator.AfterDelete)) {
+            return;
+        }
+
+        TriggerOrchestrator.AfterDelete afterDeleteOrchestrator = (TriggerOrchestrator.AfterDelete) orchestrator;
+
+        for (TriggerHandler.AfterDelete handler : afterDeleteOrchestrator.afterDeleteHandlers()) {
+            for (SObject record : Trigger.old) {
+                if (handler.qualifiesForAfterDeleteWhen(new TriggerHandler.RecordImpl(record))) {
+                    handler.onAfterDelete(record);
+                }
+            }
+        }
+    }
+
+    private static void runAfterUndelete(Object orchestrator) {
+        if (!(orchestrator instanceof TriggerOrchestrator.AfterUndelete)) {
+            return;
+        }
+
+        TriggerOrchestrator.AfterUndelete afterUndeleteOrchestrator = (TriggerOrchestrator.AfterUndelete) orchestrator;
+
+        for (TriggerHandler.AfterUndelete handler : afterUndeleteOrchestrator.afterUndeleteHandlers()) {
+            for (SObject record : Trigger.new) {
+                if (handler.qualifiesForAfterUndeleteWhen(new TriggerHandler.RecordImpl(record))) {
+                    handler.onAfterUndelete(record);
+                }
             }
         }
     }

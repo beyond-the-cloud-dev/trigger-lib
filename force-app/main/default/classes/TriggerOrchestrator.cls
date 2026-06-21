@@ -1,6 +1,7 @@
 public with sharing class TriggerOrchestrator {
     // TODO Maybe each interface should return more complex builder, not only list of handlers
     // that builder could set required permissions, bypass permission, etc, but maybe it should be on handler level? 
+
     public interface BeforeInsert { 
         List<TriggerHandler.BeforeInsert> beforeInsertHandlers();
     }

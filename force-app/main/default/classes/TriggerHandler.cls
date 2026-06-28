@@ -5,7 +5,7 @@ public with sharing class TriggerHandler {
         }
     }
 
-    public interface BeforeInsert { 
+    public interface BeforeInsert {  // Maybe BeforeInsertPopulator?
         Boolean qualifiesForBeforeInsertWhen(TriggerHandler.Record record);
         void onBeforeInsert(SObject record); 
     }
@@ -15,7 +15,7 @@ public with sharing class TriggerHandler {
         void onAfterInsert(SObject record);
     }
 
-    public interface BeforeUpdate {
+    public interface BeforeUpdate { // Maybe BeforeUpdatePopulator?
         Boolean qualifiesForBeforeUpdateWhen(TriggerHandler.Record record);
         void onBeforeUpdate(SObject newRecord, SObject oldRecord);
     }
@@ -48,6 +48,13 @@ public with sharing class TriggerHandler {
     public interface RelationshipEnrichment {
         Map<SObjectField, FieldSelection> fieldsToEnrich();
     }
+
+    public interface Bypassable {
+        Boolean bypassWhen();
+    }
+
+    // send email interface
+    // validator interface?
 
     // TODO Maybe additional interfaces
     // set required permissions, bypass permission, etc 
@@ -174,15 +181,15 @@ public with sharing class TriggerHandler {
         }
     } 
 
-    public class RecordImpl implements TriggerHandler.Record { // TODO rename the class
+    public class TriggerRecord implements TriggerHandler.Record {
         private SObject newRecord;
         private SObject oldRecord;
 
-        public RecordImpl(SObject record) {
+        public TriggerRecord(SObject record) {
             this.newRecord = record;
         }
 
-        public RecordImpl(SObject newRecord, SObject oldRecord) {
+        public TriggerRecord(SObject newRecord, SObject oldRecord) {
             this.newRecord = newRecord;
             this.oldRecord = oldRecord;
         }

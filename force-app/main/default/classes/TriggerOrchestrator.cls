@@ -1,4 +1,4 @@
-public with sharing class TriggerOrchestrator {
+public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestrator
     public interface BeforeInsert { 
         List<TriggerHandler.BeforeInsert> beforeInsertHandlers();
     }
@@ -31,12 +31,21 @@ public with sharing class TriggerOrchestrator {
         List<TriggerHandler.AfterUndelete> afterUndeleteHandlers();
     }
 
+    public interface Recursable {
+        Integer maxRecursionDepth();
+        Boolean muteRecursionDepthExceededException(); // TODO
+    }
+
     // TODO Additional interface for master condition eg. RT = A so each team can have their own orchestators
 
     // Implementations
 
+    private static Map<System.TriggerOperation, Map<String, Integer>> recursionDepthByOrchestratorName = new Map<System.TriggerOperation, Map<String, Integer>>();
+
     public static void run(Object orchestrator) {
         // TODO Maybe Adapter to a common interface if possible
+        incrementRecursionDepth(orchestrator); // do not throw exception
+
         switch on System.Trigger.operationType {
             when BEFORE_INSERT {
                 runBeforeInsert(orchestrator);
@@ -60,7 +69,7 @@ public with sharing class TriggerOrchestrator {
                 runAfterUndelete(orchestrator);
             }
             when else {
-                // throw new TODO Called outside of trigger context, or not supported operation type
+                throw new TriggerOrchestratorException('Called outside of trigger context, or not supported operation type');
             }
         }
     }
@@ -73,8 +82,12 @@ public with sharing class TriggerOrchestrator {
         TriggerOrchestrator.BeforeInsert beforeInsertOrchestrator = (TriggerOrchestrator.BeforeInsert) orchestrator;
 
         for (TriggerHandler.BeforeInsert handler : beforeInsertOrchestrator.beforeInsertHandlers()) {
+            if (shouldBeBypassed(handler)) {
+                continue;
+            }
+
             for (SObject record : Trigger.new) {
-                if (handler.qualifiesForBeforeInsertWhen(new TriggerHandler.RecordImpl(record))) {
+                if (handler.qualifiesForBeforeInsertWhen(new TriggerHandler.TriggerRecord(record))) {
                     handler.onBeforeInsert(record);
                 }
             }
@@ -89,8 +102,12 @@ public with sharing class TriggerOrchestrator {
         TriggerOrchestrator.AfterInsert afterInsertOrchestrator = (TriggerOrchestrator.AfterInsert) orchestrator;
 
         for (TriggerHandler.AfterInsert handler : afterInsertOrchestrator.afterInsertHandlers()) {
+            if (shouldBeBypassed(handler)) {
+                continue;
+            }
+
             for (SObject record : Trigger.new) {
-                if (handler.qualifiesForAfterInsertWhen(new TriggerHandler.RecordImpl(record))) {
+                if (handler.qualifiesForAfterInsertWhen(new TriggerHandler.TriggerRecord(record))) {
                     handler.onAfterInsert(record);
                 }
             }
@@ -105,11 +122,15 @@ public with sharing class TriggerOrchestrator {
         TriggerOrchestrator.BeforeUpdate beforeUpdateOrchestrator = (TriggerOrchestrator.BeforeUpdate) orchestrator;
 
         for (TriggerHandler.BeforeUpdate handler : beforeUpdateOrchestrator.beforeUpdateHandlers()) {
+            if (shouldBeBypassed(handler)) {
+                continue;
+            }
+
             for (Integer i = 0; i < Trigger.new.size(); i++) {
                 SObject newRecord = Trigger.new[i];
                 SObject oldRecord = Trigger.old[i];
 
-                if (handler.qualifiesForBeforeUpdateWhen(new TriggerHandler.RecordImpl(newRecord, oldRecord))) {
+                if (handler.qualifiesForBeforeUpdateWhen(new TriggerHandler.TriggerRecord(newRecord, oldRecord))) {
                     handler.onBeforeUpdate(newRecord, oldRecord);
                 }
             }
@@ -124,11 +145,15 @@ public with sharing class TriggerOrchestrator {
         TriggerOrchestrator.AfterUpdate afterUpdateOrchestrator = (TriggerOrchestrator.AfterUpdate) orchestrator;
 
         for (TriggerHandler.AfterUpdate handler : afterUpdateOrchestrator.afterUpdateHandlers()) {
+            if (shouldBeBypassed(handler)) {
+                continue;
+            }
+
             for (Integer i = 0; i < Trigger.new.size(); i++) {
                 SObject newRecord = Trigger.new[i];
                 SObject oldRecord = Trigger.old[i];
 
-                if (handler.qualifiesForAfterUpdateWhen(new TriggerHandler.RecordImpl(newRecord, oldRecord))) {
+                if (handler.qualifiesForAfterUpdateWhen(new TriggerHandler.TriggerRecord(newRecord, oldRecord))) {
                     handler.onAfterUpdate(newRecord, oldRecord);
                 }
             }
@@ -143,8 +168,12 @@ public with sharing class TriggerOrchestrator {
         TriggerOrchestrator.BeforeDelete beforeDeleteOrchestrator = (TriggerOrchestrator.BeforeDelete) orchestrator;
 
         for (TriggerHandler.BeforeDelete handler : beforeDeleteOrchestrator.beforeDeleteHandlers()) {
+            if (shouldBeBypassed(handler)) {
+                continue;
+            }
+
             for (SObject record : Trigger.old) {
-                if (handler.qualifiesForBeforeDeleteWhen(new TriggerHandler.RecordImpl(record))) {
+                if (handler.qualifiesForBeforeDeleteWhen(new TriggerHandler.TriggerRecord(record))) {
                     handler.onBeforeDelete(record);
                 }
             }
@@ -159,8 +188,12 @@ public with sharing class TriggerOrchestrator {
         TriggerOrchestrator.AfterDelete afterDeleteOrchestrator = (TriggerOrchestrator.AfterDelete) orchestrator;
 
         for (TriggerHandler.AfterDelete handler : afterDeleteOrchestrator.afterDeleteHandlers()) {
+            if (shouldBeBypassed(handler)) {
+                continue;
+            }
+
             for (SObject record : Trigger.old) {
-                if (handler.qualifiesForAfterDeleteWhen(new TriggerHandler.RecordImpl(record))) {
+                if (handler.qualifiesForAfterDeleteWhen(new TriggerHandler.TriggerRecord(record))) {
                     handler.onAfterDelete(record);
                 }
             }
@@ -175,11 +208,47 @@ public with sharing class TriggerOrchestrator {
         TriggerOrchestrator.AfterUndelete afterUndeleteOrchestrator = (TriggerOrchestrator.AfterUndelete) orchestrator;
 
         for (TriggerHandler.AfterUndelete handler : afterUndeleteOrchestrator.afterUndeleteHandlers()) {
+            if (shouldBeBypassed(handler)) {
+                continue;
+            }
+
             for (SObject record : Trigger.new) {
-                if (handler.qualifiesForAfterUndeleteWhen(new TriggerHandler.RecordImpl(record))) {
+                if (handler.qualifiesForAfterUndeleteWhen(new TriggerHandler.TriggerRecord(record))) {
                     handler.onAfterUndelete(record);
                 }
             }
         }
     }
+
+    private static Boolean shouldBeBypassed(Object handler) {
+        if (handler instanceof TriggerHandler.Bypassable) {                
+            return ((TriggerHandler.Bypassable) handler).bypassWhen();
+        }
+
+        return false;
+    }
+
+    private static void incrementRecursionDepth(Object orchestrator) {
+        String orchestratorName = String.valueOf(orchestrator).split(':')[0];
+
+        Integer orchestratorMaxDepth = 3;
+
+        if (orchestrator instanceof TriggerOrchestrator.Recursable) {
+            orchestratorMaxDepth = ((TriggerOrchestrator.Recursable) orchestrator).maxRecursionDepth();
+        }
+
+        if (!TriggerOrchestrator.recursionDepthByOrchestratorName.containsKey(System.Trigger.operationType)) {
+            TriggerOrchestrator.recursionDepthByOrchestratorName.put(System.Trigger.operationType, new Map<String, Integer>());
+        }
+
+        Integer currentDepth = TriggerOrchestrator.recursionDepthByOrchestratorName.get(System.Trigger.operationType).get(orchestratorName) ?? 0;
+ 
+        if (currentDepth >= orchestratorMaxDepth) {
+            throw new TriggerOrchestratorException('Maximum recursion depth reached for orchestrator: ' + orchestratorName);
+        }
+
+        TriggerOrchestrator.recursionDepthByOrchestratorName.get(System.Trigger.operationType).put(orchestratorName, currentDepth + 1);
+    }
+
+    private class TriggerOrchestratorException extends Exception {}
 }

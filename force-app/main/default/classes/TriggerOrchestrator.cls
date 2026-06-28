@@ -31,7 +31,7 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
         List<TriggerHandler.AfterUndelete> afterUndeleteHandlers();
     }
 
-    public interface Recursable {
+    public interface Recursable { // Make sense only for update operations, maybe move it there
         Integer maxRecursionDepth();
         Boolean muteRecursionDepthExceededException(); // TODO
     }
@@ -40,11 +40,21 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
 
     // Implementations
 
-    private static Map<System.TriggerOperation, Map<String, Integer>> recursionDepthByOrchestratorName = new Map<System.TriggerOperation, Map<String, Integer>>();
+	private static Map<System.TriggerOperation, Map<Id, Integer>> recursionDepth {
+		get {
+			if (recursionDepth == null) {
+				recursionDepth = new Map<System.TriggerOperation, Map<Id, Integer>>{
+					System.TriggerOperation.BEFORE_UPDATE => new Map<Id, Integer>(),
+					System.TriggerOperation.AFTER_UPDATE => new Map<Id, Integer>()
+				};
+			}
+			return recursionDepth;
+		}
+		set;
+	}
 
     public static void run(Object orchestrator) {
         // TODO Maybe Adapter to a common interface if possible
-        incrementRecursionDepth(orchestrator); // do not throw exception
 
         switch on System.Trigger.operationType {
             when BEFORE_INSERT {
@@ -54,9 +64,11 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
                 runAfterInsert(orchestrator);
             }
             when BEFORE_UPDATE {
+                incrementRecursionDepth(); 
                 runBeforeUpdate(orchestrator);
             }
             when AFTER_UPDATE {
+                incrementRecursionDepth();
                 runAfterUpdate(orchestrator);
             }
             when BEFORE_DELETE {
@@ -228,26 +240,23 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
         return false;
     }
 
-    private static void incrementRecursionDepth(Object orchestrator) {
-        String orchestratorName = String.valueOf(orchestrator).split(':')[0];
-
+    private static void incrementRecursionDepth() {
         Integer orchestratorMaxDepth = 3;
 
-        if (orchestrator instanceof TriggerOrchestrator.Recursable) {
-            orchestratorMaxDepth = ((TriggerOrchestrator.Recursable) orchestrator).maxRecursionDepth();
-        }
+        // if (orchestrator instanceof TriggerOrchestrator.Recursable) {
+        //     orchestratorMaxDepth = ((TriggerOrchestrator.Recursable) orchestrator).maxRecursionDepth();
+        // }
 
-        if (!TriggerOrchestrator.recursionDepthByOrchestratorName.containsKey(System.Trigger.operationType)) {
-            TriggerOrchestrator.recursionDepthByOrchestratorName.put(System.Trigger.operationType, new Map<String, Integer>());
-        }
+        for (Id recordId : Trigger.newMap.keySet()) { // maybe insteaf of ids, just use List hashMap
+			Map<Id, Integer> idToUpdateCount = recursionDepth.get(System.Trigger.operationType);
+			Integer updateCount = idToUpdateCount.get(recordId) ?? 0;
 
-        Integer currentDepth = TriggerOrchestrator.recursionDepthByOrchestratorName.get(System.Trigger.operationType).get(orchestratorName) ?? 0;
- 
-        if (currentDepth >= orchestratorMaxDepth) {
-            throw new TriggerOrchestratorException('Maximum recursion depth reached for orchestrator: ' + orchestratorName);
-        }
+            if (updateCount >= orchestratorMaxDepth) {
+                throw new TriggerOrchestratorException('Maximum recursion depth reached for record: ' + recordId);
+            }
 
-        TriggerOrchestrator.recursionDepthByOrchestratorName.get(System.Trigger.operationType).put(orchestratorName, currentDepth + 1);
+			idToUpdateCount.put(recordId, updateCount + 1);
+		}
     }
 
     private class TriggerOrchestratorException extends Exception {}

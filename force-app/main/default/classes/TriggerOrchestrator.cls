@@ -1,5 +1,5 @@
 public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestrator
-    public interface BeforeInsert { 
+    public interface BeforeInsert {
         List<TriggerHandler.BeforeInsert> beforeInsertHandlers();
     }
 
@@ -31,30 +31,30 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
         List<TriggerHandler.AfterUndelete> afterUndeleteHandlers();
     }
 
-    public interface UpdateRecursable { // Make sense only for update operations, maybe move it there
+    public interface UpdateRecursable {
         Integer maxRecursionDepth();
         Boolean muteRecursionDepthExceededException(); // TODO
     }
 
     // Implementations
 
-	private static Map<System.TriggerOperation, Map<Id, Integer>> recursionDepth {
-		get {
-			if (recursionDepth == null) {
-				recursionDepth = new Map<System.TriggerOperation, Map<Id, Integer>>{
-					System.TriggerOperation.BEFORE_UPDATE => new Map<Id, Integer>(),
-					System.TriggerOperation.AFTER_UPDATE => new Map<Id, Integer>()
-				};
-			}
-			return recursionDepth;
-		}
-		set;
-	}
+    private static Map<System.TriggerOperation, Map<Id, Integer>> recursionDepth {
+        get {
+            if (recursionDepth == null) {
+                recursionDepth = new Map<System.TriggerOperation, Map<Id, Integer>>{
+                    System.TriggerOperation.BEFORE_UPDATE => new Map<Id, Integer>(),
+                    System.TriggerOperation.AFTER_UPDATE => new Map<Id, Integer>()
+                };
+            }
+            return recursionDepth;
+        }
+        private set;
+    }
 
     public static void run(Object orchestrator) {
         // TODO Maybe Adapter to a common interface if possible
 
-        switch on System.Trigger.operationType {
+        switch on Trigger.operationType {
             when BEFORE_INSERT {
                 runBeforeInsert(orchestrator);
             }
@@ -62,11 +62,11 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
                 runAfterInsert(orchestrator);
             }
             when BEFORE_UPDATE {
-                incrementRecursionDepth(); 
+                incrementRecursionDepth(orchestrator);
                 runBeforeUpdate(orchestrator);
             }
             when AFTER_UPDATE {
-                incrementRecursionDepth();
+                incrementRecursionDepth(orchestrator);
                 runAfterUpdate(orchestrator);
             }
             when BEFORE_DELETE {
@@ -91,7 +91,7 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
 
         TriggerOrchestrator.BeforeInsert beforeInsertOrchestrator = (TriggerOrchestrator.BeforeInsert) orchestrator;
 
-        enrichData(beforeInsertOrchestrator.beforeInsertHandlers());
+        enrichParentRelationships(beforeInsertOrchestrator.beforeInsertHandlers());
 
         for (TriggerHandler.BeforeInsert handler : beforeInsertOrchestrator.beforeInsertHandlers()) {
             if (shouldBeBypassed(handler)) {
@@ -113,6 +113,8 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
 
         TriggerOrchestrator.AfterInsert afterInsertOrchestrator = (TriggerOrchestrator.AfterInsert) orchestrator;
 
+        enrichParentRelationships(afterInsertOrchestrator.afterInsertHandlers());
+
         for (TriggerHandler.AfterInsert handler : afterInsertOrchestrator.afterInsertHandlers()) {
             if (shouldBeBypassed(handler)) {
                 continue;
@@ -126,13 +128,15 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
         }
     }
 
-    private static void runBeforeUpdate(Object orchestrator) { 
+    private static void runBeforeUpdate(Object orchestrator) {
         if (!(orchestrator instanceof TriggerOrchestrator.BeforeUpdate)) {
             return;
         }
 
         TriggerOrchestrator.BeforeUpdate beforeUpdateOrchestrator = (TriggerOrchestrator.BeforeUpdate) orchestrator;
 
+        enrichParentRelationships(beforeUpdateOrchestrator.beforeUpdateHandlers());
+        
         for (TriggerHandler.BeforeUpdate handler : beforeUpdateOrchestrator.beforeUpdateHandlers()) {
             if (shouldBeBypassed(handler)) {
                 continue;
@@ -146,15 +150,17 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
                     handler.onBeforeUpdate(newRecord, oldRecord);
                 }
             }
-        }   
+        }
     }
 
-    private static void runAfterUpdate(Object orchestrator) { 
+    private static void runAfterUpdate(Object orchestrator) {
         if (!(orchestrator instanceof TriggerOrchestrator.AfterUpdate)) {
             return;
         }
 
         TriggerOrchestrator.AfterUpdate afterUpdateOrchestrator = (TriggerOrchestrator.AfterUpdate) orchestrator;
+
+        enrichParentRelationships(afterUpdateOrchestrator.afterUpdateHandlers());
 
         for (TriggerHandler.AfterUpdate handler : afterUpdateOrchestrator.afterUpdateHandlers()) {
             if (shouldBeBypassed(handler)) {
@@ -169,7 +175,7 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
                     handler.onAfterUpdate(newRecord, oldRecord);
                 }
             }
-        }   
+        }
     }
 
     private static void runBeforeDelete(Object orchestrator) {
@@ -178,6 +184,8 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
         }
 
         TriggerOrchestrator.BeforeDelete beforeDeleteOrchestrator = (TriggerOrchestrator.BeforeDelete) orchestrator;
+
+        enrichParentRelationships(beforeDeleteOrchestrator.beforeDeleteHandlers());
 
         for (TriggerHandler.BeforeDelete handler : beforeDeleteOrchestrator.beforeDeleteHandlers()) {
             if (shouldBeBypassed(handler)) {
@@ -199,6 +207,8 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
 
         TriggerOrchestrator.AfterDelete afterDeleteOrchestrator = (TriggerOrchestrator.AfterDelete) orchestrator;
 
+        enrichParentRelationships(afterDeleteOrchestrator.afterDeleteHandlers());
+
         for (TriggerHandler.AfterDelete handler : afterDeleteOrchestrator.afterDeleteHandlers()) {
             if (shouldBeBypassed(handler)) {
                 continue;
@@ -219,6 +229,8 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
 
         TriggerOrchestrator.AfterUndelete afterUndeleteOrchestrator = (TriggerOrchestrator.AfterUndelete) orchestrator;
 
+        enrichParentRelationships(afterUndeleteOrchestrator.afterUndeleteHandlers());
+
         for (TriggerHandler.AfterUndelete handler : afterUndeleteOrchestrator.afterUndeleteHandlers()) {
             if (shouldBeBypassed(handler)) {
                 continue;
@@ -233,14 +245,14 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
     }
 
     private static Boolean shouldBeBypassed(Object handler) {
-        if (handler instanceof TriggerHandler.Bypassable) {                
+        if (handler instanceof TriggerHandler.Bypassable) {
             return ((TriggerHandler.Bypassable) handler).bypassWhen();
         }
 
         return false;
     }
 
-    private static void enrichData(List<Object> handlers) {
+    private static void enrichParentRelationships(List<Object> handlers) {
         Map<SObjectField, SOQL.Queryable> fieldToHandlersMap = new Map<SObjectField, SOQL.Queryable>();
 
         for (Object handler : handlers) {
@@ -248,7 +260,7 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
                 TriggerHandler.RelationshipEnrichment enrichmentHandler = (TriggerHandler.RelationshipEnrichment) handler;
 
                 Map<SObjectField, TriggerHandler.FieldSelection> fieldsToEnrich = enrichmentHandler.fieldsToEnrich();
-                
+
                 for (SObjectField field : fieldsToEnrich.keySet()) {
                     if (!fieldToHandlersMap.containsKey(field)) {
                         fieldToHandlersMap.put(field, SOQL.of(field.getDescribe().getReferenceTo()[0]));
@@ -269,7 +281,7 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
 
                 if (!parentIdsToOriginField.containsKey(field)) {
                     parentIdsToOriginField.put(field, new Set<Id>());
-                } 
+                }
 
                 parentIdsToOriginField.get(field).add((Id) record.get(field));
             }
@@ -283,8 +295,8 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
             }
 
             String relationshipName = field.getDescribe().getRelationshipName();
-            // TODO .systemMode().withoutSharing() ?
-            Map<Id, SObject> relatedRecords = fieldToHandlersMap.get(field).byIds(parentIds).toMap();
+
+            Map<Id, SObject> relatedRecords = fieldToHandlersMap.get(field).byIds(parentIds).systemMode().withoutSharing().toMap();
 
             for (SObject record : Trigger.new) {
                 if (record.get(field) == null) {
@@ -302,28 +314,29 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
         }
     }
 
-    private static void incrementRecursionDepth() {
+    private static void incrementRecursionDepth(Object orchestrator) {
         Integer orchestratorMaxDepth = 3;
 
-        // if (orchestrator instanceof TriggerOrchestrator.UpdateRecursable) {
-        //     orchestratorMaxDepth = ((TriggerOrchestrator.UpdateRecursable) orchestrator).maxRecursionDepth();
-        // }
+        if (orchestrator instanceof TriggerOrchestrator.UpdateRecursable) {
+            orchestratorMaxDepth = ((TriggerOrchestrator.UpdateRecursable) orchestrator).maxRecursionDepth();
+        }
 
-        for (Id recordId : Trigger.newMap.keySet()) { // maybe insteaf of ids, just use List hashMap
-			Map<Id, Integer> idToUpdateCount = recursionDepth.get(System.Trigger.operationType);
-			Integer updateCount = idToUpdateCount.get(recordId) ?? 0;
+        for (Id recordId : Trigger.newMap.keySet()) {
+            // maybe insteaf of ids, just use List hashMap
+            Map<Id, Integer> idToUpdateCount = recursionDepth.get(Trigger.operationType);
+            Integer updateCount = idToUpdateCount.get(recordId) ?? 0;
 
             if (updateCount >= orchestratorMaxDepth) {
                 throw new TriggerOrchestratorException('Maximum recursion depth reached for record: ' + recordId);
             }
 
-			idToUpdateCount.put(recordId, updateCount + 1);
-		}
+            idToUpdateCount.put(recordId, updateCount + 1);
+        }
     }
 
     private class RelationshipEnrichment {
-        
     }
 
-    private class TriggerOrchestratorException extends Exception {}
+    private class TriggerOrchestratorException extends Exception {
+    }
 }

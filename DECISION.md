@@ -1,1 +1,3 @@
-- Minimal metadata records. Just for enable and disable. Behavior can be overriden via additional records.
+- Minimal metadata records. No metadata record needed to make lib working. Metadata records can be used however to override default behavior, and disable orchestrators/handlers.
+- As few loops should be made as possible. Developer shouldn't iterate through the records. Lib opperates in context of a single record.
+- As few SOQLs should be made as possible. Developer shouldn't make queries inside handlers. Parent relationships should be pulled automatically. Query should be made only when there is at least one qualified record, or qualification require related records or maybe no? In this way we can silenty exeed SOQL limit, eg.in 99% scenarios it will work, because conditions are not meet, but in some cases conditions are meet and too many soql querise will be made. 

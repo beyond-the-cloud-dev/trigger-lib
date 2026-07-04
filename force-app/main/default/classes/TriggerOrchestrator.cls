@@ -93,6 +93,8 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
 
         TriggerOrchestrator.BeforeInsert beforeInsertOrchestrator = (TriggerOrchestrator.BeforeInsert) orchestrator;
 
+        enrichData(beforeInsertOrchestrator.beforeInsertHandlers());
+
         for (TriggerHandler.BeforeInsert handler : beforeInsertOrchestrator.beforeInsertHandlers()) {
             if (shouldBeBypassed(handler)) {
                 continue;
@@ -238,6 +240,68 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
         }
 
         return false;
+    }
+
+    private static void enrichData(List<Object> handlers) {
+        Map<SObjectField, SOQL.Queryable> fieldToHandlersMap = new Map<SObjectField, SOQL.Queryable>();
+
+        for (Object handler : handlers) {
+            if (handler instanceof TriggerHandler.RelationshipEnrichment) {
+                TriggerHandler.RelationshipEnrichment enrichmentHandler = (TriggerHandler.RelationshipEnrichment) handler;
+
+                Map<SObjectField, TriggerHandler.FieldSelection> fieldsToEnrich = enrichmentHandler.fieldsToEnrich();
+                
+                for (SObjectField field : fieldsToEnrich.keySet()) {
+                    if (!fieldToHandlersMap.containsKey(field)) {
+                        fieldToHandlersMap.put(field, SOQL.of(field.getDescribe().getReferenceTo()[0]));
+                    }
+
+                    fieldToHandlersMap.get(field).with(fieldsToEnrich.get(field).getFields());
+                }
+            }
+        }
+
+        Map<SObjectField, Set<Id>> parentIdsToOriginField = new Map<SObjectField, Set<Id>>();
+
+        for (SObject record : Trigger.new) {
+            for (SObjectField field : fieldToHandlersMap.keySet()) {
+                if (record.get(field) == null) {
+                    continue;
+                }
+
+                if (!parentIdsToOriginField.containsKey(field)) {
+                    parentIdsToOriginField.put(field, new Set<Id>());
+                } 
+
+                parentIdsToOriginField.get(field).add((Id) record.get(field));
+            }
+        }
+
+        for (SObjectField field : fieldToHandlersMap.keySet()) {
+            Set<Id> parentIds = parentIdsToOriginField.get(field);
+
+            if (parentIds == null || parentIds.isEmpty()) {
+                continue;
+            }
+
+            String relationshipName = field.getDescribe().getRelationshipName();
+            // TODO .systemMode().withoutSharing() ?
+            Map<Id, SObject> relatedRecords = fieldToHandlersMap.get(field).byIds(parentIds).toMap();
+
+            for (SObject record : Trigger.new) {
+                if (record.get(field) == null) {
+                    continue;
+                }
+
+                SObject relatedRecord = relatedRecords.get((Id) record.get(field));
+
+                if (relatedRecord == null) {
+                    continue;
+                }
+
+                record.putSObject(relationshipName, relatedRecord);
+            }
+        }
     }
 
     private static void incrementRecursionDepth() {

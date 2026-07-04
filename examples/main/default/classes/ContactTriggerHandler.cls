@@ -10,11 +10,16 @@ public with sharing class ContactTriggerHandler implements TriggerHandler.Relati
     }
 
     public Boolean qualifiesForBeforeInsertWhen(TriggerHandler.Record record) {
-        return record.isRecordTypeEqual('Business_Contact');
+        return true;// record.isRecordTypeEqual('Business_Contact');
     }
 
     public void onBeforeInsert(SObject record) {
         Contact contact = (Contact) record;
+        System.debug('========> ' + contact.Account.Name);
+        System.debug('========> ' + contact.Account.Industry);
+        System.debug('========> ' + contact.Account.CreatedBy.Name);
+        System.debug('========> ' + contact.Account.CreatedBy.Email);
+
         contact.Description = 'This contact was created by a trigger handler.';
     }
 }

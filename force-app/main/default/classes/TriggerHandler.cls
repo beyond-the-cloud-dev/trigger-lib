@@ -5,6 +5,8 @@ public with sharing class TriggerHandler {
         }
     }
 
+    // Before Context
+
     public interface BeforeInsert {  // Maybe BeforeInsertPopulator?
         Boolean qualifiesForBeforeInsertWhen(TriggerHandler.Record record);
         void onBeforeInsert(SObject record); 
@@ -95,6 +97,7 @@ public with sharing class TriggerHandler {
         Boolean lessThan(SObjectField field, Object value);
         Boolean lessThanOrEqualTo(SObjectField field, Object value);
 
+        Id getId();
         SObject getNewSObject();
         SObject getOldSObject();
     }
@@ -113,71 +116,102 @@ public with sharing class TriggerHandler {
         FieldSelection with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
         FieldSelection with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
         FieldSelection with(String relationshipName, Iterable<SObjectField> fields);
+
+        // for private use only
+        List<String> getFields();
     }
 
     // Implementation 
 
     public class SelectionClass implements FieldSelection {
-        private SOQL query;
+        private List<String> fields = new List<String>();
 
         public FieldSelection with(SObjectField field) {
-            this.query.with(field);
+            this.fields.add(field.toString());
             return this;
         }
 
         public FieldSelection with(SObjectField field1, SObjectField field2) {
-            this.query.with(field1, field2);
+            this.fields.add(field1.toString());
+            this.fields.add(field2.toString());
             return this;
         }
 
         public FieldSelection with(SObjectField field1, SObjectField field2, SObjectField field3) {
-            this.query.with(field1, field2, field3);
+            this.fields.add(field1.toString());
+            this.fields.add(field2.toString());
+            this.fields.add(field3.toString());
             return this;
         }
 
         public FieldSelection with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4) {
-            this.query.with(field1, field2, field3, field4);
+            this.fields.add(field1.toString());
+            this.fields.add(field2.toString());
+            this.fields.add(field3.toString());
+            this.fields.add(field4.toString());
             return this;
         }
 
         public FieldSelection with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5) {
-            this.query.with(field1, field2, field3, field4, field5);
+            this.fields.add(field1.toString());
+            this.fields.add(field2.toString());
+            this.fields.add(field3.toString());
+            this.fields.add(field4.toString());
+            this.fields.add(field5.toString());
             return this;
         }
 
         public FieldSelection with(Iterable<SObjectField> fields) {
-            this.query.with(fields);
+            for (SObjectField field : fields) {
+                this.fields.add(field.toString());
+            }
             return this;
         }
 
         public FieldSelection with(String relationshipName, SObjectField field) {
-            this.query.with(relationshipName, field);
+            this.fields.add(relationshipName + '.' + field.toString());
             return this;
         }
 
         public FieldSelection with(String relationshipName, SObjectField field1, SObjectField field2) {
-            this.query.with(relationshipName, field1, field2);
+            this.fields.add(relationshipName + '.' + field1.toString());
+            this.fields.add(relationshipName + '.' + field2.toString());
             return this;
         }
 
         public FieldSelection with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3) {
-            this.query.with(relationshipName, field1, field2, field3);
+            this.fields.add(relationshipName + '.' + field1.toString());
+            this.fields.add(relationshipName + '.' + field2.toString());
+            this.fields.add(relationshipName + '.' + field3.toString());
             return this;
         }
 
         public FieldSelection with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4) {
-            this.query.with(relationshipName, field1, field2, field3, field4);
+            this.fields.add(relationshipName + '.' + field1.toString());
+            this.fields.add(relationshipName + '.' + field2.toString());
+            this.fields.add(relationshipName + '.' + field3.toString());
+            this.fields.add(relationshipName + '.' + field4.toString());
             return this;
         }
 
         public FieldSelection with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5) {
-            this.query.with(relationshipName, field1, field2, field3, field4, field5);
+            this.fields.add(relationshipName + '.' + field1.toString());
+            this.fields.add(relationshipName + '.' + field2.toString());
+            this.fields.add(relationshipName + '.' + field3.toString());
+            this.fields.add(relationshipName + '.' + field4.toString());
+            this.fields.add(relationshipName + '.' + field5.toString());
             return this;
         }
 
         public FieldSelection with(String relationshipName, Iterable<SObjectField> fields) {
-            this.query.with(relationshipName, fields);
+            for (SObjectField field : fields) {
+                this.fields.add(relationshipName + '.' + field.toString());
+            }
             return this;
+        }
+
+        public List<String> getFields() {
+            return this.fields;
         }
     } 
 
@@ -304,6 +338,10 @@ public with sharing class TriggerHandler {
 
         public Boolean lessThanOrEqualTo(SObjectField field, Object value) {
             return false;
+        }
+
+        public Id getId() {
+            return this.newRecord.Id;
         }
 
         public SObject getNewSObject() {

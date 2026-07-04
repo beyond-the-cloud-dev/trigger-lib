@@ -31,12 +31,10 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
         List<TriggerHandler.AfterUndelete> afterUndeleteHandlers();
     }
 
-    public interface Recursable { // Make sense only for update operations, maybe move it there
+    public interface UpdateRecursable { // Make sense only for update operations, maybe move it there
         Integer maxRecursionDepth();
         Boolean muteRecursionDepthExceededException(); // TODO
     }
-
-    // TODO Additional interface for master condition eg. RT = A so each team can have their own orchestators
 
     // Implementations
 
@@ -307,8 +305,8 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
     private static void incrementRecursionDepth() {
         Integer orchestratorMaxDepth = 3;
 
-        // if (orchestrator instanceof TriggerOrchestrator.Recursable) {
-        //     orchestratorMaxDepth = ((TriggerOrchestrator.Recursable) orchestrator).maxRecursionDepth();
+        // if (orchestrator instanceof TriggerOrchestrator.UpdateRecursable) {
+        //     orchestratorMaxDepth = ((TriggerOrchestrator.UpdateRecursable) orchestrator).maxRecursionDepth();
         // }
 
         for (Id recordId : Trigger.newMap.keySet()) { // maybe insteaf of ids, just use List hashMap
@@ -321,6 +319,10 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
 
 			idToUpdateCount.put(recordId, updateCount + 1);
 		}
+    }
+
+    private class RelationshipEnrichment {
+        
     }
 
     private class TriggerOrchestratorException extends Exception {}

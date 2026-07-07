@@ -2,6 +2,7 @@ import { defineConfig } from "vitepress";
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
+  cleanUrls: true,
   title: "Salesforce Template",
   description:
     "Professional Salesforce development template with CI/CD, testing, and best practices",

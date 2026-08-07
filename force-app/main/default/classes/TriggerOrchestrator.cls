@@ -1,4 +1,4 @@
-public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestrator
+public with sharing class TriggerOrchestrator {
     public interface BeforeInsert {
         List<TriggerHandler.BeforeInsert> beforeInsertHandlers();
     }
@@ -31,7 +31,9 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
         List<TriggerHandler.AfterUndelete> afterUndeleteHandlers();
     }
 
-    public interface UpdateRecursable {
+    // TODO Asynchronous Actions - TODO Only in AfterUpdate, AfterDelete context
+
+    public interface RecursiveUpdateGuard {
         Integer maxRecursionDepth();
         Boolean muteRecursionDepthExceededException(); // TODO
     }
@@ -54,33 +56,40 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
     public static void run(Object orchestrator) {
         // TODO Maybe Adapter to a common interface if possible
 
-        switch on Trigger.operationType {
-            when BEFORE_INSERT {
-                runBeforeInsert(orchestrator);
-            }
-            when AFTER_INSERT {
-                runAfterInsert(orchestrator);
-            }
-            when BEFORE_UPDATE {
-                incrementRecursionDepth(orchestrator);
-                runBeforeUpdate(orchestrator);
-            }
-            when AFTER_UPDATE {
-                incrementRecursionDepth(orchestrator);
-                runAfterUpdate(orchestrator);
-            }
-            when BEFORE_DELETE {
-                runBeforeDelete(orchestrator);
-            }
-            when AFTER_DELETE {
-                runAfterDelete(orchestrator);
-            }
-            when AFTER_UNDELETE {
-                runAfterUndelete(orchestrator);
-            }
-            when else {
-                throw new TriggerOrchestratorException('Called outside of trigger context, or not supported operation type');
-            }
+        try {
+            switch on Trigger.operationType {
+                when BEFORE_INSERT {
+                    runBeforeInsert(orchestrator);
+                }
+                when AFTER_INSERT {
+                    runAfterInsert(orchestrator);
+                }
+                when BEFORE_UPDATE {
+                    incrementRecursionDepth(orchestrator);
+                    runBeforeUpdate(orchestrator);
+                }
+                when AFTER_UPDATE {
+                    incrementRecursionDepth(orchestrator);
+                    runAfterUpdate(orchestrator);
+                }
+                when BEFORE_DELETE {
+                    runBeforeDelete(orchestrator);
+                }
+                when AFTER_DELETE {
+                    runAfterDelete(orchestrator);
+                }
+                when AFTER_UNDELETE {
+                    runAfterUndelete(orchestrator);
+                }
+                when else {
+                    throw new TriggerOrchestratorException('Called outside of trigger context, or not supported operation type');
+                }
+            } 
+        } catch (Exception e) {
+            // TODO logger
+            throw e;
+        } finally {
+            // TODO finalizer
         }
     }
 
@@ -113,14 +122,14 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
 
         TriggerOrchestrator.AfterInsert afterInsertOrchestrator = (TriggerOrchestrator.AfterInsert) orchestrator;
 
-        enrichParentRelationships(afterInsertOrchestrator.afterInsertHandlers());
+        List<SObject> records = enrichReadOnlyRelationships(afterInsertOrchestrator.afterInsertHandlers(), Trigger.new);
 
         for (TriggerHandler.AfterInsert handler : afterInsertOrchestrator.afterInsertHandlers()) {
             if (shouldBeBypassed(handler)) {
                 continue;
             }
 
-            for (SObject record : Trigger.new) {
+            for (SObject record : records) {
                 if (handler.qualifiesForAfterInsertWhen(new TriggerHandler.TriggerRecord(record))) {
                     handler.onAfterInsert(record);
                 }
@@ -160,15 +169,15 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
 
         TriggerOrchestrator.AfterUpdate afterUpdateOrchestrator = (TriggerOrchestrator.AfterUpdate) orchestrator;
 
-        enrichParentRelationships(afterUpdateOrchestrator.afterUpdateHandlers());
+        List<SObject> newRecords = enrichReadOnlyRelationships(afterUpdateOrchestrator.afterUpdateHandlers(), Trigger.new);
 
         for (TriggerHandler.AfterUpdate handler : afterUpdateOrchestrator.afterUpdateHandlers()) {
             if (shouldBeBypassed(handler)) {
                 continue;
             }
 
-            for (Integer i = 0; i < Trigger.new.size(); i++) {
-                SObject newRecord = Trigger.new[i];
+            for (Integer i = 0; i < newRecords.size(); i++) {
+                SObject newRecord = newRecords[i];
                 SObject oldRecord = Trigger.old[i];
 
                 if (handler.qualifiesForAfterUpdateWhen(new TriggerHandler.TriggerRecord(newRecord, oldRecord))) {
@@ -185,14 +194,14 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
 
         TriggerOrchestrator.BeforeDelete beforeDeleteOrchestrator = (TriggerOrchestrator.BeforeDelete) orchestrator;
 
-        enrichParentRelationships(beforeDeleteOrchestrator.beforeDeleteHandlers());
+        List<SObject> records = enrichReadOnlyRelationships(beforeDeleteOrchestrator.beforeDeleteHandlers(), Trigger.old);
 
         for (TriggerHandler.BeforeDelete handler : beforeDeleteOrchestrator.beforeDeleteHandlers()) {
             if (shouldBeBypassed(handler)) {
                 continue;
             }
 
-            for (SObject record : Trigger.old) {
+            for (SObject record : records) {
                 if (handler.qualifiesForBeforeDeleteWhen(new TriggerHandler.TriggerRecord(record))) {
                     handler.onBeforeDelete(record);
                 }
@@ -207,14 +216,14 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
 
         TriggerOrchestrator.AfterDelete afterDeleteOrchestrator = (TriggerOrchestrator.AfterDelete) orchestrator;
 
-        enrichParentRelationships(afterDeleteOrchestrator.afterDeleteHandlers());
+        List<SObject> records = enrichReadOnlyRelationships(afterDeleteOrchestrator.afterDeleteHandlers(), Trigger.old);
 
         for (TriggerHandler.AfterDelete handler : afterDeleteOrchestrator.afterDeleteHandlers()) {
             if (shouldBeBypassed(handler)) {
                 continue;
             }
 
-            for (SObject record : Trigger.old) {
+            for (SObject record : records) {
                 if (handler.qualifiesForAfterDeleteWhen(new TriggerHandler.TriggerRecord(record))) {
                     handler.onAfterDelete(record);
                 }
@@ -229,14 +238,14 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
 
         TriggerOrchestrator.AfterUndelete afterUndeleteOrchestrator = (TriggerOrchestrator.AfterUndelete) orchestrator;
 
-        enrichParentRelationships(afterUndeleteOrchestrator.afterUndeleteHandlers());
+        List<SObject> records = enrichReadOnlyRelationships(afterUndeleteOrchestrator.afterUndeleteHandlers(), Trigger.new);
 
         for (TriggerHandler.AfterUndelete handler : afterUndeleteOrchestrator.afterUndeleteHandlers()) {
             if (shouldBeBypassed(handler)) {
                 continue;
             }
 
-            for (SObject record : Trigger.new) {
+            for (SObject record : records) {
                 if (handler.qualifiesForAfterUndeleteWhen(new TriggerHandler.TriggerRecord(record))) {
                     handler.onAfterUndelete(record);
                 }
@@ -250,6 +259,89 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
         }
 
         return false;
+    }
+
+    private static List<SObject> enrichReadOnlyRelationships(List<Object> handlers, List<SObject> readOnlyRecords) {
+        Set<String> relationshipNames = new Set<String>();
+        List<String> relationshipFields = new List<String>();
+
+        for (Object handler : handlers) {
+            if (handler instanceof TriggerHandler.RelationshipEnrichment) {
+                TriggerHandler.RelationshipEnrichment enrichmentHandler = (TriggerHandler.RelationshipEnrichment) handler;
+
+                Map<SObjectField, TriggerHandler.FieldSelection> fieldsToEnrich = enrichmentHandler.fieldsToEnrich();
+
+                for (SObjectField field : fieldsToEnrich.keySet()) {
+                    DescribeFieldResult fieldDescribe = field.getDescribe();
+                    String relationshipName = fieldDescribe.getRelationshipName();
+
+                    // Audit and system lookups (CreatedById, LastModifiedById, MasterRecordId, ...)
+                    // reject putSObject with "Relationship X is not editable". Failing here names the
+                    // handler, instead of surfacing as a DML error from deep inside the orchestrator.
+                    if (!fieldDescribe.isCreateable() && !fieldDescribe.isUpdateable()) {
+                        throw new TriggerOrchestratorException(
+                            String.valueOf(handler).substringBefore(':') +
+                            '.fieldsToEnrich() declares ' +
+                            readOnlyRecords.getSObjectType() +
+                            '.' +
+                            fieldDescribe.getName() +
+                            ', but the ' +
+                            relationshipName +
+                            ' relationship is not editable and cannot be enriched. Remove it from the map.'
+                        );
+                    }
+
+                    relationshipNames.add(relationshipName);
+
+                    for (String selectedField : fieldsToEnrich.get(field).getFields()) {
+                        relationshipFields.add(relationshipName + '.' + selectedField);
+                    }
+                }
+            }
+        }
+
+        if (relationshipFields.isEmpty()) {
+            return readOnlyRecords;
+        }
+
+        // Traversing the lookups from the triggering object itself means any number of parent
+        // relationships costs one SOQL call instead of one per lookup field.
+        Map<Id, SObject> queriedRecords = SOQL.of(readOnlyRecords.getSObjectType())
+            .with(relationshipFields)
+            .byIds(readOnlyRecords)
+            .systemMode()
+            .withoutSharing()
+            .toMap();
+
+        // Records in an after context, and Trigger.old in every context, are read-only. putSObject
+        // on them throws a System.FinalException that no catch block can intercept - it aborts the
+        // whole DML. A shallow clone is writeable, isolated from the original, and keeps the Id and
+        // every field, so the parents are attached to the clones instead.
+        List<SObject> enrichedRecords = new List<SObject>();
+
+        for (SObject record : readOnlyRecords) {
+            SObject enrichedRecord = record.clone(true, false, true, true);
+
+            enrichedRecords.add(enrichedRecord);
+
+            SObject queriedRecord = queriedRecords.get(record.Id);
+
+            if (queriedRecord == null) {
+                continue;
+            }
+
+            for (String relationshipName : relationshipNames) {
+                SObject relatedRecord = queriedRecord.getSObject(relationshipName);
+
+                if (relatedRecord == null) {
+                    continue;
+                }
+
+                enrichedRecord.putSObject(relationshipName, relatedRecord);
+            }
+        }
+
+        return enrichedRecords;
     }
 
     private static void enrichParentRelationships(List<Object> handlers) {
@@ -271,7 +363,7 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
             }
         }
 
-        Map<SObjectField, Set<Id>> parentIdsToOriginField = new Map<SObjectField, Set<Id>>();
+        Map<SObjectField, Set<Id>> parentFieldToParentIds = new Map<SObjectField, Set<Id>>();
 
         for (SObject record : Trigger.new) {
             for (SObjectField field : fieldToHandlersMap.keySet()) {
@@ -279,16 +371,16 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
                     continue;
                 }
 
-                if (!parentIdsToOriginField.containsKey(field)) {
-                    parentIdsToOriginField.put(field, new Set<Id>());
+                if (!parentFieldToParentIds.containsKey(field)) {
+                    parentFieldToParentIds.put(field, new Set<Id>());
                 }
 
-                parentIdsToOriginField.get(field).add((Id) record.get(field));
+                parentFieldToParentIds.get(field).add((Id) record.get(field));
             }
         }
 
         for (SObjectField field : fieldToHandlersMap.keySet()) {
-            Set<Id> parentIds = parentIdsToOriginField.get(field);
+            Set<Id> parentIds = parentFieldToParentIds.get(field);
 
             if (parentIds == null || parentIds.isEmpty()) {
                 continue;
@@ -317,9 +409,11 @@ public with sharing class TriggerOrchestrator { // Maybe TriggerHandlersOrchestr
     private static void incrementRecursionDepth(Object orchestrator) {
         Integer orchestratorMaxDepth = 3;
 
-        if (orchestrator instanceof TriggerOrchestrator.UpdateRecursable) {
-            orchestratorMaxDepth = ((TriggerOrchestrator.UpdateRecursable) orchestrator).maxRecursionDepth();
+        if (orchestrator instanceof TriggerOrchestrator.RecursiveUpdateGuard) {
+            orchestratorMaxDepth = ((TriggerOrchestrator.RecursiveUpdateGuard) orchestrator).maxRecursionDepth();
         }
+
+        Integer recordIdsHashCode = Trigger.newMap.keySet().hashCode();
 
         for (Id recordId : Trigger.newMap.keySet()) {
             // maybe insteaf of ids, just use List hashMap

@@ -9,44 +9,44 @@ public with sharing class TriggerHandler {
 
     public interface BeforeInsert {  // Maybe BeforeInsertPopulator?
         Boolean qualifiesForBeforeInsertWhen(TriggerHandler.Record record);
-        void onBeforeInsert(SObject record); 
+        void onBeforeInsert(TriggerHandler.Record record); 
     }
         
     public interface BeforeUpdate { // Maybe BeforeUpdatePopulator?
         Boolean qualifiesForBeforeUpdateWhen(TriggerHandler.Record record);
-        void onBeforeUpdate(SObject newRecord, SObject oldRecord);
+        void onBeforeUpdate(TriggerHandler.Record record);
     }
 
     public interface BeforeDelete {
         Boolean qualifiesForBeforeDeleteWhen(TriggerHandler.Record record);
-        void onBeforeDelete(SObject oldRecord);
+        void onBeforeDelete(TriggerHandler.Record record);
     }
 
     public interface BeforeUndelete {
         Boolean qualifiesForBeforeUndeleteWhen(TriggerHandler.Record record);
-        void onBeforeUndelete(SObject newRecord);
+        void onBeforeUndelete(TriggerHandler.Record record);
     }
 
     // After Context
 
     public interface AfterInsert {
         Boolean qualifiesForAfterInsertWhen(TriggerHandler.Record record);
-        void onAfterInsert(SObject record);
+        void onAfterInsert(TriggerHandler.Record record);
     }
 
     public interface AfterUpdate {
         Boolean qualifiesForAfterUpdateWhen(TriggerHandler.Record record);
-        void onAfterUpdate(SObject newRecord, SObject oldRecord);
+        void onAfterUpdate(TriggerHandler.Record record);
     }
 
     public interface AfterDelete {
         Boolean qualifiesForAfterDeleteWhen(TriggerHandler.Record record);
-        void onAfterDelete(SObject oldRecord);
+        void onAfterDelete(TriggerHandler.Record record);
     }
 
     public interface AfterUndelete {
         Boolean qualifiesForAfterUndeleteWhen(TriggerHandler.Record record);
-        void onAfterUndelete(SObject newRecord);
+        void onAfterUndelete(TriggerHandler.Record record);
     }
 
     // Additional
@@ -67,8 +67,8 @@ public with sharing class TriggerHandler {
 
     public interface Record {
         // Record Type
-        Boolean isRecordTypeDeveloperNameEqual(String recordTypeDeveloperName);
-        Boolean isRecordTypeDeveloperNameNotEqual(String recordTypeDeveloperName);
+        Boolean isRecordTypeEqual(String recordTypeDeveloperName);
+        Boolean isRecordTypeNotEqual(String recordTypeDeveloperName);
         
         Boolean equals(SObjectField field, Object value);
         Boolean doesNotEqual(SObjectField field, Object value);
@@ -86,8 +86,19 @@ public with sharing class TriggerHandler {
         Boolean isNotBlank(SObjectField field);
         // Change Methods
         Boolean isChanged(SObjectField field);
+
+        // Boolean isAnyChanged(SObjectField field1, SObjectField field2);
+        // Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3);
+        // Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
+        // Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
         Boolean isAnyChanged(Iterable<SObjectField> fields);
+
+        // Boolean areAllChanged(SObjectField field1, SObjectField field2);
+        // Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3);
+        // Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
+        // Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
         Boolean areAllChanged(Iterable<SObjectField> fields);
+
         Boolean isChangedTo(SObjectField field, Object expectedValue);
         Boolean isChangedFrom(SObjectField field, Object priorValue); 
         Boolean isChangedFromTo(SObjectField field, Object fromValue, Object toValue);
@@ -101,18 +112,21 @@ public with sharing class TriggerHandler {
         Boolean greaterThan(SObjectField field, Double value);
         Boolean greaterThan(SObjectField field, Decimal value);
         Boolean greaterThan(SObjectField field, Long value);
+
         Boolean greaterThanOrEqualTo(SObjectField field, Integer value);
         Boolean greaterThanOrEqualTo(SObjectField field, DateTime value);
         Boolean greaterThanOrEqualTo(SObjectField field, Date value);
         Boolean greaterThanOrEqualTo(SObjectField field, Double value);
         Boolean greaterThanOrEqualTo(SObjectField field, Decimal value);
         Boolean greaterThanOrEqualTo(SObjectField field, Long value);
+
         Boolean lessThan(SObjectField field, Integer value);
         Boolean lessThan(SObjectField field, DateTime value);
         Boolean lessThan(SObjectField field, Date value);
         Boolean lessThan(SObjectField field, Double value);
         Boolean lessThan(SObjectField field, Decimal value);
         Boolean lessThan(SObjectField field, Long value);
+
         Boolean lessThanOrEqualTo(SObjectField field, Integer value);
         Boolean lessThanOrEqualTo(SObjectField field, DateTime value);
         Boolean lessThanOrEqualTo(SObjectField field, Date value);
@@ -121,8 +135,12 @@ public with sharing class TriggerHandler {
         Boolean lessThanOrEqualTo(SObjectField field, Long value);
         // Additional
         Id getId();
+        
         SObject getNewSObject();
         SObject getOldSObject();
+
+        // Object get(SObjectField field);
+        // Object get(String relationshipName);
     }
 
     public interface FieldSelection {
@@ -254,15 +272,16 @@ public with sharing class TriggerHandler {
         public TriggerRecord(SObject newRecord, SObject oldRecord) {
             this.newRecord = newRecord;
             this.oldRecord = oldRecord;
-            this.sObjectType = newRecord.getSObjectType();
+            // Delete contexts have no new record, so the type comes from the deleted row.
+            this.sObjectType = (newRecord ?? oldRecord).getSObjectType();
         }
 
-        public Boolean isRecordTypeDeveloperNameEqual(String recordTypeDeveloperName) {
-            return RecordTypesInfo.getId(this.sObjectType, recordTypeDeveloperName) == this.newRecord.get('RecordTypeId');
+        public Boolean isRecordTypeEqual(String recordTypeDeveloperName) {
+            return RecordTypesInfo.getId(this.sObjectType, recordTypeDeveloperName) == (this.newRecord ?? this.oldRecord).get('RecordTypeId');
         }
 
-        public Boolean isRecordTypeDeveloperNameNotEqual(String recordTypeDeveloperName) {
-            return RecordTypesInfo.getId(this.sObjectType, recordTypeDeveloperName) != this.newRecord.get('RecordTypeId');
+        public Boolean isRecordTypeNotEqual(String recordTypeDeveloperName) {
+            return RecordTypesInfo.getId(this.sObjectType, recordTypeDeveloperName) != (this.newRecord ?? this.oldRecord).get('RecordTypeId');
         }
 
         public Boolean equals(SObjectField field, Object value) {
@@ -274,7 +293,7 @@ public with sharing class TriggerHandler {
         }
 
         public Boolean contains(SObjectField field, String value) {
-            return this.isNotNull(field) && (this.newRecord.get(field).toString()).contains(value);
+            return this.isNotNull(field) && this.getNewFieldValue(field).toString().contains(value);
         }
 
         public Boolean doesNotContain(SObjectField field, String value) {
@@ -479,7 +498,7 @@ public with sharing class TriggerHandler {
         }
 
         private Object getNewFieldValue(SObjectField field) {
-            return this.newRecord.get(field);
+            return (this.newRecord ?? this.oldRecord).get(field);
         }
 
         private Object getOldFieldValue(SObjectField field) {
@@ -487,7 +506,7 @@ public with sharing class TriggerHandler {
         }
 
         public Id getId() {
-            return this.newRecord.Id;
+            return (this.newRecord ?? this.oldRecord).Id;
         }
 
         public SObject getNewSObject() {
@@ -496,6 +515,17 @@ public with sharing class TriggerHandler {
 
         public SObject getOldSObject() {
             return this.oldRecord;
+        }
+
+        // Internal use only
+
+        public void enrichNew(String relationshipName, SObject relatedRecord) {
+            //TODO MAP
+            // this.newRecord.put(relationshipName, relatedRecord);
+        }
+
+        public void enrichOld(String relationshipName, SObject relatedRecord) {
+            // this.oldRecord.put(relationshipName, relatedRecord);
         }
     }
 

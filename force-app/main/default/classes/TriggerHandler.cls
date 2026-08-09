@@ -140,7 +140,8 @@ public with sharing class TriggerHandler {
         SObject getOldSObject();
 
         // Object get(SObjectField field);
-        // Object get(String relationshipName);
+        SObject getNewRelated(String relationshipName);
+        SObject getOldRelated(String relationshipName);
     }
 
     public interface FieldSelection {
@@ -261,6 +262,9 @@ public with sharing class TriggerHandler {
     public class TriggerRecord implements TriggerHandler.Record {
         private SObject newRecord;
         private SObject oldRecord;
+
+        private Map<String, SObject> newRelatedRecords = new Map<String, SObject>();
+        private Map<String, SObject> oldRelatedRecords = new Map<String, SObject>();
 
         private SObjectType sObjectType;
 
@@ -517,15 +521,22 @@ public with sharing class TriggerHandler {
             return this.oldRecord;
         }
 
+        public SObject getNewRelated(String relationshipName) {
+            return this.newRelatedRecords.get(relationshipName);
+        }
+
+        public SObject getOldRelated(String relationshipName) {
+            return this.oldRelatedRecords.get(relationshipName);
+        }
+
         // Internal use only
 
         public void enrichNew(String relationshipName, SObject relatedRecord) {
-            //TODO MAP
-            // this.newRecord.put(relationshipName, relatedRecord);
+            this.newRelatedRecords.put(relationshipName, relatedRecord);
         }
 
         public void enrichOld(String relationshipName, SObject relatedRecord) {
-            // this.oldRecord.put(relationshipName, relatedRecord);
+            this.oldRelatedRecords.put(relationshipName, relatedRecord);
         }
     }
 

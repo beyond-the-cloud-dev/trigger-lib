@@ -32,21 +32,25 @@ public with sharing class TriggerHandler {
     public interface AfterInsert {
         Boolean qualifiesForAfterInsertWhen(TriggerHandler.Record record);
         void onAfterInsert(TriggerHandler.Record record);
+        // void finalizeAfterInsert(); TODO? 
     }
 
     public interface AfterUpdate {
         Boolean qualifiesForAfterUpdateWhen(TriggerHandler.Record record);
         void onAfterUpdate(TriggerHandler.Record record);
+        // void finalizeAfterInsert(); TODO?
     }
 
     public interface AfterDelete {
         Boolean qualifiesForAfterDeleteWhen(TriggerHandler.Record record);
         void onAfterDelete(TriggerHandler.Record record);
+        // void finalizeAfterInsert(); TODO?
     }
 
     public interface AfterUndelete {
         Boolean qualifiesForAfterUndeleteWhen(TriggerHandler.Record record);
         void onAfterUndelete(TriggerHandler.Record record);
+        // void finalizeAfterInsert(); TODO?
     }
 
     // Additional
@@ -80,31 +84,36 @@ public with sharing class TriggerHandler {
 
         Boolean isNull(SObjectField field);
         Boolean isNotNull(SObjectField field);
+
         Boolean isEmpty(SObjectField field);
         Boolean isNotEmpty(SObjectField field);
+
         Boolean isBlank(SObjectField field);
         Boolean isNotBlank(SObjectField field);
+
         // Change Methods
         Boolean isChanged(SObjectField field);
 
-        // Boolean isAnyChanged(SObjectField field1, SObjectField field2);
-        // Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3);
-        // Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
-        // Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
+        Boolean isAnyChanged(SObjectField field1, SObjectField field2);
+        Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3);
+        Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
+        Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
         Boolean isAnyChanged(Iterable<SObjectField> fields);
 
-        // Boolean areAllChanged(SObjectField field1, SObjectField field2);
-        // Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3);
-        // Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
-        // Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
+        Boolean areAllChanged(SObjectField field1, SObjectField field2);
+        Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3);
+        Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
+        Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
         Boolean areAllChanged(Iterable<SObjectField> fields);
 
         Boolean isChangedTo(SObjectField field, Object expectedValue);
         Boolean isChangedFrom(SObjectField field, Object priorValue); 
         Boolean isChangedFromTo(SObjectField field, Object fromValue, Object toValue);
+
         // Checkboxes
         Boolean isTrue(SObjectField field);
         Boolean isFalse(SObjectField field);
+
         // Numbers and dates
         Boolean greaterThan(SObjectField field, Integer value);
         Boolean greaterThan(SObjectField field, DateTime value);
@@ -133,13 +142,14 @@ public with sharing class TriggerHandler {
         Boolean lessThanOrEqualTo(SObjectField field, Double value);
         Boolean lessThanOrEqualTo(SObjectField field, Decimal value);
         Boolean lessThanOrEqualTo(SObjectField field, Long value);
+
         // Additional
         Id getId();
         
         SObject getNewSObject();
         SObject getOldSObject();
 
-        // Object get(SObjectField field);
+        // Parent Records Access
         SObject getNewRelated(String relationshipName);
         SObject getOldRelated(String relationshipName);
     }
@@ -340,6 +350,22 @@ public with sharing class TriggerHandler {
             return this.getNewFieldValue(field) != this.getOldFieldValue(field);
         }
 
+        public Boolean isAnyChanged(SObjectField field1, SObjectField field2) {
+            return this.isAnyChanged(new List<SObjectField>{ field1, field2 });
+        }
+
+        public Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3) {
+            return this.isAnyChanged(new List<SObjectField>{ field1, field2, field3 });
+        }
+
+        public Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4) {
+            return this.isAnyChanged(new List<SObjectField>{ field1, field2, field3, field4 });
+        }
+
+        public Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5) {
+            return this.isAnyChanged(new List<SObjectField>{ field1, field2, field3, field4, field5 });
+        }
+
         public Boolean isAnyChanged(Iterable<SObjectField> fields) {
             for (SObjectField field : fields) {
                 if (this.isChanged(field)) {
@@ -348,6 +374,22 @@ public with sharing class TriggerHandler {
             }
 
             return false;
+        }
+
+        public Boolean areAllChanged(SObjectField field1, SObjectField field2) {
+            return this.areAllChanged(new List<SObjectField>{ field1, field2 });
+        }
+
+        public Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3) {
+            return this.areAllChanged(new List<SObjectField>{ field1, field2, field3 });
+        }
+
+        public Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4) {
+            return this.areAllChanged(new List<SObjectField>{ field1, field2, field3, field4 });
+        }
+
+        public Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5) {
+            return this.areAllChanged(new List<SObjectField>{ field1, field2, field3, field4, field5 });
         }
 
         public Boolean areAllChanged(Iterable<SObjectField> fields) {

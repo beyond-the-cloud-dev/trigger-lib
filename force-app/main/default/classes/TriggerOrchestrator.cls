@@ -31,12 +31,22 @@ public with sharing class TriggerOrchestrator {
         List<TriggerHandler.AfterUndelete> afterUndeleteHandlers();
     }
 
-    // TODO Asynchronous Actions - TODO Only in AfterUpdate, AfterDelete context
+    // TODO ContextProvider for unrelated records
+    // public interface ContextProvider {
+
+    // }
 
     public interface RecursiveUpdateGuard {
         Integer maxRecursionDepth();
         Boolean muteRecursionDepthExceededException(); // TODO
     }
+
+    public interface Logger {
+        void log(String message); //TODO Pass wrapper here
+        void finalize();
+    }
+
+    // TODO Asynchronous Actions - TODO Only in AfterUpdate, AfterDelete context
 
     // Implementations
 
@@ -128,10 +138,33 @@ public with sharing class TriggerOrchestrator {
 
             runHandlers(adapters, triggerRecords);
         } catch (Exception e) {
-            // TODO logger
+            TriggerOrchestrator.logger.log(e.getMessage()); //TODO Wrapper 
             throw e;
         } finally {
-            // TODO finalizer
+            TriggerOrchestrator.logger.finalize();
+        }
+    }
+
+    // Implementation
+
+    private static Logger logger {
+        get {
+            if (logger == null) {
+                Type type = Type.forName('TriggerLogger');
+                logger = type != null ? (Logger) type.newInstance() : new DefaultLogger(); // ??
+            }
+            return logger;
+        }
+        private set;
+    }
+
+    private class DefaultLogger implements Logger {
+        public void log(String message) {
+            System.debug(message);
+        }
+
+        public void finalize() {
+            // do nothing
         }
     }
 
@@ -370,7 +403,7 @@ public with sharing class TriggerOrchestrator {
             for (TriggerHandlerAdapter adapter : adapters) {
                 if (adapter.getHandler() instanceof TriggerHandler.RelationshipEnrichment) {
                     return true;
-                }
+            }
             }
 
             return false;
@@ -379,19 +412,19 @@ public with sharing class TriggerOrchestrator {
         private void initQueries() {
             for (TriggerHandlerAdapter adapter : adapters) {
                 if (adapter.getHandler() instanceof TriggerHandler.RelationshipEnrichment) {
-                    TriggerHandler.RelationshipEnrichment enrichmentHandler = (TriggerHandler.RelationshipEnrichment) adapter.getHandler();
+                TriggerHandler.RelationshipEnrichment enrichmentHandler = (TriggerHandler.RelationshipEnrichment) adapter.getHandler();
 
-                    Map<SObjectField, TriggerHandler.FieldSelection> fieldsToEnrich = enrichmentHandler.fieldsToEnrich();
+                Map<SObjectField, TriggerHandler.FieldSelection> fieldsToEnrich = enrichmentHandler.fieldsToEnrich();
 
                     for (SObjectField field : fieldsToEnrich.keySet()) {
                         if (!parentFieldToQuery.containsKey(field)) {
                             parentFieldToQuery.put(field, SOQL.of(field.getDescribe().getReferenceTo()[0]));
-                        }
+                    }
 
                         parentFieldToQuery.get(field).with(fieldsToEnrich.get(field).getFields());
-                    }
                 }
             }
+        }
         }
 
         private Set<Id> gatherParentIds(SObjectField parentField) {
@@ -430,21 +463,21 @@ public with sharing class TriggerOrchestrator {
 
                 for (TriggerHandlerAdapter adapter : this.adapters) {
                     for (TriggerHandler.Record record : adapter.getRecords()) {
-                        TriggerHandler.TriggerRecord triggerRecord = (TriggerHandler.TriggerRecord) record;
+                    TriggerHandler.TriggerRecord triggerRecord = (TriggerHandler.TriggerRecord) record;
 
-                        SObject newRecord = triggerRecord.getNewSObject();
-                        SObject oldRecord = triggerRecord.getOldSObject();
+                    SObject newRecord = triggerRecord.getNewSObject();
+                    SObject oldRecord = triggerRecord.getOldSObject();
 
-                        if (newRecord != null && newRecord.get(parentField) != null) {
-                            triggerRecord.enrichNew(relationshipName, relatedRecords.get((Id) newRecord.get(parentField)));
-                        }
+                    if (newRecord != null && newRecord.get(parentField) != null) {
+                        triggerRecord.enrichNew(relationshipName, relatedRecords.get((Id) newRecord.get(parentField)));
+                    }
 
-                        if (oldRecord != null && oldRecord.get(parentField) != null) {
-                            triggerRecord.enrichOld(relationshipName, relatedRecords.get((Id) oldRecord.get(parentField)));
-                        }
+                    if (oldRecord != null && oldRecord.get(parentField) != null) {
+                        triggerRecord.enrichOld(relationshipName, relatedRecords.get((Id) oldRecord.get(parentField)));
                     }
                 }
             }
+        }
         }
     }
 

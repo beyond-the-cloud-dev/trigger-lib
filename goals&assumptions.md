@@ -8,4 +8,17 @@
     - for after insert, after update context we cannot enrich data as record is read-only. The only option is replace Trigger.new records (which have all fields) with queried records. As the record is read-only and I want to keep the same feeling for before and after context, the easiest way will be shallow copy. It doesn't consume to much apex heap size.
     - I cannot enrich SObject directly - first of all for after context is read only, but it can be skipped by cloning it, however some fields are read only like CreatedBy, so I cannot have CreatedBy.Profile.Name, the only way is JSON.serialize and deserialize which consumes to match heap size. To keep the same feeling for before and after context I need another solution. 
     - we shuld first check bypass, then check if records are qualified, then make query
-2. 
+
+# Before Insert & Before Update
+
+Before Insert & Before Update context can be use only to populate data, no DMLs should be performed on triggering records or related objects.
+
+# Enrichment
+
+Parents should be queries without any conditions as it doens't make sense to have conditions when query parent relationship records.
+
+Child records can have some conditions as we always do not need all the child records, but very specific. 
+
+# Logging
+
+Instead of calling saveLogs in each handler or orchestrator, framework should automatically handle log and call save at the end of the trigger.

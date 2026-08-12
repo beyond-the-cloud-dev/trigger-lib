@@ -9,22 +9,22 @@ public with sharing class ContactEnrichmentHandler implements TriggerHandler.Rel
     }
 
     public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.Record record) {
-        Contact contact = (Contact) record.getNewSObject();
-
-        log.add('qualifiesWhen | Account.Name = ' + contact.Account?.Name);
+        log.add('qualifiesWhen | Account related = ' + record.getNewRelated('Account'));
 
         return true;
     }
 
-    public void onAfterUpdate(SObject newRecord, SObject oldRecord) {
-        Contact newContact = (Contact) newRecord;
-        Contact oldContact = (Contact) oldRecord;
+    public void onAfterUpdate(TriggerHandler.Record record) {
+        Contact contact = (Contact) record.getNewSObject();
+        Contact oldContact = (Contact) record.getOldSObject();
+        Account account = (Account) record.getNewRelated('Account');
+        User owner = (User) record.getNewRelated('Owner');
 
-        log.add('enriched      | Account.Name = ' + newContact.Account?.Name + ' | Account.Industry = ' + newContact.Account?.Industry);
-        log.add('enriched      | Owner.Name = ' + newContact.Owner?.Name + ' | Owner.Email = ' + newContact.Owner?.Email);
-        log.add('own fields    | LastName = ' + newContact.LastName + ' | CreatedDate = ' + newContact.CreatedDate);
-        log.add('old record    | Description = ' + oldContact.Description);
-        log.add('new record    | Description = ' + newContact.Description);
-        log.add('Trigger.new   | Account still null = ' + (Trigger.newMap.get(newContact.Id).getSObject('Account') == null));
+        log.add('enriched      | Account.Name = ' + account?.Name + ' | Account.Industry = ' + account?.Industry);
+        log.add('enriched      | Owner.Name = ' + owner?.Name + ' | Owner.Email = ' + owner?.Email);
+        log.add('own fields    | LastName = ' + contact.LastName + ' | CreatedDate = ' + contact.CreatedDate);
+        log.add('old record    | Description = ' + oldContact?.Description);
+        log.add('new record    | Description = ' + contact.Description);
+        log.add('old related   | Account = ' + record.getOldRelated('Account'));
     }
 }

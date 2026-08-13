@@ -1,13 +1,13 @@
-import { defineConfig } from "vitepress";
+import { defineConfig } from 'vitepress';
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   cleanUrls: true,
-  title: "Salesforce Template",
+  title: 'Trigger Lib',
   description:
-    "Professional Salesforce development template with CI/CD, testing, and best practices",
+    'Apex trigger framework for Salesforce with record filtering, automatic parent enrichment, bypasses, and recursion control',
   head: [
-    ["link", { rel: "icon", href: "/favicon.ico" }],
+    ['link', { rel: 'icon', href: '/favicon.ico' }]
     // TODO: Configure Google Tag Manager
     // [
     //   'script',
@@ -22,66 +22,66 @@ export default defineConfig({
     //   gtag('config', 'YOUR-GTM-ID');`
     // ]
   ],
-  base: "/template/",
-  outDir: "../dist/docs",
+  base: '/',
+  outDir: '../dist/docs',
   sitemap: {
-    hostname: "https://beyond-the-cloud-dev.github.io/template/",
+    hostname: 'https://trigger.beyondthecloud.dev/'
   },
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
-      { text: "Home", link: "/" },
-      { text: "Documentation", link: "/introduction" },
+      { text: 'Home', link: '/' },
+      { text: 'Documentation', link: '/introduction' }
     ],
 
     sidebar: [
       {
-        text: "Getting Started",
+        text: 'Getting Started',
         items: [
-          { text: "Introduction", link: "/introduction" },
-          { text: "Quick Start", link: "/guide/getting-started" },
-        ],
+          { text: 'Introduction', link: '/introduction' },
+          { text: 'Quick Start', link: '/guide/getting-started' }
+        ]
       },
       {
-        text: "Guide",
+        text: 'Guide',
         collapsed: false,
         items: [
-          { text: "Development", link: "/guide/development" },
-          { text: "Testing", link: "/guide/testing" },
-          { text: "Deployment", link: "/guide/deployment" },
-        ],
+          { text: 'Development', link: '/guide/development' },
+          { text: 'Testing', link: '/guide/testing' },
+          { text: 'Deployment', link: '/guide/deployment' }
+        ]
       },
       {
-        text: "API Reference",
+        text: 'API Reference',
         collapsed: true,
         items: [
-          { text: "LWC Components", link: "/api/lwc" },
-          { text: "Apex Classes", link: "/api/apex" },
-        ],
+          { text: 'LWC Components', link: '/api/lwc' },
+          { text: 'Apex Classes', link: '/api/apex' }
+        ]
       },
       {
-        text: "Examples",
+        text: 'Examples',
         collapsed: true,
         items: [
-          { text: "LWC Examples", link: "/examples/lwc-examples" },
-          { text: "Apex Examples", link: "/examples/apex-examples" },
-          { text: "Best Practices", link: "/examples/best-practices" },
-        ],
-      },
+          { text: 'LWC Examples', link: '/examples/lwc-examples' },
+          { text: 'Apex Examples', link: '/examples/apex-examples' },
+          { text: 'Best Practices', link: '/examples/best-practices' }
+        ]
+      }
     ],
     footer: {
-      message: "Released under the MIT License.",
-      copyright: "Copyright © 2025-present Beyond The Cloud Sp. z o.o.",
+      message: 'Released under the MIT License.',
+      copyright: 'Copyright © 2025-present Beyond The Cloud Sp. z o.o.'
     },
     socialLinks: [
       {
-        icon: "github",
-        link: "https://github.com/beyond-the-cloud-dev/template",
+        icon: 'github',
+        link: 'https://github.com/beyond-the-cloud-dev/trigger-lib'
       },
       {
-        icon: "linkedin",
-        link: "https://www.linkedin.com/company/beyondtheclouddev",
-      },
-    ],
-  },
+        icon: 'linkedin',
+        link: 'https://www.linkedin.com/company/beyondtheclouddev'
+      }
+    ]
+  }
 });

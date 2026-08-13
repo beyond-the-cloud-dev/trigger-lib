@@ -23,10 +23,6 @@ public with sharing class TriggerOrchestrator {
         List<TriggerHandler.AfterDelete> afterDeleteHandlers();
     }
 
-    public interface BeforeUndelete {
-        List<TriggerHandler.BeforeUndelete> beforeUndeleteHandlers();
-    }
-
     public interface AfterUndelete {
         List<TriggerHandler.AfterUndelete> afterUndeleteHandlers();
     }

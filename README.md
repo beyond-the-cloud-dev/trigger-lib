@@ -1,43 +1,43 @@
 <div align="center">
-  <a href="https://beyond-the-cloud-dev.github.io/template/">
+  <a href="https://trigger.beyondthecloud.dev/">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="./website/public/logo-round.png">
-      <img alt="Salesforce Template logo" src="./website/public/logo-round.png" height="98">
+      <img alt="Trigger Lib logo" src="./website/public/logo-round.png" height="98">
     </picture>
   </a>
-  <h1>Salesforce Template</h1>
+  <h1>Trigger Lib</h1>
 
 <a href="https://beyondthecloud.dev"><img alt="Beyond The Cloud logo" src="https://img.shields.io/badge/MADE_BY_BEYOND_THE_CLOUD-555?style=for-the-badge"></a>
 <a><img alt="API version" src="https://img.shields.io/badge/api-v66.0-blue?style=for-the-badge"></a>
-<a href="https://github.com/beyond-the-cloud-dev/template/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-mit-green?style=for-the-badge"></a>
+<a href="https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-mit-green?style=for-the-badge"></a>
 
-[![CI](https://github.com/beyond-the-cloud-dev/template/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/beyond-the-cloud-dev/template/actions/workflows/ci.yml)
-[![Deploy Docs](https://github.com/beyond-the-cloud-dev/template/actions/workflows/deploy-docs.yml/badge.svg?branch=main)](https://github.com/beyond-the-cloud-dev/template/actions/workflows/deploy-docs.yml)
+[![CI](https://github.com/beyond-the-cloud-dev/trigger-lib/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/beyond-the-cloud-dev/trigger-lib/actions/workflows/ci.yml)
 
 </div>
 
 # Getting Started
 
-Professional Salesforce development template with CI/CD, testing, and best practices.
+Apex trigger framework for Salesforce with record filtering, automatic parent enrichment, bypasses, and recursion control.
 
-This template is part of the Beyond the Cloud ecosystem, providing production-ready tools for Salesforce development.
+Trigger Lib is part of the Beyond the Cloud ecosystem, providing production-ready tools for Salesforce development.
 
-For comprehensive documentation, visit [https://beyond-the-cloud-dev.github.io/template/](https://beyond-the-cloud-dev.github.io/template/)
+For comprehensive documentation, visit [https://trigger.beyondthecloud.dev/](https://trigger.beyondthecloud.dev/)
 
 ## Features
 
-- **Salesforce DX Project Structure** - Modern SFDX project layout with package-based development
-- **GitHub Actions CI/CD** - Automated testing and deployment workflows
-- **LWC Jest Testing** - Comprehensive testing setup with CodeCov integration
-- **Code Quality Tools** - ESLint, Prettier, Husky pre-commit hooks
-- **Comprehensive Documentation** - VitePress-based documentation site
+- **Orchestrator & Handlers** - One orchestrator per SObject, one handler per concern, wired in Apex
+- **Record Filtering** - Handlers run only against records that qualify, so logic never guards itself
+- **Parent Enrichment** - Related data is pulled up front, so handlers make no SOQL queries of their own
+- **Bypasses** - Disable an individual handler or a whole orchestrator when you need to
+- **Recursion Control** - Depth limiting built in, defaulting to 3
+- **No Required Metadata** - Works with zero custom metadata records; metadata only overrides defaults
 
 ## Quick Start
 
 ```bash
-# Clone the template
-git clone https://github.com/beyond-the-cloud-dev/template.git my-salesforce-project
-cd my-salesforce-project
+# Clone the repository
+git clone https://github.com/beyond-the-cloud-dev/trigger-lib.git
+cd trigger-lib
 
 # Install dependencies
 npm install
@@ -46,34 +46,34 @@ npm install
 sf org login web -d -a DevHub
 
 # Create scratch org
-sf org create scratch -f config/project-scratch-def.json -a my-scratch-org -d 30
+sf org create scratch -f config/project-scratch-def.json -a trigger-lib-dev -d 30
 
-# Deploy source
-sf project deploy start -o my-scratch-org
+# Deploy the library
+sf project deploy start -o trigger-lib-dev
 
-# Run tests
-npm test
+# Deploy the examples (optional)
+sf project deploy start -d examples -o trigger-lib-dev
 ```
 
 ## Deploy to Salesforce
 
-<a href="https://githubsfdeploy.herokuapp.com?owner=beyond-the-cloud-dev&repo=template&ref=main">
+<a href="https://githubsfdeploy.herokuapp.com?owner=beyond-the-cloud-dev&repo=trigger-lib&ref=main">
   <img alt="Deploy to Salesforce"
        src="https://raw.githubusercontent.com/afawcett/githubsfdeploy/master/deploy.png">
 </a>
 
 ## Documentation
 
-📚 **Full documentation**: [https://beyond-the-cloud-dev.github.io/template/](https://beyond-the-cloud-dev.github.io/template/)
+📚 **Full documentation**: [https://trigger.beyondthecloud.dev/](https://trigger.beyondthecloud.dev/)
 
 ### Documentation Sections
 
-- **[Getting Started](https://beyond-the-cloud-dev.github.io/template/guide/getting-started)** - Set up your development environment
-- **[Development Guide](https://beyond-the-cloud-dev.github.io/template/guide/development)** - Development workflow and commands
-- **[Testing Guide](https://beyond-the-cloud-dev.github.io/template/guide/testing)** - Testing framework and best practices
-- **[Deployment Guide](https://beyond-the-cloud-dev.github.io/template/guide/deployment)** - CI/CD and deployment process
-- **[API Reference](https://beyond-the-cloud-dev.github.io/template/api/lwc)** - LWC and Apex documentation
-- **[Code Examples](https://beyond-the-cloud-dev.github.io/template/examples/)** - Practical code patterns
+- **[Getting Started](https://trigger.beyondthecloud.dev/guide/getting-started)** - Set up your development environment
+- **[Development Guide](https://trigger.beyondthecloud.dev/guide/development)** - Development workflow and commands
+- **[Testing Guide](https://trigger.beyondthecloud.dev/guide/testing)** - Testing framework and best practices
+- **[Deployment Guide](https://trigger.beyondthecloud.dev/guide/deployment)** - CI/CD and deployment process
+- **[API Reference](https://trigger.beyondthecloud.dev/api/apex)** - Apex documentation
+- **[Code Examples](https://trigger.beyondthecloud.dev/examples/)** - Practical code patterns
 
 ### Run Documentation Locally
 
@@ -92,12 +92,14 @@ npm run docs:preview
 
 ```
 .
-├── force-app/              # Salesforce metadata
+├── force-app/              # The library
 │   └── main/default/
-│       ├── lwc/            # Lightning Web Components
-│       ├── aura/           # Aura components
-│       ├── classes/        # Apex classes
-│       └── ...             # Other metadata
+│       ├── classes/        # TriggerOrchestrator, TriggerHandler
+│       └── dependencies/   # Bundled dependencies (soql-lib)
+├── examples/               # Reference implementation, deployed separately
+│   └── main/default/
+│       ├── classes/        # Example orchestrator and handlers
+│       └── triggers/       # Example trigger
 ├── config/                 # Salesforce configurations
 │   └── project-scratch-def.json
 ├── website/                # VitePress documentation
@@ -111,10 +113,6 @@ npm run docs:preview
 ├── package.json            # npm dependencies and scripts
 └── sfdx-project.json      # SFDX project configuration
 ```
-
-## Using This Template
-
-After cloning this repository, see [TODO.md](TODO.md) for a checklist of customizations needed for your project.
 
 ## Available Scripts
 
@@ -150,11 +148,9 @@ npm run prettier:verify     # Check formatting
 
 ## CI/CD
 
-This template includes two GitHub Actions workflows:
-
 ### Salesforce CI/CD
 
-Runs on every push and pull request:
+`.github/workflows/ci.yml` runs on every push and pull request:
 
 - Creates scratch org
 - Deploys source
@@ -164,7 +160,7 @@ Runs on every push and pull request:
 
 ### Documentation Deployment
 
-Automatically deploys documentation to GitHub Pages when changes are pushed to `website/` folder.
+Documentation is built by Vercel (`vercel.json`) and published to [trigger.beyondthecloud.dev](https://trigger.beyondthecloud.dev/).
 
 ### Required Secrets
 
@@ -173,7 +169,7 @@ Add these secrets in GitHub repository settings:
 - `SFDX_AUTH_URL_DEVHUB` - Dev Hub authentication URL
 - `CODECOV_TOKEN` - CodeCov upload token (optional)
 
-See [Deployment Guide](https://beyond-the-cloud-dev.github.io/template/guide/deployment) for detailed instructions.
+See [Deployment Guide](https://trigger.beyondthecloud.dev/guide/deployment) for detailed instructions.
 
 ## What's Included
 
@@ -202,14 +198,14 @@ See [Deployment Guide](https://beyond-the-cloud-dev.github.io/template/guide/dep
 - Development workflow
 - Testing guide
 - Deployment guide
-- API reference templates
+- API reference
 - Code examples
 - Best practices
 
 ## Contributors
 
-<a href="https://github.com/beyond-the-cloud-dev/template/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=beyond-the-cloud-dev/template" />
+<a href="https://github.com/beyond-the-cloud-dev/trigger-lib/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=beyond-the-cloud-dev/trigger-lib" />
 </a>
 
 ## License
@@ -227,7 +223,7 @@ See [LICENSE](LICENSE) file for details.
 
 ## About Beyond The Cloud
 
-This template is maintained by [Beyond The Cloud](https://beyondthecloud.dev) - experts in Salesforce development and DevOps.
+Trigger Lib is maintained by [Beyond The Cloud](https://beyondthecloud.dev) - experts in Salesforce development and DevOps.
 
 **Connect with us:**
 
@@ -237,10 +233,6 @@ This template is maintained by [Beyond The Cloud](https://beyondthecloud.dev) - 
 
 ## Support
 
-- **Documentation**: [Full documentation](https://beyond-the-cloud-dev.github.io/template/)
-- **Issues**: [GitHub Issues](https://github.com/beyond-the-cloud-dev/template/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/beyond-the-cloud-dev/template/discussions)
-
----
-
-**Note:** This is a template repository. After cloning, customize it for your project by following the [TODO.md](TODO.md) checklist.
+- **Documentation**: [Full documentation](https://trigger.beyondthecloud.dev/)
+- **Issues**: [GitHub Issues](https://github.com/beyond-the-cloud-dev/trigger-lib/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/beyond-the-cloud-dev/trigger-lib/discussions)

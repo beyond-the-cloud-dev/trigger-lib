@@ -152,6 +152,9 @@ public with sharing class TriggerHandler {
         // Parent Records Access
         SObject getNewRelated(String relationshipName);
         SObject getOldRelated(String relationshipName);
+
+        // Populate
+        Record put(SObjectField field, Object value);
     }
 
     public interface FieldSelection {
@@ -569,6 +572,11 @@ public with sharing class TriggerHandler {
 
         public SObject getOldRelated(String relationshipName) {
             return this.oldRelatedRecords.get(relationshipName);
+        }
+
+        public Record put(SObjectField field, Object value) {
+            this.newRecord.put(field, value);
+            return this;
         }
 
         // Internal use only

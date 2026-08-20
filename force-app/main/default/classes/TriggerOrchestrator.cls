@@ -38,8 +38,15 @@ public with sharing class TriggerOrchestrator {
     }
 
     public interface Logger {
-        void log(String message); //TODO Pass wrapper here
+        void log(Error error);
         void finalize();
+    }
+
+    public interface Error {
+        Exception getException();
+        System.TriggerOperation getOperation();
+        SObjectType getSObjectType();
+        Set<Id> getRecordIds();
     }
 
     // TODO Asynchronous Actions - TODO Only in AfterUpdate, AfterDelete context
@@ -134,33 +141,86 @@ public with sharing class TriggerOrchestrator {
 
             runHandlers(adapters, triggerRecords);
         } catch (Exception e) {
-            TriggerOrchestrator.logger.log(e.getMessage()); //TODO Wrapper 
+            logError(e);
             throw e;
         } finally {
-            TriggerOrchestrator.logger.finalize();
+            TriggerOrchestrator.logger?.finalize();
         }
     }
 
     // Implementation
 
+    private static Logger loggerInstance;
+    private static Boolean isLoggerResolved = false;
+
+    @TestVisible
     private static Logger logger {
         get {
-            if (logger == null) {
-                Type type = Type.forName('TriggerLogger');
-                logger = type != null ? (Logger) type.newInstance() : new DefaultLogger(); // ??
+            if (!isLoggerResolved) {
+                loggerInstance = resolveLogger();
+                isLoggerResolved = true;
             }
-            return logger;
+            return loggerInstance;
         }
         private set;
     }
 
-    private class DefaultLogger implements Logger {
-        public void log(String message) {
-            System.debug(message);
+    private static Logger resolveLogger() {
+        String className = TriggerOrchestrator.class.getName();
+        String namespacePrefix = className.contains('.') ? className.substringBefore('.') : null;
+
+        List<ApexTypeImplementor> implementors = [
+            SELECT ClassName, ClassNamespacePrefix
+            FROM ApexTypeImplementor
+            WHERE InterfaceName = 'TriggerOrchestrator.Logger' AND InterfaceNamespacePrefix = :namespacePrefix AND IsConcrete = true
+            WITH SYSTEM_MODE
+            LIMIT 1
+        ];
+
+        if (implementors.isEmpty()) {
+            return null;
         }
 
-        public void finalize() {
-            // do nothing
+        Object instance = Type.forName(implementors[0].ClassNamespacePrefix, implementors[0].ClassName)?.newInstance();
+
+        return instance instanceof Logger ? (Logger) instance : null;
+    }
+
+    private static void logError(Exception e) {
+        if (TriggerOrchestrator.logger == null) {
+            return;
+        }
+
+        TriggerError error = new TriggerError();
+
+        error.triggerException = e;
+        error.operation = Trigger.operationType;
+        error.sObjectType = (Trigger.new ?? Trigger.old)?.getSObjectType();
+        error.recordIds = (Trigger.newMap ?? Trigger.oldMap)?.keySet();
+
+        TriggerOrchestrator.logger.log(error);
+    }
+
+    private class TriggerError implements Error {
+        public Exception triggerException;
+        public System.TriggerOperation operation;
+        public SObjectType sObjectType;
+        public Set<Id> recordIds;
+
+        public Exception getException() {
+            return this.triggerException;
+        }
+
+        public System.TriggerOperation getOperation() {
+            return this.operation;
+        }
+
+        public SObjectType getSObjectType() {
+            return this.sObjectType;
+        }
+
+        public Set<Id> getRecordIds() {
+            return this.recordIds;
         }
     }
 

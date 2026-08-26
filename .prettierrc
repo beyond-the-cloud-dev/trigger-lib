@@ -35,6 +35,12 @@
       }
     },
     {
+      "files": "website/**/*.md",
+      "options": {
+        "embeddedLanguageFormatting": "off"
+      }
+    },
+    {
       "files": "*.{html,js,css}",
       "options": {
         "printWidth": 180,

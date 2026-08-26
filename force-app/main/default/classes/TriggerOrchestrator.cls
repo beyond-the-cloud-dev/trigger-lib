@@ -53,6 +53,21 @@ public with sharing class TriggerOrchestrator {
 
     // Implementations
 
+    private static List<Invocation> invocationStack = new List<Invocation>();
+    private static Boolean isLoggerResolved = false;
+
+    @TestVisible
+    private static Logger logger {
+        get {
+            if (!isLoggerResolved) {
+                logger = loadLogger();
+                isLoggerResolved = true;
+            }
+            return logger;
+        }
+        private set;
+    }
+
     private static Map<System.TriggerOperation, Map<Id, Integer>> recursionDepth {
         get {
             if (recursionDepth == null) {
@@ -66,72 +81,74 @@ public with sharing class TriggerOrchestrator {
         private set;
     }
 
-    public static void run(Object orchestrator) {
+    public static void run(Object orchestrator) { //TODO maybe it shound not be static so I can have access to this
         try {
-            System.TriggerOperation operation = Trigger.operationType;
-
-            if (operation == null) {
+            if (Trigger.operationType == null) {
                 throw new TriggerOrchestratorException('Called outside of trigger context, or not supported operation type');
             }
 
-            if (operation == System.TriggerOperation.BEFORE_UPDATE || operation == System.TriggerOperation.AFTER_UPDATE) {
+            if (Trigger.operationType == System.TriggerOperation.BEFORE_UPDATE || Trigger.operationType == System.TriggerOperation.AFTER_UPDATE) {
                 incrementRecursionDepth(orchestrator);
             }
 
-            List<TriggerHandlerAdapter> adapters = new List<TriggerHandlerAdapter>();
+            Invocation invocation = new Invocation();
+
+            TriggerOrchestrator.invocationStack.add(invocation);
+
+            List<TriggerHandlerAdapter> unifiedHandlers = new List<TriggerHandlerAdapter>();
             List<TriggerHandler.Record> triggerRecords = new List<TriggerHandler.Record>();
 
-            if (operation == System.TriggerOperation.BEFORE_INSERT && orchestrator instanceof TriggerOrchestrator.BeforeInsert) {
+            if (Trigger.operationType == System.TriggerOperation.BEFORE_INSERT && orchestrator instanceof TriggerOrchestrator.BeforeInsert) {
                 for (TriggerHandler.BeforeInsert handler : ((TriggerOrchestrator.BeforeInsert) orchestrator).beforeInsertHandlers()) {
-                    adapters.add(new BeforeInsertHandlerAdapter(handler));
+                    unifiedHandlers.add(new BeforeInsertHandlerAdapter(handler));
                 }
 
                 for (SObject record : Trigger.new) {
                     triggerRecords.add(new TriggerHandler.TriggerRecord(record));
                 }
-            } else if (operation == System.TriggerOperation.AFTER_INSERT && orchestrator instanceof TriggerOrchestrator.AfterInsert) {
+            } else if (Trigger.operationType == System.TriggerOperation.AFTER_INSERT && orchestrator instanceof TriggerOrchestrator.AfterInsert) {
                 for (TriggerHandler.AfterInsert handler : ((TriggerOrchestrator.AfterInsert) orchestrator).afterInsertHandlers()) {
-                    adapters.add(new AfterInsertHandlerAdapter(handler));
+                    unifiedHandlers.add(new AfterInsertHandlerAdapter(handler));
                 }
 
                 for (SObject record : Trigger.new) {
                     triggerRecords.add(new TriggerHandler.TriggerRecord(record));
                 }
-            } else if (operation == System.TriggerOperation.BEFORE_UPDATE && orchestrator instanceof TriggerOrchestrator.BeforeUpdate) {
+            } else if (Trigger.operationType == System.TriggerOperation.BEFORE_UPDATE && orchestrator instanceof TriggerOrchestrator.BeforeUpdate) {
                 for (TriggerHandler.BeforeUpdate handler : ((TriggerOrchestrator.BeforeUpdate) orchestrator).beforeUpdateHandlers()) {
-                    adapters.add(new BeforeUpdateHandlerAdapter(handler));
+                    unifiedHandlers.add(new BeforeUpdateHandlerAdapter(handler));
                 }
 
                 for (Integer i = 0; i < Trigger.new.size(); i++) {
                     triggerRecords.add(new TriggerHandler.TriggerRecord(Trigger.new[i], Trigger.old[i]));
                 }
-            } else if (operation == System.TriggerOperation.AFTER_UPDATE && orchestrator instanceof TriggerOrchestrator.AfterUpdate) {
+            } else if (Trigger.operationType == System.TriggerOperation.AFTER_UPDATE && orchestrator instanceof TriggerOrchestrator.AfterUpdate) {
                 for (TriggerHandler.AfterUpdate handler : ((TriggerOrchestrator.AfterUpdate) orchestrator).afterUpdateHandlers()) {
-                    adapters.add(new AfterUpdateHandlerAdapter(handler));
+                    unifiedHandlers.add(new AfterUpdateHandlerAdapter(handler));
                 }
 
                 for (Integer i = 0; i < Trigger.new.size(); i++) {
                     triggerRecords.add(new TriggerHandler.TriggerRecord(Trigger.new[i], Trigger.old[i]));
                 }
-            } else if (operation == System.TriggerOperation.BEFORE_DELETE && orchestrator instanceof TriggerOrchestrator.BeforeDelete) {
+            } else if (Trigger.operationType == System.TriggerOperation.BEFORE_DELETE && orchestrator instanceof TriggerOrchestrator.BeforeDelete) {
                 for (TriggerHandler.BeforeDelete handler : ((TriggerOrchestrator.BeforeDelete) orchestrator).beforeDeleteHandlers()) {
-                    adapters.add(new BeforeDeleteHandlerAdapter(handler));
+                    unifiedHandlers.add(new BeforeDeleteHandlerAdapter(handler));
                 }
 
                 for (SObject record : Trigger.old) {
                     triggerRecords.add(new TriggerHandler.TriggerRecord(null, record));
                 }
-            } else if (operation == System.TriggerOperation.AFTER_DELETE && orchestrator instanceof TriggerOrchestrator.AfterDelete) {
+            } else if (Trigger.operationType == System.TriggerOperation.AFTER_DELETE && orchestrator instanceof TriggerOrchestrator.AfterDelete) {
                 for (TriggerHandler.AfterDelete handler : ((TriggerOrchestrator.AfterDelete) orchestrator).afterDeleteHandlers()) {
-                    adapters.add(new AfterDeleteHandlerAdapter(handler));
+                    unifiedHandlers.add(new AfterDeleteHandlerAdapter(handler));
                 }
 
                 for (SObject record : Trigger.old) {
                     triggerRecords.add(new TriggerHandler.TriggerRecord(null, record));
                 }
-            } else if (operation == System.TriggerOperation.AFTER_UNDELETE && orchestrator instanceof TriggerOrchestrator.AfterUndelete) {
+            } else if (Trigger.operationType == System.TriggerOperation.AFTER_UNDELETE && orchestrator instanceof TriggerOrchestrator.AfterUndelete) {
                 for (TriggerHandler.AfterUndelete handler : ((TriggerOrchestrator.AfterUndelete) orchestrator).afterUndeleteHandlers()) {
-                    adapters.add(new AfterUndeleteHandlerAdapter(handler));
+                    unifiedHandlers.add(new AfterUndeleteHandlerAdapter(handler));
                 }
 
                 for (SObject record : Trigger.new) {
@@ -139,33 +156,22 @@ public with sharing class TriggerOrchestrator {
                 }
             }
 
-            runHandlers(adapters, triggerRecords);
+            runHandlers(unifiedHandlers, triggerRecords);
         } catch (Exception e) {
             logError(e);
+
             throw e;
         } finally {
-            TriggerOrchestrator.logger?.finalize();
-        }
-    }
+            TriggerOrchestrator.invocationStack.remove(TriggerOrchestrator.invocationStack.size() - 1);
 
-    // Implementation
-
-    private static Logger loggerInstance;
-    private static Boolean isLoggerResolved = false;
-
-    @TestVisible
-    private static Logger logger {
-        get {
-            if (!isLoggerResolved) {
-                loggerInstance = resolveLogger();
-                isLoggerResolved = true;
+            // finalize onlu for main chunk
+            if (TriggerOrchestrator.invocationStack.isEmpty()) {
+                TriggerOrchestrator.logger?.finalize();
             }
-            return loggerInstance;
         }
-        private set;
     }
 
-    private static Logger resolveLogger() {
+    private static Logger loadLogger() {
         String className = TriggerOrchestrator.class.getName();
         String namespacePrefix = className.contains('.') ? className.substringBefore('.') : null;
 
@@ -176,6 +182,10 @@ public with sharing class TriggerOrchestrator {
             WITH SYSTEM_MODE
             LIMIT 1
         ];
+
+        if (implementors.size() > 1) {
+            throw new TriggerOrchestratorException('Multiple implementations of TriggerOrchestrator.Logger found. Only one implementation is allowed.');
+        }
 
         if (implementors.isEmpty()) {
             return null;
@@ -199,6 +209,20 @@ public with sharing class TriggerOrchestrator {
         error.recordIds = (Trigger.newMap ?? Trigger.oldMap)?.keySet();
 
         TriggerOrchestrator.logger.log(error);
+    }
+
+    private class Invocation {
+        private System.TriggerOperation operationType;
+        private SObjectType sObjectType;
+        private Integer totalRecordsProcessed;
+        private Integer depth; //TODO nestingLevel? 
+
+        private Invocation() {
+            this.operationType = Trigger.operationType;
+            this.sObjectType = (Trigger.new ?? Trigger.old)?.getSObjectType();
+            this.totalRecordsProcessed = (Trigger.new ?? Trigger.old)?.size() ?? 0;
+            this.depth = TriggerOrchestrator.invocationStack.size();
+        }
     }
 
     private class TriggerError implements Error {
@@ -316,6 +340,7 @@ public with sharing class TriggerOrchestrator {
 
         public void execute() {
             for (TriggerHandler.Record record : this.records) {
+                // TODO Allow to override execute method so before methods will have logic to block DMLs
                 this.executeOn(record);
             }
         }

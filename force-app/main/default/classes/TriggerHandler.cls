@@ -63,6 +63,8 @@ public with sharing class TriggerHandler {
         Boolean bypassWhen();
     }
 
+    // TODO Mute exception marker interface
+
     // send email interface
     // validator interface?
 

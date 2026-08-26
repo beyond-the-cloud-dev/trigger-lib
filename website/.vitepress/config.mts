@@ -46,6 +46,7 @@ export default defineConfig({
         text: 'Guide',
         collapsed: false,
         items: [
+          { text: 'Transaction Lifecycle', link: '/guide/transaction-lifecycle' },
           { text: 'Development', link: '/guide/development' },
           { text: 'Testing', link: '/guide/testing' },
           { text: 'Deployment', link: '/guide/deployment' }
@@ -55,6 +56,7 @@ export default defineConfig({
         text: 'API Reference',
         collapsed: true,
         items: [
+          { text: 'TriggerOrchestrator', link: '/api/trigger-orchestrator' },
           { text: 'LWC Components', link: '/api/lwc' },
           { text: 'Apex Classes', link: '/api/apex' }
         ]

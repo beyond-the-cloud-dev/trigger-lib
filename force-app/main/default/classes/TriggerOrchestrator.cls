@@ -81,7 +81,8 @@ public with sharing class TriggerOrchestrator {
         private set;
     }
 
-    public static void run(Object orchestrator) { //TODO maybe it shound not be static so I can have access to this
+    public static void run(Object orchestrator) {
+        //TODO maybe it shound not be static so I can have access to this
         try {
             if (Trigger.operationType == null) {
                 throw new TriggerOrchestratorException('Called outside of trigger context, or not supported operation type');
@@ -96,7 +97,7 @@ public with sharing class TriggerOrchestrator {
             TriggerOrchestrator.invocationStack.add(invocation);
 
             List<TriggerHandlerAdapter> unifiedHandlers = new List<TriggerHandlerAdapter>();
-            List<TriggerHandler.Record> triggerRecords = new List<TriggerHandler.Record>();
+            List<TriggerHandler.TriggerRecord> triggerRecords = new List<TriggerHandler.TriggerRecord>();
 
             if (Trigger.operationType == System.TriggerOperation.BEFORE_INSERT && orchestrator instanceof TriggerOrchestrator.BeforeInsert) {
                 for (TriggerHandler.BeforeInsert handler : ((TriggerOrchestrator.BeforeInsert) orchestrator).beforeInsertHandlers()) {
@@ -178,7 +179,7 @@ public with sharing class TriggerOrchestrator {
         List<ApexTypeImplementor> implementors = [
             SELECT ClassName, ClassNamespacePrefix
             FROM ApexTypeImplementor
-            WHERE InterfaceName = 'TriggerOrchestrator.Logger' AND InterfaceNamespacePrefix = :namespacePrefix AND IsConcrete = true
+            WHERE InterfaceName = 'TriggerOrchestrator.Logger' AND InterfaceNamespacePrefix = :namespacePrefix AND IsConcrete = TRUE
             WITH SYSTEM_MODE
             LIMIT 1
         ];
@@ -215,7 +216,7 @@ public with sharing class TriggerOrchestrator {
         private System.TriggerOperation operationType;
         private SObjectType sObjectType;
         private Integer totalRecordsProcessed;
-        private Integer depth; //TODO nestingLevel? 
+        private Integer depth; //TODO nestingLevel?
 
         private Invocation() {
             this.operationType = Trigger.operationType;
@@ -248,22 +249,47 @@ public with sharing class TriggerOrchestrator {
         }
     }
 
-    private static void runHandlers(List<TriggerHandlerAdapter> adapters, List<TriggerHandler.Record> records) {
+    // TODO Refactor it, simplify
+    private static void runHandlers(List<TriggerHandlerAdapter> adapters, List<TriggerHandler.TriggerRecord> records) {
         if (records.isEmpty()) {
             return;
         }
 
-        List<TriggerHandlerAdapter> qualifiedAdapters = new List<TriggerHandlerAdapter>();
+        List<TriggerHandlerAdapter> activeHandlers = new List<TriggerHandlerAdapter>();
 
         for (TriggerHandlerAdapter adapter : adapters) {
             if (shouldBeBypassed(adapter.getHandler())) {
                 continue;
             }
 
-            for (TriggerHandler.Record record : records) {
-                // TODO isQualified can use related records, so we need to enrich them before calling isQualified
-                // but maybe enrich data only when calling getRelated(..) method from records is used.
+            activeHandlers.add(adapter);
+        }
+
+        for (TriggerHandlerAdapter adapter : activeHandlers) {
+            for (TriggerHandler.TriggerRecord record : records) {
                 if (adapter.isQualified(record)) {
+                    adapter.registerRecord(record);
+                }
+            }
+        }
+
+        List<TriggerHandler.TriggerRecord> recordsNeedingRelatedData = new List<TriggerHandler.TriggerRecord>();
+
+        for (TriggerHandlerAdapter adapter : activeHandlers) {
+            for (TriggerHandler.TriggerRecord record : records) {
+                if (!adapter.hasRecordAlreadyRegistered(record) && record.isQualificationNeedRelatedRecords()) {
+                    recordsNeedingRelatedData.add(record);
+                }
+            }
+        }
+
+        new ParentRelationshipEnrichment(activeHandlers, recordsNeedingRelatedData).enrich();
+
+        List<TriggerHandlerAdapter> handlersToExecute = new List<TriggerHandlerAdapter>();
+
+        for (TriggerHandlerAdapter adapter : activeHandlers) {
+            for (TriggerHandler.TriggerRecord record : records) {
+                if (adapter.hasRecordAlreadyRegistered(record) || adapter.isQualified(record)) {
                     adapter.registerRecord(record);
                 }
             }
@@ -272,16 +298,14 @@ public with sharing class TriggerOrchestrator {
                 continue;
             }
 
-            qualifiedAdapters.add(adapter);
+            handlersToExecute.add(adapter);
         }
 
-        if (qualifiedAdapters.isEmpty()) {
+        if (handlersToExecute.isEmpty()) {
             return;
         }
 
-        new ParentRelationshipEnrichment(qualifiedAdapters).enrich();
-
-        for (TriggerHandlerAdapter adapter : qualifiedAdapters) {
+        for (TriggerHandlerAdapter adapter : handlersToExecute) {
             adapter.execute();
         }
     }
@@ -319,35 +343,39 @@ public with sharing class TriggerOrchestrator {
     private abstract class TriggerHandlerAdapter {
         protected Object handler;
 
-        private List<TriggerHandler.Record> records;
+        private Map<String, TriggerHandler.TriggerRecord> qualifiedRecordByIdentifier;
 
         public TriggerHandlerAdapter(Object handler) {
             this.handler = handler;
-            this.records = new List<TriggerHandler.Record>();
+            this.qualifiedRecordByIdentifier = new Map<String, TriggerHandler.TriggerRecord>();
         }
 
         public Object getHandler() {
             return this.handler;
         }
 
-        public void registerRecord(TriggerHandler.Record record) {
-            this.records.add(record);
+        public void registerRecord(TriggerHandler.TriggerRecord record) {
+            this.qualifiedRecordByIdentifier.put(record.getIdentifier(), record);
         }
 
-        public List<TriggerHandler.Record> getRecords() {
-            return this.records;
+        public Boolean hasRecordAlreadyRegistered(TriggerHandler.TriggerRecord record) {
+            return this.qualifiedRecordByIdentifier.containsKey(record.getIdentifier());
+        }
+
+        public List<TriggerHandler.TriggerRecord> getRecords() {
+            return new List<TriggerHandler.TriggerRecord>(this.qualifiedRecordByIdentifier.values());
         }
 
         public void execute() {
-            for (TriggerHandler.Record record : this.records) {
+            for (TriggerHandler.TriggerRecord record : this.getRecords()) {
                 // TODO Allow to override execute method so before methods will have logic to block DMLs
                 this.executeOn(record);
             }
         }
 
-        public abstract Boolean isQualified(TriggerHandler.Record record);
+        public abstract Boolean isQualified(TriggerHandler.TriggerRecord record);
 
-        protected abstract void executeOn(TriggerHandler.Record record);
+        protected abstract void executeOn(TriggerHandler.TriggerRecord record);
     }
 
     private class BeforeInsertHandlerAdapter extends TriggerHandlerAdapter {
@@ -355,11 +383,11 @@ public with sharing class TriggerOrchestrator {
             super(handler);
         }
 
-        public override Boolean isQualified(TriggerHandler.Record record) {
+        public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
             return ((TriggerHandler.BeforeInsert) this.handler).qualifiesForBeforeInsertWhen(record);
         }
 
-        protected override void executeOn(TriggerHandler.Record record) {
+        protected override void executeOn(TriggerHandler.TriggerRecord record) {
             ((TriggerHandler.BeforeInsert) this.handler).onBeforeInsert(record);
         }
     }
@@ -369,11 +397,11 @@ public with sharing class TriggerOrchestrator {
             super(handler);
         }
 
-        public override Boolean isQualified(TriggerHandler.Record record) {
+        public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
             return ((TriggerHandler.AfterInsert) this.handler).qualifiesForAfterInsertWhen(record);
         }
 
-        protected override void executeOn(TriggerHandler.Record record) {
+        protected override void executeOn(TriggerHandler.TriggerRecord record) {
             ((TriggerHandler.AfterInsert) this.handler).onAfterInsert(record);
         }
     }
@@ -383,11 +411,11 @@ public with sharing class TriggerOrchestrator {
             super(handler);
         }
 
-        public override Boolean isQualified(TriggerHandler.Record record) {
+        public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
             return ((TriggerHandler.BeforeUpdate) this.handler).qualifiesForBeforeUpdateWhen(record);
         }
 
-        protected override void executeOn(TriggerHandler.Record record) {
+        protected override void executeOn(TriggerHandler.TriggerRecord record) {
             ((TriggerHandler.BeforeUpdate) this.handler).onBeforeUpdate(record);
         }
     }
@@ -397,11 +425,11 @@ public with sharing class TriggerOrchestrator {
             super(handler);
         }
 
-        public override Boolean isQualified(TriggerHandler.Record record) {
+        public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
             return ((TriggerHandler.AfterUpdate) this.handler).qualifiesForAfterUpdateWhen(record);
         }
 
-        protected override void executeOn(TriggerHandler.Record record) {
+        protected override void executeOn(TriggerHandler.TriggerRecord record) {
             ((TriggerHandler.AfterUpdate) this.handler).onAfterUpdate(record);
         }
     }
@@ -411,11 +439,11 @@ public with sharing class TriggerOrchestrator {
             super(handler);
         }
 
-        public override Boolean isQualified(TriggerHandler.Record record) {
+        public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
             return ((TriggerHandler.BeforeDelete) this.handler).qualifiesForBeforeDeleteWhen(record);
         }
 
-        protected override void executeOn(TriggerHandler.Record record) {
+        protected override void executeOn(TriggerHandler.TriggerRecord record) {
             ((TriggerHandler.BeforeDelete) this.handler).onBeforeDelete(record);
         }
     }
@@ -425,11 +453,11 @@ public with sharing class TriggerOrchestrator {
             super(handler);
         }
 
-        public override Boolean isQualified(TriggerHandler.Record record) {
+        public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
             return ((TriggerHandler.AfterDelete) this.handler).qualifiesForAfterDeleteWhen(record);
         }
 
-        protected override void executeOn(TriggerHandler.Record record) {
+        protected override void executeOn(TriggerHandler.TriggerRecord record) {
             ((TriggerHandler.AfterDelete) this.handler).onAfterDelete(record);
         }
     }
@@ -439,11 +467,11 @@ public with sharing class TriggerOrchestrator {
             super(handler);
         }
 
-        public override Boolean isQualified(TriggerHandler.Record record) {
+        public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
             return ((TriggerHandler.BeforeUndelete) this.handler).qualifiesForBeforeUndeleteWhen(record);
         }
 
-        protected override void executeOn(TriggerHandler.Record record) {
+        protected override void executeOn(TriggerHandler.TriggerRecord record) {
             ((TriggerHandler.BeforeUndelete) this.handler).onBeforeUndelete(record);
         }
     }
@@ -453,21 +481,23 @@ public with sharing class TriggerOrchestrator {
             super(handler);
         }
 
-        public override Boolean isQualified(TriggerHandler.Record record) {
+        public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
             return ((TriggerHandler.AfterUndelete) this.handler).qualifiesForAfterUndeleteWhen(record);
         }
 
-        protected override void executeOn(TriggerHandler.Record record) {
+        protected override void executeOn(TriggerHandler.TriggerRecord record) {
             ((TriggerHandler.AfterUndelete) this.handler).onAfterUndelete(record);
         }
     }
 
     private class ParentRelationshipEnrichment {
         private List<TriggerHandlerAdapter> adapters;
+        private List<TriggerHandler.TriggerRecord> records;
         private Map<SObjectField, SOQL.Queryable> parentFieldToQuery;
 
-        public ParentRelationshipEnrichment(List<TriggerHandlerAdapter> adapters) {
+        public ParentRelationshipEnrichment(List<TriggerHandlerAdapter> adapters, List<TriggerHandler.TriggerRecord> records) {
             this.adapters = adapters;
+            this.records = records;
             this.parentFieldToQuery = new Map<SObjectField, SOQL.Queryable>();
         }
 
@@ -484,7 +514,7 @@ public with sharing class TriggerOrchestrator {
             for (TriggerHandlerAdapter adapter : adapters) {
                 if (adapter.getHandler() instanceof TriggerHandler.RelationshipEnrichment) {
                     return true;
-            }
+                }
             }
 
             return false;
@@ -493,36 +523,34 @@ public with sharing class TriggerOrchestrator {
         private void initQueries() {
             for (TriggerHandlerAdapter adapter : adapters) {
                 if (adapter.getHandler() instanceof TriggerHandler.RelationshipEnrichment) {
-                TriggerHandler.RelationshipEnrichment enrichmentHandler = (TriggerHandler.RelationshipEnrichment) adapter.getHandler();
+                    TriggerHandler.RelationshipEnrichment enrichmentHandler = (TriggerHandler.RelationshipEnrichment) adapter.getHandler();
 
-                Map<SObjectField, TriggerHandler.FieldSelection> fieldsToEnrich = enrichmentHandler.fieldsToEnrich();
+                    Map<SObjectField, TriggerHandler.FieldSelection> fieldsToEnrich = enrichmentHandler.fieldsToEnrich();
 
                     for (SObjectField field : fieldsToEnrich.keySet()) {
-                        if (!parentFieldToQuery.containsKey(field)) {
-                            parentFieldToQuery.put(field, SOQL.of(field.getDescribe().getReferenceTo()[0]));
-                    }
+                        if (!this.parentFieldToQuery.containsKey(field)) {
+                            this.parentFieldToQuery.put(field, SOQL.of(field.getDescribe().getReferenceTo()[0]));
+                        }
 
-                        parentFieldToQuery.get(field).with(fieldsToEnrich.get(field).getFields());
+                        this.parentFieldToQuery.get(field).with(fieldsToEnrich.get(field).getFields());
+                    }
                 }
             }
-        }
         }
 
         private Set<Id> gatherParentIds(SObjectField parentField) {
             Set<Id> parentIds = new Set<Id>();
 
-            for (TriggerHandlerAdapter adapter : this.adapters) {
-                for (TriggerHandler.Record record : adapter.getRecords()) {
-                    SObject newRecord = record.getNewSObject();
-                    SObject oldRecord = record.getOldSObject();
+            for (TriggerHandler.TriggerRecord record : this.records) {
+                SObject newRecord = record.getNewSObject();
+                SObject oldRecord = record.getOldSObject();
 
-                    if (newRecord != null && newRecord.get(parentField) != null) {
-                        parentIds.add((Id) newRecord.get(parentField));
-                    }
+                if (newRecord != null && newRecord.get(parentField) != null) {
+                    parentIds.add((Id) newRecord.get(parentField));
+                }
 
-                    if (oldRecord != null && oldRecord.get(parentField) != null) {
-                        parentIds.add((Id) oldRecord.get(parentField));
-                    }
+                if (oldRecord != null && oldRecord.get(parentField) != null) {
+                    parentIds.add((Id) oldRecord.get(parentField));
                 }
             }
 
@@ -537,28 +565,23 @@ public with sharing class TriggerOrchestrator {
                     continue;
                 }
 
-                // TODO Do a signle query for after context
                 Map<Id, SObject> relatedRecords = this.parentFieldToQuery.get(parentField).byIds(parentIds).systemMode().withoutSharing().toMap();
 
                 String relationshipName = parentField.getDescribe().getRelationshipName();
 
-                for (TriggerHandlerAdapter adapter : this.adapters) {
-                    for (TriggerHandler.Record record : adapter.getRecords()) {
-                    TriggerHandler.TriggerRecord triggerRecord = (TriggerHandler.TriggerRecord) record;
-
-                    SObject newRecord = triggerRecord.getNewSObject();
-                    SObject oldRecord = triggerRecord.getOldSObject();
+                for (TriggerHandler.TriggerRecord record : this.records) {
+                    SObject newRecord = record.getNewSObject();
+                    SObject oldRecord = record.getOldSObject();
 
                     if (newRecord != null && newRecord.get(parentField) != null) {
-                        triggerRecord.enrichNew(relationshipName, relatedRecords.get((Id) newRecord.get(parentField)));
+                        record.enrichNew(relationshipName, relatedRecords.get((Id) newRecord.get(parentField)));
                     }
 
                     if (oldRecord != null && oldRecord.get(parentField) != null) {
-                        triggerRecord.enrichOld(relationshipName, relatedRecords.get((Id) oldRecord.get(parentField)));
+                        record.enrichOld(relationshipName, relatedRecords.get((Id) oldRecord.get(parentField)));
                     }
                 }
             }
-        }
         }
     }
 

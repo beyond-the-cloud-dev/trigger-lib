@@ -282,10 +282,14 @@ public with sharing class TriggerHandler {
         private Map<String, SObject> oldRelatedRecords = new Map<String, SObject>();
 
         private SObjectType sObjectType;
+        
+        private Boolean isQualificationNeedRelatedRecords = false;
+        private String identifier;
 
         public TriggerRecord(SObject record) {
             this.newRecord = record;
             this.sObjectType = record.getSObjectType();
+            this.identifier = record.get('Id')?.toString() ?? UUID.randomUUID().toString();
         }
 
         public TriggerRecord(SObject newRecord, SObject oldRecord) {
@@ -293,6 +297,7 @@ public with sharing class TriggerHandler {
             this.oldRecord = oldRecord;
             // Delete contexts have no new record, so the type comes from the deleted row.
             this.sObjectType = (newRecord ?? oldRecord).getSObjectType();
+            this.identifier = (newRecord ?? oldRecord).get('Id')?.toString() ?? UUID.randomUUID().toString();
         }
 
         public Boolean isRecordTypeEqual(String recordTypeDeveloperName) {
@@ -569,10 +574,12 @@ public with sharing class TriggerHandler {
         }
 
         public SObject getNewRelated(String relationshipName) {
+            this.isQualificationNeedRelatedRecords = true;
             return this.newRelatedRecords.get(relationshipName);
         }
 
         public SObject getOldRelated(String relationshipName) {
+            this.isQualificationNeedRelatedRecords = true;
             return this.oldRelatedRecords.get(relationshipName);
         }
 
@@ -589,6 +596,14 @@ public with sharing class TriggerHandler {
 
         public void enrichOld(String relationshipName, SObject relatedRecord) {
             this.oldRelatedRecords.put(relationshipName, relatedRecord);
+        }
+
+        public Boolean isQualificationNeedRelatedRecords() {
+            return this.isQualificationNeedRelatedRecords;
+        }
+
+        public String getIdentifier() {
+            return this.identifier;
         }
     }
 

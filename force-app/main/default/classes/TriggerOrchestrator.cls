@@ -157,7 +157,7 @@ public with sharing class TriggerOrchestrator {
                 }
             }
 
-            runHandlers(unifiedHandlers, triggerRecords);
+            new Executor(unifiedHandlers, triggerRecords).run();
         } catch (Exception e) {
             logError(e);
 
@@ -195,6 +195,28 @@ public with sharing class TriggerOrchestrator {
         Object instance = Type.forName(implementors[0].ClassNamespacePrefix, implementors[0].ClassName)?.newInstance();
 
         return instance instanceof Logger ? (Logger) instance : null;
+    }
+
+    private static void incrementRecursionDepth(Object orchestrator) {
+        Integer orchestratorMaxDepth = 3;
+
+        if (orchestrator instanceof TriggerOrchestrator.RecursiveUpdateGuard) {
+            orchestratorMaxDepth = ((TriggerOrchestrator.RecursiveUpdateGuard) orchestrator).maxRecursionDepth();
+        }
+
+        Integer recordIdsHashCode = Trigger.newMap.keySet().hashCode();
+
+        for (Id recordId : Trigger.newMap.keySet()) {
+            // maybe insteaf of ids, just use List hashMap
+            Map<Id, Integer> idToUpdateCount = recursionDepth.get(Trigger.operationType);
+            Integer updateCount = idToUpdateCount.get(recordId) ?? 0;
+
+            if (updateCount >= orchestratorMaxDepth) {
+                throw new TriggerOrchestratorException('Maximum recursion depth reached for record: ' + recordId);
+            }
+
+            idToUpdateCount.put(recordId, updateCount + 1);
+        }
     }
 
     private static void logError(Exception e) {
@@ -249,94 +271,77 @@ public with sharing class TriggerOrchestrator {
         }
     }
 
-    // TODO Refactor it, simplify
-    private static void runHandlers(List<TriggerHandlerAdapter> adapters, List<TriggerHandler.TriggerRecord> records) {
-        if (records.isEmpty()) {
-            return;
+    private class Executor {
+        private List<TriggerHandlerAdapter> handlersToExecute;
+        private List<TriggerHandlerAdapter> activeHandlers;
+        private List<TriggerHandler.TriggerRecord> records;
+
+        private Executor(List<TriggerHandlerAdapter> handlersToExecute, List<TriggerHandler.TriggerRecord> records) {
+            this.handlersToExecute = handlersToExecute;
+            this.records = records;
+            this.activeHandlers = new List<TriggerHandlerAdapter>();
         }
 
-        List<TriggerHandlerAdapter> activeHandlers = new List<TriggerHandlerAdapter>();
-
-        for (TriggerHandlerAdapter adapter : adapters) {
-            if (shouldBeBypassed(adapter.getHandler())) {
-                continue;
-            }
-
-            activeHandlers.add(adapter);
+        public void run() {
+            this.gatherActiveHandlers();
+            this.qualifieRecordsWithoutRelatedData();
+            this.qualifieRecordsNeedingRelatedData();
         }
 
-        for (TriggerHandlerAdapter adapter : activeHandlers) {
-            for (TriggerHandler.TriggerRecord record : records) {
-                if (adapter.isQualified(record)) {
-                    adapter.registerRecord(record);
+        private void gatherActiveHandlers() {
+            for (TriggerHandlerAdapter adapter : this.handlersToExecute) {
+                if (!this.shouldBeBypassed(adapter.getHandler())) {
+                    this.activeHandlers.add(adapter);
                 }
             }
         }
 
-        List<TriggerHandler.TriggerRecord> recordsNeedingRelatedData = new List<TriggerHandler.TriggerRecord>();
-
-        for (TriggerHandlerAdapter adapter : activeHandlers) {
-            for (TriggerHandler.TriggerRecord record : records) {
-                if (!adapter.hasRecordAlreadyRegistered(record) && record.isQualificationNeedRelatedRecords()) {
-                    recordsNeedingRelatedData.add(record);
+        private void qualifieRecordsWithoutRelatedData() {
+            for (TriggerHandlerAdapter adapter : this.activeHandlers) {
+                for (TriggerHandler.TriggerRecord record : records) {
+                    if (adapter.isQualified(record)) {
+                        adapter.registerRecord(record);
+                    }
                 }
             }
         }
 
-        new ParentRelationshipEnrichment(activeHandlers, recordsNeedingRelatedData).enrich();
+        private void qualifieRecordsNeedingRelatedData() {
+            List<TriggerHandler.TriggerRecord> recordsNeedingRelatedData = new List<TriggerHandler.TriggerRecord>();
 
-        List<TriggerHandlerAdapter> handlersToExecute = new List<TriggerHandlerAdapter>();
-
-        for (TriggerHandlerAdapter adapter : activeHandlers) {
-            for (TriggerHandler.TriggerRecord record : records) {
-                if (adapter.hasRecordAlreadyRegistered(record) || adapter.isQualified(record)) {
-                    adapter.registerRecord(record);
+            for (TriggerHandlerAdapter adapter : this.activeHandlers) {
+                for (TriggerHandler.TriggerRecord record : records) {
+                    if (!adapter.hasRecordAlreadyRegistered(record) && record.isQualificationNeedRelatedRecords()) {
+                        recordsNeedingRelatedData.add(record);
+                    }
                 }
             }
 
-            if (adapter.getRecords().isEmpty()) {
-                continue;
+            new ParentRelationshipEnrichment(this.activeHandlers, recordsNeedingRelatedData).enrich();
+
+            for (TriggerHandlerAdapter adapter : this.activeHandlers) {
+                for (TriggerHandler.TriggerRecord record : records) {
+                    if (adapter.hasRecordAlreadyRegistered(record) || adapter.isQualified(record)) {
+                        adapter.registerRecord(record);
+                    }
+                }
+            }
+        }
+
+        private void executeHandlers() {
+            for (TriggerHandlerAdapter adapter : this.activeHandlers) {
+                if (!adapter.getRecords().isEmpty()) {
+                    adapter.execute();
+                }
+            }
+        }
+
+        private Boolean shouldBeBypassed(Object handler) {
+            if (handler instanceof TriggerHandler.Bypassable) {
+                return ((TriggerHandler.Bypassable) handler).bypassWhen();
             }
 
-            handlersToExecute.add(adapter);
-        }
-
-        if (handlersToExecute.isEmpty()) {
-            return;
-        }
-
-        for (TriggerHandlerAdapter adapter : handlersToExecute) {
-            adapter.execute();
-        }
-    }
-
-    private static Boolean shouldBeBypassed(Object handler) {
-        if (handler instanceof TriggerHandler.Bypassable) {
-            return ((TriggerHandler.Bypassable) handler).bypassWhen();
-        }
-
-        return false;
-    }
-
-    private static void incrementRecursionDepth(Object orchestrator) {
-        Integer orchestratorMaxDepth = 3;
-
-        if (orchestrator instanceof TriggerOrchestrator.RecursiveUpdateGuard) {
-            orchestratorMaxDepth = ((TriggerOrchestrator.RecursiveUpdateGuard) orchestrator).maxRecursionDepth();
-        }
-
-        Integer recordIdsHashCode = Trigger.newMap.keySet().hashCode();
-
-        for (Id recordId : Trigger.newMap.keySet()) {
-            // maybe insteaf of ids, just use List hashMap
-            Map<Id, Integer> idToUpdateCount = recursionDepth.get(Trigger.operationType);
-            Integer updateCount = idToUpdateCount.get(recordId) ?? 0;
-
-            if (updateCount >= orchestratorMaxDepth) {
-                throw new TriggerOrchestratorException('Maximum recursion depth reached for record: ' + recordId);
-            }
-
-            idToUpdateCount.put(recordId, updateCount + 1);
+            return false;
         }
     }
 
@@ -492,47 +497,72 @@ public with sharing class TriggerOrchestrator {
 
     private class ParentRelationshipEnrichment {
         private List<TriggerHandlerAdapter> adapters;
+        private List<TriggerHandlerAdapter> enrichmentHandlers;
         private List<TriggerHandler.TriggerRecord> records;
         private Map<SObjectField, SOQL.Queryable> parentFieldToQuery;
 
         public ParentRelationshipEnrichment(List<TriggerHandlerAdapter> adapters, List<TriggerHandler.TriggerRecord> records) {
             this.adapters = adapters;
             this.records = records;
+            this.enrichmentHandlers = new List<TriggerHandlerAdapter>();
             this.parentFieldToQuery = new Map<SObjectField, SOQL.Queryable>();
         }
 
         public void enrich() {
-            if (!this.isEnrichmentNeeded()) {
+            this.gatherRelationshipEnrichmentHandlers();
+
+            if (enrichmentHandlers.isEmpty()) {
                 return;
             }
 
-            this.initQueries();
+            this.initDynamicQueries();
             this.enrichRecords();
         }
 
-        private Boolean isEnrichmentNeeded() {
+        private void gatherRelationshipEnrichmentHandlers() {
             for (TriggerHandlerAdapter adapter : adapters) {
                 if (adapter.getHandler() instanceof TriggerHandler.RelationshipEnrichment) {
-                    return true;
+                    this.enrichmentHandlers.add(adapter);
                 }
             }
-
-            return false;
         }
 
-        private void initQueries() {
-            for (TriggerHandlerAdapter adapter : adapters) {
-                if (adapter.getHandler() instanceof TriggerHandler.RelationshipEnrichment) {
-                    TriggerHandler.RelationshipEnrichment enrichmentHandler = (TriggerHandler.RelationshipEnrichment) adapter.getHandler();
+        private void initDynamicQueries() {
+            for (TriggerHandlerAdapter adapter : this.enrichmentHandlers) {
+                Map<SObjectField, TriggerHandler.FieldSelection> fieldsToEnrich = ((TriggerHandler.RelationshipEnrichment) adapter.getHandler()).fieldsToEnrich();
 
-                    Map<SObjectField, TriggerHandler.FieldSelection> fieldsToEnrich = enrichmentHandler.fieldsToEnrich();
+                for (SObjectField field : fieldsToEnrich.keySet()) {
+                    if (!this.parentFieldToQuery.containsKey(field)) {
+                        this.parentFieldToQuery.put(field, SOQL.of(field.getDescribe().getReferenceTo()[0]));
+                    }
 
-                    for (SObjectField field : fieldsToEnrich.keySet()) {
-                        if (!this.parentFieldToQuery.containsKey(field)) {
-                            this.parentFieldToQuery.put(field, SOQL.of(field.getDescribe().getReferenceTo()[0]));
-                        }
+                    this.parentFieldToQuery.get(field).with(fieldsToEnrich.get(field).getFields());
+                }
+            }
+        }
 
-                        this.parentFieldToQuery.get(field).with(fieldsToEnrich.get(field).getFields());
+        private void enrichRecords() {
+            for (SObjectField parentField : this.parentFieldToQuery.keySet()) {
+                Set<Id> parentIds = this.gatherParentIds(parentField);
+
+                if (parentIds.isEmpty()) {
+                    continue;
+                }
+
+                Map<Id, SObject> relatedRecordsById = this.parentFieldToQuery.get(parentField).byIds(parentIds).systemMode().withoutSharing().toMap();
+
+                String relationshipName = parentField.getDescribe().getRelationshipName();
+
+                for (TriggerHandler.TriggerRecord record : this.records) {
+                    SObject newRecord = record.getNewSObject();
+                    SObject oldRecord = record.getOldSObject();
+
+                    if (newRecord != null && newRecord.isSet(parentField)) {
+                        record.enrichNew(relationshipName, relatedRecordsById.get((Id) newRecord.get(parentField)));
+                    }
+
+                    if (oldRecord != null && oldRecord.isSet(parentField)) {
+                        record.enrichOld(relationshipName, relatedRecordsById.get((Id) oldRecord.get(parentField)));
                     }
                 }
             }
@@ -545,43 +575,16 @@ public with sharing class TriggerOrchestrator {
                 SObject newRecord = record.getNewSObject();
                 SObject oldRecord = record.getOldSObject();
 
-                if (newRecord != null && newRecord.get(parentField) != null) {
+                if (newRecord != null && newRecord.isSet(parentField)) {
                     parentIds.add((Id) newRecord.get(parentField));
                 }
 
-                if (oldRecord != null && oldRecord.get(parentField) != null) {
+                if (oldRecord != null && oldRecord.isSet(parentField)) {
                     parentIds.add((Id) oldRecord.get(parentField));
                 }
             }
 
             return parentIds;
-        }
-
-        private void enrichRecords() {
-            for (SObjectField parentField : this.parentFieldToQuery.keySet()) {
-                Set<Id> parentIds = this.gatherParentIds(parentField);
-
-                if (parentIds.isEmpty()) {
-                    continue;
-                }
-
-                Map<Id, SObject> relatedRecords = this.parentFieldToQuery.get(parentField).byIds(parentIds).systemMode().withoutSharing().toMap();
-
-                String relationshipName = parentField.getDescribe().getRelationshipName();
-
-                for (TriggerHandler.TriggerRecord record : this.records) {
-                    SObject newRecord = record.getNewSObject();
-                    SObject oldRecord = record.getOldSObject();
-
-                    if (newRecord != null && newRecord.get(parentField) != null) {
-                        record.enrichNew(relationshipName, relatedRecords.get((Id) newRecord.get(parentField)));
-                    }
-
-                    if (oldRecord != null && oldRecord.get(parentField) != null) {
-                        record.enrichOld(relationshipName, relatedRecords.get((Id) oldRecord.get(parentField)));
-                    }
-                }
-            }
         }
     }
 

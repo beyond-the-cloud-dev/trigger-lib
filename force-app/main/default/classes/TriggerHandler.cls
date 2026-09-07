@@ -55,8 +55,12 @@ public with sharing class TriggerHandler {
 
     // Additional
 
-    public interface RelationshipEnrichment {
-        Map<SObjectField, FieldSelection> fieldsToEnrich();
+    public interface NewRecordEnrichment {
+        Map<SObjectField, FieldSelection> newFieldsToEnrich();
+    }
+
+    public interface OldRecordEnrichment {
+        Map<SObjectField, FieldSelection> oldFieldsToEnrich();
     }
 
     public interface Bypassable {

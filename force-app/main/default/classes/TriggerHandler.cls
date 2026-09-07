@@ -283,7 +283,6 @@ public with sharing class TriggerHandler {
 
         private SObjectType sObjectType;
         
-        private Boolean isQualificationNeedRelatedRecords = false;
         private String identifier;
 
         public TriggerRecord(SObject record) {
@@ -574,12 +573,10 @@ public with sharing class TriggerHandler {
         }
 
         public SObject getNewRelated(String relationshipName) {
-            this.isQualificationNeedRelatedRecords = true;
             return this.newRelatedRecords.get(relationshipName);
         }
 
         public SObject getOldRelated(String relationshipName) {
-            this.isQualificationNeedRelatedRecords = true;
             return this.oldRelatedRecords.get(relationshipName);
         }
 
@@ -596,10 +593,6 @@ public with sharing class TriggerHandler {
 
         public void enrichOld(String relationshipName, SObject relatedRecord) {
             this.oldRelatedRecords.put(relationshipName, relatedRecord);
-        }
-
-        public Boolean isQualificationNeedRelatedRecords() {
-            return this.isQualificationNeedRelatedRecords;
         }
 
         public String getIdentifier() {

@@ -273,32 +273,36 @@ public with sharing class TriggerOrchestrator {
 
     private class HandlerExecutor {
         private List<TriggerHandlerAdapter> candidateAdapters;
-        private List<TriggerHandlerAdapter> activeAdapters;
+        private List<TriggerHandlerAdapter> activeHandlers;
         private List<TriggerHandler.TriggerRecord> records;
 
         private HandlerExecutor(List<TriggerHandlerAdapter> candidateAdapters, List<TriggerHandler.TriggerRecord> records) {
             this.candidateAdapters = candidateAdapters;
             this.records = records;
-            this.activeAdapters = new List<TriggerHandlerAdapter>();
+            this.activeHandlers = new List<TriggerHandlerAdapter>();
         }
 
         public void run() {
-            this.gatherActiveAdapters();
-            this.qualifyRecordsWithoutRelatedData();
-            this.qualifyRecordsNeedingRelatedData();
+            this.gatherActiveHandlers();
+            this.enrichRecords();
+            this.qualifyRecords();
             this.executeHandlers();
         }
 
-        private void gatherActiveAdapters() {
+        private void gatherActiveHandlers() {
             for (TriggerHandlerAdapter adapter : this.candidateAdapters) {
                 if (!this.shouldBeBypassed(adapter.getHandler())) {
-                    this.activeAdapters.add(adapter);
+                    this.activeHandlers.add(adapter);
                 }
             }
         }
 
-        private void qualifyRecordsWithoutRelatedData() {
-            for (TriggerHandlerAdapter adapter : this.activeAdapters) {
+        private void enrichRecords() {
+            new ParentRelationshipEnrichment(this.activeHandlers, this.records).enrich();
+        }
+
+        private void qualifyRecords() {
+            for (TriggerHandlerAdapter adapter : this.activeHandlers) {
                 for (TriggerHandler.TriggerRecord record : records) {
                     if (adapter.isQualified(record)) {
                         adapter.registerRecord(record);
@@ -307,30 +311,8 @@ public with sharing class TriggerOrchestrator {
             }
         }
 
-        private void qualifyRecordsNeedingRelatedData() {
-            List<TriggerHandler.TriggerRecord> recordsNeedingRelatedData = new List<TriggerHandler.TriggerRecord>();
-
-            for (TriggerHandlerAdapter adapter : this.activeAdapters) {
-                for (TriggerHandler.TriggerRecord record : records) {
-                    if (!adapter.isRecordRegistered(record) && record.isQualificationNeedRelatedRecords()) {
-                        recordsNeedingRelatedData.add(record);
-                    }
-                }
-            }
-
-            new ParentRelationshipEnrichment(this.activeAdapters, recordsNeedingRelatedData).enrich();
-
-            for (TriggerHandlerAdapter adapter : this.activeAdapters) {
-                for (TriggerHandler.TriggerRecord record : records) {
-                    if (adapter.isRecordRegistered(record) || adapter.isQualified(record)) {
-                        adapter.registerRecord(record);
-                    }
-                }
-            }
-        }
-
         private void executeHandlers() {
-            for (TriggerHandlerAdapter adapter : this.activeAdapters) {
+            for (TriggerHandlerAdapter adapter : this.activeHandlers) {
                 if (!adapter.getQualifiedRecords().isEmpty()) {
                     adapter.execute();
                 }
@@ -510,7 +492,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public void enrich() {
-            this.gatherEnrichmentAdapters();
+            this.gatherEnrichmentHandlers();
 
             if (enrichmentAdapters.isEmpty()) {
                 return;
@@ -520,7 +502,7 @@ public with sharing class TriggerOrchestrator {
             this.enrichRecords();
         }
 
-        private void gatherEnrichmentAdapters() {
+        private void gatherEnrichmentHandlers() {
             for (TriggerHandlerAdapter adapter : adapters) {
                 if (adapter.getHandler() instanceof TriggerHandler.RelationshipEnrichment) {
                     this.enrichmentAdapters.add(adapter);

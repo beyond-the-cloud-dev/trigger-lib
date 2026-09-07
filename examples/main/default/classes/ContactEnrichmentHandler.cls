@@ -1,10 +1,17 @@
-public with sharing class ContactEnrichmentHandler implements TriggerHandler.RelationshipEnrichment, TriggerHandler.AfterUpdate {
+public with sharing class ContactEnrichmentHandler implements TriggerHandler.NewRecordEnrichment, TriggerHandler.OldRecordEnrichment, TriggerHandler.AfterUpdate {
     public static List<String> log = new List<String>();
 
-    public Map<SObjectField, TriggerHandler.FieldSelection> fieldsToEnrich() {
+    public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrich() {
         return new Map<SObjectField, TriggerHandler.FieldSelection>{
             Contact.AccountId => TriggerHandler.FieldSelection.with(Account.Name, Account.Industry),
             Contact.OwnerId => TriggerHandler.FieldSelection.with(User.Name, User.Email)
+        };
+    }
+
+    // The handler reads getOldRelated('Account'), so the old side declares that lookup too.
+    public Map<SObjectField, TriggerHandler.FieldSelection> oldFieldsToEnrich() {
+        return new Map<SObjectField, TriggerHandler.FieldSelection>{
+            Contact.AccountId => TriggerHandler.FieldSelection.with(Account.Name, Account.Industry)
         };
     }
 

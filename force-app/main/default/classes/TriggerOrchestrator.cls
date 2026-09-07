@@ -480,53 +480,58 @@ public with sharing class TriggerOrchestrator {
 
     private class ParentRelationshipEnrichment {
         private List<TriggerHandlerAdapter> adapters;
-        private List<TriggerHandlerAdapter> enrichmentAdapters;
         private List<TriggerHandler.TriggerRecord> recordsToEnrich;
-        private Map<SObjectField, SOQL.Queryable> queryByParentField;
+        private Set<SObjectField> newRecordFieldsToEnrich = new Set<SObjectField>();
+        private Set<SObjectField> oldRecordFieldsToEnrich = new Set<SObjectField>();
+        private Map<SObjectField, SOQL.Queryable> queryByParentField = new Map<SObjectField, SOQL.Queryable>();
 
         public ParentRelationshipEnrichment(List<TriggerHandlerAdapter> adapters, List<TriggerHandler.TriggerRecord> recordsToEnrich) {
             this.adapters = adapters;
             this.recordsToEnrich = recordsToEnrich;
-            this.enrichmentAdapters = new List<TriggerHandlerAdapter>();
-            this.queryByParentField = new Map<SObjectField, SOQL.Queryable>();
         }
 
         public void enrich() {
-            this.gatherEnrichmentHandlers();
+            this.declareParentFields();
 
-            if (enrichmentAdapters.isEmpty()) {
+            if (this.queryByParentField.isEmpty()) {
                 return;
             }
 
-            this.buildParentQueries();
             this.enrichRecords();
         }
 
-        private void gatherEnrichmentHandlers() {
-            for (TriggerHandlerAdapter adapter : adapters) {
-                if (adapter.getHandler() instanceof TriggerHandler.RelationshipEnrichment) {
-                    this.enrichmentAdapters.add(adapter);
+        private void declareParentFields() {
+            for (TriggerHandlerAdapter adapter : this.adapters) {
+                Object handler = adapter.getHandler();
+
+                if (handler instanceof TriggerHandler.NewRecordEnrichment) {
+                    this.declare(((TriggerHandler.NewRecordEnrichment) handler).newFieldsToEnrich(), this.newRecordFieldsToEnrich);
+                }
+
+                if (handler instanceof TriggerHandler.OldRecordEnrichment) {
+                    this.declare(((TriggerHandler.OldRecordEnrichment) handler).oldFieldsToEnrich(), this.oldRecordFieldsToEnrich);
                 }
             }
         }
 
-        private void buildParentQueries() {
-            for (TriggerHandlerAdapter adapter : this.enrichmentAdapters) {
-                Map<SObjectField, TriggerHandler.FieldSelection> fieldsToEnrich = ((TriggerHandler.RelationshipEnrichment) adapter.getHandler()).fieldsToEnrich();
+        private void declare(Map<SObjectField, TriggerHandler.FieldSelection> fieldsToEnrich, Set<SObjectField> recordFieldsToEnrich) {
+            for (SObjectField parentField : fieldsToEnrich.keySet()) {
+                recordFieldsToEnrich.add(parentField);
 
-                for (SObjectField parentField : fieldsToEnrich.keySet()) {
-                    if (!this.queryByParentField.containsKey(parentField)) {
-                        this.queryByParentField.put(parentField, SOQL.of(parentField.getDescribe().getReferenceTo()[0]));
-                    }
-
-                    this.queryByParentField.get(parentField).with(fieldsToEnrich.get(parentField).getFields());
+                if (!this.queryByParentField.containsKey(parentField)) {
+                    this.queryByParentField.put(parentField, SOQL.of(parentField.getDescribe().getReferenceTo()[0]));
                 }
+
+                this.queryByParentField.get(parentField).with(fieldsToEnrich.get(parentField).getFields());
             }
         }
 
         private void enrichRecords() {
             for (SObjectField parentField : this.queryByParentField.keySet()) {
-                Set<Id> parentIds = this.gatherParentIds(parentField);
+                Boolean enrichNewSide = this.newRecordFieldsToEnrich.contains(parentField);
+                Boolean enrichOldSide = this.oldRecordFieldsToEnrich.contains(parentField);
+
+                Set<Id> parentIds = this.gatherParentIds(parentField, enrichNewSide, enrichOldSide);
 
                 if (parentIds.isEmpty()) {
                     continue;
@@ -540,38 +545,35 @@ public with sharing class TriggerOrchestrator {
                     SObject newRecord = record.getNewSObject();
                     SObject oldRecord = record.getOldSObject();
 
-                    if (newRecord != null && newRecord.isSet(parentField)) {
+                    if (enrichNewSide && newRecord != null && newRecord.isSet(parentField)) {
                         record.enrichNew(relationshipName, relatedRecordById.get((Id) newRecord.get(parentField)));
                     }
 
-                    if (oldRecord != null && oldRecord.isSet(parentField)) {
+                    if (enrichOldSide && oldRecord != null && oldRecord.isSet(parentField)) {
                         record.enrichOld(relationshipName, relatedRecordById.get((Id) oldRecord.get(parentField)));
                     }
                 }
             }
         }
 
-        private Set<Id> gatherParentIds(SObjectField parentField) {
+        private Set<Id> gatherParentIds(SObjectField parentField, Boolean fromNewSide, Boolean fromOldSide) {
             Set<Id> parentIds = new Set<Id>();
 
             for (TriggerHandler.TriggerRecord record : this.recordsToEnrich) {
                 SObject newRecord = record.getNewSObject();
                 SObject oldRecord = record.getOldSObject();
 
-                if (newRecord != null && newRecord.isSet(parentField)) {
+                if (fromNewSide && newRecord != null && newRecord.isSet(parentField)) {
                     parentIds.add((Id) newRecord.get(parentField));
                 }
 
-                if (oldRecord != null && oldRecord.isSet(parentField)) {
+                if (fromOldSide && oldRecord != null && oldRecord.isSet(parentField)) {
                     parentIds.add((Id) oldRecord.get(parentField));
                 }
             }
 
             return parentIds;
         }
-    }
-
-    private class RelationshipEnrichment {
     }
 
     private class TriggerOrchestratorException extends Exception {

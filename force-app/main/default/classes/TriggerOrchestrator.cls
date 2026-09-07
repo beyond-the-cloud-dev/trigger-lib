@@ -313,8 +313,18 @@ public with sharing class TriggerOrchestrator {
 
         private void executeHandlers() {
             for (TriggerHandlerAdapter adapter : this.activeHandlers) {
-                if (!adapter.getQualifiedRecords().isEmpty()) {
+                if (adapter.getQualifiedRecords().isEmpty()) {
+                    continue;
+                }
+
+                try {
                     adapter.execute();
+                } catch (Exception e) {
+                    if (!(adapter.getHandler() instanceof TriggerHandler.ContinueOnError)) {
+                        throw e;
+                    }
+
+                    logError(e);
                 }
             }
         }

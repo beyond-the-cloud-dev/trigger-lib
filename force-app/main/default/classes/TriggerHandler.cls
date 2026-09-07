@@ -55,6 +55,10 @@ public with sharing class TriggerHandler {
 
     // Additional
 
+    public interface Bypassable {
+        Boolean bypassWhen();
+    }
+
     public interface NewRecordEnrichment {
         Map<SObjectField, FieldSelection> newFieldsToEnrich();
     }
@@ -63,11 +67,7 @@ public with sharing class TriggerHandler {
         Map<SObjectField, FieldSelection> oldFieldsToEnrich();
     }
 
-    public interface Bypassable {
-        Boolean bypassWhen();
-    }
-
-    // TODO Mute exception marker interface
+    public interface ContinueOnError {}
 
     // send email interface
     // validator interface?

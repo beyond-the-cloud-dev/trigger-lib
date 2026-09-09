@@ -320,7 +320,7 @@ public with sharing class TriggerOrchestrator {
                 try {
                     adapter.execute();
                 } catch (Exception e) {
-                    if (!(adapter.getHandler() instanceof TriggerHandler.ContinueOnError)) {
+                    if (e instanceof TriggerOrchestratorException || !(adapter.getHandler() instanceof TriggerHandler.ContinueOnError)) {
                         throw e;
                     }
 
@@ -364,9 +364,8 @@ public with sharing class TriggerOrchestrator {
             return new List<TriggerHandler.TriggerRecord>(this.qualifiedRecordByIdentifier.values());
         }
 
-        public void execute() {
+        public virtual void execute() {
             for (TriggerHandler.TriggerRecord record : this.getQualifiedRecords()) {
-                // TODO Allow to override execute method so before methods will have logic to block DMLs
                 this.executeOn(record);
             }
         }
@@ -379,6 +378,19 @@ public with sharing class TriggerOrchestrator {
     private class BeforeInsertHandlerAdapter extends TriggerHandlerAdapter {
         public BeforeInsertHandlerAdapter(TriggerHandler.BeforeInsert handler) {
             super(handler);
+        }
+
+        public override void execute() {
+            Integer dmlStatementsBefore = Limits.getDmlStatements();
+            Integer immediateEventsBefore = Limits.getPublishImmediateDML();
+
+            for (TriggerHandler.TriggerRecord record : this.getQualifiedRecords()) {
+                this.executeOn(record);
+            }
+
+            if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
+                throw new TriggerOrchestratorException(String.valueOf(this.handler).substringBefore(':') + ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.');
+            }
         }
 
         public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
@@ -407,6 +419,19 @@ public with sharing class TriggerOrchestrator {
     private class BeforeUpdateHandlerAdapter extends TriggerHandlerAdapter {
         public BeforeUpdateHandlerAdapter(TriggerHandler.BeforeUpdate handler) {
             super(handler);
+        }
+
+        public override void execute() {
+            Integer dmlStatementsBefore = Limits.getDmlStatements();
+            Integer immediateEventsBefore = Limits.getPublishImmediateDML();
+
+            for (TriggerHandler.TriggerRecord record : this.getQualifiedRecords()) {
+                this.executeOn(record);
+            }
+
+            if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
+                throw new TriggerOrchestratorException(String.valueOf(this.handler).substringBefore(':') + ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.');
+            }
         }
 
         public override Boolean isQualified(TriggerHandler.TriggerRecord record) {

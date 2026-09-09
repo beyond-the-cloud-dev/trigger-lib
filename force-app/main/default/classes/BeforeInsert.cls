@@ -17,6 +17,5 @@ public class BeforeInsert {
     }
 
     public interface AllowDmls {}
-
     public interface ContinueOnError {}
 }

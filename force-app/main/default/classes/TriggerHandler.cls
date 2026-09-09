@@ -5,12 +5,6 @@ public with sharing class TriggerHandler {
         }
     }
 
-    // send email interface
-    // validator interface?
-
-    // TODO Maybe additional interfaces
-    // set required permissions, bypass permission, etc 
-
     public interface Record {
         // Record Type
         Boolean isRecordTypeEqual(String recordTypeDeveloperName);

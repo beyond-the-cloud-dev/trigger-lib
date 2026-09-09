@@ -327,7 +327,7 @@ Main project configuration:
   ],
   "namespace": "btcdev",
   "sfdcLoginUrl": "https://login.salesforce.com",
-  "sourceApiVersion": "66.0"
+  "sourceApiVersion": "67.0"
 }
 ```
 

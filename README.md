@@ -66,15 +66,6 @@ sf project deploy start -d examples -o trigger-lib-dev
 
 📚 **Full documentation**: [https://trigger.beyondthecloud.dev/](https://trigger.beyondthecloud.dev/)
 
-### Documentation Sections
-
-- **[Getting Started](https://trigger.beyondthecloud.dev/guide/getting-started)** - Set up your development environment
-- **[Development Guide](https://trigger.beyondthecloud.dev/guide/development)** - Development workflow and commands
-- **[Testing Guide](https://trigger.beyondthecloud.dev/guide/testing)** - Testing framework and best practices
-- **[Deployment Guide](https://trigger.beyondthecloud.dev/guide/deployment)** - CI/CD and deployment process
-- **[API Reference](https://trigger.beyondthecloud.dev/api/apex)** - Apex documentation
-- **[Code Examples](https://trigger.beyondthecloud.dev/examples/)** - Practical code patterns
-
 ### Run Documentation Locally
 
 ```bash
@@ -102,14 +93,9 @@ npm run docs:preview
 │       └── triggers/       # Example trigger
 ├── config/                 # Salesforce configurations
 │   └── project-scratch-def.json
-├── website/                # VitePress documentation
-│   ├── .vitepress/
-│   ├── guide/
-│   ├── api/
-│   └── examples/
+├── website/                # VitePress documentation, deployed by Vercel
 ├── .github/workflows/      # CI/CD workflows
-│   ├── ci.yml             # Salesforce CI/CD
-│   └── deploy-docs.yml    # Documentation deployment
+│   └── ci.yml             # Salesforce CI/CD
 ├── package.json            # npm dependencies and scripts
 └── sfdx-project.json      # SFDX project configuration
 ```
@@ -168,8 +154,6 @@ Add these secrets in GitHub repository settings:
 
 - `SFDX_AUTH_URL_DEVHUB` - Dev Hub authentication URL
 - `CODECOV_TOKEN` - CodeCov upload token (optional)
-
-See [Deployment Guide](https://trigger.beyondthecloud.dev/guide/deployment) for detailed instructions.
 
 ## What's Included
 

@@ -11,22 +11,28 @@ hero:
       text: Get Started
       link: /introduction
     - theme: alt
-      text: View on GitHub
-      link: https://github.com/beyond-the-cloud-dev/trigger-lib
+      text: Installation
+      link: /installation
 
 features:
   - title: Orchestrator & Handlers
     details: One orchestrator per SObject, one handler per concern, wired in Apex.
+    link: /guide/orchestrator
   - title: Record Filtering
     details: Handlers run only against records that qualify, so logic never guards itself.
+    link: /guide/qualification
   - title: Parent Enrichment
     details: Related data is pulled up front, so handlers make no SOQL queries of their own.
+    link: /guide/enrichment
   - title: Bypasses
     details: Disable an individual handler or a whole orchestrator when you need to.
+    link: /guide/bypasses
   - title: Recursion Control
     details: Depth limiting built in, defaulting to 3.
+    link: /guide/recursion-control
   - title: No Required Metadata
     details: Works with zero custom metadata records; metadata only overrides defaults.
+    link: /introduction/design-principles
 ---
 
 <BTCFooter context="trigger-lib" />

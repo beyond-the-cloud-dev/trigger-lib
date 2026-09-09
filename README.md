@@ -32,6 +32,75 @@ For comprehensive documentation, visit [https://trigger.beyondthecloud.dev/](htt
 - **Recursion Control** - Depth limiting built in, defaulting to 3
 - **No Required Metadata** - Works with zero custom metadata records; metadata only overrides defaults
 
+## Quick Example
+
+**Trigger**
+
+```apex
+trigger ContactTrigger on Contact(
+  before insert,
+  after insert,
+  before update,
+  after update,
+  before delete,
+  after delete,
+  after undelete
+) {
+  TriggerOrchestrator.run(new ContactTriggerOrchestrator());
+}
+```
+
+**Orchestrator**
+
+```apex
+public with sharing class ContactTriggerOrchestrator implements TriggerOrchestrator.BeforeInsert, TriggerOrchestrator.AfterUpdate {
+  public List<BeforeInsert.Handler> beforeInsertHandlers() {
+    return new List<BeforeInsert.Handler>{ new ContactDescriptionHandler() };
+  }
+
+  public List<AfterUpdate.Handler> afterUpdateHandlers() {
+    return new List<AfterUpdate.Handler>{ new ContactAccountSyncHandler() };
+  }
+}
+```
+
+**Handler**
+
+```apex
+public with sharing class ContactAccountSyncHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment, AfterUpdate.Finalizer {
+  private List<Account> accountsToUpdate = new List<Account>();
+
+  public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterUpdate() {
+    return new Map<SObjectField, TriggerHandler.FieldSelection>{
+      Contact.AccountId => TriggerHandler.FieldSelection.with(
+        Account.Name,
+        Account.Industry
+      )
+    };
+  }
+
+  public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.Record record) {
+    return record.isChanged(Contact.Email) &&
+      record.isNotNull(Contact.AccountId);
+  }
+
+  public void onAfterUpdate(TriggerHandler.Record record) {
+    Account account = (Account) record.getNewRelated('Account');
+
+    accountsToUpdate.add(
+      new Account(
+        Id = account.Id,
+        Description = 'Contact email changed: ' + account.Name
+      )
+    );
+  }
+
+  public void finalizeAfterUpdate() {
+    update accountsToUpdate;
+  }
+}
+```
+
 ## Quick Start
 
 ```bash
@@ -115,19 +184,9 @@ sf project deploy start
 sf apex run test --test-level RunLocalTests
 ```
 
-### Testing
+### Formatting
 
 ```bash
-npm test                    # Run all LWC Jest tests
-npm run test:unit:watch     # Watch mode
-npm run test:unit:debug     # Debug mode
-npm run test:unit:coverage  # Generate coverage report
-```
-
-### Code Quality
-
-```bash
-npm run lint                # Lint LWC and Aura components
 npm run prettier            # Format all files
 npm run prettier:verify     # Check formatting
 ```
@@ -141,7 +200,6 @@ npm run prettier:verify     # Check formatting
 - Creates scratch org
 - Deploys source
 - Runs Apex tests
-- Runs LWC Jest tests
 - Uploads coverage to CodeCov
 
 ### Documentation Deployment
@@ -154,37 +212,6 @@ Add these secrets in GitHub repository settings:
 
 - `SFDX_AUTH_URL_DEVHUB` - Dev Hub authentication URL
 - `CODECOV_TOKEN` - CodeCov upload token (optional)
-
-## What's Included
-
-### Tooling
-
-- **Salesforce CLI** - Modern Salesforce development
-- **LWC Jest** - Lightning Web Component testing
-- **ESLint** - Code quality for LWC/Aura
-- **Prettier** - Code formatting
-- **Husky** - Git hooks
-- **lint-staged** - Run checks on staged files
-- **VitePress** - Documentation site generator
-
-### Configuration
-
-- Scratch org definition
-- ESLint rules for LWC/Aura
-- Prettier configuration
-- Pre-commit hooks
-- GitHub Actions workflows
-- Test coverage reporting
-
-### Documentation
-
-- Getting Started guide
-- Development workflow
-- Testing guide
-- Deployment guide
-- API reference
-- Code examples
-- Best practices
 
 ## Contributors
 

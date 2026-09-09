@@ -1,5 +1,5 @@
-public with sharing class ContactTriggerHandler implements TriggerHandler.NewRecordEnrichment, TriggerHandler.BeforeInsert {
-    public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrich() {
+public with sharing class ContactTriggerHandler implements BeforeInsert.Handler, BeforeInsert.NewRecordEnrichment {
+    public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnBeforeInsert() {
         return new Map<SObjectField, TriggerHandler.FieldSelection>{
             Contact.AccountId => TriggerHandler.FieldSelection
                 .with(Account.Name, Account.Industry)

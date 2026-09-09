@@ -27,11 +27,6 @@ public with sharing class TriggerOrchestrator {
         List<AfterUndelete.Handler> afterUndeleteHandlers();
     }
 
-    // TODO ContextProvider for unrelated records
-    // public interface ContextProvider {
-
-    // }
-
     public interface Logger {
         void log(Error error);
         void finalize();
@@ -44,8 +39,6 @@ public with sharing class TriggerOrchestrator {
         SObjectType getSObjectType();
         Set<Id> getRecordIds();
     }
-
-    // TODO Asynchronous Actions - TODO Only in AfterUpdate, AfterDelete context
 
     // Implementations
 

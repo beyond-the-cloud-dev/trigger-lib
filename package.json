@@ -2,7 +2,7 @@
   "name": "trigger-lib",
   "private": true,
   "version": "1.0.0",
-  "description": "Trigger Lib",
+  "description": "Apex trigger framework for Salesforce with record filtering, automatic parent enrichment, bypasses, and recursion control",
   "scripts": {
     "lint": "eslint **/{aura,lwc}/**",
     "test": "npm run test:unit",
@@ -33,6 +33,7 @@
     "prettier": "^3.7.4",
     "prettier-plugin-apex": "^2.2.6",
     "vitepress": "^1.6.4",
+    "vitepress-plugin-llms": "^1.13.5",
     "vue": "^3.5.26"
   },
   "lint-staged": {

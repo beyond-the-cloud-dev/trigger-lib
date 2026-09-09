@@ -1,77 +1,32 @@
 ---
+# https://vitepress.dev/reference/default-theme-home-page
 layout: home
 
 hero:
-  name: "Salesforce Template"
-  text: "Beyond The Cloud"
-  tagline: Professional Salesforce development with CI/CD, testing, and best practices
+  name: 'Trigger Lib'
+  text: 'Salesforce Apex Trigger Framework'
+  tagline: Apex trigger framework for Salesforce with record filtering, automatic parent enrichment, bypasses, and recursion control
   actions:
     - theme: brand
       text: Get Started
-      link: /guide/getting-started
+      link: /introduction
     - theme: alt
       text: View on GitHub
-      link: https://github.com/beyond-the-cloud-dev/template
+      link: https://github.com/beyond-the-cloud-dev/trigger-lib
 
 features:
-  - icon: 🚀
-    title: Production Ready
-    details: Enterprise-grade template with CI/CD, automated testing, and deployment workflows configured out of the box.
-
-  - icon: 🧪
-    title: Comprehensive Testing
-    details: LWC Jest testing setup with coverage reports, integrated with CodeCov for continuous quality monitoring.
-
-  - icon: 📦
-    title: Modern Tooling
-    details: ESLint, Prettier, Husky hooks, and lint-staged configured for consistent code quality.
-
-  - icon: 🔄
-    title: GitHub Actions
-    details: Automated CI/CD pipeline with Salesforce DX, scratch org validation, and deployment automation.
-
-  - icon: 📚
-    title: Best Practices
-    details: Following Salesforce and community best practices for scalable, maintainable code.
-
-  - icon: ⚡
-    title: Lightning Web Components
-    details: Modern LWC development with proper structure, testing, and documentation.
+  - title: Orchestrator & Handlers
+    details: One orchestrator per SObject, one handler per concern, wired in Apex.
+  - title: Record Filtering
+    details: Handlers run only against records that qualify, so logic never guards itself.
+  - title: Parent Enrichment
+    details: Related data is pulled up front, so handlers make no SOQL queries of their own.
+  - title: Bypasses
+    details: Disable an individual handler or a whole orchestrator when you need to.
+  - title: Recursion Control
+    details: Depth limiting built in, defaulting to 3.
+  - title: No Required Metadata
+    details: Works with zero custom metadata records; metadata only overrides defaults.
 ---
 
-## Quick Start
-
-```bash
-# Clone the template
-git clone https://github.com/beyond-the-cloud-dev/template.git
-
-# Install dependencies
-npm install
-
-# Authenticate with Dev Hub
-sf org login web -d -a DevHub
-
-# Create scratch org
-sf org create scratch -f config/project-scratch-def.json -a my-scratch-org
-
-# Deploy source
-sf project deploy start
-
-# Run tests
-npm test
-```
-
-## What's Included
-
-- **Salesforce DX Project Structure**: Modern SFDX project layout
-- **CI/CD Pipeline**: GitHub Actions workflow for automated testing and deployment
-- **Testing Framework**: LWC Jest with coverage reporting
-- **Code Quality Tools**: ESLint, Prettier, Husky pre-commit hooks
-- **Documentation**: Comprehensive guides and API documentation
-
-## Beyond The Cloud
-
-This template is maintained by [Beyond The Cloud](https://beyondthecloud.dev) - experts in Salesforce development and DevOps.
-
-**License:** MIT
-**Copyright:** © 2025 Beyond The Cloud Sp. z o.o.
+<BTCFooter context="trigger-lib" />

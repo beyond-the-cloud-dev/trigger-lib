@@ -86,5 +86,8 @@ export const contextLinks = {
         { label: 'Pricing', href: '/pricing' }
     ],
     'release-notifier': [{ label: 'Documentation', href: '/docs/intro' }],
-    'trigger-lib': [{ label: 'Introduction', href: '/introduction' }]
+    'trigger-lib': [
+        { label: 'Get Started', href: '/introduction' },
+        { label: 'Installation', href: '/installation' }
+    ]
 };

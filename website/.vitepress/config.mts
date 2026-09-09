@@ -119,7 +119,41 @@ export default defineConfig({
       {
         text: 'Introduction',
         collapsed: false,
-        items: [{ text: 'Introduction', link: '/introduction' }]
+        items: [
+          { text: 'Introduction', link: '/introduction' },
+          { text: 'Installation', link: '/installation' },
+          {
+            text: 'Design Principles',
+            link: '/introduction/design-principles'
+          }
+        ]
+      },
+      {
+        text: 'Guide',
+        collapsed: false,
+        items: [
+          { text: 'Orchestrator', link: '/guide/orchestrator' },
+          { text: 'Handlers', link: '/guide/handlers' },
+          { text: 'Record Qualification', link: '/guide/qualification' },
+          { text: 'Parent Enrichment', link: '/guide/enrichment' },
+          { text: 'Bypasses', link: '/guide/bypasses' },
+          { text: 'Recursion Control', link: '/guide/recursion-control' },
+          { text: 'Finalizers', link: '/guide/finalizers' },
+          { text: 'Error Handling', link: '/guide/error-handling' }
+        ]
+      },
+      {
+        text: 'API',
+        collapsed: false,
+        items: [
+          { text: 'TriggerOrchestrator', link: '/api/trigger-orchestrator' },
+          { text: 'Context Interfaces', link: '/api/context-interfaces' },
+          { text: 'TriggerHandler.Record', link: '/api/record' },
+          {
+            text: 'TriggerHandler.FieldSelection',
+            link: '/api/field-selection'
+          }
+        ]
       }
     ],
     socialLinks: [

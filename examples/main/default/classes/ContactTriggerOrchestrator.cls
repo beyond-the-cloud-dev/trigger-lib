@@ -1,16 +1,16 @@
 public with sharing class ContactTriggerOrchestrator implements TriggerOrchestrator.BeforeInsert, TriggerOrchestrator.AfterInsert, TriggerOrchestrator.AfterUpdate {
-    public List<TriggerHandler.BeforeInsert> beforeInsertHandlers() {
-        return new List<TriggerHandler.BeforeInsert>{
+    public List<BeforeInsert.Handler> beforeInsertHandlers() {
+        return new List<BeforeInsert.Handler>{
             new ContactTriggerHandler()
         };
     }
 
-    public List<TriggerHandler.AfterInsert> afterInsertHandlers() {
-        return new List<TriggerHandler.AfterInsert>();
+    public List<AfterInsert.Handler> afterInsertHandlers() {
+        return new List<AfterInsert.Handler>();
     }
 
-    public List<TriggerHandler.AfterUpdate> afterUpdateHandlers() {
-        return new List<TriggerHandler.AfterUpdate>{
+    public List<AfterUpdate.Handler> afterUpdateHandlers() {
+        return new List<AfterUpdate.Handler>{
             new ContactEnrichmentHandler()
         };
     }

@@ -1,73 +1,9 @@
 public with sharing class TriggerHandler {
     public static FieldSelection FieldSelection {
         get {
-            return new SelectionClass(); //TODO rename it
+            return new FieldSelector();
         }
     }
-
-    // Before Context
-
-    public interface BeforeInsert {  // Maybe BeforeInsertPopulator?
-        Boolean qualifiesForBeforeInsertWhen(TriggerHandler.Record record);
-        void onBeforeInsert(TriggerHandler.Record record); 
-    }
-        
-    public interface BeforeUpdate { // Maybe BeforeUpdatePopulator?
-        Boolean qualifiesForBeforeUpdateWhen(TriggerHandler.Record record);
-        void onBeforeUpdate(TriggerHandler.Record record);
-    }
-
-    public interface BeforeDelete {
-        Boolean qualifiesForBeforeDeleteWhen(TriggerHandler.Record record);
-        void onBeforeDelete(TriggerHandler.Record record);
-    }
-
-    public interface BeforeUndelete {
-        Boolean qualifiesForBeforeUndeleteWhen(TriggerHandler.Record record);
-        void onBeforeUndelete(TriggerHandler.Record record);
-    }
-
-    // After Context
-
-    public interface AfterInsert {
-        Boolean qualifiesForAfterInsertWhen(TriggerHandler.Record record);
-        void onAfterInsert(TriggerHandler.Record record);
-        // void finalizeAfterInsert(); TODO? 
-    }
-
-    public interface AfterUpdate {
-        Boolean qualifiesForAfterUpdateWhen(TriggerHandler.Record record);
-        void onAfterUpdate(TriggerHandler.Record record);
-        // void finalizeAfterInsert(); TODO?
-    }
-
-    public interface AfterDelete {
-        Boolean qualifiesForAfterDeleteWhen(TriggerHandler.Record record);
-        void onAfterDelete(TriggerHandler.Record record);
-        // void finalizeAfterInsert(); TODO?
-    }
-
-    public interface AfterUndelete {
-        Boolean qualifiesForAfterUndeleteWhen(TriggerHandler.Record record);
-        void onAfterUndelete(TriggerHandler.Record record);
-        // void finalizeAfterInsert(); TODO?
-    }
-
-    // Additional
-
-    public interface Bypassable {
-        Boolean bypassWhen();
-    }
-
-    public interface NewRecordEnrichment {
-        Map<SObjectField, FieldSelection> newFieldsToEnrich();
-    }
-
-    public interface OldRecordEnrichment {
-        Map<SObjectField, FieldSelection> oldFieldsToEnrich();
-    }
-
-    public interface ContinueOnError {}
 
     // send email interface
     // validator interface?
@@ -186,7 +122,7 @@ public with sharing class TriggerHandler {
 
     private static RecordTypesInfo RecordTypesInfo = new RecordTypesInfo();
 
-    public class SelectionClass implements FieldSelection {
+    public class FieldSelector implements FieldSelection {
         private List<String> fields = new List<String>();
 
         public FieldSelection with(SObjectField field) {

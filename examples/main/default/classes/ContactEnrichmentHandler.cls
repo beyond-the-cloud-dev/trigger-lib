@@ -1,7 +1,7 @@
-public with sharing class ContactEnrichmentHandler implements TriggerHandler.NewRecordEnrichment, TriggerHandler.OldRecordEnrichment, TriggerHandler.AfterUpdate {
+public with sharing class ContactEnrichmentHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment, AfterUpdate.OldRecordEnrichment {
     public static List<String> log = new List<String>();
 
-    public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrich() {
+    public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterUpdate() {
         return new Map<SObjectField, TriggerHandler.FieldSelection>{
             Contact.AccountId => TriggerHandler.FieldSelection.with(Account.Name, Account.Industry),
             Contact.OwnerId => TriggerHandler.FieldSelection.with(User.Name, User.Email)
@@ -9,14 +9,14 @@ public with sharing class ContactEnrichmentHandler implements TriggerHandler.New
     }
 
     // The handler reads getOldRelated('Account'), so the old side declares that lookup too.
-    public Map<SObjectField, TriggerHandler.FieldSelection> oldFieldsToEnrich() {
+    public Map<SObjectField, TriggerHandler.FieldSelection> oldFieldsToEnrichOnAfterUpdate() {
         return new Map<SObjectField, TriggerHandler.FieldSelection>{
             Contact.AccountId => TriggerHandler.FieldSelection.with(Account.Name, Account.Industry)
         };
     }
 
     public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.Record record) {
-        log.add('qualifiesWhen | Account related = ' + record.getNewRelated('Account'));
+        log.add('qualifiesForAfterUpdateWhen | Account related = ' + record.getNewRelated('Account'));
 
         return true;
     }

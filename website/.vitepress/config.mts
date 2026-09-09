@@ -1,13 +1,55 @@
 import { defineConfig } from 'vitepress';
+import llmstxt from 'vitepress-plugin-llms';
 
 // https://vitepress.dev/reference/site-config
+
+const siteUrl = 'https://trigger.beyondthecloud.dev';
+const siteTitle = 'Trigger Lib';
+const siteDescription =
+  'Apex trigger framework for Salesforce with record filtering, automatic parent enrichment, bypasses, and recursion control';
+
 export default defineConfig({
+  lang: 'en-US',
+  title: siteTitle,
+  description: siteDescription,
   cleanUrls: true,
-  title: 'Trigger Lib',
-  description:
-    'Apex trigger framework for Salesforce with record filtering, automatic parent enrichment, bypasses, and recursion control',
   head: [
-    ['link', { rel: 'icon', href: '/favicon.ico' }]
+    ['link', { rel: 'icon', href: '/favicon.ico' }],
+    ['meta', { name: 'author', content: 'Beyond The Cloud' }],
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { property: 'og:site_name', content: siteTitle }],
+    ['meta', { property: 'og:image', content: `${siteUrl}/logo.png` }],
+    ['meta', { name: 'twitter:card', content: 'summary' }],
+    [
+      'script',
+      { type: 'application/ld+json' },
+      JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: siteTitle,
+        description: siteDescription,
+        url: siteUrl,
+        applicationCategory: 'DeveloperApplication',
+        operatingSystem: 'Salesforce',
+        license: 'https://opensource.org/licenses/MIT',
+        codeRepository: 'https://github.com/beyond-the-cloud-dev/trigger-lib',
+        isPartOf: {
+          '@type': 'SoftwareApplication',
+          name: 'Apex Fluently',
+          url: 'https://apexfluently.beyondthecloud.dev'
+        },
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+        author: {
+          '@type': 'Organization',
+          name: 'Beyond The Cloud',
+          url: 'https://beyondthecloud.dev',
+          sameAs: [
+            'https://github.com/beyond-the-cloud-dev',
+            'https://www.linkedin.com/company/beyondtheclouddev'
+          ]
+        }
+      })
+    ]
     // TODO: Configure Google Tag Manager
     // [
     //   'script',
@@ -22,57 +64,64 @@ export default defineConfig({
     //   gtag('config', 'YOUR-GTM-ID');`
     // ]
   ],
-  base: '/',
-  outDir: '../dist/docs',
   sitemap: {
-    hostname: 'https://trigger.beyondthecloud.dev/'
+    hostname: siteUrl
+  },
+  vite: {
+    plugins: [llmstxt({ domain: siteUrl })]
+  },
+  transformPageData(pageData) {
+    const canonicalUrl = `${siteUrl}/${pageData.relativePath}`
+      .replace(/index\.md$/, '')
+      .replace(/\.md$/, '')
+      .replace(/\/$/, '');
+    pageData.frontmatter.head ??= [];
+    pageData.frontmatter.head.push(
+      ['link', { rel: 'canonical', href: canonicalUrl || siteUrl }],
+      ['meta', { property: 'og:url', content: canonicalUrl || siteUrl }]
+    );
+    const pageTitle = pageData.frontmatter.title || pageData.title;
+    pageData.frontmatter.head.push(
+      [
+        'meta',
+        {
+          property: 'og:title',
+          content:
+            pageTitle && pageTitle !== siteTitle
+              ? `${pageTitle} | ${siteTitle}`
+              : siteTitle
+        }
+      ],
+      [
+        'meta',
+        {
+          property: 'og:description',
+          content:
+            pageData.frontmatter.description ||
+            pageData.description ||
+            siteDescription
+        }
+      ]
+    );
   },
   themeConfig: {
+    logo: '/logo.png',
+    search: {
+      provider: 'local'
+    },
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Documentation', link: '/introduction' }
+      { text: 'Docs', link: '/introduction' }
     ],
 
     sidebar: [
       {
-        text: 'Getting Started',
-        items: [
-          { text: 'Introduction', link: '/introduction' },
-          { text: 'Quick Start', link: '/guide/getting-started' }
-        ]
-      },
-      {
-        text: 'Guide',
+        text: 'Introduction',
         collapsed: false,
-        items: [
-          { text: 'Development', link: '/guide/development' },
-          { text: 'Testing', link: '/guide/testing' },
-          { text: 'Deployment', link: '/guide/deployment' }
-        ]
-      },
-      {
-        text: 'API Reference',
-        collapsed: true,
-        items: [
-          { text: 'LWC Components', link: '/api/lwc' },
-          { text: 'Apex Classes', link: '/api/apex' }
-        ]
-      },
-      {
-        text: 'Examples',
-        collapsed: true,
-        items: [
-          { text: 'LWC Examples', link: '/examples/lwc-examples' },
-          { text: 'Apex Examples', link: '/examples/apex-examples' },
-          { text: 'Best Practices', link: '/examples/best-practices' }
-        ]
+        items: [{ text: 'Introduction', link: '/introduction' }]
       }
     ],
-    footer: {
-      message: 'Released under the MIT License.',
-      copyright: 'Copyright © 2025-present Beyond The Cloud Sp. z o.o.'
-    },
     socialLinks: [
       {
         icon: 'github',

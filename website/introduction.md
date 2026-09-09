@@ -1,97 +1,24 @@
+---
+outline: deep
+---
+
 # Introduction
 
-## What is Salesforce Template?
+Apex trigger framework for Salesforce with record filtering, automatic parent enrichment, bypasses, and recursion control.
 
-The Salesforce Template is a production-ready starting point for Salesforce development projects. Created and maintained by Beyond The Cloud, this template provides a complete development environment with modern tooling, automated testing, and continuous integration already configured.
+Trigger Lib is part of [Apex Fluently](https://apexfluently.beyondthecloud.dev/), a suite of production-ready Salesforce libraries by [Beyond the Cloud](https://beyondthecloud.dev).
 
-## Who is this for?
+## Features
 
-This template is ideal for:
+- **Orchestrator & Handlers** - One orchestrator per SObject, one handler per concern, wired in Apex
+- **Record Filtering** - Handlers run only against records that qualify, so logic never guards itself
+- **Parent Enrichment** - Related data is pulled up front, so handlers make no SOQL queries of their own
+- **Bypasses** - Disable an individual handler or a whole orchestrator when you need to
+- **Recursion Control** - Depth limiting built in, defaulting to 3
+- **No Required Metadata** - Works with zero custom metadata records; metadata only overrides defaults
 
-- **Development Teams** starting new Salesforce projects
-- **DevOps Engineers** setting up CI/CD pipelines for Salesforce
-- **Salesforce Architects** establishing best practices and project structure
-- **Solo Developers** looking for a professional project setup
+## Deploy to Salesforce
 
-## What's Included?
-
-### Salesforce DX Structure
-
-The template follows Salesforce DX best practices with:
-
-- Package-based development structure
-- Scratch org configuration
-- Namespace support (btcdev)
-- Source format metadata
-
-### CI/CD Pipeline
-
-GitHub Actions workflows for:
-
-- Automated testing on pull requests
-- Scratch org validation
-- Code coverage reporting with CodeCov
-- Continuous deployment capabilities
-
-### Testing Framework
-
-Complete LWC Jest setup including:
-
-- Unit test configuration
-- Coverage reporting
-- Watch mode for development
-- Debug capabilities
-
-### Code Quality Tools
-
-Pre-configured tooling:
-
-- **ESLint**: Linting for LWC and Aura components
-- **Prettier**: Code formatting for all file types
-- **Husky**: Git hooks for pre-commit checks
-- **lint-staged**: Run checks only on staged files
-
-### Documentation
-
-- VitePress-based documentation site
-- Comprehensive guides and examples
-- API reference templates
-- Best practices documentation
-
-## Key Features
-
-### Production Ready
-
-Everything is configured and ready to use. No need to set up tooling, testing, or CI/CD from scratch.
-
-### Modern Development Experience
-
-Leverage the latest tools and best practices in the Salesforce ecosystem.
-
-### Automated Quality Checks
-
-Pre-commit hooks ensure code quality before it reaches your repository.
-
-### Flexible and Customizable
-
-While opinionated, the template is designed to be easily customized for your specific needs.
-
-## Getting Started
-
-Ready to start building? Head over to the [Quick Start Guide](/guide/getting-started) to set up your development environment.
-
-## Philosophy
-
-This template embodies Beyond The Cloud's philosophy of:
-
-1. **Quality First**: Automated testing and code quality checks
-2. **Developer Experience**: Modern tooling for efficient development
-3. **Best Practices**: Following Salesforce and community standards
-4. **Documentation**: Comprehensive guides and examples
-5. **Automation**: CI/CD pipelines for reliable deployments
-
-## License
-
-This template is open-source and available under the MIT License.
-
-**Copyright © 2025 Beyond The Cloud Sp. z o.o.**
+<a href="https://githubsfdeploy.herokuapp.com?owner=beyond-the-cloud-dev&repo=trigger-lib&ref=main">
+  <img alt="Deploy to Salesforce" src="https://raw.githubusercontent.com/afawcett/githubsfdeploy/master/deploy.png">
+</a>

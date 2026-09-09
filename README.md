@@ -1,8 +1,8 @@
 <div align="center">
   <a href="https://trigger.beyondthecloud.dev/">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="./website/public/logo-round.png">
-      <img alt="Trigger Lib logo" src="./website/public/logo-round.png" height="98">
+      <source media="(prefers-color-scheme: dark)" srcset="./website/public/logo.png">
+      <img alt="Trigger Lib logo" src="./website/public/logo.png" height="98">
     </picture>
   </a>
   <h1>Trigger Lib</h1>

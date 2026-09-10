@@ -44,6 +44,7 @@ public with sharing class TriggerOrchestrator {
 
     private static List<Invocation> invocationStack = new List<Invocation>();
     private static Map<String, Integer> recursionDepthByHandlerRecord = new Map<String, Integer>();
+    private static Map<String, MetadataSettings> metadataSettingsByObjectName;
     private static Boolean isLoggerResolved = false;
 
     @TestVisible
@@ -69,6 +70,12 @@ public with sharing class TriggerOrchestrator {
             Invocation invocation = new Invocation();
 
             TriggerOrchestrator.invocationStack.add(invocation);
+
+            MetadataSettings metadataSettings = TriggerOrchestrator.resolveMetadataSettings((Trigger.new ?? Trigger.old)?.getSObjectType());
+
+            if (metadataSettings?.isBypassed == true) {
+                return;
+            }
 
             List<TriggerHandlerAdapter> handlerAdapters = new List<TriggerHandlerAdapter>();
             List<TriggerHandler.TriggerRecord> triggerRecords = new List<TriggerHandler.TriggerRecord>();
@@ -171,6 +178,32 @@ public with sharing class TriggerOrchestrator {
         return instance instanceof Logger ? (Logger) instance : null;
     }
 
+    private static MetadataSettings resolveMetadataSettings(SObjectType sObjectType) {
+        if (TriggerOrchestrator.metadataSettingsByObjectName == null) {
+            TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, MetadataSettings>();
+
+            for (TriggerObject__mdt triggerObject : [
+                SELECT ObjectAPIName__c, Bypass__c, (SELECT ApexClassName__c, Bypass__c FROM TriggerHandlers__r)
+                FROM TriggerObject__mdt
+                WITH SYSTEM_MODE
+            ]) {
+                MetadataSettings metadataSettings = new MetadataSettings();
+
+                metadataSettings.isBypassed = triggerObject.Bypass__c == true;
+
+                for (TriggerHandler__mdt triggerHandler : triggerObject.TriggerHandlers__r ?? new List<TriggerHandler__mdt>()) {
+                    if (triggerHandler.Bypass__c == true) {
+                        metadataSettings.bypassedHandlerNames.add(triggerHandler.ApexClassName__c.trim().toLowerCase());
+                    }
+                }
+
+                TriggerOrchestrator.metadataSettingsByObjectName.put(triggerObject.ObjectAPIName__c.trim().toLowerCase(), metadataSettings);
+            }
+        }
+
+        return TriggerOrchestrator.metadataSettingsByObjectName?.get(String.valueOf(sObjectType).toLowerCase());
+    }
+
     private static void logError(Exception e, Object handler) {
         if (TriggerOrchestrator.logger == null) {
             return;
@@ -185,6 +218,11 @@ public with sharing class TriggerOrchestrator {
         error.recordIds = (Trigger.newMap ?? Trigger.oldMap)?.keySet();
 
         TriggerOrchestrator.logger.log(error);
+    }
+
+    private class MetadataSettings {
+        private Boolean isBypassed = false;
+        private Set<String> bypassedHandlerNames = new Set<String>();
     }
 
     private class Invocation {
@@ -253,8 +291,16 @@ public with sharing class TriggerOrchestrator {
         }
 
         private void gatherActiveHandlers() {
+            MetadataSettings metadataSettings = TriggerOrchestrator.resolveMetadataSettings((Trigger.new ?? Trigger.old)?.getSObjectType());
+
             for (TriggerHandlerAdapter adapter : this.candidateAdapters) {
                 this.currentHandler = adapter.getHandler();
+
+                String handlerName = String.valueOf(adapter.getHandler()).substringBefore(':').toLowerCase();
+
+                if (metadataSettings?.bypassedHandlerNames.contains(handlerName) == true) {
+                    continue;
+                }
 
                 if (!adapter.isBypassed()) {
                     this.activeHandlers.add(adapter);
@@ -833,15 +879,12 @@ public with sharing class TriggerOrchestrator {
                 String relationshipName = parentField.getDescribe().getRelationshipName();
 
                 for (TriggerHandler.TriggerRecord record : this.recordsToEnrich) {
-                    SObject newRecord = record.getNewSObject();
-                    SObject oldRecord = record.getOldSObject();
-
-                    if (enrichNewSide && newRecord != null && newRecord.isSet(parentField)) {
-                        record.enrichNew(relationshipName, relatedRecordById.get((Id) newRecord.get(parentField)));
+                    if (enrichNewSide && record.getNewSObject()?.isSet(parentField) == true) {
+                        record.enrichNew(relationshipName, relatedRecordById.get((Id) record.getNewSObject().get(parentField)));
                     }
 
-                    if (enrichOldSide && oldRecord != null && oldRecord.isSet(parentField)) {
-                        record.enrichOld(relationshipName, relatedRecordById.get((Id) oldRecord.get(parentField)));
+                    if (enrichOldSide && record.getOldSObject()?.isSet(parentField) == true) {
+                        record.enrichOld(relationshipName, relatedRecordById.get((Id) record.getOldSObject().get(parentField)));
                     }
                 }
             }
@@ -851,15 +894,12 @@ public with sharing class TriggerOrchestrator {
             Set<Id> parentIds = new Set<Id>();
 
             for (TriggerHandler.TriggerRecord record : this.recordsToEnrich) {
-                SObject newRecord = record.getNewSObject();
-                SObject oldRecord = record.getOldSObject();
-
-                if (fromNewSide && newRecord != null && newRecord.isSet(parentField)) {
-                    parentIds.add((Id) newRecord.get(parentField));
+                if (fromNewSide && record.getNewSObject()?.isSet(parentField) == true) {
+                    parentIds.add((Id) record.getNewSObject().get(parentField));
                 }
 
-                if (fromOldSide && oldRecord != null && oldRecord.isSet(parentField)) {
-                    parentIds.add((Id) oldRecord.get(parentField));
+                if (fromOldSide && record.getOldSObject()?.isSet(parentField) == true) {
+                    parentIds.add((Id) record.getOldSObject().get(parentField));
                 }
             }
 

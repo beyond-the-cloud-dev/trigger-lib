@@ -246,7 +246,7 @@ public with sharing class TriggerHandler {
         }
 
         public Boolean doesNotEqual(SObjectField field, Object value) {
-            return this.getNewFieldValue(field) != value;
+            return !this.equals(field, value);
         }
 
         public Boolean contains(SObjectField field, String value) {
@@ -270,7 +270,7 @@ public with sharing class TriggerHandler {
         }
 
         public Boolean isNotNull(SObjectField field) {
-            return this.getNewFieldValue(field) != null;
+            return !this.isNull(field);
         }
 
         public Boolean isEmpty(SObjectField field) {
@@ -542,10 +542,7 @@ public with sharing class TriggerHandler {
         }
 
         public Schema.RecordTypeInfo byDeveloperName(SObjectType objectType, String recordTypeDeveloperName) {
-            if (
-                !OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.containsKey(objectType) ||
-                !OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.get(objectType).containsKey(recordTypeDeveloperName)
-            ) {
+            if (OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.get(objectType)?.containsKey(recordTypeDeveloperName) != true) {
                 load(objectType);
             }
 

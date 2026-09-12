@@ -44,6 +44,12 @@ Behaviour the library is expected to guarantee. Every row is a scenario that sho
 | **Recursion** | | |
 | Default recursion depth | Update handler re-enters without a `RecursionGuard` | Handler stops after three passes per record |
 | Custom recursion depth | Update handler implements `RecursionGuard` returning two | Handler stops after two passes per record |
+| Orchestrator recursion depth | Orchestrator implements `TriggerOrchestrator.RecursionGuard` returning five, handler declares none | Every handler of that orchestrator stops after five passes per record instead of three |
+| Handler depth beats orchestrator depth | Orchestrator returns five, one handler implements the context `RecursionGuard` returning two | That handler stops after two passes, every other handler of the orchestrator stops after five |
+| No guard anywhere | Neither orchestrator nor handler implements a `RecursionGuard` | The framework default of three passes per record applies |
+| Counter scope | Two records updated in one DML, handler guarded at two passes | Each record carries its own budget. The handler runs twice for each record, four times in total. The counter is keyed by handler class, operation and record id, so one record exhausting its budget never affects another |
+| Counter is per handler | Two handlers in the same context, one re-enters | Each handler has its own independent budget for the same record. One handler exhausting its passes does not consume another handler's |
+| Limit reached | A record reaches the handler more times than its guard allows | The handler is skipped silently for that record. No exception is thrown, nothing reaches the `Logger`, and the DML succeeds |
 | Chunking is not recursion | One DML of 201 records | Depth counter is unaffected, all records processed |
 | **Errors and logging** | | |
 | ContinueOnError swallows handler failures | Handler implements `ContinueOnError` and its own logic throws | DML succeeds, remaining handlers still run |

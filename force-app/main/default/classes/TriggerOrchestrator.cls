@@ -27,6 +27,10 @@ public with sharing class TriggerOrchestrator {
         List<AfterUndelete.Handler> afterUndeleteHandlers();
     }
 
+    public interface RecursionGuard {
+        Integer maxRecursionDepth();
+    }
+
     public interface Logger {
         void log(TriggerOrchestrator.Error error);
         void finalize();
@@ -119,17 +123,23 @@ public with sharing class TriggerOrchestrator {
 
             this.registerRecords();
             this.adaptHandlers();
+            this.registerOrchestratorOnHandlerAdapters();
 
             this.filterBypassedHandlers();
             this.enrichParentRelatioships();
-            this.qualifyRecordsForHandlers();
-            
+
             this.runHandlers();
         }
 
         private void registerRecords() {
             for (Integer i = 0; i < (Trigger.new ?? Trigger.old).size(); i++) {
                 this.triggerRecords.add(new TriggerHandler.TriggerRecord(Trigger.new?.get(i), Trigger.old?.get(i)));
+            }
+        }
+
+        private void registerOrchestratorOnHandlerAdapters() {
+            for (TriggerHandlerAdapter adapter : this.handlerAdapters) {
+                adapter.registerOrchestrator(this.orchestrator);
             }
         }
 
@@ -145,32 +155,26 @@ public with sharing class TriggerOrchestrator {
             new ParentRelationshipEnrichment(this.activeHandlers, this.triggerRecords).enrich();
         }
 
-        private void qualifyRecordsForHandlers() {
-            for (TriggerHandlerAdapter adapter : this.activeHandlers) {
-                for (TriggerHandler.TriggerRecord record : this.triggerRecords) {
-                    if (adapter.isRecursionDepthExceeded(record)) {
-                        continue;
-                    }
-
-                    if (adapter.isQualified(record)) {
-                        adapter.registerRecord(record);
-                    }
-                }
-            }
-        }
-
         private void runHandlers() {
             for (TriggerHandlerAdapter adapter : this.activeHandlers) {
-                if (adapter.getQualifiedRecords().isEmpty()) {
-                    continue;
-                }
-
                 try {
-                    adapter.execute();
+                    for (TriggerHandler.TriggerRecord record : this.triggerRecords) {
+                        if (adapter.isRecursionDepthExceeded(record)) {
+                            continue;
+                        }
+
+                        if (adapter.isQualified(record)) {
+                            adapter.registerRecord(record);
+                        }
+                    }
+
+                    if (!adapter.getQualifiedRecords().isEmpty()) {
+                        adapter.execute();
+                    }
                 } catch (Exception e) {
                     TriggerOrchestrator.logError(e, adapter);
 
-                    if (e instanceof TriggerOrchestratorException || !adapter.continuesOnError()) {
+                    if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !adapter.continuesOnError()) {
                         throw e;
                     }
                 }
@@ -389,6 +393,7 @@ public with sharing class TriggerOrchestrator {
 
     private abstract class TriggerHandlerAdapter {
         protected Object handler;
+        protected Object orchestrator;
 
         private Map<String, TriggerHandler.TriggerRecord> qualifiedRecordByIdentifier;
 
@@ -399,6 +404,10 @@ public with sharing class TriggerOrchestrator {
 
         public Object getHandler() {
             return this.handler;
+        }
+
+        public void registerOrchestrator(Object orchestrator) {
+            this.orchestrator = orchestrator;
         }
 
         public virtual void registerRecord(TriggerHandler.TriggerRecord record) {
@@ -682,6 +691,10 @@ public with sharing class TriggerOrchestrator {
         public override Boolean isRecursionDepthExceeded(TriggerHandler.TriggerRecord record) {
             Integer maxRecursionDepth = 3;
 
+            if (this.orchestrator instanceof TriggerOrchestrator.RecursionGuard) {
+                maxRecursionDepth = ((TriggerOrchestrator.RecursionGuard) this.orchestrator).maxRecursionDepth();
+            }
+
             if (this.handler instanceof BeforeUpdate.RecursionGuard) {
                 maxRecursionDepth = ((BeforeUpdate.RecursionGuard) this.handler).maxRecursionDepthOnBeforeUpdate();
             }
@@ -824,6 +837,10 @@ public with sharing class TriggerOrchestrator {
 
         public override Boolean isRecursionDepthExceeded(TriggerHandler.TriggerRecord record) {
             Integer maxRecursionDepth = 3;
+
+            if (this.orchestrator instanceof TriggerOrchestrator.RecursionGuard) {
+                maxRecursionDepth = ((TriggerOrchestrator.RecursionGuard) this.orchestrator).maxRecursionDepth();
+            }
 
             if (this.handler instanceof AfterUpdate.RecursionGuard) {
                 maxRecursionDepth = ((AfterUpdate.RecursionGuard) this.handler).maxRecursionDepthOnAfterUpdate();

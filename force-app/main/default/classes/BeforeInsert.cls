@@ -1,8 +1,17 @@
 public class BeforeInsert {
-    public interface Handler {
-        Boolean qualifiesForBeforeInsertWhen(TriggerHandler.Record record);
-        void onBeforeInsert(TriggerHandler.Record record);
+    // main interfaces
+
+    public interface Populator extends Handler {
+        Boolean populateOnBeforeInsertWhen(TriggerHandler.Record record);
+        void populateOnBeforeInsert(TriggerHandler.Record record);
     }
+
+    public interface Validator extends Handler {
+        Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.Record record);
+        String beforeInsertValidationMessage(TriggerHandler.Record record);
+    }
+
+    // additional interfaces
 
     public interface NewRecordEnrichment {
         Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnBeforeInsert();
@@ -16,6 +25,9 @@ public class BeforeInsert {
         void finalizeBeforeInsert();
     }
 
-    public interface AllowDmls {}
     public interface ContinueOnError {}
+
+    // internal
+
+    public interface Handler {}
 }

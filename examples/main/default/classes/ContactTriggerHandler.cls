@@ -1,4 +1,4 @@
-public with sharing class ContactTriggerHandler implements BeforeInsert.Handler, BeforeInsert.NewRecordEnrichment {
+public with sharing class ContactTriggerHandler implements BeforeInsert.Populator, BeforeInsert.NewRecordEnrichment {
     public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnBeforeInsert() {
         return new Map<SObjectField, TriggerHandler.FieldSelection>{
             Contact.AccountId => TriggerHandler.FieldSelection
@@ -9,11 +9,11 @@ public with sharing class ContactTriggerHandler implements BeforeInsert.Handler,
         };
     }
 
-    public Boolean qualifiesForBeforeInsertWhen(TriggerHandler.Record record) {
+    public Boolean populateOnBeforeInsertWhen(TriggerHandler.Record record) {
         return record.isRecordTypeEqual('Business_Contact');
     }
 
-    public void onBeforeInsert(TriggerHandler.Record record) {
+    public void populateOnBeforeInsert(TriggerHandler.Record record) {
 
         // record.Description = 'This contact was created by a trigger handler.';
         

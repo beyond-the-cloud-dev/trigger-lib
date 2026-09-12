@@ -538,21 +538,21 @@ public with sharing class TriggerHandler {
         private final Map<SObjectType, Map<String, Schema.RecordTypeInfo>> OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME = new Map<SObjectType, Map<String, Schema.RecordTypeInfo>>();
 
         public Id getId(SObjectType objectType, String recordTypeDeveloperName) {
-            return byDeveloperName(objectType, recordTypeDeveloperName)?.getRecordTypeId();
+            return this.byDeveloperName(objectType, recordTypeDeveloperName)?.getRecordTypeId();
         }
 
         public Schema.RecordTypeInfo byDeveloperName(SObjectType objectType, String recordTypeDeveloperName) {
-            if (OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.get(objectType)?.containsKey(recordTypeDeveloperName) != true) {
-                load(objectType);
+            if (this.OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.get(objectType)?.containsKey(recordTypeDeveloperName) != true) {
+                this.load(objectType);
             }
 
-            return OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.get(objectType).get(recordTypeDeveloperName);
+            return this.OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.get(objectType).get(recordTypeDeveloperName);
         }
 
         private void load(SObjectType objectType) {
             Schema.DescribeSObjectResult describe = objectType.getDescribe(SObjectDescribeOptions.DEFERRED);
 
-            OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.put(objectType, describe.getRecordTypeInfosByDeveloperName());
+            this.OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.put(objectType, describe.getRecordTypeInfosByDeveloperName());
         }
     }
 }

@@ -28,15 +28,15 @@ public with sharing class TriggerOrchestrator {
     }
 
     public interface Logger {
-        void log(Error error);
+        void log(TriggerOrchestrator.Error error);
         void finalize();
     }
 
     public interface Error {
-        Exception getException();
         String getHandlerName();
-        System.TriggerOperation getOperation();
         SObjectType getSObjectType();
+        System.Exception getException();
+        System.TriggerOperation getOperation();
         Set<Id> getRecordIds();
     }
 
@@ -78,67 +78,38 @@ public with sharing class TriggerOrchestrator {
             }
 
             List<TriggerHandlerAdapter> handlerAdapters = new List<TriggerHandlerAdapter>();
-            List<TriggerHandler.TriggerRecord> triggerRecords = new List<TriggerHandler.TriggerRecord>();
 
             if (Trigger.operationType == System.TriggerOperation.BEFORE_INSERT && orchestrator instanceof TriggerOrchestrator.BeforeInsert) {
                 for (BeforeInsert.Handler handler : ((TriggerOrchestrator.BeforeInsert) orchestrator).beforeInsertHandlers()) {
                     handlerAdapters.add(new BeforeInsertHandlerAdapter(handler));
                 }
-
-                for (SObject record : Trigger.new) {
-                    triggerRecords.add(new TriggerHandler.TriggerRecord(record));
-                }
             } else if (Trigger.operationType == System.TriggerOperation.AFTER_INSERT && orchestrator instanceof TriggerOrchestrator.AfterInsert) {
                 for (AfterInsert.Handler handler : ((TriggerOrchestrator.AfterInsert) orchestrator).afterInsertHandlers()) {
                     handlerAdapters.add(new AfterInsertHandlerAdapter(handler));
-                }
-
-                for (SObject record : Trigger.new) {
-                    triggerRecords.add(new TriggerHandler.TriggerRecord(record));
                 }
             } else if (Trigger.operationType == System.TriggerOperation.BEFORE_UPDATE && orchestrator instanceof TriggerOrchestrator.BeforeUpdate) {
                 for (BeforeUpdate.Handler handler : ((TriggerOrchestrator.BeforeUpdate) orchestrator).beforeUpdateHandlers()) {
                     handlerAdapters.add(new BeforeUpdateHandlerAdapter(handler));
                 }
-
-                for (Integer i = 0; i < Trigger.new.size(); i++) {
-                    triggerRecords.add(new TriggerHandler.TriggerRecord(Trigger.new[i], Trigger.old[i]));
-                }
             } else if (Trigger.operationType == System.TriggerOperation.AFTER_UPDATE && orchestrator instanceof TriggerOrchestrator.AfterUpdate) {
                 for (AfterUpdate.Handler handler : ((TriggerOrchestrator.AfterUpdate) orchestrator).afterUpdateHandlers()) {
                     handlerAdapters.add(new AfterUpdateHandlerAdapter(handler));
-                }
-
-                for (Integer i = 0; i < Trigger.new.size(); i++) {
-                    triggerRecords.add(new TriggerHandler.TriggerRecord(Trigger.new[i], Trigger.old[i]));
                 }
             } else if (Trigger.operationType == System.TriggerOperation.BEFORE_DELETE && orchestrator instanceof TriggerOrchestrator.BeforeDelete) {
                 for (BeforeDelete.Handler handler : ((TriggerOrchestrator.BeforeDelete) orchestrator).beforeDeleteHandlers()) {
                     handlerAdapters.add(new BeforeDeleteHandlerAdapter(handler));
                 }
-
-                for (SObject record : Trigger.old) {
-                    triggerRecords.add(new TriggerHandler.TriggerRecord(null, record));
-                }
             } else if (Trigger.operationType == System.TriggerOperation.AFTER_DELETE && orchestrator instanceof TriggerOrchestrator.AfterDelete) {
                 for (AfterDelete.Handler handler : ((TriggerOrchestrator.AfterDelete) orchestrator).afterDeleteHandlers()) {
                     handlerAdapters.add(new AfterDeleteHandlerAdapter(handler));
-                }
-
-                for (SObject record : Trigger.old) {
-                    triggerRecords.add(new TriggerHandler.TriggerRecord(null, record));
                 }
             } else if (Trigger.operationType == System.TriggerOperation.AFTER_UNDELETE && orchestrator instanceof TriggerOrchestrator.AfterUndelete) {
                 for (AfterUndelete.Handler handler : ((TriggerOrchestrator.AfterUndelete) orchestrator).afterUndeleteHandlers()) {
                     handlerAdapters.add(new AfterUndeleteHandlerAdapter(handler));
                 }
-
-                for (SObject record : Trigger.new) {
-                    triggerRecords.add(new TriggerHandler.TriggerRecord(record));
-                }
             }
 
-            executor = new HandlerExecutor(handlerAdapters, triggerRecords);
+            executor = new HandlerExecutor(handlerAdapters, createTriggerRecords());
             executor.run();
         } catch (Exception e) {
             logError(e, executor?.getCurrentHandler());
@@ -151,6 +122,16 @@ public with sharing class TriggerOrchestrator {
                 TriggerOrchestrator.logger?.finalize();
             }
         }
+    }
+
+    private static List<TriggerHandler.TriggerRecord> createTriggerRecords() {
+        List<TriggerHandler.TriggerRecord> triggerRecords = new List<TriggerHandler.TriggerRecord>();
+
+        for (Integer i = 0; i < (Trigger.new ?? Trigger.old).size(); i++) {
+            triggerRecords.add(new TriggerHandler.TriggerRecord(Trigger.new?.get(i), Trigger.old?.get(i)));
+        }
+
+        return triggerRecords;
     }
 
     private static Logger resolveLogger() {
@@ -173,9 +154,7 @@ public with sharing class TriggerOrchestrator {
             return null;
         }
 
-        Object instance = Type.forName(implementors[0].ClassNamespacePrefix, implementors[0].ClassName)?.newInstance();
-
-        return instance instanceof Logger ? (Logger) instance : null;
+        return (Logger) Type.forName(implementors[0].ClassNamespacePrefix, implementors[0].ClassName)?.newInstance();
     }
 
     private static MetadataSettings resolveMetadataSettings(SObjectType sObjectType) {
@@ -240,10 +219,10 @@ public with sharing class TriggerOrchestrator {
     }
 
     private class TriggerError implements Error {
-        public Exception triggerException;
         public String handlerName;
-        public System.TriggerOperation operation;
         public SObjectType sObjectType;
+        public System.Exception triggerException;
+        public System.TriggerOperation operation;
         public Set<Id> recordIds;
 
         public Exception getException() {
@@ -396,13 +375,10 @@ public with sharing class TriggerOrchestrator {
         }
 
         public abstract Boolean isBypassed();
-
         public abstract Boolean continuesOnError();
-
         public abstract Boolean isQualified(TriggerHandler.TriggerRecord record);
 
         protected abstract void executeOn(TriggerHandler.TriggerRecord record);
-
         protected abstract void finalizeHandler();
     }
 
@@ -427,7 +403,10 @@ public with sharing class TriggerOrchestrator {
             this.finalizeHandler();
 
             if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
-                throw new TriggerOrchestratorException(String.valueOf(this.handler).substringBefore(':') + ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.');
+                throw new TriggerOrchestratorException(
+                    String.valueOf(this.handler).substringBefore(':') +
+                    ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
+                );
             }
         }
 
@@ -527,7 +506,10 @@ public with sharing class TriggerOrchestrator {
             this.finalizeHandler();
 
             if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
-                throw new TriggerOrchestratorException(String.valueOf(this.handler).substringBefore(':') + ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.');
+                throw new TriggerOrchestratorException(
+                    String.valueOf(this.handler).substringBefore(':') +
+                    ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
+                );
             }
         }
 

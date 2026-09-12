@@ -9,11 +9,11 @@ public with sharing class ContactTriggerHandler implements BeforeInsert.Populato
         };
     }
 
-    public Boolean populateOnBeforeInsertWhen(TriggerHandler.Record record) {
+    public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
         return record.isRecordTypeEqual('Business_Contact');
     }
 
-    public void populateOnBeforeInsert(TriggerHandler.Record record) {
+    public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
 
         // record.Description = 'This contact was created by a trigger handler.';
         

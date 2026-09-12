@@ -94,8 +94,6 @@ public with sharing class TriggerOrchestrator {
             TriggerOrchestrator.executionStack.add(executionStrategy);
 
             executionStrategy.execute(orchestrator);
-        } catch (Exception e) {
-            throw e;
         } finally {
             if (!TriggerOrchestrator.executionStack.isEmpty()) {
                 TriggerOrchestrator.executionStack.remove(TriggerOrchestrator.executionStack.size() - 1);
@@ -170,11 +168,11 @@ public with sharing class TriggerOrchestrator {
                 try {
                     adapter.execute();
                 } catch (Exception e) {
+                    TriggerOrchestrator.logError(e, adapter);
+
                     if (e instanceof TriggerOrchestratorException || !adapter.continuesOnError()) {
                         throw e;
                     }
-
-                    TriggerOrchestrator.logError(e, adapter);
                 }
             }
         }
@@ -183,12 +181,26 @@ public with sharing class TriggerOrchestrator {
     private class BeforeInsertExecutionStrategy extends ExecutionStrategy {
         public override void adaptHandlers() {
             for (BeforeInsert.Handler handler : ((TriggerOrchestrator.BeforeInsert) this.orchestrator).beforeInsertHandlers()) {
+                if (handler instanceof BeforeInsert.Populator && handler instanceof BeforeInsert.Validator) {
+                    throw new TriggerOrchestratorException(
+                        String.valueOf(handler).substringBefore(':') +
+                        ' implements both BeforeInsert.Populator and BeforeInsert.Validator. A class can implement only one main interface per context.'
+                    );
+                }
+
                 if (handler instanceof BeforeInsert.Populator) {
                     this.handlerAdapters.add(new BeforeInsertPopulatorHandlerAdapter((BeforeInsert.Populator) handler));
                 }
 
                 if (handler instanceof BeforeInsert.Validator) {
                     this.handlerAdapters.add(new BeforeInsertValidatorHandlerAdapter((BeforeInsert.Validator) handler));
+                }
+
+                if (!(handler instanceof BeforeInsert.Populator) && !(handler instanceof BeforeInsert.Validator)) {
+                    throw new TriggerOrchestratorException(
+                        String.valueOf(handler).substringBefore(':') +
+                        ' implements neither BeforeInsert.Populator nor BeforeInsert.Validator. A class must implement one main interface per context.'
+                    );
                 }
             }
         }
@@ -205,12 +217,26 @@ public with sharing class TriggerOrchestrator {
     private class BeforeUpdateExecutionStrategy extends ExecutionStrategy {
         public override void adaptHandlers() {
             for (BeforeUpdate.Handler handler : ((TriggerOrchestrator.BeforeUpdate) this.orchestrator).beforeUpdateHandlers()) {
+                if (handler instanceof BeforeUpdate.Populator && handler instanceof BeforeUpdate.Validator) {
+                    throw new TriggerOrchestratorException(
+                        String.valueOf(handler).substringBefore(':') +
+                        ' implements both BeforeUpdate.Populator and BeforeUpdate.Validator. A class can implement only one main interface per context.'
+                    );
+                }
+
                 if (handler instanceof BeforeUpdate.Populator) {
                     this.handlerAdapters.add(new BeforeUpdatePopulatorHandlerAdapter((BeforeUpdate.Populator) handler));
                 }
 
                 if (handler instanceof BeforeUpdate.Validator) {
                     this.handlerAdapters.add(new BeforeUpdateValidatorHandlerAdapter((BeforeUpdate.Validator) handler));
+                }
+
+                if (!(handler instanceof BeforeUpdate.Populator) && !(handler instanceof BeforeUpdate.Validator)) {
+                    throw new TriggerOrchestratorException(
+                        String.valueOf(handler).substringBefore(':') +
+                        ' implements neither BeforeUpdate.Populator nor BeforeUpdate.Validator. A class must implement one main interface per context.'
+                    );
                 }
             }
         }
@@ -290,7 +316,13 @@ public with sharing class TriggerOrchestrator {
 
                 for (TriggerHandler__mdt triggerHandler : triggerObject.TriggerHandlers__r ?? new List<TriggerHandler__mdt>()) {
                     if (triggerHandler.Bypass__c == true) {
-                        metadataSettings.bypassedHandlerNames.add(triggerHandler.ApexClassName__c.trim().toLowerCase());
+                        String bypassedHandlerName = triggerHandler.ApexClassName__c.trim().toLowerCase();
+
+                        metadataSettings.bypassedHandlerNames.add(bypassedHandlerName);
+
+                        if (bypassedHandlerName.contains('.')) {
+                            metadataSettings.bypassedHandlerNames.add(bypassedHandlerName.substringAfterLast('.'));
+                        }
                     }
                 }
 
@@ -421,17 +453,19 @@ public with sharing class TriggerOrchestrator {
             Integer dmlStatementsBefore = Limits.getDmlStatements();
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
-            for (TriggerHandler.TriggerRecord record : this.getQualifiedRecords()) {
-                this.executeOn(record);
-            }
+            try {
+                for (TriggerHandler.TriggerRecord record : this.getQualifiedRecords()) {
+                    this.executeOn(record);
+                }
 
-            this.finalizeHandler();
-
-            if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
-                throw new TriggerOrchestratorException(
-                    String.valueOf(this.handler).substringBefore(':') +
-                    ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
-                );
+                this.finalizeHandler();
+            } finally {
+                if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
+                    throw new TriggerOrchestratorException(
+                        String.valueOf(this.handler).substringBefore(':') +
+                        ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
+                    );
+                }
             }
         }
 
@@ -486,17 +520,19 @@ public with sharing class TriggerOrchestrator {
             Integer dmlStatementsBefore = Limits.getDmlStatements();
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
-            for (TriggerHandler.TriggerRecord record : this.getQualifiedRecords()) {
-                this.executeOn(record);
-            }
+            try {
+                for (TriggerHandler.TriggerRecord record : this.getQualifiedRecords()) {
+                    this.executeOn(record);
+                }
 
-            this.finalizeHandler();
-
-            if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
-                throw new TriggerOrchestratorException(
-                    String.valueOf(this.handler).substringBefore(':') +
-                    ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
-                );
+                this.finalizeHandler();
+            } finally {
+                if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
+                    throw new TriggerOrchestratorException(
+                        String.valueOf(this.handler).substringBefore(':') +
+                        ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
+                    );
+                }
             }
         }
 
@@ -595,17 +631,19 @@ public with sharing class TriggerOrchestrator {
             Integer dmlStatementsBefore = Limits.getDmlStatements();
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
-            for (TriggerHandler.TriggerRecord record : this.getQualifiedRecords()) {
-                this.executeOn(record);
-            }
+            try {
+                for (TriggerHandler.TriggerRecord record : this.getQualifiedRecords()) {
+                    this.executeOn(record);
+                }
 
-            this.finalizeHandler();
-
-            if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
-                throw new TriggerOrchestratorException(
-                    String.valueOf(this.handler).substringBefore(':') +
-                    ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
-                );
+                this.finalizeHandler();
+            } finally {
+                if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
+                    throw new TriggerOrchestratorException(
+                        String.valueOf(this.handler).substringBefore(':') +
+                        ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
+                    );
+                }
             }
         }
 
@@ -688,17 +726,19 @@ public with sharing class TriggerOrchestrator {
             Integer dmlStatementsBefore = Limits.getDmlStatements();
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
-            for (TriggerHandler.TriggerRecord record : this.getQualifiedRecords()) {
-                this.executeOn(record);
-            }
+            try {
+                for (TriggerHandler.TriggerRecord record : this.getQualifiedRecords()) {
+                    this.executeOn(record);
+                }
 
-            this.finalizeHandler();
-
-            if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
-                throw new TriggerOrchestratorException(
-                    String.valueOf(this.handler).substringBefore(':') +
-                    ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
-                );
+                this.finalizeHandler();
+            } finally {
+                if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
+                    throw new TriggerOrchestratorException(
+                        String.valueOf(this.handler).substringBefore(':') +
+                        ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
+                    );
+                }
             }
         }
 

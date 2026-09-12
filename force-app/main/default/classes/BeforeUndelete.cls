@@ -1,7 +1,7 @@
 public class BeforeUndelete {
     public interface Handler {
-        Boolean qualifiesForBeforeUndeleteWhen(TriggerHandler.Record record);
-        void onBeforeUndelete(TriggerHandler.Record record);
+        Boolean qualifiesForBeforeUndeleteWhen(TriggerHandler.UndeleteRecord record);
+        void onBeforeUndelete(TriggerHandler.UndeleteRecord record);
     }
 
     public interface NewRecordEnrichment {

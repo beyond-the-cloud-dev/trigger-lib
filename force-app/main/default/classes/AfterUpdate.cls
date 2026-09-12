@@ -1,7 +1,7 @@
 public class AfterUpdate {
     public interface Handler {
-        Boolean qualifiesForAfterUpdateWhen(TriggerHandler.Record record);
-        void onAfterUpdate(TriggerHandler.Record record);
+        Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record);
+        void onAfterUpdate(TriggerHandler.UpdateRecord record);
     }
 
     public interface NewRecordEnrichment {

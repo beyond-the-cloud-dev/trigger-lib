@@ -2,13 +2,13 @@ public class BeforeUpdate {
     // main interfaces - use one main interface per handler class
 
     public interface Populator extends Handler {
-        Boolean populateOnBeforeUpdateWhen(TriggerHandler.Record record);
-        void populateOnBeforeUpdate(TriggerHandler.Record record);
+        Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record);
+        void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record);
     }
 
     public interface Validator extends Handler {
-        Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.Record record);
-        String beforeUpdateValidationMessage(TriggerHandler.Record record);
+        Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record);
+        String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record);
     }
 
     // additional interfaces - use as needed

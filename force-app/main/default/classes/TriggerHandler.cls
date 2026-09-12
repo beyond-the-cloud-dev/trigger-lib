@@ -5,11 +5,10 @@ public with sharing class TriggerHandler {
         }
     }
 
-    public interface Record {
-        // Record Type
+    public interface InsertRecord {
         Boolean isRecordTypeEqual(String recordTypeDeveloperName);
         Boolean isRecordTypeNotEqual(String recordTypeDeveloperName);
-        
+
         Boolean equals(SObjectField field, Object value);
         Boolean doesNotEqual(SObjectField field, Object value);
 
@@ -27,30 +26,9 @@ public with sharing class TriggerHandler {
         Boolean isBlank(SObjectField field);
         Boolean isNotBlank(SObjectField field);
 
-        // Change Methods
-        Boolean isChanged(SObjectField field);
-
-        Boolean isAnyChanged(SObjectField field1, SObjectField field2);
-        Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3);
-        Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
-        Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
-        Boolean isAnyChanged(Iterable<SObjectField> fields);
-
-        Boolean areAllChanged(SObjectField field1, SObjectField field2);
-        Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3);
-        Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
-        Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
-        Boolean areAllChanged(Iterable<SObjectField> fields);
-
-        Boolean isChangedTo(SObjectField field, Object expectedValue);
-        Boolean isChangedFrom(SObjectField field, Object priorValue); 
-        Boolean isChangedFromTo(SObjectField field, Object fromValue, Object toValue);
-
-        // Checkboxes
         Boolean isTrue(SObjectField field);
         Boolean isFalse(SObjectField field);
 
-        // Numbers and dates
         Boolean greaterThan(SObjectField field, Integer value);
         Boolean greaterThan(SObjectField field, DateTime value);
         Boolean greaterThan(SObjectField field, Date value);
@@ -79,18 +57,212 @@ public with sharing class TriggerHandler {
         Boolean lessThanOrEqualTo(SObjectField field, Decimal value);
         Boolean lessThanOrEqualTo(SObjectField field, Long value);
 
-        // Additional
         Id getId();
-        
+
+        SObject getNewSObject();
+
+        SObject getNewRelated(String relationshipName);
+
+        void put(SObjectField field, Object value);
+    }
+
+    public interface UpdateRecord {
+        Boolean isRecordTypeEqual(String recordTypeDeveloperName);
+        Boolean isRecordTypeNotEqual(String recordTypeDeveloperName);
+
+        Boolean equals(SObjectField field, Object value);
+        Boolean doesNotEqual(SObjectField field, Object value);
+
+        Boolean contains(SObjectField field, String value);
+        Boolean doesNotContain(SObjectField field, String value);
+        Boolean startsWith(SObjectField field, String value);
+        Boolean endsWith(SObjectField field, String value);
+
+        Boolean isNull(SObjectField field);
+        Boolean isNotNull(SObjectField field);
+
+        Boolean isEmpty(SObjectField field);
+        Boolean isNotEmpty(SObjectField field);
+
+        Boolean isBlank(SObjectField field);
+        Boolean isNotBlank(SObjectField field);
+
+        Boolean isChanged(SObjectField field);
+
+        Boolean isAnyChanged(SObjectField field1, SObjectField field2);
+        Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3);
+        Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
+        Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
+        Boolean isAnyChanged(Iterable<SObjectField> fields);
+
+        Boolean areAllChanged(SObjectField field1, SObjectField field2);
+        Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3);
+        Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
+        Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
+        Boolean areAllChanged(Iterable<SObjectField> fields);
+
+        Boolean isChangedTo(SObjectField field, Object expectedValue);
+        Boolean isChangedFrom(SObjectField field, Object priorValue); 
+        Boolean isChangedFromTo(SObjectField field, Object fromValue, Object toValue);
+
+        Boolean isTrue(SObjectField field);
+        Boolean isFalse(SObjectField field);
+
+        Boolean greaterThan(SObjectField field, Integer value);
+        Boolean greaterThan(SObjectField field, DateTime value);
+        Boolean greaterThan(SObjectField field, Date value);
+        Boolean greaterThan(SObjectField field, Double value);
+        Boolean greaterThan(SObjectField field, Decimal value);
+        Boolean greaterThan(SObjectField field, Long value);
+
+        Boolean greaterThanOrEqualTo(SObjectField field, Integer value);
+        Boolean greaterThanOrEqualTo(SObjectField field, DateTime value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Date value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Double value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Decimal value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Long value);
+
+        Boolean lessThan(SObjectField field, Integer value);
+        Boolean lessThan(SObjectField field, DateTime value);
+        Boolean lessThan(SObjectField field, Date value);
+        Boolean lessThan(SObjectField field, Double value);
+        Boolean lessThan(SObjectField field, Decimal value);
+        Boolean lessThan(SObjectField field, Long value);
+
+        Boolean lessThanOrEqualTo(SObjectField field, Integer value);
+        Boolean lessThanOrEqualTo(SObjectField field, DateTime value);
+        Boolean lessThanOrEqualTo(SObjectField field, Date value);
+        Boolean lessThanOrEqualTo(SObjectField field, Double value);
+        Boolean lessThanOrEqualTo(SObjectField field, Decimal value);
+        Boolean lessThanOrEqualTo(SObjectField field, Long value);
+
+        Id getId();
+
         SObject getNewSObject();
         SObject getOldSObject();
 
-        // Parent Records Access
         SObject getNewRelated(String relationshipName);
         SObject getOldRelated(String relationshipName);
 
-        // Populate
-        Record put(SObjectField field, Object value);
+        void put(SObjectField field, Object value);
+    }
+
+    public interface DeleteRecord {
+        Boolean isRecordTypeEqual(String recordTypeDeveloperName);
+        Boolean isRecordTypeNotEqual(String recordTypeDeveloperName);
+
+        Boolean equals(SObjectField field, Object value);
+        Boolean doesNotEqual(SObjectField field, Object value);
+
+        Boolean contains(SObjectField field, String value);
+        Boolean doesNotContain(SObjectField field, String value);
+        Boolean startsWith(SObjectField field, String value);
+        Boolean endsWith(SObjectField field, String value);
+
+        Boolean isNull(SObjectField field);
+        Boolean isNotNull(SObjectField field);
+
+        Boolean isEmpty(SObjectField field);
+        Boolean isNotEmpty(SObjectField field);
+
+        Boolean isBlank(SObjectField field);
+        Boolean isNotBlank(SObjectField field);
+
+        Boolean isTrue(SObjectField field);
+        Boolean isFalse(SObjectField field);
+
+        Boolean greaterThan(SObjectField field, Integer value);
+        Boolean greaterThan(SObjectField field, DateTime value);
+        Boolean greaterThan(SObjectField field, Date value);
+        Boolean greaterThan(SObjectField field, Double value);
+        Boolean greaterThan(SObjectField field, Decimal value);
+        Boolean greaterThan(SObjectField field, Long value);
+
+        Boolean greaterThanOrEqualTo(SObjectField field, Integer value);
+        Boolean greaterThanOrEqualTo(SObjectField field, DateTime value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Date value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Double value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Decimal value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Long value);
+
+        Boolean lessThan(SObjectField field, Integer value);
+        Boolean lessThan(SObjectField field, DateTime value);
+        Boolean lessThan(SObjectField field, Date value);
+        Boolean lessThan(SObjectField field, Double value);
+        Boolean lessThan(SObjectField field, Decimal value);
+        Boolean lessThan(SObjectField field, Long value);
+
+        Boolean lessThanOrEqualTo(SObjectField field, Integer value);
+        Boolean lessThanOrEqualTo(SObjectField field, DateTime value);
+        Boolean lessThanOrEqualTo(SObjectField field, Date value);
+        Boolean lessThanOrEqualTo(SObjectField field, Double value);
+        Boolean lessThanOrEqualTo(SObjectField field, Decimal value);
+        Boolean lessThanOrEqualTo(SObjectField field, Long value);
+
+        Id getId();
+
+        SObject getOldSObject();
+
+        SObject getOldRelated(String relationshipName);
+    }
+
+    public interface UndeleteRecord {
+        Boolean isRecordTypeEqual(String recordTypeDeveloperName);
+        Boolean isRecordTypeNotEqual(String recordTypeDeveloperName);
+
+        Boolean equals(SObjectField field, Object value);
+        Boolean doesNotEqual(SObjectField field, Object value);
+
+        Boolean contains(SObjectField field, String value);
+        Boolean doesNotContain(SObjectField field, String value);
+        Boolean startsWith(SObjectField field, String value);
+        Boolean endsWith(SObjectField field, String value);
+
+        Boolean isNull(SObjectField field);
+        Boolean isNotNull(SObjectField field);
+
+        Boolean isEmpty(SObjectField field);
+        Boolean isNotEmpty(SObjectField field);
+
+        Boolean isBlank(SObjectField field);
+        Boolean isNotBlank(SObjectField field);
+
+        Boolean isTrue(SObjectField field);
+        Boolean isFalse(SObjectField field);
+
+        Boolean greaterThan(SObjectField field, Integer value);
+        Boolean greaterThan(SObjectField field, DateTime value);
+        Boolean greaterThan(SObjectField field, Date value);
+        Boolean greaterThan(SObjectField field, Double value);
+        Boolean greaterThan(SObjectField field, Decimal value);
+        Boolean greaterThan(SObjectField field, Long value);
+
+        Boolean greaterThanOrEqualTo(SObjectField field, Integer value);
+        Boolean greaterThanOrEqualTo(SObjectField field, DateTime value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Date value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Double value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Decimal value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Long value);
+
+        Boolean lessThan(SObjectField field, Integer value);
+        Boolean lessThan(SObjectField field, DateTime value);
+        Boolean lessThan(SObjectField field, Date value);
+        Boolean lessThan(SObjectField field, Double value);
+        Boolean lessThan(SObjectField field, Decimal value);
+        Boolean lessThan(SObjectField field, Long value);
+
+        Boolean lessThanOrEqualTo(SObjectField field, Integer value);
+        Boolean lessThanOrEqualTo(SObjectField field, DateTime value);
+        Boolean lessThanOrEqualTo(SObjectField field, Date value);
+        Boolean lessThanOrEqualTo(SObjectField field, Double value);
+        Boolean lessThanOrEqualTo(SObjectField field, Decimal value);
+        Boolean lessThanOrEqualTo(SObjectField field, Long value);
+
+        Id getId();
+
+        SObject getNewSObject();
+
+        SObject getNewRelated(String relationshipName);
     }
 
     public interface FieldSelection {
@@ -208,7 +380,7 @@ public with sharing class TriggerHandler {
         }
     } 
 
-    public class TriggerRecord implements TriggerHandler.Record {
+    public class TriggerRecord implements TriggerHandler.InsertRecord, TriggerHandler.UpdateRecord, TriggerHandler.DeleteRecord, TriggerHandler.UndeleteRecord {
         private SObject newRecord;
         private SObject oldRecord;
 
@@ -234,10 +406,22 @@ public with sharing class TriggerHandler {
         }
 
         public Boolean isRecordTypeEqual(String recordTypeDeveloperName) {
+            if (!RecordTypesInfo.hasRecordTypes(this.sObjectType)) {
+                throw new TriggerHandlerException(
+                    String.valueOf(this.sObjectType) + ' has no record types, so isRecordTypeEqual cannot be used on it.'
+                );
+            }
+
             return RecordTypesInfo.getId(this.sObjectType, recordTypeDeveloperName) == (this.newRecord ?? this.oldRecord).get('RecordTypeId');
         }
 
         public Boolean isRecordTypeNotEqual(String recordTypeDeveloperName) {
+            if (!RecordTypesInfo.hasRecordTypes(this.sObjectType)) {
+                throw new TriggerHandlerException(
+                    String.valueOf(this.sObjectType) + ' has no record types, so isRecordTypeNotEqual cannot be used on it.'
+                );
+            }
+
             return RecordTypesInfo.getId(this.sObjectType, recordTypeDeveloperName) != (this.newRecord ?? this.oldRecord).get('RecordTypeId');
         }
 
@@ -514,9 +698,8 @@ public with sharing class TriggerHandler {
             return this.oldRelatedRecords.get(relationshipName);
         }
 
-        public Record put(SObjectField field, Object value) {
+        public void put(SObjectField field, Object value) {
             this.newRecord.put(field, value);
-            return this;
         }
 
         // Internal use only
@@ -541,8 +724,16 @@ public with sharing class TriggerHandler {
             return this.byDeveloperName(objectType, recordTypeDeveloperName)?.getRecordTypeId();
         }
 
+        public Boolean hasRecordTypes(SObjectType objectType) {
+            if (!this.OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.containsKey(objectType)) {
+                this.load(objectType);
+            }
+
+            return this.OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.get(objectType).size() > 1;
+        }
+
         public Schema.RecordTypeInfo byDeveloperName(SObjectType objectType, String recordTypeDeveloperName) {
-            if (this.OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.get(objectType)?.containsKey(recordTypeDeveloperName) != true) {
+            if (!this.OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.containsKey(objectType)) {
                 this.load(objectType);
             }
 
@@ -554,5 +745,8 @@ public with sharing class TriggerHandler {
 
             this.OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.put(objectType, describe.getRecordTypeInfosByDeveloperName());
         }
+    }
+
+    private class TriggerHandlerException extends Exception {
     }
 }

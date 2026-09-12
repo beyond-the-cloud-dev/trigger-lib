@@ -15,13 +15,13 @@ public with sharing class ContactEnrichmentHandler implements AfterUpdate.Handle
         };
     }
 
-    public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.Record record) {
+    public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
         log.add('qualifiesForAfterUpdateWhen | Account related = ' + record.getNewRelated('Account'));
 
         return true;
     }
 
-    public void onAfterUpdate(TriggerHandler.Record record) {
+    public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
         Contact contact = (Contact) record.getNewSObject();
         Contact oldContact = (Contact) record.getOldSObject();
         Account account = (Account) record.getNewRelated('Account');

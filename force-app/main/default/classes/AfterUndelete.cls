@@ -1,7 +1,7 @@
 public class AfterUndelete {
     public interface Handler {
-        Boolean qualifiesForAfterUndeleteWhen(TriggerHandler.Record record);
-        void onAfterUndelete(TriggerHandler.Record record);
+        Boolean qualifiesForAfterUndeleteWhen(TriggerHandler.UndeleteRecord record);
+        void onAfterUndelete(TriggerHandler.UndeleteRecord record);
     }
 
     public interface NewRecordEnrichment {

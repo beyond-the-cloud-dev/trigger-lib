@@ -1,7 +1,7 @@
 public class AfterDelete {
     public interface Handler {
-        Boolean qualifiesForAfterDeleteWhen(TriggerHandler.Record record);
-        void onAfterDelete(TriggerHandler.Record record);
+        Boolean qualifiesForAfterDeleteWhen(TriggerHandler.DeleteRecord record);
+        void onAfterDelete(TriggerHandler.DeleteRecord record);
     }
 
     public interface OldRecordEnrichment {

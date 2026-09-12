@@ -1,7 +1,7 @@
 public class AfterInsert {
     public interface Handler {
-        Boolean qualifiesForAfterInsertWhen(TriggerHandler.Record record);
-        void onAfterInsert(TriggerHandler.Record record);
+        Boolean qualifiesForAfterInsertWhen(TriggerHandler.InsertRecord record);
+        void onAfterInsert(TriggerHandler.InsertRecord record);
     }
 
     public interface NewRecordEnrichment {

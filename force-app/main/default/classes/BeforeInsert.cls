@@ -2,13 +2,13 @@ public class BeforeInsert {
     // main interfaces
 
     public interface Populator extends Handler {
-        Boolean populateOnBeforeInsertWhen(TriggerHandler.Record record);
-        void populateOnBeforeInsert(TriggerHandler.Record record);
+        Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record);
+        void populateOnBeforeInsert(TriggerHandler.InsertRecord record);
     }
 
     public interface Validator extends Handler {
-        Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.Record record);
-        String beforeInsertValidationMessage(TriggerHandler.Record record);
+        Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record);
+        String beforeInsertValidationMessage(TriggerHandler.InsertRecord record);
     }
 
     // additional interfaces

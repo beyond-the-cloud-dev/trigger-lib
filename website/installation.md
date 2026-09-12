@@ -33,8 +33,15 @@ sf project deploy start -d examples -o your-org-alias
 **Framework**
 
 - `TriggerOrchestrator` - entry point and execution engine
-- `TriggerHandler` - `Record` and `FieldSelection` APIs
+- `TriggerHandler` - the `InsertRecord`, `UpdateRecord`, `DeleteRecord` and `UndeleteRecord` APIs, the `FieldSelection` API, and `TriggerHandlerException`
 - `BeforeInsert`, `AfterInsert`, `BeforeUpdate`, `AfterUpdate`, `BeforeDelete`, `AfterDelete`, `AfterUndelete` - per-context handler interfaces
+
+**Custom metadata types**
+
+- `TriggerObject__mdt` - one row per object, with `ObjectAPIName__c` and `Bypass__c`
+- `TriggerHandler__mdt` - one row per handler class, with `ApexClassName__c`, `TriggerObject__c` and `Bypass__c`
+
+No records of either type are required. With none present, every handler runs and no SOQL is consumed.
 
 **Bundled dependency**
 

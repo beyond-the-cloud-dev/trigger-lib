@@ -25,10 +25,10 @@ features:
     details: Related data is pulled up front, so handlers make no SOQL queries of their own.
     link: /guide/enrichment
   - title: Bypasses
-    details: Disable an individual handler or a whole orchestrator when you need to.
+    details: Skip one handler from code, or a handler or a whole object from metadata.
     link: /guide/bypasses
   - title: Recursion Control
-    details: Depth limiting built in, defaulting to 3.
+    details: Depth limiting built in, defaulting to three passes per record.
     link: /guide/recursion-control
   - title: No Required Metadata
     details: Works with zero custom metadata records; metadata only overrides defaults.

@@ -8,7 +8,7 @@ Handlers often need data from a parent record: the account of a contact, the own
 
 ## Declaring Fields
 
-Implement `NewRecordEnrichment` and return a map from the lookup field on the triggering object to a `TriggerHandler.FieldSelection` listing the parent fields.
+Implement `NewRecordEnrichment` and return a map from the lookup field on the triggering object to a [`TriggerHandler.FieldSelection`](/api/field-selection) listing the parent fields.
 
 ```apex
 public with sharing class ContactAccountHandler implements AfterInsert.Handler, AfterInsert.NewRecordEnrichment {
@@ -26,11 +26,11 @@ public with sharing class ContactAccountHandler implements AfterInsert.Handler, 
     };
   }
 
-  public Boolean qualifiesForAfterInsertWhen(TriggerHandler.Record record) {
+  public Boolean qualifiesForAfterInsertWhen(TriggerHandler.InsertRecord record) {
     return record.isNotNull(Contact.AccountId);
   }
 
-  public void onAfterInsert(TriggerHandler.Record record) {
+  public void onAfterInsert(TriggerHandler.InsertRecord record) {
     Account account = (Account) record.getNewRelated('Account');
     User creator = (User) record.getNewRelated('CreatedBy');
 
@@ -49,7 +49,20 @@ A polymorphic lookup resolves to the **first** type in its describe. `OwnerId` o
 
 `getNewRelated(relationshipName)` returns the parent record attached to the new version of the trigger record. The relationship name is the one from the field describe: `Account` for `AccountId`, `CreatedBy` for `CreatedById`, `Custom_Object__r` for `Custom_Object__c`.
 
-The result is `null` when the lookup is empty or the parent was not found. Only the declared fields are populated on the returned SObject.
+Only the declared fields are populated on the returned SObject. Reading any other field raises the platform's usual `SObjectException` for an unqueried field.
+
+`getNewRelated` returns `null` in every case where no parent was attached:
+
+- The relationship was never declared. **No query is issued for an undeclared relationship**, so this is a silent `null`, not an error. A typo in the relationship name string behaves the same way.
+- The lookup is empty on that record. An unset lookup fetches nothing: the record contributes no Id to the query, no parent is attached to it, and no error is raised.
+- The lookup points at a record that the query did not return.
+
+Always null-check, or use safe navigation:
+
+```apex
+Account account = (Account) record.getNewRelated('Account');
+String industry = account?.Industry;
+```
 
 ## Nested Relationships
 
@@ -86,11 +99,11 @@ public with sharing class ContactAccountMoveHandler implements AfterUpdate.Handl
     };
   }
 
-  public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.Record record) {
+  public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
     return record.isChanged(Contact.AccountId);
   }
 
-  public void onAfterUpdate(TriggerHandler.Record record) {
+  public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
     Account previousAccount = (Account) record.getOldRelated('Account');
     Account currentAccount = (Account) record.getNewRelated('Account');
 
@@ -99,26 +112,58 @@ public with sharing class ContactAccountMoveHandler implements AfterUpdate.Handl
 }
 ```
 
-Which side is available depends on the context:
+The two sides are declared independently. Declaring `Contact.AccountId` on the new side only attaches a parent to the new record; `getOldRelated('Account')` still returns `null` until the old side declares it too.
 
-| Context        | `NewRecordEnrichment` | `OldRecordEnrichment` |
-| -------------- | :-------------------: | :-------------------: |
-| Before Insert  |          ✅           |                       |
-| After Insert   |          ✅           |                       |
-| Before Update  |          ✅           |          ✅           |
-| After Update   |          ✅           |          ✅           |
-| Before Delete  |                       |          ✅           |
-| After Delete   |                       |          ✅           |
-| After Undelete |          ✅           |                       |
+Which side is available depends on the context, and so does the record interface the handler methods receive:
 
-## How Queries Are Built
+| Context        | Record interface                 | `NewRecordEnrichment` | `OldRecordEnrichment` |
+| -------------- | -------------------------------- | :-------------------: | :-------------------: |
+| Before Insert  | `TriggerHandler.InsertRecord`    |          ✅           |                       |
+| After Insert   | `TriggerHandler.InsertRecord`    |          ✅           |                       |
+| Before Update  | `TriggerHandler.UpdateRecord`    |          ✅           |          ✅           |
+| After Update   | `TriggerHandler.UpdateRecord`    |          ✅           |          ✅           |
+| Before Delete  | `TriggerHandler.DeleteRecord`    |                       |          ✅           |
+| After Delete   | `TriggerHandler.DeleteRecord`    |                       |          ✅           |
+| After Undelete | `TriggerHandler.UndeleteRecord`  |          ✅           |                       |
 
-1. Field selections from all non-bypassed handlers of the current context are merged per lookup field.
-2. One query per lookup field is executed with the parent Ids gathered from the new and old records.
-3. The query runs in system mode without sharing, so enrichment does not depend on the running user's access to the parent.
-4. Lookups without any parent Id in the batch are not queried.
+The record interfaces only expose the side that exists in their context. `InsertRecord` and `UndeleteRecord` have `getNewRelated` and no `getOldRelated`; `DeleteRecord` has `getOldRelated` and no `getNewRelated`; `UpdateRecord` has both. Calling the missing one is a compile error, not a `null`.
 
-Two handlers declaring `Contact.AccountId` produce one query on `Account` with the union of their fields. Enrichment runs before qualification, so predicates can use parent data, and it runs for all trigger records, not only the qualified ones.
+## One Query Per Lookup
+
+Enrichment runs once, before any handler in the context executes.
+
+1. The field selections of every **active** handler in the context are merged per lookup field. Handlers filtered out by a [bypass](/guide/bypasses) are already gone at this point and contribute nothing.
+2. One query is executed per lookup field, with the parent Ids gathered from the new and old records of the whole invocation.
+3. A lookup with no populated value on any record in the invocation is not queried at all.
+4. Queries run in system mode without sharing, so enrichment does not depend on the running user's access to the parent.
+
+The cost is **one query per declared lookup field per trigger invocation**, whatever the number of handlers or records. Five handlers declaring `Contact.AccountId` over 200 contacts still produce a single `Account` query, carrying the union of the fields they asked for.
+
+## Declarations Are Pooled
+
+The merged declarations are applied to the shared trigger records, so any active handler can read any relationship that any other active handler declared, even one it never declared itself.
+
+```apex
+// AccountNameHandler declares Contact.AccountId => Account.Name
+// ContactOwnerHandler declares nothing, but still gets the parent:
+public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
+    Account account = (Account) record.getNewRelated('Account');
+}
+```
+
+This is convenient, and it is fragile. The parent is only there while the handler that declared it is active. Bypass that handler, remove it from the orchestrator list, or move it to another context, and `getNewRelated` starts returning `null` in a handler that was never touched. Declare what you read.
+
+## Enrichment and Qualification
+
+Enrichment happens once up front, for every trigger record in the invocation, not only the ones a handler ends up qualifying. Qualification is evaluated later, at each handler's own turn. That ordering is what lets a `...When` predicate read parent data:
+
+```apex
+public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+    Account account = (Account) record.getNewRelated('Account');
+
+    return account?.Industry == 'Technology';
+}
+```
 
 ::: tip
 Enrichment uses the bundled [SOQL Lib](https://soql.beyondthecloud.dev) `SOQL` class to build and execute the queries.

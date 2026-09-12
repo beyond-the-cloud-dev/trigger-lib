@@ -6,12 +6,15 @@ outline: deep
 
 An after update handler that updates its own records fires the trigger again. Workflow rules, flows and other triggers do the same. Trigger Lib limits how many times an update handler runs for a given record within one transaction.
 
+Both update contexts are guarded. A before update handler cannot perform DML at all, so its re-entry always comes from somewhere else in the transaction, but it is counted and capped the same way.
+
 ## Default Depth
 
-Before update and after update handlers run at most **3 times per record** by default. The counter is kept per handler class, per context and per record Id, so:
+Before update and after update handlers run at most **3 times per record** by default. The counter is keyed by **handler class, trigger operation and record Id**, so:
 
-- two different handlers on the same record have independent counters,
+- two different handlers on the same record have independent counters. One handler exhausting its passes does not consume another handler's,
 - the before update and after update counters of one handler are independent,
+- every record carries its own budget. A handler limited to two passes and given two records in one DML runs twice for each record, four times in total, and one record exhausting its budget never affects the other,
 - the counter lives for the whole transaction.
 
 A record over the limit is skipped for that handler. Other records in the same trigger batch and other handlers are not affected.
@@ -40,7 +43,7 @@ public with sharing class OpportunityTriggerOrchestrator implements TriggerOrche
 }
 ```
 
-Every handler in `afterUpdateHandlers()` and `beforeUpdateHandlers()` now runs at most 5 times per record, unless it sets its own limit.
+Every handler this orchestrator returns for before update and after update now runs at most 5 times per record, unless it sets its own limit. One value covers both contexts.
 
 ### On a Handler
 
@@ -70,9 +73,11 @@ Unlike the orchestrator setting, the handler setting is per context: a class imp
 
 ## Counting Rules
 
-The counter increments when a record **qualifies** for the handler, not when it merely passes through the trigger. Records that fail `qualifiesFor...When` do not consume depth.
+The counter increments when a record **qualifies** for the handler, not when it merely passes through the trigger. Records that fail the handler's `...When` predicate do not consume depth.
 
-A record that reaches its limit is **skipped silently** for that handler. No exception is thrown, nothing reaches the `Logger`, and the DML succeeds.
+A record that reaches its limit is **skipped silently** for that handler, before the predicate is evaluated. No exception is thrown, nothing reaches the `Logger`, and the DML succeeds. A handler that stops running is therefore invisible unless you look for it.
+
+Chunking is not recursion. A single DML of 201 records reaches the trigger in two chunks, but each record has its own counter, so no record loses a pass and all 201 are processed.
 
 ## Insert, Delete and Undelete
 

@@ -747,6 +747,6 @@ public with sharing class TriggerHandler {
         }
     }
 
-    private class TriggerHandlerException extends Exception {
+    public class TriggerHandlerException extends Exception {
     }
 }

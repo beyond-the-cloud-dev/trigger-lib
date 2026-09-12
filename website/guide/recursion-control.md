@@ -18,7 +18,33 @@ A record over the limit is skipped for that handler. Other records in the same t
 
 ## Overriding the Depth
 
-Implement `RecursionGuard` to set a different limit for a handler.
+The limit is resolved in three steps, each overriding the one before it:
+
+1. the framework default of **3**,
+2. `TriggerOrchestrator.RecursionGuard` on the orchestrator, which sets the default for every handler it returns,
+3. the context `RecursionGuard` on an individual handler, which always wins.
+
+### On the Orchestrator
+
+Implement `TriggerOrchestrator.RecursionGuard` to change the default for every handler in that orchestrator, in both update contexts.
+
+```apex
+public with sharing class OpportunityTriggerOrchestrator implements TriggerOrchestrator.AfterUpdate, TriggerOrchestrator.RecursionGuard {
+  public Integer maxRecursionDepth() {
+    return 5;
+  }
+
+  public List<AfterUpdate.Handler> afterUpdateHandlers() {
+    return new List<AfterUpdate.Handler>{ new OpportunityRollupHandler(), new OpportunityStampHandler() };
+  }
+}
+```
+
+Every handler in `afterUpdateHandlers()` and `beforeUpdateHandlers()` now runs at most 5 times per record, unless it sets its own limit.
+
+### On a Handler
+
+Implement the context `RecursionGuard` to set a limit for one handler. A handler-level limit takes precedence over the orchestrator's.
 
 ```apex
 public with sharing class OpportunityRollupHandler implements AfterUpdate.Handler, AfterUpdate.RecursionGuard {
@@ -26,11 +52,11 @@ public with sharing class OpportunityRollupHandler implements AfterUpdate.Handle
     return 1;
   }
 
-  public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.Record record) {
+  public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
     return record.isChanged(Opportunity.Amount);
   }
 
-  public void onAfterUpdate(TriggerHandler.Record record) {
+  public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
     // ...
   }
 }
@@ -40,9 +66,13 @@ public with sharing class OpportunityRollupHandler implements AfterUpdate.Handle
 
 A depth of `1` means the handler processes each record once per transaction, which is the right choice for handlers that write back to the triggering object.
 
+Unlike the orchestrator setting, the handler setting is per context: a class implementing both `BeforeUpdate.RecursionGuard` and `AfterUpdate.RecursionGuard` can give each context a different limit.
+
 ## Counting Rules
 
 The counter increments when a record **qualifies** for the handler, not when it merely passes through the trigger. Records that fail `qualifiesFor...When` do not consume depth.
+
+A record that reaches its limit is **skipped silently** for that handler. No exception is thrown, nothing reaches the `Logger`, and the DML succeeds.
 
 ## Insert, Delete and Undelete
 

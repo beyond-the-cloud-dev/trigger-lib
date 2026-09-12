@@ -65,6 +65,7 @@ Behaviour the library is expected to guarantee. Every row is a scenario that sho
 | DML in a populator | Before-context populator performs DML | `TriggerOrchestratorException` naming the handler, DML rolled back |
 | DML in a validator | Before-context validator performs DML | `TriggerOrchestratorException` naming the handler |
 | DML in a finalizer | Before-context finalizer performs DML | `TriggerOrchestratorException` naming the handler |
+| DML in a qualification predicate | Before-context handler performs DML inside its `...When` method | `TriggerOrchestratorException` naming the handler, DML rolled back. The guard spans the handler's whole turn, qualification included |
 | Immediate platform event | Before-context handler publishes an immediate event | Treated as DML and rejected |
 | DML in an after context | After-context handler performs DML on other records | Allowed, no exception |
 | ContinueOnError does not suppress the guard | Before-context handler implements `ContinueOnError` and performs DML | Guard still throws, DML is aborted, nothing is committed. `ContinueOnError` covers a handler's own exceptions, never a framework contract violation |

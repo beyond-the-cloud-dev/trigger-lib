@@ -79,12 +79,12 @@ public with sharing class ContactAccountSyncHandler implements AfterUpdate.Handl
     };
   }
 
-  public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.Record record) {
+  public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
     return record.isChanged(Contact.Email) &&
       record.isNotNull(Contact.AccountId);
   }
 
-  public void onAfterUpdate(TriggerHandler.Record record) {
+  public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
     Account account = (Account) record.getNewRelated('Account');
 
     accountsToUpdate.add(

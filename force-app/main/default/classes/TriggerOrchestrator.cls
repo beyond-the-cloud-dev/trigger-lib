@@ -158,19 +158,7 @@ public with sharing class TriggerOrchestrator {
         private void runHandlers() {
             for (TriggerHandlerAdapter adapter : this.activeHandlers) {
                 try {
-                    for (TriggerHandler.TriggerRecord record : this.triggerRecords) {
-                        if (adapter.isRecursionDepthExceeded(record)) {
-                            continue;
-                        }
-
-                        if (adapter.isQualified(record)) {
-                            adapter.registerRecord(record);
-                        }
-                    }
-
-                    if (!adapter.getQualifiedRecords().isEmpty()) {
-                        adapter.execute();
-                    }
+                    adapter.execute(this.triggerRecords);
                 } catch (Exception e) {
                     TriggerOrchestrator.logError(e, adapter);
 
@@ -395,11 +383,8 @@ public with sharing class TriggerOrchestrator {
         protected Object handler;
         protected Object orchestrator;
 
-        private Map<String, TriggerHandler.TriggerRecord> qualifiedRecordByIdentifier;
-
         public TriggerHandlerAdapter(Object handler) {
             this.handler = handler;
-            this.qualifiedRecordByIdentifier = new Map<String, TriggerHandler.TriggerRecord>();
         }
 
         public Object getHandler() {
@@ -411,23 +396,29 @@ public with sharing class TriggerOrchestrator {
         }
 
         public virtual void registerRecord(TriggerHandler.TriggerRecord record) {
-            this.qualifiedRecordByIdentifier.put(record.getIdentifier(), record);
         }
 
-        public Boolean isRecordRegistered(TriggerHandler.TriggerRecord record) {
-            return this.qualifiedRecordByIdentifier.containsKey(record.getIdentifier());
-        }
+        public virtual void execute(List<TriggerHandler.TriggerRecord> records) {
+            Boolean hasQualifiedRecord = false;
 
-        public List<TriggerHandler.TriggerRecord> getQualifiedRecords() {
-            return new List<TriggerHandler.TriggerRecord>(this.qualifiedRecordByIdentifier.values());
-        }
+            for (TriggerHandler.TriggerRecord record : records) {
+                if (this.isRecursionDepthExceeded(record)) {
+                    continue;
+                }
 
-        public virtual void execute() {
-            for (TriggerHandler.TriggerRecord record : this.getQualifiedRecords()) {
+                if (!this.isQualified(record)) {
+                    continue;
+                }
+
+                this.registerRecord(record);
                 this.executeOn(record);
+
+                hasQualifiedRecord = true;
             }
 
-            this.finalizeHandler();
+            if (hasQualifiedRecord) {
+                this.finalizeHandler();
+            }
         }
 
         public virtual Map<SObjectField, TriggerHandler.FieldSelection> getNewFieldsToEnrich() {
@@ -458,16 +449,12 @@ public with sharing class TriggerOrchestrator {
             this.populator = populator;
         }
 
-        public override void execute() {
+        public override void execute(List<TriggerHandler.TriggerRecord> records) {
             Integer dmlStatementsBefore = Limits.getDmlStatements();
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
             try {
-                for (TriggerHandler.TriggerRecord record : this.getQualifiedRecords()) {
-                    this.executeOn(record);
-                }
-
-                this.finalizeHandler();
+                super.execute(records);
             } finally {
                 if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
                     throw new TriggerOrchestratorException(
@@ -525,16 +512,12 @@ public with sharing class TriggerOrchestrator {
             this.validator = validator;
         }
 
-        public override void execute() {
+        public override void execute(List<TriggerHandler.TriggerRecord> records) {
             Integer dmlStatementsBefore = Limits.getDmlStatements();
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
             try {
-                for (TriggerHandler.TriggerRecord record : this.getQualifiedRecords()) {
-                    this.executeOn(record);
-                }
-
-                this.finalizeHandler();
+                super.execute(records);
             } finally {
                 if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
                     throw new TriggerOrchestratorException(
@@ -636,16 +619,12 @@ public with sharing class TriggerOrchestrator {
             this.populator = populator;
         }
 
-        public override void execute() {
+        public override void execute(List<TriggerHandler.TriggerRecord> records) {
             Integer dmlStatementsBefore = Limits.getDmlStatements();
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
             try {
-                for (TriggerHandler.TriggerRecord record : this.getQualifiedRecords()) {
-                    this.executeOn(record);
-                }
-
-                this.finalizeHandler();
+                super.execute(records);
             } finally {
                 if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
                     throw new TriggerOrchestratorException(
@@ -705,8 +684,6 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override void registerRecord(TriggerHandler.TriggerRecord record) {
-            super.registerRecord(record);
-
             String recursionKey = String.valueOf(this.handler).substringBefore(':') + ':BEFORE_UPDATE:' + record.getId();
 
             TriggerOrchestrator.recursionDepthByHandlerRecord.put(recursionKey, (TriggerOrchestrator.recursionDepthByHandlerRecord.get(recursionKey) ?? 0) + 1);
@@ -735,16 +712,12 @@ public with sharing class TriggerOrchestrator {
             this.validator = validator;
         }
 
-        public override void execute() {
+        public override void execute(List<TriggerHandler.TriggerRecord> records) {
             Integer dmlStatementsBefore = Limits.getDmlStatements();
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
             try {
-                for (TriggerHandler.TriggerRecord record : this.getQualifiedRecords()) {
-                    this.executeOn(record);
-                }
-
-                this.finalizeHandler();
+                super.execute(records);
             } finally {
                 if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
                     throw new TriggerOrchestratorException(
@@ -852,8 +825,6 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override void registerRecord(TriggerHandler.TriggerRecord record) {
-            super.registerRecord(record);
-
             String recursionKey = String.valueOf(this.handler).substringBefore(':') + ':AFTER_UPDATE:' + record.getId();
 
             TriggerOrchestrator.recursionDepthByHandlerRecord.put(recursionKey, (TriggerOrchestrator.recursionDepthByHandlerRecord.get(recursionKey) ?? 0) + 1);

@@ -148,7 +148,7 @@ export default defineConfig({
         items: [
           { text: 'TriggerOrchestrator', link: '/api/trigger-orchestrator' },
           { text: 'Context Interfaces', link: '/api/context-interfaces' },
-          { text: 'TriggerHandler.Record', link: '/api/record' },
+          { text: 'Record Interfaces', link: '/api/record' },
           {
             text: 'TriggerHandler.FieldSelection',
             link: '/api/field-selection'

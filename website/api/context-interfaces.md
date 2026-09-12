@@ -8,39 +8,114 @@ Each trigger context has its own top-level class that groups the interfaces a ha
 
 Method names carry the context name, so one class can implement several contexts without clashes.
 
+Before insert and before update are the two contexts with **roles**: a handler there implements `Populator` or `Validator`, never a plain `Handler`. The other five contexts have a single working `Handler` interface. Every other interface on this page is optional and works the same way whichever of the three a handler is.
+
 ## Availability Matrix
 
-| Interface             | Before Insert | After Insert | Before Update | After Update | Before Delete | After Delete | After Undelete |
-| --------------------- | :-----------: | :----------: | :-----------: | :----------: | :-----------: | :----------: | :------------: |
-| `Handler`             |      ✅       |      ✅      |      ✅       |      ✅      |      ✅       |      ✅      |       ✅       |
-| `NewRecordEnrichment` |      ✅       |      ✅      |      ✅       |      ✅      |               |              |       ✅       |
-| `OldRecordEnrichment` |               |              |      ✅       |      ✅      |      ✅       |      ✅      |                |
-| `Bypassable`          |      ✅       |      ✅      |      ✅       |      ✅      |      ✅       |      ✅      |       ✅       |
-| `RecursionGuard`      |               |              |      ✅       |      ✅      |               |              |                |
-| `Finalizer`           |      ✅       |      ✅      |      ✅       |      ✅      |      ✅       |      ✅      |       ✅       |
-| `AllowDmls`           |      ✅       |              |      ✅       |              |               |              |                |
-| `ContinueOnError`     |      ✅       |      ✅      |      ✅       |      ✅      |      ✅       |      ✅      |       ✅       |
+| Interface             | Before Insert | After Insert  | Before Update | After Update  | Before Delete | After Delete  | After Undelete |
+| --------------------- | :-----------: | :-----------: | :-----------: | :-----------: | :-----------: | :-----------: | :------------: |
+| `Populator`           |      ✅       |               |      ✅       |               |               |               |                |
+| `Validator`           |      ✅       |               |      ✅       |               |               |               |                |
+| `Handler`             |    marker     |      ✅       |    marker     |      ✅       |      ✅       |      ✅       |       ✅       |
+| `NewRecordEnrichment` |      ✅       |      ✅       |      ✅       |      ✅       |               |               |       ✅       |
+| `OldRecordEnrichment` |               |               |      ✅       |      ✅       |      ✅       |      ✅       |                |
+| `Bypassable`          |      ✅       |      ✅       |      ✅       |      ✅       |      ✅       |      ✅       |       ✅       |
+| `RecursionGuard`      |               |               |      ✅       |      ✅       |               |               |                |
+| `Finalizer`           |      ✅       |      ✅       |      ✅       |      ✅       |      ✅       |      ✅       |       ✅       |
+| `ContinueOnError`     |      ✅       |      ✅       |      ✅       |      ✅       |      ✅       |      ✅       |       ✅       |
 
-## Handler
+"marker" means `Handler` exists in that context only as an empty interface that `Populator` and `Validator` extend, so the orchestrator list has a type. You never implement it directly.
 
-Required. Qualifies records and processes each qualified one.
+No interface opts a handler out of the before-context DML guard. DML in a before insert or before update handler is always rejected. See [No DML in Before Contexts](/guide/handlers#no-dml-in-before-contexts).
+
+## Populator
+
+Available in before insert and before update. Writes fields on the triggering record.
 
 ```apex
-public interface Handler {
-  Boolean qualifiesForBeforeInsertWhen(TriggerHandler.Record record);
-  void onBeforeInsert(TriggerHandler.Record record);
+public interface Populator extends Handler {
+  Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record);
+  void populateOnBeforeInsert(TriggerHandler.InsertRecord record);
 }
 ```
 
-| Context        | Methods                                            |
-| -------------- | -------------------------------------------------- |
-| Before Insert  | `qualifiesForBeforeInsertWhen`, `onBeforeInsert`   |
-| After Insert   | `qualifiesForAfterInsertWhen`, `onAfterInsert`     |
-| Before Update  | `qualifiesForBeforeUpdateWhen`, `onBeforeUpdate`   |
-| After Update   | `qualifiesForAfterUpdateWhen`, `onAfterUpdate`     |
-| Before Delete  | `qualifiesForBeforeDeleteWhen`, `onBeforeDelete`   |
-| After Delete   | `qualifiesForAfterDeleteWhen`, `onAfterDelete`     |
-| After Undelete | `qualifiesForAfterUndeleteWhen`, `onAfterUndelete` |
+| Context       | Methods                                                     | Record                        |
+| ------------- | ----------------------------------------------------------- | ----------------------------- |
+| Before Insert | `populateOnBeforeInsertWhen`, `populateOnBeforeInsert`      | `TriggerHandler.InsertRecord` |
+| Before Update | `populateOnBeforeUpdateWhen`, `populateOnBeforeUpdate`      | `TriggerHandler.UpdateRecord` |
+
+```apex
+public with sharing class AccountDefaultsPopulator implements BeforeInsert.Populator {
+  public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+    return record.isBlank(Account.Rating);
+  }
+
+  public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+    record.put(Account.Rating, 'Warm');
+  }
+}
+```
+
+## Validator
+
+Available in before insert and before update. Returns the message for records that must be blocked. The framework attaches it with `addError`; the validator never calls `addError` itself and has no action method.
+
+```apex
+public interface Validator extends Handler {
+  Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record);
+  String beforeInsertValidationMessage(TriggerHandler.InsertRecord record);
+}
+```
+
+| Context       | Methods                                                                        | Record                        |
+| ------------- | ------------------------------------------------------------------------------ | ----------------------------- |
+| Before Insert | `errorShouldBeAttachedOnBeforeInsertWhen`, `beforeInsertValidationMessage`      | `TriggerHandler.InsertRecord` |
+| Before Update | `errorShouldBeAttachedOnBeforeUpdateWhen`, `beforeUpdateValidationMessage`      | `TriggerHandler.UpdateRecord` |
+
+```apex
+public with sharing class AccountIndustryValidator implements BeforeInsert.Validator {
+  public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+    return record.isBlank(Account.Industry);
+  }
+
+  public String beforeInsertValidationMessage(TriggerHandler.InsertRecord record) {
+    return 'Industry is required on new accounts.';
+  }
+}
+```
+
+The returned string is the DML error message, verbatim.
+
+::: warning Exactly one role per context
+A class in `beforeInsertHandlers()` or `beforeUpdateHandlers()` must implement exactly one of `Populator` and `Validator` for that context. Implementing both, or neither, aborts the invocation with a `TriggerOrchestratorException` naming the class and both interfaces, before any handler runs. Roles in different contexts are independent: `BeforeInsert.Populator` and `BeforeUpdate.Validator` on one class is allowed.
+:::
+
+## Handler
+
+In after insert, after update, before delete, after delete and after undelete, `Handler` is the interface a handler implements. It qualifies records and processes each qualified one.
+
+```apex
+public interface Handler {
+  Boolean qualifiesForAfterInsertWhen(TriggerHandler.InsertRecord record);
+  void onAfterInsert(TriggerHandler.InsertRecord record);
+}
+```
+
+| Context        | Methods                                            | Record                          |
+| -------------- | -------------------------------------------------- | ------------------------------- |
+| After Insert   | `qualifiesForAfterInsertWhen`, `onAfterInsert`     | `TriggerHandler.InsertRecord`   |
+| After Update   | `qualifiesForAfterUpdateWhen`, `onAfterUpdate`     | `TriggerHandler.UpdateRecord`   |
+| Before Delete  | `qualifiesForBeforeDeleteWhen`, `onBeforeDelete`   | `TriggerHandler.DeleteRecord`   |
+| After Delete   | `qualifiesForAfterDeleteWhen`, `onAfterDelete`     | `TriggerHandler.DeleteRecord`   |
+| After Undelete | `qualifiesForAfterUndeleteWhen`, `onAfterUndelete` | `TriggerHandler.UndeleteRecord` |
+
+In before insert and before update the same name is an empty interface:
+
+```apex
+public interface Handler {}
+```
+
+`BeforeInsert.Handler` and `BeforeUpdate.Handler` are the element types of `beforeInsertHandlers()` and `beforeUpdateHandlers()` and nothing more.
 
 See [Handlers](/guide/handlers) and [Record Qualification](/guide/qualification).
 
@@ -62,7 +137,7 @@ public interface NewRecordEnrichment {
 | After Update   | `newFieldsToEnrichOnAfterUpdate`   |
 | After Undelete | `newFieldsToEnrichOnAfterUndelete` |
 
-See [Parent Enrichment](/guide/enrichment).
+See [Parent Enrichment](/guide/enrichment) and [TriggerHandler.FieldSelection](/api/field-selection).
 
 ## OldRecordEnrichment
 
@@ -81,9 +156,11 @@ public interface OldRecordEnrichment {
 | Before Delete | `oldFieldsToEnrichOnBeforeDelete` |
 | After Delete  | `oldFieldsToEnrichOnAfterDelete`  |
 
+The two sides are declared independently. Declaring a lookup on the new side does not attach a parent to the old record.
+
 ## Bypassable
 
-Skips the handler for the current invocation when the method returns `true`.
+Skips the handler for the current invocation when the method returns `true`. It is asked once per invocation, not per record.
 
 ```apex
 public interface Bypassable {
@@ -101,11 +178,11 @@ public interface Bypassable {
 | After Delete   | `bypassOnAfterDeleteWhen`   |
 | After Undelete | `bypassOnAfterUndeleteWhen` |
 
-See [Bypasses](/guide/bypasses).
+A handler already bypassed in metadata never has this method called. See [Bypasses](/guide/bypasses).
 
 ## RecursionGuard
 
-Overrides the default depth of 3 for update contexts.
+Available in before update and after update only. Overrides how many times the handler may process one record in a transaction.
 
 ```apex
 public interface RecursionGuard {
@@ -118,11 +195,13 @@ public interface RecursionGuard {
 | Before Update | `maxRecursionDepthOnBeforeUpdate` |
 | After Update  | `maxRecursionDepthOnAfterUpdate`  |
 
+The depth is resolved in three steps, each overriding the one before it: the framework default of `3`, then [`TriggerOrchestrator.RecursionGuard`](/api/trigger-orchestrator#recursionguard) on the orchestrator, then this interface on the handler, which always wins. A record over the budget is skipped silently for that handler, with no exception and nothing logged.
+
 See [Recursion Control](/guide/recursion-control).
 
 ## Finalizer
 
-Runs once after all qualified records were processed.
+Runs once after the handler processed its last qualified record, and before the next handler in the list starts. It does not run when the handler qualified no records.
 
 ```apex
 public interface Finalizer {
@@ -140,26 +219,14 @@ public interface Finalizer {
 | After Delete   | `finalizeAfterDelete`   |
 | After Undelete | `finalizeAfterUndelete` |
 
-See [Finalizers](/guide/finalizers).
-
-## AllowDmls
-
-Marker interface. Disables the DML guard for a before insert or before update handler.
-
-```apex
-public interface AllowDmls {
-}
-```
-
-See [Before Context DML](/guide/handlers#before-context-dml).
+In before insert and before update the DML guard covers the finalizer as well, so a finalizer there cannot perform DML either. See [Finalizers](/guide/finalizers).
 
 ## ContinueOnError
 
-Marker interface. Exceptions from the handler are logged and the orchestrator continues with the next handler.
+Marker interface. An exception raised by the handler's own code is passed to the logger and the orchestrator continues with the next handler, so the DML succeeds.
 
 ```apex
-public interface ContinueOnError {
-}
+public interface ContinueOnError {}
 ```
 
-See [Error Handling](/guide/error-handling).
+It covers a handler's own exceptions only. A `TriggerOrchestratorException` and a `TriggerHandler.TriggerHandlerException` are logged and then rethrown even for a handler that implements it, and the DML is aborted. See [Error Handling](/guide/error-handling).

@@ -7,16 +7,42 @@ outline: deep
 Describes which fields to query on a parent record during [enrichment](/guide/enrichment). A new selection starts from the `TriggerHandler.FieldSelection` static property and every `with` call returns the same selection, so calls chain.
 
 ```apex
-public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterUpdate() {
+public with sharing class ContactAccountHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment {
+  public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterUpdate() {
     return new Map<SObjectField, TriggerHandler.FieldSelection>{
-        Contact.AccountId => TriggerHandler.FieldSelection
-            .with(Account.Name, Account.Industry)
-            .with('Owner', User.Name, User.Email)
+      Contact.AccountId => TriggerHandler.FieldSelection
+        .with(Account.Name, Account.Industry)
+        .with('Owner', User.Name, User.Email)
     };
+  }
+
+  public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+    return record.getNewRelated('Account') != null;
+  }
+
+  public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
+    Account account = (Account) record.getNewRelated('Account');
+
+    System.debug(account.Name + ' owned by ' + account.Owner.Email);
+  }
 }
 ```
 
+Reading the `TriggerHandler.FieldSelection` property hands back a new, empty selection every time, so each map entry starts from scratch.
+
+## The Map Key
+
 The map key is the lookup field on the triggering object. The fields in the selection belong to the parent object that lookup points to.
+
+The key also decides the name the parent is read back under. The framework uses the relationship name of the lookup, so `Contact.AccountId` is read with `getNewRelated('Account')` and a custom lookup `My_Lookup__c` with `getNewRelated('My_Lookup__r')`.
+
+| Declared key         | Parent object queried | Read back with              |
+| -------------------- | --------------------- | --------------------------- |
+| `Contact.AccountId`  | `Account`             | `getNewRelated('Account')`  |
+| `Contact.OwnerId`    | `User`                | `getNewRelated('Owner')`    |
+| `Contact.CreatedById`| `User`                | `getNewRelated('CreatedBy')`|
+
+`OldRecordEnrichment` uses the same keys and the same names, read with `getOldRelated`. Declaring a lookup on one side does not declare it on the other.
 
 ## Methods
 
@@ -60,13 +86,15 @@ FieldSelection with(String relationshipName, SObjectField field1, SObjectField f
 FieldSelection with(String relationshipName, Iterable<SObjectField> fields)
 ```
 
+Each field is added to the query as `relationshipName.Field`, so it is read by traversing the parent record that comes back. The relationship name does not change how the parent itself is read back, only what it carries.
+
 **Example**
 
 ```apex
 Contact.AccountId => TriggerHandler.FieldSelection
-    .with(Account.Name)
-    .with('Owner', User.Name, User.Email)
-    .with('Parent', Account.Name)
+  .with(Account.Name)
+  .with('Owner', User.Name, User.Email)
+  .with('Parent', Account.Name)
 ```
 
 ```apex
@@ -75,9 +103,19 @@ String ownerEmail = account.Owner.Email;
 String parentName = account.Parent?.Name;
 ```
 
+### getFields
+
+```apex
+List<String> getFields()
+```
+
+Used by the framework to build the query. Handlers have no reason to call it.
+
 ## Merging
 
-Selections from all active handlers of the same context are merged per lookup field, so one query on the parent object serves every handler. Declaring the same field twice is harmless.
+Selections from all handlers that run in the same context are merged per lookup field, so one query on the parent object serves every handler. Declaring the same field twice is harmless. A handler that is [bypassed](/guide/bypasses) contributes nothing, because bypassed handlers are removed before enrichment runs.
+
+Parents are fetched for every record in the invocation, before any qualification predicate is evaluated. That is what makes the parents readable inside the predicates, and it means the query cost does not depend on how many records qualify.
 
 ## Id
 

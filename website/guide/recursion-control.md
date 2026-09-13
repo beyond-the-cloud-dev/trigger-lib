@@ -6,11 +6,13 @@ outline: deep
 
 An after update handler that updates its own records fires the trigger again. Workflow rules, flows and other triggers do the same. Trigger Lib limits how many times an update handler runs for a given record within one transaction.
 
-Both update contexts are guarded. A before update handler cannot perform DML at all, so its re-entry always comes from somewhere else in the transaction, but it is counted and capped the same way.
+Recursion control applies to **before update populators** and **after update handlers**. A before update populator cannot perform DML at all, so its re-entry always comes from somewhere else in the transaction, but it is counted and capped the same way.
+
+Before update **validators** are not counted and cannot be capped. A validator that qualifies attaches an error, which takes that record out of the save, so it cannot run a second time for that record no matter what else happens in the transaction. Declaring `BeforeUpdate.RecursionGuard` on a validator has no effect.
 
 ## Default Depth
 
-Before update and after update handlers run at most **3 times per record** by default. The counter is keyed by **handler class, trigger operation and record Id**, so:
+Before update populators and after update handlers run at most **3 times per record** by default. The counter is keyed by **handler class, trigger operation and record Id**, so:
 
 - two different handlers on the same record have independent counters. One handler exhausting its passes does not consume another handler's,
 - the before update and after update counters of one handler are independent,

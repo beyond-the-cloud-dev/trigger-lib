@@ -55,6 +55,7 @@ Behaviour the library is expected to guarantee. Every row is a scenario that sho
 | Orchestrator recursion depth | Orchestrator implements `TriggerOrchestrator.RecursionGuard` returning five, handler declares none | Every handler of that orchestrator stops after five passes per record instead of three |
 | Handler depth beats orchestrator depth | Orchestrator returns five, one handler implements the context `RecursionGuard` returning two | That handler stops after two passes, every other handler of the orchestrator stops after five |
 | No guard anywhere | Neither orchestrator nor handler implements a `RecursionGuard` | The framework default of three passes per record applies |
+| Validators are not counted | A before update `Validator` re-enters, with or without a `RecursionGuard` | It runs on every pass. A validator that qualifies ends its record's save, so it cannot re-enter and needs no cap. `BeforeUpdate.RecursionGuard` on a validator is inert |
 | Depth below one | A `RecursionGuard` returns zero or a negative number | `TriggerOrchestratorException` naming the class and the method that returned it, stating the minimum is one. Never a silently disabled handler |
 | Depth of null | A `RecursionGuard` returns null | `TriggerOrchestratorException` naming the class and the method. Never an unguarded handler |
 | Depth of one | A `RecursionGuard` returns one | The handler runs once per record and is skipped on every re-entry. This is the value for run-exactly-once, not zero |

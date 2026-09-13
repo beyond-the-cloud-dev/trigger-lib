@@ -619,6 +619,10 @@ public with sharing class TriggerHandler {
             return this.isLessThan(field, value);
         }
 
+        public Boolean lessThan(SObjectField field, Long value) {
+            return this.isLessThan(field, value);
+        }
+
         public Boolean lessThan(SObjectField field, Double value) {
             return this.isLessThan(field, value);
         }
@@ -638,6 +642,10 @@ public with sharing class TriggerHandler {
         }
 
         public Boolean lessThanOrEqualTo(SObjectField field, Integer value) {
+            return this.isLessThanOrEqualTo(field, value);
+        }
+
+        public Boolean lessThanOrEqualTo(SObjectField field, Long value) {
             return this.isLessThanOrEqualTo(field, value);
         }
 

@@ -1,3 +1,21 @@
+/**
+ * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
+ * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
+ *
+ * v0.0.1
+ *
+ * PMD False Positives:
+ * - ExcessivePublicCount: It is a library class and exposes all necessary methods to evaluate a trigger record
+ * - CyclomaticComplexity: It is a library and we tried to put everything into ONE class
+ * - CognitiveComplexity: It is a library and we tried to put everything into ONE class
+ * - ExcessiveParameterList: Fixed arity overloads spare the caller from building a list for the common cases
+ * - PropertyNamingConventions: It was intentional to make the lib more fluent and readable
+ * - FieldNamingConventions: It was intentional to make the lib more fluent and readable
+ * - FieldDeclarationsShouldBeAtStart: Developer who uses lib should see what's important at start
+ **/
+@SuppressWarnings(
+    'PMD.ExcessivePublicCount,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ExcessiveParameterList,PMD.PropertyNamingConventions,PMD.FieldNamingConventions,PMD.FieldDeclarationsShouldBeAtStart'
+)
 public with sharing class TriggerHandler {
     public static FieldSelection FieldSelection {
         get {
@@ -102,7 +120,7 @@ public with sharing class TriggerHandler {
         Boolean areAllChanged(Iterable<SObjectField> fields);
 
         Boolean isChangedTo(SObjectField field, Object expectedValue);
-        Boolean isChangedFrom(SObjectField field, Object priorValue); 
+        Boolean isChangedFrom(SObjectField field, Object priorValue);
         Boolean isChangedFromTo(SObjectField field, Object fromValue, Object toValue);
 
         Boolean isTrue(SObjectField field);
@@ -266,7 +284,7 @@ public with sharing class TriggerHandler {
     }
 
     public interface FieldSelection {
-        FieldSelection with(SObjectField field); 
+        FieldSelection with(SObjectField field);
         FieldSelection with(SObjectField field1, SObjectField field2);
         FieldSelection with(SObjectField field1, SObjectField field2, SObjectField field3);
         FieldSelection with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
@@ -284,7 +302,7 @@ public with sharing class TriggerHandler {
         List<String> getFields();
     }
 
-    // Implementation 
+    // Implementation
 
     private static RecordTypesInfo RecordTypesInfo = new RecordTypesInfo();
 
@@ -378,7 +396,7 @@ public with sharing class TriggerHandler {
         public List<String> getFields() {
             return this.fields;
         }
-    } 
+    }
 
     public class TriggerRecord implements TriggerHandler.InsertRecord, TriggerHandler.UpdateRecord, TriggerHandler.DeleteRecord, TriggerHandler.UndeleteRecord {
         private SObject newRecord;
@@ -388,7 +406,7 @@ public with sharing class TriggerHandler {
         private Map<String, SObject> oldRelatedRecords = new Map<String, SObject>();
 
         private SObjectType sObjectType;
-        
+
         private String identifier;
 
         public TriggerRecord(SObject record) {
@@ -407,9 +425,7 @@ public with sharing class TriggerHandler {
 
         public Boolean isRecordTypeEqual(String recordTypeDeveloperName) {
             if (!RecordTypesInfo.hasRecordTypes(this.sObjectType)) {
-                throw new TriggerHandlerException(
-                    String.valueOf(this.sObjectType) + ' has no record types, so isRecordTypeEqual cannot be used on it.'
-                );
+                throw new TriggerHandlerException(String.valueOf(this.sObjectType) + ' has no record types, so isRecordTypeEqual cannot be used on it.');
             }
 
             return RecordTypesInfo.getId(this.sObjectType, recordTypeDeveloperName) == (this.newRecord ?? this.oldRecord).get('RecordTypeId');
@@ -417,9 +433,7 @@ public with sharing class TriggerHandler {
 
         public Boolean isRecordTypeNotEqual(String recordTypeDeveloperName) {
             if (!RecordTypesInfo.hasRecordTypes(this.sObjectType)) {
-                throw new TriggerHandlerException(
-                    String.valueOf(this.sObjectType) + ' has no record types, so isRecordTypeNotEqual cannot be used on it.'
-                );
+                throw new TriggerHandlerException(String.valueOf(this.sObjectType) + ' has no record types, so isRecordTypeNotEqual cannot be used on it.');
             }
 
             return RecordTypesInfo.getId(this.sObjectType, recordTypeDeveloperName) != (this.newRecord ?? this.oldRecord).get('RecordTypeId');
@@ -748,5 +762,26 @@ public with sharing class TriggerHandler {
     }
 
     public class TriggerHandlerException extends Exception {
+    }
+
+    public static RandomIdGenerator IdGenerator = new RandomIdGenerator();
+
+    public class RandomIdGenerator {
+        private final String RANDOM_STRING_CHARACTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz';
+
+        public Id get(SObjectType objectType) {
+            return this.get(objectType.getDescribe(SObjectDescribeOptions.DEFERRED).getKeyPrefix());
+        }
+
+        public Id get(String prefix) {
+            String randomPart = '';
+
+            while (randomPart.length() < 8) {
+                Integer idx = Math.mod(Math.abs(Crypto.getRandomInteger()), this.RANDOM_STRING_CHARACTERS.length());
+                randomPart += this.RANDOM_STRING_CHARACTERS.substring(idx, idx + 1);
+            }
+
+            return Id.valueOf(prefix + '0000' + randomPart);
+        }
     }
 }

@@ -30,6 +30,14 @@ Behaviour the library is expected to guarantee. Every row is a scenario that sho
 | Enrichment not declared | Handler reads a relationship it never declared | `getNewRelated` returns null, no query is issued |
 | Lookup field unset | Trigger record has no value in the declared lookup | No parent is fetched for that record, no error |
 | Enrichment query count | Several handlers declare the same parent field | One query per parent field per invocation |
+| Lookup re-pointed by a handler | A before-context handler changes a declared lookup, a later handler reads that relationship | The later handler receives the parent the record now points at, not the original one |
+| Lookup populated from null | A before-context handler sets a declared lookup that was empty | The later handler receives the newly referenced parent instead of null |
+| Re-point query cost | Two hundred records each re-pointed to a different parent, then read | One additional query for the whole chunk, covering only the changed lookup field. Never one query per record |
+| No re-point, many handlers | Ten handlers run and none changes a declared lookup | No extra queries at all. The cost stays at one query per parent field for the whole invocation |
+| Parent already fetched | A handler re-points a record to a parent already loaded for another record | No query is issued. Parents are cached by id for the invocation, hits and misses alike |
+| Old side never refreshes | A handler changes a lookup that is also declared for the old side | `getOldRelated` is unchanged. `Trigger.old` is immutable, so the old side is resolved on the first pass and never re-queried, in every context |
+| Refresh only where records can change | Handlers run in after insert, after update, a delete context or after undelete | Parents are resolved once. No re-check happens between handlers, because no handler can change a record in those contexts |
+| Both sides in one pass | After-update handler declares the same lookup for both sides and the lookup changed | `getOldRelated` returns the prior parent and `getNewRelated` the current one, resolved together in a single query |
 | **Qualification** | | |
 | Qualified record registered | Handler's qualify method returns true | Handler's action runs for that record |
 | Unqualified record skipped | Handler's qualify method returns false | Handler's action never runs for that record |

@@ -6,6 +6,19 @@ outline: deep
 
 Handlers often need data from a parent record: the account of a contact, the owner of an opportunity. Instead of querying inside the handler, declare the lookup field and the parent fields you need. The framework queries them once and attaches the parent record to every trigger record.
 
+## Freshness
+
+Parents are resolved before the first handler runs. In **before insert** and **before update** they are also re-checked at every handler boundary, because those are the only contexts in which a handler can change a record.
+
+If a handler there changes a declared lookup field, the next handler sees the parent the record now points at. A lookup moved from one parent to another resolves to the new one; a lookup filled in from empty resolves instead of staying null.
+
+The re-check costs nothing when nothing changed. When a lookup has changed, the framework issues **one** additional query for that lookup field, covering every record whose value changed, and only for parents it has not already loaded. Re-pointing two hundred records to two hundred different parents is one query, not two hundred. Pointing a record at a parent already loaded for another record is free.
+
+Every other context resolves parents exactly once. After insert, after update, the delete contexts and after undelete cannot change a record, so there is nothing to re-check and no work is done between handlers.
+
+The old side is never refreshed in any context. `Trigger.old` is immutable, so `getOldRelated` is resolved on the first pass and never looked at again.
+
+
 ## Declaring Fields
 
 Implement `NewRecordEnrichment` and return a map from the lookup field on the triggering object to a [`TriggerHandler.FieldSelection`](/api/field-selection) listing the parent fields.

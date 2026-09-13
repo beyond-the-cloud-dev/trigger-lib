@@ -69,6 +69,8 @@ public with sharing class OpportunityRollupHandler implements AfterUpdate.Handle
 
 A depth of `1` means the handler processes each record once per transaction, which is the right choice for handlers that write back to the triggering object.
 
+The minimum is `1`. Returning `0`, a negative number or `null` from either `maxRecursionDepth()` or a context `maxRecursionDepthOn...()` raises a `TriggerOrchestratorException` naming the class and the method, rather than silently disabling the handler or removing its limit.
+
 Unlike the orchestrator setting, the handler setting is per context: a class implementing both `BeforeUpdate.RecursionGuard` and `AfterUpdate.RecursionGuard` can give each context a different limit.
 
 ## Counting Rules

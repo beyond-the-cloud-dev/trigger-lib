@@ -746,10 +746,26 @@ public with sharing class TriggerOrchestrator {
 
             if (this.orchestrator instanceof TriggerOrchestrator.RecursionGuard) {
                 maxRecursionDepth = ((TriggerOrchestrator.RecursionGuard) this.orchestrator).maxRecursionDepth();
+
+                if (maxRecursionDepth == null || maxRecursionDepth < 1) {
+                    throw new TriggerOrchestratorException(
+                        String.valueOf(this.orchestrator).substringBefore(':') +
+                        ' returned a recursion depth of ' + maxRecursionDepth +
+                        ' from maxRecursionDepth(). The minimum is 1, meaning the handler runs once per record.'
+                    );
+                }
             }
 
             if (this.handler instanceof BeforeUpdate.RecursionGuard) {
                 maxRecursionDepth = ((BeforeUpdate.RecursionGuard) this.handler).maxRecursionDepthOnBeforeUpdate();
+
+                if (maxRecursionDepth == null || maxRecursionDepth < 1) {
+                    throw new TriggerOrchestratorException(
+                        String.valueOf(this.handler).substringBefore(':') +
+                        ' returned a recursion depth of ' + maxRecursionDepth +
+                        ' from maxRecursionDepthOnBeforeUpdate(). The minimum is 1, meaning the handler runs once per record.'
+                    );
+                }
             }
 
             String recursionKey = String.valueOf(this.handler).substringBefore(':') + ':BEFORE_UPDATE:' + record.getId();
@@ -887,10 +903,26 @@ public with sharing class TriggerOrchestrator {
 
             if (this.orchestrator instanceof TriggerOrchestrator.RecursionGuard) {
                 maxRecursionDepth = ((TriggerOrchestrator.RecursionGuard) this.orchestrator).maxRecursionDepth();
+
+                if (maxRecursionDepth == null || maxRecursionDepth < 1) {
+                    throw new TriggerOrchestratorException(
+                        String.valueOf(this.orchestrator).substringBefore(':') +
+                        ' returned a recursion depth of ' + maxRecursionDepth +
+                        ' from maxRecursionDepth(). The minimum is 1, meaning the handler runs once per record.'
+                    );
+                }
             }
 
             if (this.handler instanceof AfterUpdate.RecursionGuard) {
                 maxRecursionDepth = ((AfterUpdate.RecursionGuard) this.handler).maxRecursionDepthOnAfterUpdate();
+
+                if (maxRecursionDepth == null || maxRecursionDepth < 1) {
+                    throw new TriggerOrchestratorException(
+                        String.valueOf(this.handler).substringBefore(':') +
+                        ' returned a recursion depth of ' + maxRecursionDepth +
+                        ' from maxRecursionDepthOnAfterUpdate(). The minimum is 1, meaning the handler runs once per record.'
+                    );
+                }
             }
 
             String recursionKey = String.valueOf(this.handler).substringBefore(':') + ':AFTER_UPDATE:' + record.getId();

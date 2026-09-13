@@ -11,11 +11,10 @@
  * - CyclomaticComplexity: Dispatch has to branch over all seven trigger contexts
  * - StdCyclomaticComplexity: Dispatch has to branch over all seven trigger contexts
  * - CognitiveComplexity: Dispatch has to branch over all seven trigger contexts
- * - AvoidDeeplyNestedIfStmts: The nesting mirrors the shape of the data that is unpacked
  * - AvoidNonRestrictiveQueries: The bypass configuration is custom metadata, it is read once and does not count against SOQL limits
  **/
 @SuppressWarnings(
-    'PMD.ExcessiveClassLength,PMD.NcssTypeCount,PMD.NcssMethodCount,PMD.CyclomaticComplexity,PMD.StdCyclomaticComplexity,PMD.CognitiveComplexity,PMD.AvoidDeeplyNestedIfStmts,PMD.AvoidNonRestrictiveQueries'
+    'PMD.ExcessiveClassLength,PMD.NcssTypeCount,PMD.NcssMethodCount,PMD.CyclomaticComplexity,PMD.StdCyclomaticComplexity,PMD.CognitiveComplexity,PMD.AvoidNonRestrictiveQueries'
 )
 public with sharing class TriggerOrchestrator {
     public interface BeforeInsert {
@@ -362,35 +361,39 @@ public with sharing class TriggerOrchestrator {
     }
 
     private static MetadataSettings resolveMetadataSettings(SObjectType sObjectType) {
-        if (TriggerOrchestrator.metadataSettingsByObjectName == null) {
-            TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, MetadataSettings>();
-
-            for (TriggerObject__mdt triggerObject : [
-                SELECT ObjectAPIName__c, Bypass__c, (SELECT ApexClassName__c, Bypass__c FROM TriggerHandlers__r)
-                FROM TriggerObject__mdt
-                WITH SYSTEM_MODE
-            ]) {
-                MetadataSettings metadataSettings = new MetadataSettings();
-
-                metadataSettings.isSObjectBypassed = triggerObject.Bypass__c == true;
-
-                for (TriggerHandler__mdt triggerHandler : triggerObject.TriggerHandlers__r ?? new List<TriggerHandler__mdt>()) {
-                    if (triggerHandler.Bypass__c == true) {
-                        String bypassedHandlerName = triggerHandler.ApexClassName__c.trim().toLowerCase();
-
-                        metadataSettings.bypassedHandlerNames.add(bypassedHandlerName);
-
-                        if (bypassedHandlerName.contains('.')) {
-                            metadataSettings.bypassedHandlerNames.add(bypassedHandlerName.substringAfterLast('.'));
-                        }
-                    }
-                }
-
-                TriggerOrchestrator.metadataSettingsByObjectName.put(triggerObject.ObjectAPIName__c.trim().toLowerCase(), metadataSettings);
-            }
+        if (TriggerOrchestrator.metadataSettingsByObjectName != null) {
+            return TriggerOrchestrator.metadataSettingsByObjectName.get(String.valueOf(sObjectType).toLowerCase());
         }
 
-        return TriggerOrchestrator.metadataSettingsByObjectName?.get(String.valueOf(sObjectType).toLowerCase());
+        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, MetadataSettings>();
+
+        for (TriggerObject__mdt triggerObject : [
+            SELECT ObjectAPIName__c, Bypass__c, (SELECT ApexClassName__c, Bypass__c FROM TriggerHandlers__r)
+            FROM TriggerObject__mdt
+            WITH SYSTEM_MODE
+        ]) {
+            MetadataSettings metadataSettings = new MetadataSettings();
+
+            metadataSettings.isSObjectBypassed = triggerObject.Bypass__c == true;
+
+            for (TriggerHandler__mdt triggerHandler : triggerObject.TriggerHandlers__r ?? new List<TriggerHandler__mdt>()) {
+                if (triggerHandler.Bypass__c != true) {
+                    continue;
+                }
+
+                String bypassedHandlerName = triggerHandler.ApexClassName__c.trim().toLowerCase();
+
+                metadataSettings.bypassedHandlerNames.add(bypassedHandlerName);
+
+                if (bypassedHandlerName.contains('.')) {
+                    metadataSettings.bypassedHandlerNames.add(bypassedHandlerName.substringAfterLast('.'));
+                }
+            }
+
+            TriggerOrchestrator.metadataSettingsByObjectName.put(triggerObject.ObjectAPIName__c.trim().toLowerCase(), metadataSettings);
+        }
+
+        return TriggerOrchestrator.metadataSettingsByObjectName.get(String.valueOf(sObjectType).toLowerCase());
     }
 
     private static void logError(Exception e, TriggerHandlerAdapter adapter) {
@@ -1160,20 +1163,24 @@ public with sharing class TriggerOrchestrator {
             Map<String, Id> staleNewIdByRecord = new Map<String, Id>();
             Set<Id> parentIdsToQuery = new Set<Id>();
 
-            for (TriggerHandler.TriggerRecord record : this.recordsToEnrich) {
-                if (enrichNewSide) {
+            if (enrichNewSide) {
+                for (TriggerHandler.TriggerRecord record : this.recordsToEnrich) {
                     Id parentId = record.getNewSObject()?.isSet(parentField) == true ? (Id) record.getNewSObject().get(parentField) : null;
 
-                    if (enrichedNewIdByRecord.get(record.getIdentifier()) != parentId) {
-                        staleNewIdByRecord.put(record.getIdentifier(), parentId);
+                    if (enrichedNewIdByRecord.get(record.getIdentifier()) == parentId) {
+                        continue;
+                    }
 
-                        if (parentId != null && !cachedParentById.containsKey(parentId)) {
-                            parentIdsToQuery.add(parentId);
-                        }
+                    staleNewIdByRecord.put(record.getIdentifier(), parentId);
+
+                    if (parentId != null && !cachedParentById.containsKey(parentId)) {
+                        parentIdsToQuery.add(parentId);
                     }
                 }
+            }
 
-                if (enrichOldSide) {
+            if (enrichOldSide) {
+                for (TriggerHandler.TriggerRecord record : this.recordsToEnrich) {
                     Id parentId = record.getOldSObject()?.isSet(parentField) == true ? (Id) record.getOldSObject().get(parentField) : null;
 
                     if (parentId != null && !cachedParentById.containsKey(parentId)) {

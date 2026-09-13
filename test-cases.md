@@ -55,6 +55,9 @@ Behaviour the library is expected to guarantee. Every row is a scenario that sho
 | Orchestrator recursion depth | Orchestrator implements `TriggerOrchestrator.RecursionGuard` returning five, handler declares none | Every handler of that orchestrator stops after five passes per record instead of three |
 | Handler depth beats orchestrator depth | Orchestrator returns five, one handler implements the context `RecursionGuard` returning two | That handler stops after two passes, every other handler of the orchestrator stops after five |
 | No guard anywhere | Neither orchestrator nor handler implements a `RecursionGuard` | The framework default of three passes per record applies |
+| Depth below one | A `RecursionGuard` returns zero or a negative number | `TriggerOrchestratorException` naming the class and the method that returned it, stating the minimum is one. Never a silently disabled handler |
+| Depth of null | A `RecursionGuard` returns null | `TriggerOrchestratorException` naming the class and the method. Never an unguarded handler |
+| Depth of one | A `RecursionGuard` returns one | The handler runs once per record and is skipped on every re-entry. This is the value for run-exactly-once, not zero |
 | Counter scope | Two records updated in one DML, handler guarded at two passes | Each record carries its own budget. The handler runs twice for each record, four times in total. The counter is keyed by handler class, operation and record id, so one record exhausting its budget never affects another |
 | Counter is per handler | Two handlers in the same context, one re-enters | Each handler has its own independent budget for the same record. One handler exhausting its passes does not consume another handler's |
 | Limit reached | A record reaches the handler more times than its guard allows | The handler is skipped silently for that record. No exception is thrown, nothing reaches the `Logger`, and the DML succeeds |

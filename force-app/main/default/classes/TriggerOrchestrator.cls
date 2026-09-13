@@ -1,3 +1,22 @@
+/**
+ * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
+ * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
+ *
+ * v0.0.1
+ *
+ * PMD False Positives:
+ * - ExcessiveClassLength: It is a library and we tried to put everything into ONE class
+ * - NcssTypeCount: It is a library and we tried to put everything into ONE class
+ * - NcssMethodCount: Parent enrichment resolves the new and the old side in one pass to keep it to a single query
+ * - CyclomaticComplexity: Dispatch has to branch over all seven trigger contexts
+ * - StdCyclomaticComplexity: Dispatch has to branch over all seven trigger contexts
+ * - CognitiveComplexity: Dispatch has to branch over all seven trigger contexts
+ * - AvoidDeeplyNestedIfStmts: The nesting mirrors the shape of the data that is unpacked
+ * - AvoidNonRestrictiveQueries: The bypass configuration is custom metadata, it is read once and does not count against SOQL limits
+ **/
+@SuppressWarnings(
+    'PMD.ExcessiveClassLength,PMD.NcssTypeCount,PMD.NcssMethodCount,PMD.CyclomaticComplexity,PMD.StdCyclomaticComplexity,PMD.CognitiveComplexity,PMD.AvoidDeeplyNestedIfStmts,PMD.AvoidNonRestrictiveQueries'
+)
 public with sharing class TriggerOrchestrator {
     public interface BeforeInsert {
         List<BeforeInsert.Handler> beforeInsertHandlers();
@@ -48,8 +67,52 @@ public with sharing class TriggerOrchestrator {
 
     private static List<ExecutionStrategy> executionStack = new List<ExecutionStrategy>();
     private static Map<String, Integer> recursionDepthByHandlerRecord = new Map<String, Integer>();
+
+    @TestVisible
     private static Map<String, MetadataSettings> metadataSettingsByObjectName;
+
+    @TestVisible
     private static Boolean isLoggerResolved = false;
+
+    @TestVisible
+    private static System.TriggerOperation operationType {
+        get {
+            return operationType ?? Trigger.operationType;
+        }
+        private set;
+    }
+
+    @TestVisible
+    private static List<SObject> newRecords {
+        get {
+            return newRecords ?? Trigger.new;
+        }
+        private set;
+    }
+
+    @TestVisible
+    private static List<SObject> oldRecords {
+        get {
+            return oldRecords ?? Trigger.old;
+        }
+        private set;
+    }
+
+    @TestVisible
+    private static Map<Id, SObject> newRecordsById {
+        get {
+            return newRecordsById ?? Trigger.newMap;
+        }
+        private set;
+    }
+
+    @TestVisible
+    private static Map<Id, SObject> oldRecordsById {
+        get {
+            return oldRecordsById ?? Trigger.oldMap;
+        }
+        private set;
+    }
 
     @TestVisible
     private static Logger logger {
@@ -67,29 +130,29 @@ public with sharing class TriggerOrchestrator {
         ExecutionStrategy executionStrategy;
 
         try {
-            if (Trigger.operationType == null) {
+            if (TriggerOrchestrator.operationType == null) {
                 throw new TriggerOrchestratorException('Called outside of trigger context, or not supported operation type');
             }
 
-            MetadataSettings metadataSettings = TriggerOrchestrator.resolveMetadataSettings((Trigger.new ?? Trigger.old)?.getSObjectType());
+            MetadataSettings metadataSettings = TriggerOrchestrator.resolveMetadataSettings((TriggerOrchestrator.newRecords ?? TriggerOrchestrator.oldRecords)?.getSObjectType());
 
             if (metadataSettings?.isSObjectBypassed == true) {
                 return;
             }
 
-            if (Trigger.operationType == System.TriggerOperation.BEFORE_INSERT && orchestrator instanceof TriggerOrchestrator.BeforeInsert) {
+            if (TriggerOrchestrator.operationType == System.TriggerOperation.BEFORE_INSERT && orchestrator instanceof TriggerOrchestrator.BeforeInsert) {
                 executionStrategy = new BeforeInsertExecutionStrategy();
-            } else if (Trigger.operationType == System.TriggerOperation.AFTER_INSERT && orchestrator instanceof TriggerOrchestrator.AfterInsert) {
+            } else if (TriggerOrchestrator.operationType == System.TriggerOperation.AFTER_INSERT && orchestrator instanceof TriggerOrchestrator.AfterInsert) {
                 executionStrategy = new AfterInsertExecutionStrategy();
-            } else if (Trigger.operationType == System.TriggerOperation.BEFORE_UPDATE && orchestrator instanceof TriggerOrchestrator.BeforeUpdate) {
+            } else if (TriggerOrchestrator.operationType == System.TriggerOperation.BEFORE_UPDATE && orchestrator instanceof TriggerOrchestrator.BeforeUpdate) {
                 executionStrategy = new BeforeUpdateExecutionStrategy();
-            } else if (Trigger.operationType == System.TriggerOperation.AFTER_UPDATE && orchestrator instanceof TriggerOrchestrator.AfterUpdate) {
+            } else if (TriggerOrchestrator.operationType == System.TriggerOperation.AFTER_UPDATE && orchestrator instanceof TriggerOrchestrator.AfterUpdate) {
                 executionStrategy = new AfterUpdateExecutionStrategy();
-            } else if (Trigger.operationType == System.TriggerOperation.BEFORE_DELETE && orchestrator instanceof TriggerOrchestrator.BeforeDelete) {
+            } else if (TriggerOrchestrator.operationType == System.TriggerOperation.BEFORE_DELETE && orchestrator instanceof TriggerOrchestrator.BeforeDelete) {
                 executionStrategy = new BeforeDeleteExecutionStrategy();
-            } else if (Trigger.operationType == System.TriggerOperation.AFTER_DELETE && orchestrator instanceof TriggerOrchestrator.AfterDelete) {
+            } else if (TriggerOrchestrator.operationType == System.TriggerOperation.AFTER_DELETE && orchestrator instanceof TriggerOrchestrator.AfterDelete) {
                 executionStrategy = new AfterDeleteExecutionStrategy();
-            } else if (Trigger.operationType == System.TriggerOperation.AFTER_UNDELETE && orchestrator instanceof TriggerOrchestrator.AfterUndelete) {
+            } else if (TriggerOrchestrator.operationType == System.TriggerOperation.AFTER_UNDELETE && orchestrator instanceof TriggerOrchestrator.AfterUndelete) {
                 executionStrategy = new AfterUndeleteExecutionStrategy();
             } else {
                 return;
@@ -115,6 +178,7 @@ public with sharing class TriggerOrchestrator {
         protected List<TriggerHandlerAdapter> handlerAdapters = new List<TriggerHandlerAdapter>();
         protected List<TriggerHandlerAdapter> activeHandlers = new List<TriggerHandlerAdapter>();
         protected List<TriggerHandler.TriggerRecord> triggerRecords = new List<TriggerHandler.TriggerRecord>();
+        protected ParentRelationshipEnrichment parentRelationshipEnrichment;
 
         public abstract void adaptHandlers();
 
@@ -126,14 +190,14 @@ public with sharing class TriggerOrchestrator {
             this.registerOrchestratorOnHandlerAdapters();
 
             this.filterBypassedHandlers();
-            this.enrichParentRelatioships();
+            this.declareParentRelatioships();
 
             this.runHandlers();
         }
 
         private void registerRecords() {
-            for (Integer i = 0; i < (Trigger.new ?? Trigger.old).size(); i++) {
-                this.triggerRecords.add(new TriggerHandler.TriggerRecord(Trigger.new?.get(i), Trigger.old?.get(i)));
+            for (Integer i = 0; i < (TriggerOrchestrator.newRecords ?? TriggerOrchestrator.oldRecords).size(); i++) {
+                this.triggerRecords.add(new TriggerHandler.TriggerRecord(TriggerOrchestrator.newRecords?.get(i), TriggerOrchestrator.oldRecords?.get(i)));
             }
         }
 
@@ -151,12 +215,15 @@ public with sharing class TriggerOrchestrator {
             }
         }
 
-        private void enrichParentRelatioships() {
-            new ParentRelationshipEnrichment(this.activeHandlers, this.triggerRecords).enrich();
+        private void declareParentRelatioships() {
+            this.parentRelationshipEnrichment = new ParentRelationshipEnrichment(this.activeHandlers, this.triggerRecords);
+            this.parentRelationshipEnrichment.declareParentFields();
         }
 
         private void runHandlers() {
             for (TriggerHandlerAdapter adapter : this.activeHandlers) {
+                this.parentRelationshipEnrichment.enrich();
+
                 try {
                     adapter.execute(this.triggerRecords);
                 } catch (Exception e) {
@@ -290,7 +357,8 @@ public with sharing class TriggerOrchestrator {
     }
 
     private static Boolean isHandlerBypassedInMetadata(Object handler) {
-        return TriggerOrchestrator.resolveMetadataSettings((Trigger.new ?? Trigger.old)?.getSObjectType())?.isHandlerBypassed(handler) == true;
+        return TriggerOrchestrator.resolveMetadataSettings((TriggerOrchestrator.newRecords ?? TriggerOrchestrator.oldRecords)?.getSObjectType())?.isHandlerBypassed(handler) ==
+            true;
     }
 
     private static MetadataSettings resolveMetadataSettings(SObjectType sObjectType) {
@@ -334,22 +402,25 @@ public with sharing class TriggerOrchestrator {
 
         error.triggerException = e;
         error.handlerName = adapter == null ? null : String.valueOf(adapter.getHandler()).substringBefore(':');
-        error.operation = Trigger.operationType;
-        error.sObjectType = (Trigger.new ?? Trigger.old)?.getSObjectType();
-        error.recordIds = (Trigger.newMap ?? Trigger.oldMap)?.keySet();
+        error.operation = TriggerOrchestrator.operationType;
+        error.sObjectType = (TriggerOrchestrator.newRecords ?? TriggerOrchestrator.oldRecords)?.getSObjectType();
+        error.recordIds = (TriggerOrchestrator.newRecordsById ?? TriggerOrchestrator.oldRecordsById)?.keySet();
 
         TriggerOrchestrator.logger.log(error);
     }
 
+    @TestVisible
     private class MetadataSettings {
+        @TestVisible
         private Boolean isSObjectBypassed = false;
+
+        @TestVisible
         private Set<String> bypassedHandlerNames = new Set<String>();
 
         public Boolean isHandlerBypassed(Object handler) {
             return this.bypassedHandlerNames.contains(String.valueOf(handler).substringBefore(':').toLowerCase());
         }
     }
-
 
     private class TriggerError implements Error {
         public String handlerName;
@@ -1028,26 +1099,25 @@ public with sharing class TriggerOrchestrator {
     private class ParentRelationshipEnrichment {
         private List<TriggerHandlerAdapter> adapters;
         private List<TriggerHandler.TriggerRecord> recordsToEnrich;
+
         private Set<SObjectField> newRecordFieldsToEnrich = new Set<SObjectField>();
         private Set<SObjectField> oldRecordFieldsToEnrich = new Set<SObjectField>();
-        private Map<SObjectField, SOQL.Queryable> queryByParentField = new Map<SObjectField, SOQL.Queryable>();
+        private Map<SObjectField, Set<String>> selectedFieldsByParentField = new Map<SObjectField, Set<String>>();
+
+        private Map<SObjectField, Map<Id, SObject>> cachedParentByIdByParentField = new Map<SObjectField, Map<Id, SObject>>();
+        private Map<SObjectField, Map<String, Id>> enrichedNewIdByRecordByParentField = new Map<SObjectField, Map<String, Id>>();
+
+        private Boolean isResolved = false;
+        private Boolean isRecordMutable =
+            TriggerOrchestrator.operationType == System.TriggerOperation.BEFORE_INSERT ||
+            TriggerOrchestrator.operationType == System.TriggerOperation.BEFORE_UPDATE;
 
         public ParentRelationshipEnrichment(List<TriggerHandlerAdapter> adapters, List<TriggerHandler.TriggerRecord> recordsToEnrich) {
             this.adapters = adapters;
             this.recordsToEnrich = recordsToEnrich;
         }
 
-        public void enrich() {
-            this.declareParentFields();
-
-            if (this.queryByParentField.isEmpty()) {
-                return;
-            }
-
-            this.enrichRecords();
-        }
-
-        private void declareParentFields() {
+        public void declareParentFields() {
             for (TriggerHandlerAdapter adapter : this.adapters) {
                 this.declare(adapter.getNewFieldsToEnrich(), this.newRecordFieldsToEnrich);
                 this.declare(adapter.getOldFieldsToEnrich(), this.oldRecordFieldsToEnrich);
@@ -1058,55 +1128,92 @@ public with sharing class TriggerOrchestrator {
             for (SObjectField parentField : fieldsToEnrich.keySet()) {
                 recordFieldsToEnrich.add(parentField);
 
-                if (!this.queryByParentField.containsKey(parentField)) {
-                    this.queryByParentField.put(parentField, SOQL.of(parentField.getDescribe().getReferenceTo()[0]));
+                if (!this.selectedFieldsByParentField.containsKey(parentField)) {
+                    this.selectedFieldsByParentField.put(parentField, new Set<String>());
+                    this.cachedParentByIdByParentField.put(parentField, new Map<Id, SObject>());
+                    this.enrichedNewIdByRecordByParentField.put(parentField, new Map<String, Id>());
                 }
 
-                this.queryByParentField.get(parentField).with(fieldsToEnrich.get(parentField).getFields());
+                this.selectedFieldsByParentField.get(parentField).addAll(fieldsToEnrich.get(parentField).getFields());
             }
         }
 
-        private void enrichRecords() {
-            for (SObjectField parentField : this.queryByParentField.keySet()) {
-                Boolean enrichNewSide = this.newRecordFieldsToEnrich.contains(parentField);
-                Boolean enrichOldSide = this.oldRecordFieldsToEnrich.contains(parentField);
-
-                Set<Id> parentIds = this.gatherParentIds(parentField, enrichNewSide, enrichOldSide);
-
-                if (parentIds.isEmpty()) {
-                    continue;
-                }
-
-                Map<Id, SObject> relatedRecordById = this.queryByParentField.get(parentField).byIds(parentIds).systemMode().withoutSharing().toMap();
-
-                String relationshipName = parentField.getDescribe().getRelationshipName();
-
-                for (TriggerHandler.TriggerRecord record : this.recordsToEnrich) {
-                    if (enrichNewSide && record.getNewSObject()?.isSet(parentField) == true) {
-                        record.enrichNew(relationshipName, relatedRecordById.get((Id) record.getNewSObject().get(parentField)));
-                    }
-
-                    if (enrichOldSide && record.getOldSObject()?.isSet(parentField) == true) {
-                        record.enrichOld(relationshipName, relatedRecordById.get((Id) record.getOldSObject().get(parentField)));
-                    }
-                }
+        public void enrich() {
+            if (this.isResolved && !this.isRecordMutable) {
+                return;
             }
+
+            for (SObjectField parentField : this.selectedFieldsByParentField.keySet()) {
+                this.enrichParentField(parentField);
+            }
+
+            this.isResolved = true;
         }
 
-        private Set<Id> gatherParentIds(SObjectField parentField, Boolean fromNewSide, Boolean fromOldSide) {
-            Set<Id> parentIds = new Set<Id>();
+        private void enrichParentField(SObjectField parentField) {
+            Map<Id, SObject> cachedParentById = this.cachedParentByIdByParentField.get(parentField);
+            Map<String, Id> enrichedNewIdByRecord = this.enrichedNewIdByRecordByParentField.get(parentField);
+
+            Boolean enrichNewSide = this.newRecordFieldsToEnrich.contains(parentField);
+            Boolean enrichOldSide = !this.isResolved && this.oldRecordFieldsToEnrich.contains(parentField);
+
+            Map<String, Id> staleNewIdByRecord = new Map<String, Id>();
+            Set<Id> parentIdsToQuery = new Set<Id>();
 
             for (TriggerHandler.TriggerRecord record : this.recordsToEnrich) {
-                if (fromNewSide && record.getNewSObject()?.isSet(parentField) == true) {
-                    parentIds.add((Id) record.getNewSObject().get(parentField));
+                if (enrichNewSide) {
+                    Id parentId = record.getNewSObject()?.isSet(parentField) == true ? (Id) record.getNewSObject().get(parentField) : null;
+
+                    if (enrichedNewIdByRecord.get(record.getIdentifier()) != parentId) {
+                        staleNewIdByRecord.put(record.getIdentifier(), parentId);
+
+                        if (parentId != null && !cachedParentById.containsKey(parentId)) {
+                            parentIdsToQuery.add(parentId);
+                        }
+                    }
                 }
 
-                if (fromOldSide && record.getOldSObject()?.isSet(parentField) == true) {
-                    parentIds.add((Id) record.getOldSObject().get(parentField));
+                if (enrichOldSide) {
+                    Id parentId = record.getOldSObject()?.isSet(parentField) == true ? (Id) record.getOldSObject().get(parentField) : null;
+
+                    if (parentId != null && !cachedParentById.containsKey(parentId)) {
+                        parentIdsToQuery.add(parentId);
+                    }
                 }
             }
 
-            return parentIds;
+            if (staleNewIdByRecord.isEmpty() && !enrichOldSide) {
+                return;
+            }
+
+            if (!parentIdsToQuery.isEmpty()) {
+                Map<Id, SObject> queriedParentById = SOQL.of(parentField.getDescribe().getReferenceTo()[0])
+                    .with(new List<String>(this.selectedFieldsByParentField.get(parentField)))
+                    .byIds(parentIdsToQuery)
+                    .systemMode()
+                    .withoutSharing()
+                    .toMap();
+
+                for (Id parentId : parentIdsToQuery) {
+                    cachedParentById.put(parentId, queriedParentById.get(parentId));
+                }
+            }
+
+            String relationshipName = parentField.getDescribe().getRelationshipName();
+
+            for (TriggerHandler.TriggerRecord record : this.recordsToEnrich) {
+                if (staleNewIdByRecord.containsKey(record.getIdentifier())) {
+                    record.enrichNew(relationshipName, cachedParentById.get(staleNewIdByRecord.get(record.getIdentifier())));
+                    enrichedNewIdByRecord.put(record.getIdentifier(), staleNewIdByRecord.get(record.getIdentifier()));
+                }
+
+                if (enrichOldSide) {
+                    record.enrichOld(
+                        relationshipName,
+                        cachedParentById.get(record.getOldSObject()?.isSet(parentField) == true ? (Id) record.getOldSObject().get(parentField) : null)
+                    );
+                }
+            }
         }
     }
 

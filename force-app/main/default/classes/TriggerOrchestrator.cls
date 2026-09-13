@@ -65,7 +65,7 @@ public with sharing class TriggerOrchestrator {
     // Implementations
 
     private static List<ExecutionStrategy> executionStack = new List<ExecutionStrategy>();
-    private static Map<String, Integer> recursionDepthByHandlerRecord = new Map<String, Integer>();
+    private static Map<String, Map<Id, Integer>> recursionDepthByRecordByHandler = new Map<String, Map<Id, Integer>>();
 
     @TestVisible
     private static Map<String, MetadataSettings> metadataSettingsByObjectName;
@@ -241,7 +241,7 @@ public with sharing class TriggerOrchestrator {
             for (BeforeInsert.Handler handler : ((TriggerOrchestrator.BeforeInsert) this.orchestrator).beforeInsertHandlers()) {
                 if (handler instanceof BeforeInsert.Populator && handler instanceof BeforeInsert.Validator) {
                     throw new TriggerOrchestratorException(
-                        String.valueOf(handler).substringBefore(':') +
+                        handler.toString().substringBefore(':') +
                         ' implements both BeforeInsert.Populator and BeforeInsert.Validator. A class can implement only one main interface per context.'
                     );
                 }
@@ -256,7 +256,7 @@ public with sharing class TriggerOrchestrator {
 
                 if (!(handler instanceof BeforeInsert.Populator) && !(handler instanceof BeforeInsert.Validator)) {
                     throw new TriggerOrchestratorException(
-                        String.valueOf(handler).substringBefore(':') +
+                        handler.toString().substringBefore(':') +
                         ' implements neither BeforeInsert.Populator nor BeforeInsert.Validator. A class must implement one main interface per context.'
                     );
                 }
@@ -277,7 +277,7 @@ public with sharing class TriggerOrchestrator {
             for (BeforeUpdate.Handler handler : ((TriggerOrchestrator.BeforeUpdate) this.orchestrator).beforeUpdateHandlers()) {
                 if (handler instanceof BeforeUpdate.Populator && handler instanceof BeforeUpdate.Validator) {
                     throw new TriggerOrchestratorException(
-                        String.valueOf(handler).substringBefore(':') +
+                        handler.toString().substringBefore(':') +
                         ' implements both BeforeUpdate.Populator and BeforeUpdate.Validator. A class can implement only one main interface per context.'
                     );
                 }
@@ -292,7 +292,7 @@ public with sharing class TriggerOrchestrator {
 
                 if (!(handler instanceof BeforeUpdate.Populator) && !(handler instanceof BeforeUpdate.Validator)) {
                     throw new TriggerOrchestratorException(
-                        String.valueOf(handler).substringBefore(':') +
+                        handler.toString().substringBefore(':') +
                         ' implements neither BeforeUpdate.Populator nor BeforeUpdate.Validator. A class must implement one main interface per context.'
                     );
                 }
@@ -362,7 +362,7 @@ public with sharing class TriggerOrchestrator {
 
     private static MetadataSettings resolveMetadataSettings(SObjectType sObjectType) {
         if (TriggerOrchestrator.metadataSettingsByObjectName != null) {
-            return TriggerOrchestrator.metadataSettingsByObjectName.get(String.valueOf(sObjectType).toLowerCase());
+            return TriggerOrchestrator.metadataSettingsByObjectName.get(sObjectType.toString().toLowerCase());
         }
 
         TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, MetadataSettings>();
@@ -393,7 +393,7 @@ public with sharing class TriggerOrchestrator {
             TriggerOrchestrator.metadataSettingsByObjectName.put(triggerObject.ObjectAPIName__c.trim().toLowerCase(), metadataSettings);
         }
 
-        return TriggerOrchestrator.metadataSettingsByObjectName.get(String.valueOf(sObjectType).toLowerCase());
+        return TriggerOrchestrator.metadataSettingsByObjectName.get(sObjectType.toString().toLowerCase());
     }
 
     private static void logError(Exception e, TriggerHandlerAdapter adapter) {
@@ -404,7 +404,7 @@ public with sharing class TriggerOrchestrator {
         TriggerError error = new TriggerError();
 
         error.triggerException = e;
-        error.handlerName = adapter == null ? null : String.valueOf(adapter.getHandler()).substringBefore(':');
+        error.handlerName = adapter == null ? null : adapter.getHandler().toString().substringBefore(':');
         error.operation = TriggerOrchestrator.operationType;
         error.sObjectType = (TriggerOrchestrator.newRecords ?? TriggerOrchestrator.oldRecords)?.getSObjectType();
         error.recordIds = (TriggerOrchestrator.newRecordsById ?? TriggerOrchestrator.oldRecordsById)?.keySet();
@@ -421,7 +421,7 @@ public with sharing class TriggerOrchestrator {
         private Set<String> bypassedHandlerNames = new Set<String>();
 
         public Boolean isHandlerBypassed(Object handler) {
-            return this.bypassedHandlerNames.contains(String.valueOf(handler).substringBefore(':').toLowerCase());
+            return this.bypassedHandlerNames.contains(handler.toString().substringBefore(':').toLowerCase());
         }
     }
 
@@ -456,10 +456,15 @@ public with sharing class TriggerOrchestrator {
     private abstract class TriggerHandlerAdapter {
         protected Object handler;
         protected Object orchestrator;
+        protected String handlerName;
 
         public TriggerHandlerAdapter(Object handler) {
             this.handler = handler;
+            this.handlerName = handler.toString().substringBefore(':');
         }
+
+        protected Map<Id, Integer> recursionDepthByRecord;
+        protected Integer maxRecursionDepth;
 
         public Object getHandler() {
             return this.handler;
@@ -532,7 +537,7 @@ public with sharing class TriggerOrchestrator {
             } finally {
                 if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
                     throw new TriggerOrchestratorException(
-                        String.valueOf(this.handler).substringBefore(':') +
+                        this.handlerName +
                         ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
                     );
                 }
@@ -595,7 +600,7 @@ public with sharing class TriggerOrchestrator {
             } finally {
                 if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
                     throw new TriggerOrchestratorException(
-                        String.valueOf(this.handler).substringBefore(':') +
+                        this.handlerName +
                         ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
                     );
                 }
@@ -691,6 +696,13 @@ public with sharing class TriggerOrchestrator {
         public BeforeUpdatePopulatorHandlerAdapter(BeforeUpdate.Populator populator) {
             super(populator);
             this.populator = populator;
+            String recursionScope = this.handlerName + ':BEFORE_UPDATE';
+
+            if (!TriggerOrchestrator.recursionDepthByRecordByHandler.containsKey(recursionScope)) {
+                TriggerOrchestrator.recursionDepthByRecordByHandler.put(recursionScope, new Map<Id, Integer>());
+            }
+
+            this.recursionDepthByRecord = TriggerOrchestrator.recursionDepthByRecordByHandler.get(recursionScope);
         }
 
         public override void execute(List<TriggerHandler.TriggerRecord> records) {
@@ -702,7 +714,7 @@ public with sharing class TriggerOrchestrator {
             } finally {
                 if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
                     throw new TriggerOrchestratorException(
-                        String.valueOf(this.handler).substringBefore(':') +
+                        this.handlerName +
                         ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
                     );
                 }
@@ -742,41 +754,39 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isRecursionDepthExceeded(TriggerHandler.TriggerRecord record) {
-            Integer maxRecursionDepth = 3;
+            if (this.maxRecursionDepth == null) {
+                this.maxRecursionDepth = 3;
 
-            if (this.orchestrator instanceof TriggerOrchestrator.RecursionGuard) {
-                maxRecursionDepth = ((TriggerOrchestrator.RecursionGuard) this.orchestrator).maxRecursionDepth();
+                if (this.orchestrator instanceof TriggerOrchestrator.RecursionGuard) {
+                    this.maxRecursionDepth = ((TriggerOrchestrator.RecursionGuard) this.orchestrator).maxRecursionDepth();
 
-                if (maxRecursionDepth == null || maxRecursionDepth < 1) {
-                    throw new TriggerOrchestratorException(
-                        String.valueOf(this.orchestrator).substringBefore(':') +
-                        ' returned a recursion depth of ' + maxRecursionDepth +
-                        ' from maxRecursionDepth(). The minimum is 1, meaning the handler runs once per record.'
-                    );
+                    if (this.maxRecursionDepth == null || this.maxRecursionDepth < 1) {
+                        throw new TriggerOrchestratorException(
+                            this.orchestrator.toString().substringBefore(':') +
+                            ' returned a recursion depth of ' + this.maxRecursionDepth +
+                            ' from maxRecursionDepth(). The minimum is 1, meaning the handler runs once per record.'
+                        );
+                    }
+                }
+
+                if (this.handler instanceof BeforeUpdate.RecursionGuard) {
+                    this.maxRecursionDepth = ((BeforeUpdate.RecursionGuard) this.handler).maxRecursionDepthOnBeforeUpdate();
+
+                    if (this.maxRecursionDepth == null || this.maxRecursionDepth < 1) {
+                        throw new TriggerOrchestratorException(
+                            this.handlerName +
+                            ' returned a recursion depth of ' + this.maxRecursionDepth +
+                            ' from maxRecursionDepthOnBeforeUpdate(). The minimum is 1, meaning the handler runs once per record.'
+                        );
+                    }
                 }
             }
 
-            if (this.handler instanceof BeforeUpdate.RecursionGuard) {
-                maxRecursionDepth = ((BeforeUpdate.RecursionGuard) this.handler).maxRecursionDepthOnBeforeUpdate();
-
-                if (maxRecursionDepth == null || maxRecursionDepth < 1) {
-                    throw new TriggerOrchestratorException(
-                        String.valueOf(this.handler).substringBefore(':') +
-                        ' returned a recursion depth of ' + maxRecursionDepth +
-                        ' from maxRecursionDepthOnBeforeUpdate(). The minimum is 1, meaning the handler runs once per record.'
-                    );
-                }
-            }
-
-            String recursionKey = String.valueOf(this.handler).substringBefore(':') + ':BEFORE_UPDATE:' + record.getId();
-
-            return (TriggerOrchestrator.recursionDepthByHandlerRecord.get(recursionKey) ?? 0) >= maxRecursionDepth;
+            return (this.recursionDepthByRecord.get(record.getId()) ?? 0) >= this.maxRecursionDepth;
         }
 
         public override void registerRecord(TriggerHandler.TriggerRecord record) {
-            String recursionKey = String.valueOf(this.handler).substringBefore(':') + ':BEFORE_UPDATE:' + record.getId();
-
-            TriggerOrchestrator.recursionDepthByHandlerRecord.put(recursionKey, (TriggerOrchestrator.recursionDepthByHandlerRecord.get(recursionKey) ?? 0) + 1);
+            this.recursionDepthByRecord.put(record.getId(), (this.recursionDepthByRecord.get(record.getId()) ?? 0) + 1);
         }
 
         public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
@@ -811,7 +821,7 @@ public with sharing class TriggerOrchestrator {
             } finally {
                 if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
                     throw new TriggerOrchestratorException(
-                        String.valueOf(this.handler).substringBefore(':') +
+                        this.handlerName +
                         ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
                     );
                 }
@@ -868,6 +878,13 @@ public with sharing class TriggerOrchestrator {
     private class AfterUpdateHandlerAdapter extends TriggerHandlerAdapter {
         public AfterUpdateHandlerAdapter(AfterUpdate.Handler handler) {
             super(handler);
+            String recursionScope = this.handlerName + ':AFTER_UPDATE';
+
+            if (!TriggerOrchestrator.recursionDepthByRecordByHandler.containsKey(recursionScope)) {
+                TriggerOrchestrator.recursionDepthByRecordByHandler.put(recursionScope, new Map<Id, Integer>());
+            }
+
+            this.recursionDepthByRecord = TriggerOrchestrator.recursionDepthByRecordByHandler.get(recursionScope);
         }
 
         public override Boolean isBypassed() {
@@ -899,41 +916,39 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isRecursionDepthExceeded(TriggerHandler.TriggerRecord record) {
-            Integer maxRecursionDepth = 3;
+            if (this.maxRecursionDepth == null) {
+                this.maxRecursionDepth = 3;
 
-            if (this.orchestrator instanceof TriggerOrchestrator.RecursionGuard) {
-                maxRecursionDepth = ((TriggerOrchestrator.RecursionGuard) this.orchestrator).maxRecursionDepth();
+                if (this.orchestrator instanceof TriggerOrchestrator.RecursionGuard) {
+                    this.maxRecursionDepth = ((TriggerOrchestrator.RecursionGuard) this.orchestrator).maxRecursionDepth();
 
-                if (maxRecursionDepth == null || maxRecursionDepth < 1) {
-                    throw new TriggerOrchestratorException(
-                        String.valueOf(this.orchestrator).substringBefore(':') +
-                        ' returned a recursion depth of ' + maxRecursionDepth +
-                        ' from maxRecursionDepth(). The minimum is 1, meaning the handler runs once per record.'
-                    );
+                    if (this.maxRecursionDepth == null || this.maxRecursionDepth < 1) {
+                        throw new TriggerOrchestratorException(
+                            this.orchestrator.toString().substringBefore(':') +
+                            ' returned a recursion depth of ' + this.maxRecursionDepth +
+                            ' from maxRecursionDepth(). The minimum is 1, meaning the handler runs once per record.'
+                        );
+                    }
+                }
+
+                if (this.handler instanceof AfterUpdate.RecursionGuard) {
+                    this.maxRecursionDepth = ((AfterUpdate.RecursionGuard) this.handler).maxRecursionDepthOnAfterUpdate();
+
+                    if (this.maxRecursionDepth == null || this.maxRecursionDepth < 1) {
+                        throw new TriggerOrchestratorException(
+                            this.handlerName +
+                            ' returned a recursion depth of ' + this.maxRecursionDepth +
+                            ' from maxRecursionDepthOnAfterUpdate(). The minimum is 1, meaning the handler runs once per record.'
+                        );
+                    }
                 }
             }
 
-            if (this.handler instanceof AfterUpdate.RecursionGuard) {
-                maxRecursionDepth = ((AfterUpdate.RecursionGuard) this.handler).maxRecursionDepthOnAfterUpdate();
-
-                if (maxRecursionDepth == null || maxRecursionDepth < 1) {
-                    throw new TriggerOrchestratorException(
-                        String.valueOf(this.handler).substringBefore(':') +
-                        ' returned a recursion depth of ' + maxRecursionDepth +
-                        ' from maxRecursionDepthOnAfterUpdate(). The minimum is 1, meaning the handler runs once per record.'
-                    );
-                }
-            }
-
-            String recursionKey = String.valueOf(this.handler).substringBefore(':') + ':AFTER_UPDATE:' + record.getId();
-
-            return (TriggerOrchestrator.recursionDepthByHandlerRecord.get(recursionKey) ?? 0) >= maxRecursionDepth;
+            return (this.recursionDepthByRecord.get(record.getId()) ?? 0) >= this.maxRecursionDepth;
         }
 
         public override void registerRecord(TriggerHandler.TriggerRecord record) {
-            String recursionKey = String.valueOf(this.handler).substringBefore(':') + ':AFTER_UPDATE:' + record.getId();
-
-            TriggerOrchestrator.recursionDepthByHandlerRecord.put(recursionKey, (TriggerOrchestrator.recursionDepthByHandlerRecord.get(recursionKey) ?? 0) + 1);
+            this.recursionDepthByRecord.put(record.getId(), (this.recursionDepthByRecord.get(record.getId()) ?? 0) + 1);
         }
 
         public override Boolean continuesOnError() {

@@ -425,7 +425,7 @@ public with sharing class TriggerHandler {
 
         public Boolean isRecordTypeEqual(String recordTypeDeveloperName) {
             if (!RecordTypesInfo.hasRecordTypes(this.sObjectType)) {
-                throw new TriggerHandlerException(String.valueOf(this.sObjectType) + ' has no record types, so isRecordTypeEqual cannot be used on it.');
+                throw new TriggerHandlerException(this.sObjectType.toString() + ' has no record types, so isRecordTypeEqual cannot be used on it.');
             }
 
             return RecordTypesInfo.getId(this.sObjectType, recordTypeDeveloperName) == (this.newRecord ?? this.oldRecord).get('RecordTypeId');
@@ -433,7 +433,7 @@ public with sharing class TriggerHandler {
 
         public Boolean isRecordTypeNotEqual(String recordTypeDeveloperName) {
             if (!RecordTypesInfo.hasRecordTypes(this.sObjectType)) {
-                throw new TriggerHandlerException(String.valueOf(this.sObjectType) + ' has no record types, so isRecordTypeNotEqual cannot be used on it.');
+                throw new TriggerHandlerException(this.sObjectType.toString() + ' has no record types, so isRecordTypeNotEqual cannot be used on it.');
             }
 
             return RecordTypesInfo.getId(this.sObjectType, recordTypeDeveloperName) != (this.newRecord ?? this.oldRecord).get('RecordTypeId');
@@ -681,7 +681,8 @@ public with sharing class TriggerHandler {
 
         private Decimal getNewFieldValueAsDecimal(SObjectField field) {
             Object value = this.getNewFieldValue(field);
-            return this.isNull(field) ? null : Decimal.valueOf(String.valueOf(value));
+
+            return value == null ? null : Decimal.valueOf(value.toString());
         }
 
         private Object getNewFieldValue(SObjectField field) {

@@ -5833,7 +5833,7 @@ private class TriggerOrchestratorTest {
     }
 
     @IsTest
-    static void defaultRecursionDepthStopsBeforeUpdateValidatorAfterThreePasses() {
+    static void recursionGuardDoesNotApplyToBeforeUpdateValidator() {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
@@ -5854,14 +5854,14 @@ private class TriggerOrchestratorTest {
 
         // Verify
         Assert.areEqual(
-            3,
+            5,
             handler.runCount,
-            'It should be 3, because recursion control guards every before update handler, and a validator without a RecursionGuard stops after the framework default of three passes per record.'
+            'It should be 5, because recursion control covers populators only. A validator that qualifies attaches an error and ends that record\'s save, so it cannot drive re-entry and keeps no counter.'
         );
     }
 
     @IsTest
-    static void handlerRecursionGuardStopsBeforeUpdateValidatorAfterTwoPasses() {
+    static void handlerRecursionGuardIsInertOnABeforeUpdateValidator() {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
@@ -5882,9 +5882,9 @@ private class TriggerOrchestratorTest {
 
         // Verify
         Assert.areEqual(
-            2,
+            5,
             handler.runCount,
-            'It should be 2, because BeforeUpdate.RecursionGuard is offered to validators as well as populators and caps the handler at two passes per record.'
+            'It should be 5, because BeforeUpdate.RecursionGuard has no effect on a validator. The cap exists for handlers that can be re-entered, and a validator that fires takes its record out of the save.'
         );
     }
 

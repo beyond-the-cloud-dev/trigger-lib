@@ -161,12 +161,12 @@ public with sharing class TriggerOrchestrator {
 
             executionStrategy.execute(orchestrator);
         } finally {
-            if (!TriggerOrchestrator.executionStack.isEmpty()) {
+            if (executionStrategy != null) {
                 TriggerOrchestrator.executionStack.remove(TriggerOrchestrator.executionStack.size() - 1);
-            }
 
-            if (TriggerOrchestrator.executionStack.isEmpty()) {
-                TriggerOrchestrator.logger?.finalize();
+                if (TriggerOrchestrator.executionStack.isEmpty()) {
+                    TriggerOrchestrator.logger?.finalize();
+                }
             }
         }
     }
@@ -195,8 +195,12 @@ public with sharing class TriggerOrchestrator {
         }
 
         private void registerRecords() {
-            for (Integer i = 0; i < (TriggerOrchestrator.newRecords ?? TriggerOrchestrator.oldRecords).size(); i++) {
-                this.triggerRecords.add(new TriggerHandler.TriggerRecord(TriggerOrchestrator.newRecords?.get(i), TriggerOrchestrator.oldRecords?.get(i)));
+            List<SObject> triggerNewRecords = TriggerOrchestrator.newRecords;
+            List<SObject> triggerOldRecords = TriggerOrchestrator.oldRecords;
+            Integer recordCount = (triggerNewRecords ?? triggerOldRecords).size();
+
+            for (Integer i = 0; i < recordCount; i++) {
+                this.triggerRecords.add(new TriggerHandler.TriggerRecord(triggerNewRecords?.get(i), triggerOldRecords?.get(i)));
             }
         }
 
@@ -220,8 +224,10 @@ public with sharing class TriggerOrchestrator {
         }
 
         private void runHandlers() {
+            List<TriggerHandler.TriggerRecord> recordsToRescan = this.triggerRecords;
+
             for (TriggerHandlerAdapter adapter : this.activeHandlers) {
-                this.parentRelationshipEnrichment.enrich();
+                this.parentRelationshipEnrichment.enrich(recordsToRescan);
 
                 try {
                     adapter.execute(this.triggerRecords);
@@ -232,6 +238,8 @@ public with sharing class TriggerOrchestrator {
                         throw e;
                     }
                 }
+
+                recordsToRescan = adapter.getProcessedRecords();
             }
         }
     }
@@ -465,6 +473,7 @@ public with sharing class TriggerOrchestrator {
 
         protected Map<Id, Integer> recursionDepthByRecord;
         protected Integer maxRecursionDepth;
+        protected List<TriggerHandler.TriggerRecord> processedRecords = new List<TriggerHandler.TriggerRecord>();
 
         public Object getHandler() {
             return this.handler;
@@ -478,8 +487,6 @@ public with sharing class TriggerOrchestrator {
         }
 
         public virtual void execute(List<TriggerHandler.TriggerRecord> records) {
-            Boolean hasQualifiedRecord = false;
-
             for (TriggerHandler.TriggerRecord record : records) {
                 if (this.isRecursionDepthExceeded(record)) {
                     continue;
@@ -490,14 +497,17 @@ public with sharing class TriggerOrchestrator {
                 }
 
                 this.registerRecord(record);
+                this.processedRecords.add(record);
                 this.executeOn(record);
-
-                hasQualifiedRecord = true;
             }
 
-            if (hasQualifiedRecord) {
+            if (!this.processedRecords.isEmpty()) {
                 this.finalizeHandler();
             }
+        }
+
+        public List<TriggerHandler.TriggerRecord> getProcessedRecords() {
+            return this.processedRecords;
         }
 
         public virtual Map<SObjectField, TriggerHandler.FieldSelection> getNewFieldsToEnrich() {
@@ -1188,19 +1198,21 @@ public with sharing class TriggerOrchestrator {
             }
         }
 
-        public void enrich() {
-            if (this.isResolved && !this.isRecordMutable) {
+        public void enrich(List<TriggerHandler.TriggerRecord> recordsToRescan) {
+            if (this.isResolved && (!this.isRecordMutable || recordsToRescan.isEmpty())) {
                 return;
             }
 
+            List<TriggerHandler.TriggerRecord> recordsToScan = this.isResolved ? recordsToRescan : this.recordsToEnrich;
+
             for (SObjectField parentField : this.selectedFieldsByParentField.keySet()) {
-                this.enrichParentField(parentField);
+                this.enrichParentField(parentField, recordsToScan);
             }
 
             this.isResolved = true;
         }
 
-        private void enrichParentField(SObjectField parentField) {
+        private void enrichParentField(SObjectField parentField, List<TriggerHandler.TriggerRecord> recordsToScan) {
             Map<Id, SObject> cachedParentById = this.cachedParentByIdByParentField.get(parentField);
             Map<String, Id> enrichedNewIdByRecord = this.enrichedNewIdByRecordByParentField.get(parentField);
 
@@ -1211,7 +1223,7 @@ public with sharing class TriggerOrchestrator {
             Set<Id> parentIdsToQuery = new Set<Id>();
 
             if (enrichNewSide) {
-                for (TriggerHandler.TriggerRecord record : this.recordsToEnrich) {
+                for (TriggerHandler.TriggerRecord record : recordsToScan) {
                     Id parentId = record.getNewSObject()?.isSet(parentField) == true ? (Id) record.getNewSObject().get(parentField) : null;
 
                     if (enrichedNewIdByRecord.get(record.getIdentifier()) == parentId) {
@@ -1227,7 +1239,7 @@ public with sharing class TriggerOrchestrator {
             }
 
             if (enrichOldSide) {
-                for (TriggerHandler.TriggerRecord record : this.recordsToEnrich) {
+                for (TriggerHandler.TriggerRecord record : recordsToScan) {
                     Id parentId = record.getOldSObject()?.isSet(parentField) == true ? (Id) record.getOldSObject().get(parentField) : null;
 
                     if (parentId != null && !cachedParentById.containsKey(parentId)) {
@@ -1255,7 +1267,7 @@ public with sharing class TriggerOrchestrator {
 
             String relationshipName = parentField.getDescribe().getRelationshipName();
 
-            for (TriggerHandler.TriggerRecord record : this.recordsToEnrich) {
+            for (TriggerHandler.TriggerRecord record : recordsToScan) {
                 if (staleNewIdByRecord.containsKey(record.getIdentifier())) {
                     record.enrichNew(relationshipName, cachedParentById.get(staleNewIdByRecord.get(record.getIdentifier())));
                     enrichedNewIdByRecord.put(record.getIdentifier(), staleNewIdByRecord.get(record.getIdentifier()));

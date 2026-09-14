@@ -1036,50 +1036,6 @@ public with sharing class TriggerOrchestrator {
         }
     }
 
-    private class BeforeUndeleteHandlerAdapter extends TriggerHandlerAdapter {
-        public BeforeUndeleteHandlerAdapter(BeforeUndelete.Handler handler) {
-            super(handler);
-        }
-
-        public override Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.sObjectType)) {
-                return true;
-            }
-
-            if (this.handler instanceof BeforeUndelete.Bypassable) {
-                return ((BeforeUndelete.Bypassable) this.handler).bypassOnBeforeUndeleteWhen();
-            }
-
-            return false;
-        }
-
-        public override Map<SObjectField, TriggerHandler.FieldSelection> getNewFieldsToEnrich() {
-            if (this.handler instanceof BeforeUndelete.NewRecordEnrichment) {
-                return ((BeforeUndelete.NewRecordEnrichment) this.handler).newFieldsToEnrichOnBeforeUndelete();
-            }
-
-            return new Map<SObjectField, TriggerHandler.FieldSelection>();
-        }
-
-        public override Boolean continuesOnError() {
-            return this.handler instanceof BeforeUndelete.ContinueOnError;
-        }
-
-        public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
-            return ((BeforeUndelete.Handler) this.handler).qualifiesForBeforeUndeleteWhen(record);
-        }
-
-        protected override void executeOn(TriggerHandler.TriggerRecord record) {
-            ((BeforeUndelete.Handler) this.handler).onBeforeUndelete(record);
-        }
-
-        protected override void finalizeHandler() {
-            if (this.handler instanceof BeforeUndelete.Finalizer) {
-                ((BeforeUndelete.Finalizer) this.handler).finalizeBeforeUndelete();
-            }
-        }
-    }
-
     private class AfterUndeleteHandlerAdapter extends TriggerHandlerAdapter {
         public AfterUndeleteHandlerAdapter(AfterUndelete.Handler handler) {
             super(handler);

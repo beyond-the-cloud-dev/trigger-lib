@@ -176,7 +176,7 @@ public with sharing class TriggerOrchestrator {
             WITH SYSTEM_MODE
         ]) {
             MetadataSettings metadataSettings = new MetadataSettings();
-            
+
             metadataSettings.sObjectSetting = triggerObject;
 
             for (TriggerHandler__mdt triggerHandler : triggerObject.TriggerHandlers__r ?? new List<TriggerHandler__mdt>()) {
@@ -244,8 +244,8 @@ public with sharing class TriggerOrchestrator {
         }
 
         private void declareParentRelatioships() {
-            this.parentRelationshipEnrichment = new ParentRelationshipEnrichment(this.activeHandlers, this.triggerRecords, this.orchestrator.triggerOperation);
-            this.parentRelationshipEnrichment.declareParentFields();
+            this.parentRelationshipEnrichment = new ParentRelationshipEnrichment(this.orchestrator.triggerOperation);
+            this.parentRelationshipEnrichment.declareParentFields(this.activeHandlers);
         }
 
         private void logError(Exception e, TriggerHandlerAdapter adapter) {
@@ -264,7 +264,7 @@ public with sharing class TriggerOrchestrator {
             TriggerError error = new TriggerError();
 
             error.triggerException = e;
-            error.handlerName = adapter.getHandler().toString().substringBefore(':');
+            error.handlerName = adapter.handlerName;
             error.operation = this.orchestrator.triggerOperation;
             error.sObjectType = this.orchestrator.sObjectType;
             error.recordIds = recordIds;
@@ -430,8 +430,7 @@ public with sharing class TriggerOrchestrator {
     private abstract class TriggerHandlerAdapter {
         protected Object handler;
         protected TriggerOrchestrator orchestrator;
-        protected SObjectType sObjectType;
-        protected String handlerName;
+        public String handlerName;
 
         public TriggerHandlerAdapter(Object handler) {
             this.handler = handler;
@@ -442,13 +441,8 @@ public with sharing class TriggerOrchestrator {
         protected Integer maxRecursionDepth;
         protected List<TriggerHandler.TriggerRecord> processedRecords = new List<TriggerHandler.TriggerRecord>();
 
-        public Object getHandler() {
-            return this.handler;
-        }
-
         public void registerContext(TriggerOrchestrator orchestrator) {
             this.orchestrator = orchestrator;
-            this.sObjectType = orchestrator.sObjectType;
         }
 
         public virtual void registerRecord(TriggerHandler.TriggerRecord record) {
@@ -499,11 +493,8 @@ public with sharing class TriggerOrchestrator {
     }
 
     private class BeforeInsertPopulatorHandlerAdapter extends TriggerHandlerAdapter {
-        private BeforeInsert.Populator populator;
-
         public BeforeInsertPopulatorHandlerAdapter(BeforeInsert.Populator populator) {
             super(populator);
-            this.populator = populator;
         }
 
         public override void execute(List<TriggerHandler.TriggerRecord> records) {
@@ -522,7 +513,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.sObjectType)) {
+            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.sObjectType)) {
                 return true;
             }
 
@@ -546,11 +537,11 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
-            return this.populator.populateOnBeforeInsertWhen(record);
+            return ((BeforeInsert.Populator) this.handler).populateOnBeforeInsertWhen(record);
         }
 
         protected override void executeOn(TriggerHandler.TriggerRecord record) {
-            this.populator.populateOnBeforeInsert(record);
+            ((BeforeInsert.Populator) this.handler).populateOnBeforeInsert(record);
         }
 
         protected override void finalizeHandler() {
@@ -561,11 +552,8 @@ public with sharing class TriggerOrchestrator {
     }
 
     private class BeforeInsertValidatorHandlerAdapter extends TriggerHandlerAdapter {
-        private BeforeInsert.Validator validator;
-
         public BeforeInsertValidatorHandlerAdapter(BeforeInsert.Validator validator) {
             super(validator);
-            this.validator = validator;
         }
 
         public override void execute(List<TriggerHandler.TriggerRecord> records) {
@@ -584,7 +572,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.sObjectType)) {
+            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.sObjectType)) {
                 return true;
             }
 
@@ -608,11 +596,11 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
-            return this.validator.errorShouldBeAttachedOnBeforeInsertWhen(record);
+            return ((BeforeInsert.Validator) this.handler).errorShouldBeAttachedOnBeforeInsertWhen(record);
         }
 
         protected override void executeOn(TriggerHandler.TriggerRecord record) {
-            record.getNewSObject().addError(this.validator.beforeInsertValidationMessage(record));
+            record.getNewSObject().addError(((BeforeInsert.Validator) this.handler).beforeInsertValidationMessage(record));
         }
 
         protected override void finalizeHandler() {
@@ -628,7 +616,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.sObjectType)) {
+            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.sObjectType)) {
                 return true;
             }
 
@@ -667,11 +655,8 @@ public with sharing class TriggerOrchestrator {
     }
 
     private class BeforeUpdatePopulatorHandlerAdapter extends TriggerHandlerAdapter {
-        private BeforeUpdate.Populator populator;
-
         public BeforeUpdatePopulatorHandlerAdapter(BeforeUpdate.Populator populator) {
             super(populator);
-            this.populator = populator;
             String recursionScope = this.handlerName + ':BEFORE_UPDATE';
 
             if (!TriggerOrchestrator.recursionDepthByRecordByHandler.containsKey(recursionScope)) {
@@ -697,7 +682,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.sObjectType)) {
+            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.sObjectType)) {
                 return true;
             }
 
@@ -767,11 +752,11 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
-            return this.populator.populateOnBeforeUpdateWhen(record);
+            return ((BeforeUpdate.Populator) this.handler).populateOnBeforeUpdateWhen(record);
         }
 
         protected override void executeOn(TriggerHandler.TriggerRecord record) {
-            this.populator.populateOnBeforeUpdate(record);
+            ((BeforeUpdate.Populator) this.handler).populateOnBeforeUpdate(record);
         }
 
         protected override void finalizeHandler() {
@@ -782,11 +767,8 @@ public with sharing class TriggerOrchestrator {
     }
 
     private class BeforeUpdateValidatorHandlerAdapter extends TriggerHandlerAdapter {
-        private BeforeUpdate.Validator validator;
-
         public BeforeUpdateValidatorHandlerAdapter(BeforeUpdate.Validator validator) {
             super(validator);
-            this.validator = validator;
         }
 
         public override void execute(List<TriggerHandler.TriggerRecord> records) {
@@ -805,7 +787,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.sObjectType)) {
+            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.sObjectType)) {
                 return true;
             }
 
@@ -837,11 +819,11 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
-            return this.validator.errorShouldBeAttachedOnBeforeUpdateWhen(record);
+            return ((BeforeUpdate.Validator) this.handler).errorShouldBeAttachedOnBeforeUpdateWhen(record);
         }
 
         protected override void executeOn(TriggerHandler.TriggerRecord record) {
-            record.getNewSObject().addError(this.validator.beforeUpdateValidationMessage(record));
+            record.getNewSObject().addError(((BeforeUpdate.Validator) this.handler).beforeUpdateValidationMessage(record));
         }
 
         protected override void finalizeHandler() {
@@ -864,7 +846,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.sObjectType)) {
+            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.sObjectType)) {
                 return true;
             }
 
@@ -954,7 +936,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.sObjectType)) {
+            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.sObjectType)) {
                 return true;
             }
 
@@ -998,7 +980,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.sObjectType)) {
+            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.sObjectType)) {
                 return true;
             }
 
@@ -1042,7 +1024,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.sObjectType)) {
+            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.sObjectType)) {
                 return true;
             }
 
@@ -1081,9 +1063,6 @@ public with sharing class TriggerOrchestrator {
     }
 
     private class ParentRelationshipEnrichment {
-        private List<TriggerHandlerAdapter> adapters;
-        private List<TriggerHandler.TriggerRecord> allTriggerRecords;
-
         private Set<SObjectField> newRecordFieldsToEnrich = new Set<SObjectField>();
         private Set<SObjectField> oldRecordFieldsToEnrich = new Set<SObjectField>();
         private Map<SObjectField, Set<String>> selectedFieldsByParentField = new Map<SObjectField, Set<String>>();
@@ -1094,14 +1073,12 @@ public with sharing class TriggerOrchestrator {
         private Boolean isResolved = false;
         private Boolean isRecordMutable;
 
-        public ParentRelationshipEnrichment(List<TriggerHandlerAdapter> adapters, List<TriggerHandler.TriggerRecord> allTriggerRecords, System.TriggerOperation triggerOperation) {
-            this.adapters = adapters;
-            this.allTriggerRecords = allTriggerRecords;
+        public ParentRelationshipEnrichment(System.TriggerOperation triggerOperation) {
             this.isRecordMutable = triggerOperation == System.TriggerOperation.BEFORE_INSERT || triggerOperation == System.TriggerOperation.BEFORE_UPDATE;
         }
 
-        public void declareParentFields() {
-            for (TriggerHandlerAdapter adapter : this.adapters) {
+        public void declareParentFields(List<TriggerHandlerAdapter> adapters) {
+            for (TriggerHandlerAdapter adapter : adapters) {
                 this.declare(adapter.getNewFieldsToEnrich(), this.newRecordFieldsToEnrich);
                 this.declare(adapter.getOldFieldsToEnrich(), this.oldRecordFieldsToEnrich);
             }
@@ -1126,10 +1103,8 @@ public with sharing class TriggerOrchestrator {
                 return;
             }
 
-            List<TriggerHandler.TriggerRecord> recordsToScan = this.isResolved ? recordsToEnrich : this.allTriggerRecords;
-
             for (SObjectField parentField : this.selectedFieldsByParentField.keySet()) {
-                this.enrichParentField(parentField, recordsToScan);
+                this.enrichParentField(parentField, recordsToEnrich);
             }
 
             this.isResolved = true;

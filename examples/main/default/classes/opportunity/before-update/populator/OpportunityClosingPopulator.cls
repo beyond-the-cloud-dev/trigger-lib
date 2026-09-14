@@ -1,6 +1,4 @@
 public with sharing class OpportunityClosingPopulator implements BeforeUpdate.Populator, BeforeUpdate.RecursionGuard {
-    private static final Set<String> CLOSED_STAGES = new Set<String>{ 'Closed Won', 'Closed Lost' };
-
     public Integer maxRecursionDepthOnBeforeUpdate() {
         return 1;
     }
@@ -8,7 +6,7 @@ public with sharing class OpportunityClosingPopulator implements BeforeUpdate.Po
     public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
         Opportunity newOpportunity = (Opportunity) record.getNewSObject();
 
-        return record.isChanged(Opportunity.StageName) && CLOSED_STAGES.contains(newOpportunity.StageName);
+        return record.isChanged(Opportunity.StageName) && new Set<String>{ 'Closed Won', 'Closed Lost' }.contains(newOpportunity.StageName);
     }
 
     public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {

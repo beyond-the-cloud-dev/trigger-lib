@@ -1,7 +1,4 @@
 public with sharing class AccountRatingPopulator implements BeforeInsert.Populator {
-    private static final Decimal HOT_REVENUE_FLOOR = 5000000;
-    private static final Decimal WARM_REVENUE_FLOOR = 500000;
-
     public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
         return record.isBlank(Account.Rating) && record.isNotNull(Account.AnnualRevenue);
     }
@@ -11,11 +8,11 @@ public with sharing class AccountRatingPopulator implements BeforeInsert.Populat
     }
 
     private String ratingFor(TriggerHandler.InsertRecord record) {
-        if (record.greaterThanOrEqualTo(Account.AnnualRevenue, HOT_REVENUE_FLOOR)) {
+        if (record.greaterThanOrEqualTo(Account.AnnualRevenue, 5000000)) {
             return 'Hot';
         }
 
-        if (record.greaterThanOrEqualTo(Account.AnnualRevenue, WARM_REVENUE_FLOOR)) {
+        if (record.greaterThanOrEqualTo(Account.AnnualRevenue, 500000)) {
             return 'Warm';
         }
 

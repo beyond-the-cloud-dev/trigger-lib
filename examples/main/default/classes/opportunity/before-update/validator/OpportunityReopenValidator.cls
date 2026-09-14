@@ -1,14 +1,12 @@
 public with sharing class OpportunityReopenValidator implements BeforeUpdate.Validator, BeforeUpdate.Bypassable {
     public static Boolean isBypassed = false;
 
-    private static final String CLOSED_WON = 'Closed Won';
-
     public Boolean bypassOnBeforeUpdateWhen() {
         return isBypassed;
     }
 
     public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
-        return record.isChangedFrom(Opportunity.StageName, CLOSED_WON);
+        return record.isChangedFrom(Opportunity.StageName, 'Closed Won');
     }
 
     public String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record) {

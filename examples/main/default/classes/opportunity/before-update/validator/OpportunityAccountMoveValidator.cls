@@ -1,6 +1,4 @@
 public with sharing class OpportunityAccountMoveValidator implements BeforeUpdate.Validator, BeforeUpdate.NewRecordEnrichment, BeforeUpdate.OldRecordEnrichment {
-    private static final String CLOSED_WON = 'Closed Won';
-
     public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnBeforeUpdate() {
         return new Map<SObjectField, TriggerHandler.FieldSelection>{ Opportunity.AccountId => TriggerHandler.FieldSelection.with(Account.Name) };
     }
@@ -10,7 +8,7 @@ public with sharing class OpportunityAccountMoveValidator implements BeforeUpdat
     }
 
     public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
-        return record.equals(Opportunity.StageName, CLOSED_WON) && record.isChanged(Opportunity.AccountId);
+        return record.equals(Opportunity.StageName, 'Closed Won') && record.isChanged(Opportunity.AccountId);
     }
 
     public String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record) {

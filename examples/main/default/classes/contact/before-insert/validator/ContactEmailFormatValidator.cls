@@ -1,6 +1,4 @@
 public with sharing class ContactEmailFormatValidator implements BeforeInsert.Validator {
-    private static final List<String> SHARED_MAILBOX_PREFIXES = new List<String>{ 'info@', 'sales@', 'support@', 'contact@', 'admin@', 'noreply@', 'no-reply@' };
-
     public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
         if (record.isBlank(Contact.Email)) {
             return false;
@@ -18,7 +16,7 @@ public with sharing class ContactEmailFormatValidator implements BeforeInsert.Va
     }
 
     private Boolean isSharedMailbox(TriggerHandler.InsertRecord record) {
-        for (String prefix : ContactEmailFormatValidator.SHARED_MAILBOX_PREFIXES) {
+        for (String prefix : new List<String>{ 'info@', 'sales@', 'support@', 'contact@', 'admin@', 'noreply@', 'no-reply@' }) {
             if (record.startsWith(Contact.Email, prefix)) {
                 return true;
             }

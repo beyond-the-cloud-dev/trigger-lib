@@ -1,6 +1,4 @@
 public with sharing class AccountTypeAuditPopulator implements BeforeUpdate.Populator, BeforeUpdate.RecursionGuard {
-    private static final Integer DESCRIPTION_LIMIT = 32000;
-
     public Integer maxRecursionDepthOnBeforeUpdate() {
         return 1;
     }
@@ -28,6 +26,6 @@ public with sharing class AccountTypeAuditPopulator implements BeforeUpdate.Popu
     private String stampedDescription(String auditLine, String description) {
         String stamped = String.isBlank(description) ? auditLine : auditLine + '\n' + description;
 
-        return stamped.length() > DESCRIPTION_LIMIT ? stamped.left(DESCRIPTION_LIMIT) : stamped;
+        return stamped.length() > 32000 ? stamped.left(32000) : stamped;
     }
 }

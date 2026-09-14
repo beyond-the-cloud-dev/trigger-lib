@@ -1,6 +1,4 @@
 public with sharing class ContactFollowUpTaskHandler implements AfterInsert.Handler, AfterInsert.NewRecordEnrichment, AfterInsert.Finalizer, AfterInsert.ContinueOnError {
-    private static final Integer DAYS_TO_FOLLOW_UP = 2;
-
     private List<Task> followUps = new List<Task>();
 
     public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterInsert() {
@@ -21,7 +19,7 @@ public with sharing class ContactFollowUpTaskHandler implements AfterInsert.Hand
                 WhatId = contactRecord.AccountId,
                 OwnerId = contactRecord.OwnerId,
                 Subject = 'Follow up with new web contactRecord' + (accountRecord == null ? '' : ' from ' + accountRecord.Name),
-                ActivityDate = Date.today().addDays(ContactFollowUpTaskHandler.DAYS_TO_FOLLOW_UP),
+                ActivityDate = Date.today().addDays(2),
                 Priority = 'High',
                 Status = 'Not Started'
             )

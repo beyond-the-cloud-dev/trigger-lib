@@ -1,6 +1,4 @@
 public with sharing class AccountWelcomeTaskHandler implements AfterInsert.Handler, AfterInsert.NewRecordEnrichment, AfterInsert.Finalizer, AfterInsert.ContinueOnError {
-    private static final Integer ONBOARDING_DUE_IN_DAYS = 3;
-
     private List<Task> onboardingTasks = new List<Task>();
 
     public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterInsert() {
@@ -21,7 +19,7 @@ public with sharing class AccountWelcomeTaskHandler implements AfterInsert.Handl
                 OwnerId = accountRecord.OwnerId,
                 Subject = 'Onboarding call - ' + accountRecord.Name,
                 Description = 'New customer assigned to ' + owner?.Name + ' (' + owner?.Email + '). Confirm the billing address and the primary contact.',
-                ActivityDate = Date.today().addDays(ONBOARDING_DUE_IN_DAYS),
+                ActivityDate = Date.today().addDays(3),
                 Priority = 'High',
                 Status = 'Not Started'
             )

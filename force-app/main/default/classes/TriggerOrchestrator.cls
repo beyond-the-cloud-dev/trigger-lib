@@ -76,15 +76,7 @@ public with sharing class TriggerOrchestrator {
     private static List<ExecutionStrategy> executionStack = new List<ExecutionStrategy>();
 
     private Object orchestrator;
-
-    @TestVisible
-    private System.TriggerOperation triggerOperation = Trigger.operationType;
-    @TestVisible
-    private List<SObject> triggerNewRecords = Trigger.new;
-    @TestVisible
-    private List<SObject> triggerOldRecords = Trigger.old;
-    @TestVisible
-    private SObjectType sObjectType;
+    private TriggerContext context = new TriggerContext();
 
     @TestVisible
     private TriggerOrchestrator(Object orchestrator) {
@@ -96,29 +88,27 @@ public with sharing class TriggerOrchestrator {
         ExecutionStrategy executionStrategy;
 
         try {
-            if (this.triggerOperation == null) {
+            if (this.context.triggerOperation == null) {
                 throw new TriggerOrchestratorException('Called outside of a trigger context, or the trigger operation is not supported.');
             }
 
-            this.sObjectType = (this.triggerNewRecords ?? this.triggerOldRecords)?.getSObjectType();
-
-            if (TriggerOrchestrator.metadataSettingsByObjectName.get(this.sObjectType?.toString()?.toLowerCase())?.sObjectSetting.Bypass__c == true) {
+            if (TriggerOrchestrator.metadataSettingsByObjectName.get(this.context.sObjectTypeName)?.sObjectSetting.Bypass__c == true) {
                 return;
             }
 
-            if (this.triggerOperation == System.TriggerOperation.BEFORE_INSERT && this.orchestrator instanceof TriggerOrchestrator.BeforeInsert) {
+            if (this.context.triggerOperation == System.TriggerOperation.BEFORE_INSERT && this.orchestrator instanceof TriggerOrchestrator.BeforeInsert) {
                 executionStrategy = new BeforeInsertExecutionStrategy();
-            } else if (this.triggerOperation == System.TriggerOperation.AFTER_INSERT && this.orchestrator instanceof TriggerOrchestrator.AfterInsert) {
+            } else if (this.context.triggerOperation == System.TriggerOperation.AFTER_INSERT && this.orchestrator instanceof TriggerOrchestrator.AfterInsert) {
                 executionStrategy = new AfterInsertExecutionStrategy();
-            } else if (this.triggerOperation == System.TriggerOperation.BEFORE_UPDATE && this.orchestrator instanceof TriggerOrchestrator.BeforeUpdate) {
+            } else if (this.context.triggerOperation == System.TriggerOperation.BEFORE_UPDATE && this.orchestrator instanceof TriggerOrchestrator.BeforeUpdate) {
                 executionStrategy = new BeforeUpdateExecutionStrategy();
-            } else if (this.triggerOperation == System.TriggerOperation.AFTER_UPDATE && this.orchestrator instanceof TriggerOrchestrator.AfterUpdate) {
+            } else if (this.context.triggerOperation == System.TriggerOperation.AFTER_UPDATE && this.orchestrator instanceof TriggerOrchestrator.AfterUpdate) {
                 executionStrategy = new AfterUpdateExecutionStrategy();
-            } else if (this.triggerOperation == System.TriggerOperation.BEFORE_DELETE && this.orchestrator instanceof TriggerOrchestrator.BeforeDelete) {
+            } else if (this.context.triggerOperation == System.TriggerOperation.BEFORE_DELETE && this.orchestrator instanceof TriggerOrchestrator.BeforeDelete) {
                 executionStrategy = new BeforeDeleteExecutionStrategy();
-            } else if (this.triggerOperation == System.TriggerOperation.AFTER_DELETE && this.orchestrator instanceof TriggerOrchestrator.AfterDelete) {
+            } else if (this.context.triggerOperation == System.TriggerOperation.AFTER_DELETE && this.orchestrator instanceof TriggerOrchestrator.AfterDelete) {
                 executionStrategy = new AfterDeleteExecutionStrategy();
-            } else if (this.triggerOperation == System.TriggerOperation.AFTER_UNDELETE && this.orchestrator instanceof TriggerOrchestrator.AfterUndelete) {
+            } else if (this.context.triggerOperation == System.TriggerOperation.AFTER_UNDELETE && this.orchestrator instanceof TriggerOrchestrator.AfterUndelete) {
                 executionStrategy = new AfterUndeleteExecutionStrategy();
             } else {
                 return;
@@ -142,6 +132,14 @@ public with sharing class TriggerOrchestrator {
         if (TriggerOrchestrator.executionStack.isEmpty()) {
             TriggerOrchestrator.logger?.finalize();
         }
+    }
+
+    private class TriggerContext {
+        private System.TriggerOperation triggerOperation = Trigger.operationType;
+        private List<SObject> triggerNewRecords = Trigger.new;
+        private List<SObject> triggerOldRecords = Trigger.old;
+        private SObjectType sObjectType = (Trigger.new ?? Trigger.old)?.getSObjectType();
+        private String sObjectTypeName = (Trigger.new ?? Trigger.old)?.getSObjectType().toString().toLowerCase();
     }
 
     private static Logger resolveLogger() {
@@ -209,8 +207,8 @@ public with sharing class TriggerOrchestrator {
         protected abstract void adaptHandlers();
 
         private void registerRecords() {
-            List<SObject> newRecords = this.orchestrator.triggerNewRecords;
-            List<SObject> oldRecords = this.orchestrator.triggerOldRecords;
+            List<SObject> newRecords = this.orchestrator.context.triggerNewRecords;
+            List<SObject> oldRecords = this.orchestrator.context.triggerOldRecords;
 
             Integer recordCount = (newRecords ?? oldRecords).size();
 
@@ -236,7 +234,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         private void declareParentRelationships() {
-            this.parentRelationshipEnrichment = new ParentRelationshipEnrichment(this.orchestrator.triggerOperation);
+            this.parentRelationshipEnrichment = new ParentRelationshipEnrichment(this.orchestrator.context.triggerOperation);
             this.parentRelationshipEnrichment.declareParentFields(this.activeHandlers);
         }
 
@@ -247,7 +245,7 @@ public with sharing class TriggerOrchestrator {
 
             Set<Id> recordIds = new Set<Id>();
 
-            for (SObject record : this.orchestrator.triggerNewRecords ?? this.orchestrator.triggerOldRecords) {
+            for (SObject record : this.orchestrator.context.triggerNewRecords ?? this.orchestrator.context.triggerOldRecords) {
                 if (record.Id != null) {
                     recordIds.add(record.Id);
                 }
@@ -257,8 +255,8 @@ public with sharing class TriggerOrchestrator {
 
             error.triggerException = e;
             error.handlerName = adapter.handlerName;
-            error.operation = this.orchestrator.triggerOperation;
-            error.sObjectType = this.orchestrator.sObjectType;
+            error.operation = this.orchestrator.context.triggerOperation;
+            error.sObjectType = this.orchestrator.context.sObjectType;
             error.recordIds = recordIds;
 
             TriggerOrchestrator.logger.log(error);
@@ -540,7 +538,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.sObjectType)) {
+            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.context.sObjectType)) {
                 return true;
             }
 
@@ -599,7 +597,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.sObjectType)) {
+            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.context.sObjectType)) {
                 return true;
             }
 
@@ -643,7 +641,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.sObjectType)) {
+            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.context.sObjectType)) {
                 return true;
             }
 
@@ -712,7 +710,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.sObjectType)) {
+            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.context.sObjectType)) {
                 return true;
             }
 
@@ -817,7 +815,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.sObjectType)) {
+            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.context.sObjectType)) {
                 return true;
             }
 
@@ -879,7 +877,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.sObjectType)) {
+            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.context.sObjectType)) {
                 return true;
             }
 
@@ -969,7 +967,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.sObjectType)) {
+            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.context.sObjectType)) {
                 return true;
             }
 
@@ -1013,7 +1011,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.sObjectType)) {
+            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.context.sObjectType)) {
                 return true;
             }
 
@@ -1057,7 +1055,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.sObjectType)) {
+            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.context.sObjectType)) {
                 return true;
             }
 

@@ -69,18 +69,16 @@ public with sharing class TriggerOrchestrator {
     // Implementations
 
     @TestVisible
-    private static Logger logger = TriggerOrchestrator.resolveLogger();
-    @TestVisible
-    private static Map<String, MetadataSettings> metadataSettingsByObjectName = TriggerOrchestrator.resolveMetadataSettings();
-    private static Map<String, Map<Id, Integer>> recursionDepthByRecordByHandler = new Map<String, Map<Id, Integer>>();
-    private static List<ExecutionStrategy> executionStack = new List<ExecutionStrategy>();
+    private static TriggerSettings TriggerSettings = new TriggerSettings();
+    private static TransactionState TransactionState = new TransactionState();
 
+    @TestVisible
+    private TriggerContext context;
     private Object orchestrator;
-    private TriggerContext context = new TriggerContext();
 
-    @TestVisible
     private TriggerOrchestrator(Object orchestrator) {
         this.orchestrator = orchestrator;
+        this.context = new TriggerContext();
     }
 
     @TestVisible
@@ -92,7 +90,7 @@ public with sharing class TriggerOrchestrator {
                 throw new TriggerOrchestratorException('Called outside of a trigger context, or the trigger operation is not supported.');
             }
 
-            if (TriggerOrchestrator.metadataSettingsByObjectName.get(this.context.sObjectTypeName)?.sObjectSetting.Bypass__c == true) {
+            if (TriggerOrchestrator.TriggerSettings.isSObjectTriggerBypassedInMetadata(this.context)) {
                 return;
             }
 
@@ -114,7 +112,7 @@ public with sharing class TriggerOrchestrator {
                 return;
             }
 
-            TriggerOrchestrator.executionStack.add(executionStrategy);
+            TriggerOrchestrator.TransactionState.executionStack.add(executionStrategy);
 
             executionStrategy.execute(this);
         } finally {
@@ -127,60 +125,79 @@ public with sharing class TriggerOrchestrator {
             return;
         }
 
-        TriggerOrchestrator.executionStack.remove(TriggerOrchestrator.executionStack.size() - 1);
+        TriggerOrchestrator.TransactionState.executionStack.remove(TriggerOrchestrator.TransactionState.executionStack.size() - 1);
 
-        if (TriggerOrchestrator.executionStack.isEmpty()) {
-            TriggerOrchestrator.logger?.finalize();
+        if (TriggerOrchestrator.TransactionState.executionStack.isEmpty()) {
+            TriggerOrchestrator.TriggerSettings.logger?.finalize();
         }
     }
 
     private class TriggerContext {
-        private System.TriggerOperation triggerOperation = Trigger.operationType;
-        private List<SObject> triggerNewRecords = Trigger.new;
-        private List<SObject> triggerOldRecords = Trigger.old;
-        private SObjectType sObjectType = (Trigger.new ?? Trigger.old)?.getSObjectType();
-        private String sObjectTypeName = (Trigger.new ?? Trigger.old)?.getSObjectType().toString().toLowerCase();
+        public System.TriggerOperation triggerOperation = Trigger.operationType;
+        public List<SObject> triggerNewRecords = Trigger.new;
+        public List<SObject> triggerOldRecords = Trigger.old;
+        public SObjectType sObjectType = (Trigger.new ?? Trigger.old)?.getSObjectType();
+        public String sObjectTypeName = (Trigger.new ?? Trigger.old)?.getSObjectType().toString().toLowerCase();
     }
 
-    private static Logger resolveLogger() {
-        List<ApexTypeImplementor> implementors = SOQL.of('ApexTypeImplementor')
-            .with(ApexTypeImplementor.ClassName, ApexTypeImplementor.ClassNamespacePrefix)
-            .whereAre(SOQL.Filter.with(ApexTypeImplementor.InterfaceName).equal('TriggerOrchestrator.Logger'))
-            .whereAre(SOQL.Filter.with(ApexTypeImplementor.InterfaceNamespacePrefix).equal(TriggerOrchestrator.class.getName().substringBetween('', '.')))
-            .whereAre(SOQL.Filter.with(ApexTypeImplementor.IsConcrete).isTrue())
-            .systemMode()
-            .setLimit(2)
-            .toList();
+    private class TransactionState {
+        public Map<String, Map<Id, Integer>> recursionDepthByRecordByHandler = new Map<String, Map<Id, Integer>>();
+        public List<ExecutionStrategy> executionStack = new List<ExecutionStrategy>();
+    }
 
-        if (implementors.size() > 1) {
-            throw new TriggerOrchestratorException('Multiple implementations of TriggerOrchestrator.Logger found. Only one implementation is allowed.');
+    private class TriggerSettings {
+        public Logger logger;
+        public Map<String, MetadataSettings> metadataSettingsByObjectName;
+
+        public TriggerSettings() {
+            this.logger = this.resolveLogger();
+            this.metadataSettingsByObjectName = this.resolveMetadataSettings();
         }
 
-        if (implementors.isEmpty()) {
-            return null;
+        public Boolean isSObjectTriggerBypassedInMetadata(TriggerContext context) {
+            return this.metadataSettingsByObjectName.get(context.sObjectTypeName)?.sObjectSetting.Bypass__c == true;
         }
 
-        return (Logger) Type.forName(implementors[0].ClassNamespacePrefix, implementors[0].ClassName)?.newInstance();
+        private Logger resolveLogger() {
+            List<ApexTypeImplementor> implementors = SOQL.of('ApexTypeImplementor')
+                .with(ApexTypeImplementor.ClassName, ApexTypeImplementor.ClassNamespacePrefix)
+                .whereAre(SOQL.Filter.with(ApexTypeImplementor.InterfaceName).equal('TriggerOrchestrator.Logger'))
+                .whereAre(SOQL.Filter.with(ApexTypeImplementor.InterfaceNamespacePrefix).equal(TriggerOrchestrator.class.getName().substringBetween('', '.')))
+                .whereAre(SOQL.Filter.with(ApexTypeImplementor.IsConcrete).isTrue())
+                .systemMode()
+                .setLimit(2)
+                .toList();
+
+            if (implementors.size() > 1) {
+                throw new TriggerOrchestratorException('Multiple implementations of TriggerOrchestrator.Logger found. Only one implementation is allowed.');
+            }
+
+            if (implementors.isEmpty()) {
+                return null;
+            }
+
+            return (Logger) Type.forName(implementors[0].ClassNamespacePrefix, implementors[0].ClassName)?.newInstance();
+        }
+
+        private Map<String, MetadataSettings> resolveMetadataSettings() {
+            Map<String, MetadataSettings> metadataSettingsByObjectName = new Map<String, MetadataSettings>();
+
+            for (
+                TriggerObject__mdt triggerObject : (List<TriggerObject__mdt>) SOQL.of(TriggerObject__mdt.SObjectType)
+                    .with(TriggerObject__mdt.ObjectAPIName__c, TriggerObject__mdt.Bypass__c)
+                    .with(SOQL.SubQuery.of('TriggerHandlers__r').with(TriggerHandler__mdt.ApexClassName__c, TriggerHandler__mdt.Bypass__c))
+                    .systemMode()
+                    .toList()
+            ) {
+                metadataSettingsByObjectName.put(triggerObject.ObjectAPIName__c.trim().toLowerCase(), new MetadataSettings(triggerObject));
+            }
+
+            return metadataSettingsByObjectName;
+        }
     }
 
     private static Boolean isHandlerBypassedInMetadata(Object handler, SObjectType sObjectType) {
-        return TriggerOrchestrator.metadataSettingsByObjectName.get(sObjectType?.toString()?.toLowerCase())?.isHandlerBypassed(handler) == true;
-    }
-
-    private static Map<String, MetadataSettings> resolveMetadataSettings() {
-        Map<String, MetadataSettings> metadataSettingsByObjectName = new Map<String, MetadataSettings>();
-
-        for (
-            TriggerObject__mdt triggerObject : (List<TriggerObject__mdt>) SOQL.of(TriggerObject__mdt.SObjectType)
-                .with(TriggerObject__mdt.ObjectAPIName__c, TriggerObject__mdt.Bypass__c)
-                .with(SOQL.SubQuery.of('TriggerHandlers__r').with(TriggerHandler__mdt.ApexClassName__c, TriggerHandler__mdt.Bypass__c))
-                .systemMode()
-                .toList()
-        ) {
-            metadataSettingsByObjectName.put(triggerObject.ObjectAPIName__c.trim().toLowerCase(), new MetadataSettings(triggerObject));
-        }
-
-        return metadataSettingsByObjectName;
+        return TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName.get(sObjectType?.toString()?.toLowerCase())?.isHandlerBypassed(handler) == true;
     }
 
     private abstract class ExecutionStrategy {
@@ -239,7 +256,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         private void logError(Exception e, TriggerHandlerAdapter adapter) {
-            if (TriggerOrchestrator.logger == null) {
+            if (TriggerOrchestrator.TriggerSettings.logger == null) {
                 return;
             }
 
@@ -259,7 +276,7 @@ public with sharing class TriggerOrchestrator {
             error.sObjectType = this.orchestrator.context.sObjectType;
             error.recordIds = recordIds;
 
-            TriggerOrchestrator.logger.log(error);
+            TriggerOrchestrator.TriggerSettings.logger.log(error);
         }
 
         private void runHandlers() {
@@ -687,11 +704,11 @@ public with sharing class TriggerOrchestrator {
             super(populator);
             String recursionScope = this.handlerName + ':BEFORE_UPDATE';
 
-            if (!TriggerOrchestrator.recursionDepthByRecordByHandler.containsKey(recursionScope)) {
-                TriggerOrchestrator.recursionDepthByRecordByHandler.put(recursionScope, new Map<Id, Integer>());
+            if (!TriggerOrchestrator.TransactionState.recursionDepthByRecordByHandler.containsKey(recursionScope)) {
+                TriggerOrchestrator.TransactionState.recursionDepthByRecordByHandler.put(recursionScope, new Map<Id, Integer>());
             }
 
-            this.recursionDepthByRecord = TriggerOrchestrator.recursionDepthByRecordByHandler.get(recursionScope);
+            this.recursionDepthByRecord = TriggerOrchestrator.TransactionState.recursionDepthByRecordByHandler.get(recursionScope);
         }
 
         public override void execute(List<TriggerHandler.TriggerRecord> records) {
@@ -869,11 +886,11 @@ public with sharing class TriggerOrchestrator {
             super(handler);
             String recursionScope = this.handlerName + ':AFTER_UPDATE';
 
-            if (!TriggerOrchestrator.recursionDepthByRecordByHandler.containsKey(recursionScope)) {
-                TriggerOrchestrator.recursionDepthByRecordByHandler.put(recursionScope, new Map<Id, Integer>());
+            if (!TriggerOrchestrator.TransactionState.recursionDepthByRecordByHandler.containsKey(recursionScope)) {
+                TriggerOrchestrator.TransactionState.recursionDepthByRecordByHandler.put(recursionScope, new Map<Id, Integer>());
             }
 
-            this.recursionDepthByRecord = TriggerOrchestrator.recursionDepthByRecordByHandler.get(recursionScope);
+            this.recursionDepthByRecord = TriggerOrchestrator.TransactionState.recursionDepthByRecordByHandler.get(recursionScope);
         }
 
         public Boolean isBypassed() {

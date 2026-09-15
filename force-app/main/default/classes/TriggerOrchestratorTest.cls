@@ -467,7 +467,7 @@ private class TriggerOrchestratorTest {
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because run() is only valid inside a trigger.');
         Assert.areEqual(
-            'Called outside of trigger context, or not supported operation type',
+            'Called outside of a trigger context, or the trigger operation is not supported.',
             orchestratorException.getMessage(),
             'It should be the outside-of-trigger message, because there is no operation type to resolve a context from.'
         );
@@ -496,7 +496,7 @@ private class TriggerOrchestratorTest {
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because the missing trigger context is checked before the argument is looked at.');
         Assert.areEqual(
-            'Called outside of trigger context, or not supported operation type',
+            'Called outside of a trigger context, or the trigger operation is not supported.',
             orchestratorException.getMessage(),
             'It should be the outside-of-trigger message, because the guard does not depend on what was passed to run().'
         );
@@ -517,7 +517,7 @@ private class TriggerOrchestratorTest {
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because the missing trigger context is checked before the argument is looked at.');
         Assert.areEqual(
-            'Called outside of trigger context, or not supported operation type',
+            'Called outside of a trigger context, or the trigger operation is not supported.',
             orchestratorException.getMessage(),
             'It should be the outside-of-trigger message, because the guard does not depend on what was passed to run().'
         );
@@ -543,7 +543,7 @@ private class TriggerOrchestratorTest {
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because the operation type alone decides whether there is a trigger context.');
         Assert.areEqual(
-            'Called outside of trigger context, or not supported operation type',
+            'Called outside of a trigger context, or the trigger operation is not supported.',
             orchestratorException.getMessage(),
             'It should be the outside-of-trigger message, because records without an operation type are not a trigger invocation.'
         );

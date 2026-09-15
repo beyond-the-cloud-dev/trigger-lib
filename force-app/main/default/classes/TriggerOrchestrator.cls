@@ -137,6 +137,7 @@ public with sharing class TriggerOrchestrator {
         public List<SObject> triggerNewRecords = Trigger.new;
         public List<SObject> triggerOldRecords = Trigger.old;
         public SObjectType sObjectType = (Trigger.new ?? Trigger.old)?.getSObjectType();
+        public Integer recordsCount = (Trigger.new ?? Trigger.old).size();
         public String sObjectTypeName = (Trigger.new ?? Trigger.old)?.getSObjectType().toString().toLowerCase();
     }
 
@@ -156,6 +157,11 @@ public with sharing class TriggerOrchestrator {
 
         public Boolean isSObjectTriggerBypassedInMetadata(TriggerContext context) {
             return this.metadataSettingsByObjectName.get(context.sObjectTypeName)?.sObjectSetting.Bypass__c == true;
+        }
+
+        public Boolean isHandlerBypassedInMetadata(TriggerContext context, Object handler) {
+            String handlerClassName = handler.toString().substringBefore(':').toLowerCase();
+            return this.metadataSettingsByObjectName.get(context.sObjectTypeName)?.settingByHandlerName.get(handlerClassName)?.Bypass__c == true;
         }
 
         private Logger resolveLogger() {
@@ -196,24 +202,19 @@ public with sharing class TriggerOrchestrator {
         }
     }
 
-    private static Boolean isHandlerBypassedInMetadata(Object handler, SObjectType sObjectType) {
-        return TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName.get(sObjectType?.toString()?.toLowerCase())?.isHandlerBypassed(handler) == true;
-    }
-
     private abstract class ExecutionStrategy {
-        protected TriggerOrchestrator orchestrator;
-
         protected List<TriggerHandlerAdapter> handlerAdapters = new List<TriggerHandlerAdapter>();
         protected List<TriggerHandlerAdapter> activeHandlers = new List<TriggerHandlerAdapter>();
         protected List<TriggerHandler.TriggerRecord> triggerRecords = new List<TriggerHandler.TriggerRecord>();
         protected ParentRelationshipEnrichment parentRelationshipEnrichment;
 
-        public void execute(TriggerOrchestrator orchestrator) {
-            this.orchestrator = orchestrator;
+        private TriggerContext context;
 
-            this.registerRecords();
-            this.adaptHandlers();
-            this.registerOrchestratorOnHandlerAdapters();
+        public void execute(TriggerOrchestrator orchestrator) {
+            this.context = orchestrator.context;
+
+            this.enhanceRecords();
+            this.adaptHandlers(orchestrator);
 
             this.filterBypassedHandlers();
             this.declareParentRelationships();
@@ -221,22 +222,11 @@ public with sharing class TriggerOrchestrator {
             this.runHandlers();
         }
 
-        protected abstract void adaptHandlers();
+        protected abstract void adaptHandlers(TriggerOrchestrator orchestrator);
 
-        private void registerRecords() {
-            List<SObject> newRecords = this.orchestrator.context.triggerNewRecords;
-            List<SObject> oldRecords = this.orchestrator.context.triggerOldRecords;
-
-            Integer recordCount = (newRecords ?? oldRecords).size();
-
-            for (Integer i = 0; i < recordCount; i++) {
-                this.triggerRecords.add(new TriggerHandler.TriggerRecord(newRecords?.get(i), oldRecords?.get(i)));
-            }
-        }
-
-        private void registerOrchestratorOnHandlerAdapters() {
-            for (TriggerHandlerAdapter adapter : this.handlerAdapters) {
-                adapter.registerContext(this.orchestrator);
+        private void enhanceRecords() {
+            for (Integer i = 0; i < this.context.recordsCount; i++) {
+                this.triggerRecords.add(new TriggerHandler.TriggerRecord(this.context.triggerNewRecords?.get(i), this.context.triggerOldRecords?.get(i)));
             }
         }
 
@@ -251,7 +241,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         private void declareParentRelationships() {
-            this.parentRelationshipEnrichment = new ParentRelationshipEnrichment(this.orchestrator.context.triggerOperation);
+            this.parentRelationshipEnrichment = new ParentRelationshipEnrichment(this.context.triggerOperation);
             this.parentRelationshipEnrichment.declareParentFields(this.activeHandlers);
         }
 
@@ -262,7 +252,7 @@ public with sharing class TriggerOrchestrator {
 
             Set<Id> recordIds = new Set<Id>();
 
-            for (SObject record : this.orchestrator.context.triggerNewRecords ?? this.orchestrator.context.triggerOldRecords) {
+            for (SObject record : this.context.triggerNewRecords ?? this.context.triggerOldRecords) {
                 if (record.Id != null) {
                     recordIds.add(record.Id);
                 }
@@ -272,8 +262,8 @@ public with sharing class TriggerOrchestrator {
 
             error.triggerException = e;
             error.handlerName = adapter.handlerName;
-            error.operation = this.orchestrator.context.triggerOperation;
-            error.sObjectType = this.orchestrator.context.sObjectType;
+            error.operation = this.context.triggerOperation;
+            error.sObjectType = this.context.sObjectType;
             error.recordIds = recordIds;
 
             TriggerOrchestrator.TriggerSettings.logger.log(error);
@@ -306,97 +296,65 @@ public with sharing class TriggerOrchestrator {
     }
 
     private class BeforeInsertExecutionStrategy extends ExecutionStrategy {
-        public override void adaptHandlers() {
-            for (BeforeInsert.Handler handler : ((TriggerOrchestrator.BeforeInsert) this.orchestrator.orchestrator).beforeInsertHandlers()) {
-                if (handler instanceof BeforeInsert.Populator && handler instanceof BeforeInsert.Validator) {
-                    throw new TriggerOrchestratorException(
-                        handler.toString().substringBefore(':') +
-                        ' implements both BeforeInsert.Populator and BeforeInsert.Validator. A class can implement only one main interface per context.'
-                    );
-                }
-
+        public override void adaptHandlers(TriggerOrchestrator orchestrator) {
+            for (BeforeInsert.Handler handler : ((TriggerOrchestrator.BeforeInsert) orchestrator.orchestrator).beforeInsertHandlers()) {
                 if (handler instanceof BeforeInsert.Populator) {
-                    this.handlerAdapters.add(new BeforeInsertPopulatorHandlerAdapter((BeforeInsert.Populator) handler));
-                }
-
-                if (handler instanceof BeforeInsert.Validator) {
-                    this.handlerAdapters.add(new BeforeInsertValidatorHandlerAdapter((BeforeInsert.Validator) handler));
-                }
-
-                if (!(handler instanceof BeforeInsert.Populator) && !(handler instanceof BeforeInsert.Validator)) {
-                    throw new TriggerOrchestratorException(
-                        handler.toString().substringBefore(':') +
-                        ' implements neither BeforeInsert.Populator nor BeforeInsert.Validator. A class must implement one main interface per context.'
-                    );
+                    this.handlerAdapters.add(new BeforeInsertPopulatorHandlerAdapter((BeforeInsert.Populator) handler, orchestrator));
+                } else if (handler instanceof BeforeInsert.Validator) {
+                    this.handlerAdapters.add(new BeforeInsertValidatorHandlerAdapter((BeforeInsert.Validator) handler, orchestrator));
                 }
             }
         }
     }
 
     private class AfterInsertExecutionStrategy extends ExecutionStrategy {
-        public override void adaptHandlers() {
-            for (AfterInsert.Handler handler : ((TriggerOrchestrator.AfterInsert) this.orchestrator.orchestrator).afterInsertHandlers()) {
-                this.handlerAdapters.add(new AfterInsertHandlerAdapter(handler));
+        public override void adaptHandlers(TriggerOrchestrator orchestrator) {
+            for (AfterInsert.Handler handler : ((TriggerOrchestrator.AfterInsert) orchestrator.orchestrator).afterInsertHandlers()) {
+                this.handlerAdapters.add(new AfterInsertHandlerAdapter(handler, orchestrator));
             }
         }
     }
 
     private class BeforeUpdateExecutionStrategy extends ExecutionStrategy {
-        public override void adaptHandlers() {
-            for (BeforeUpdate.Handler handler : ((TriggerOrchestrator.BeforeUpdate) this.orchestrator.orchestrator).beforeUpdateHandlers()) {
-                if (handler instanceof BeforeUpdate.Populator && handler instanceof BeforeUpdate.Validator) {
-                    throw new TriggerOrchestratorException(
-                        handler.toString().substringBefore(':') +
-                        ' implements both BeforeUpdate.Populator and BeforeUpdate.Validator. A class can implement only one main interface per context.'
-                    );
-                }
-
+        public override void adaptHandlers(TriggerOrchestrator orchestrator) {
+            for (BeforeUpdate.Handler handler : ((TriggerOrchestrator.BeforeUpdate) orchestrator.orchestrator).beforeUpdateHandlers()) {
                 if (handler instanceof BeforeUpdate.Populator) {
-                    this.handlerAdapters.add(new BeforeUpdatePopulatorHandlerAdapter((BeforeUpdate.Populator) handler));
-                }
-
-                if (handler instanceof BeforeUpdate.Validator) {
-                    this.handlerAdapters.add(new BeforeUpdateValidatorHandlerAdapter((BeforeUpdate.Validator) handler));
-                }
-
-                if (!(handler instanceof BeforeUpdate.Populator) && !(handler instanceof BeforeUpdate.Validator)) {
-                    throw new TriggerOrchestratorException(
-                        handler.toString().substringBefore(':') +
-                        ' implements neither BeforeUpdate.Populator nor BeforeUpdate.Validator. A class must implement one main interface per context.'
-                    );
+                    this.handlerAdapters.add(new BeforeUpdatePopulatorHandlerAdapter((BeforeUpdate.Populator) handler, orchestrator));
+                } else if (handler instanceof BeforeUpdate.Validator) {
+                    this.handlerAdapters.add(new BeforeUpdateValidatorHandlerAdapter((BeforeUpdate.Validator) handler, orchestrator));
                 }
             }
         }
     }
 
     private class AfterUpdateExecutionStrategy extends ExecutionStrategy {
-        public override void adaptHandlers() {
-            for (AfterUpdate.Handler handler : ((TriggerOrchestrator.AfterUpdate) this.orchestrator.orchestrator).afterUpdateHandlers()) {
-                this.handlerAdapters.add(new AfterUpdateHandlerAdapter(handler));
+        public override void adaptHandlers(TriggerOrchestrator orchestrator) {
+            for (AfterUpdate.Handler handler : ((TriggerOrchestrator.AfterUpdate) orchestrator.orchestrator).afterUpdateHandlers()) {
+                this.handlerAdapters.add(new AfterUpdateHandlerAdapter(handler, orchestrator));
             }
         }
     }
 
     private class BeforeDeleteExecutionStrategy extends ExecutionStrategy {
-        public override void adaptHandlers() {
-            for (BeforeDelete.Handler handler : ((TriggerOrchestrator.BeforeDelete) this.orchestrator.orchestrator).beforeDeleteHandlers()) {
-                this.handlerAdapters.add(new BeforeDeleteHandlerAdapter(handler));
+        public override void adaptHandlers(TriggerOrchestrator orchestrator) {
+            for (BeforeDelete.Handler handler : ((TriggerOrchestrator.BeforeDelete) orchestrator.orchestrator).beforeDeleteHandlers()) {
+                this.handlerAdapters.add(new BeforeDeleteHandlerAdapter(handler, orchestrator));
             }
         }
     }
 
     private class AfterDeleteExecutionStrategy extends ExecutionStrategy {
-        public override void adaptHandlers() {
-            for (AfterDelete.Handler handler : ((TriggerOrchestrator.AfterDelete) this.orchestrator.orchestrator).afterDeleteHandlers()) {
-                this.handlerAdapters.add(new AfterDeleteHandlerAdapter(handler));
+        public override void adaptHandlers(TriggerOrchestrator orchestrator) {
+            for (AfterDelete.Handler handler : ((TriggerOrchestrator.AfterDelete) orchestrator.orchestrator).afterDeleteHandlers()) {
+                this.handlerAdapters.add(new AfterDeleteHandlerAdapter(handler, orchestrator));
             }
         }
     }
 
     private class AfterUndeleteExecutionStrategy extends ExecutionStrategy {
-        public override void adaptHandlers() {
-            for (AfterUndelete.Handler handler : ((TriggerOrchestrator.AfterUndelete) this.orchestrator.orchestrator).afterUndeleteHandlers()) {
-                this.handlerAdapters.add(new AfterUndeleteHandlerAdapter(handler));
+        public override void adaptHandlers(TriggerOrchestrator orchestrator) {
+            for (AfterUndelete.Handler handler : ((TriggerOrchestrator.AfterUndelete) orchestrator.orchestrator).afterUndeleteHandlers()) {
+                this.handlerAdapters.add(new AfterUndeleteHandlerAdapter(handler, orchestrator));
             }
         }
     }
@@ -485,13 +443,10 @@ public with sharing class TriggerOrchestrator {
         protected TriggerOrchestrator orchestrator;
         protected List<TriggerHandler.TriggerRecord> processedRecords = new List<TriggerHandler.TriggerRecord>();
 
-        public TriggerHandlerAdapter(Object handler) {
+        public TriggerHandlerAdapter(Object handler, TriggerOrchestrator orchestrator) {
             this.handler = handler;
-            this.handlerName = handler.toString().substringBefore(':');
-        }
-
-        public void registerContext(TriggerOrchestrator orchestrator) {
             this.orchestrator = orchestrator;
+            this.handlerName = handler.toString().substringBefore(':');
         }
 
         public virtual void execute(List<TriggerHandler.TriggerRecord> records) {
@@ -535,8 +490,8 @@ public with sharing class TriggerOrchestrator {
     }
 
     private class BeforeInsertPopulatorHandlerAdapter extends TriggerHandlerAdapter implements Bypassable, ContinueOnError, Finalizer, NewRecordEnricher {
-        public BeforeInsertPopulatorHandlerAdapter(BeforeInsert.Populator populator) {
-            super(populator);
+        public BeforeInsertPopulatorHandlerAdapter(BeforeInsert.Populator populator, TriggerOrchestrator orchestrator) {
+            super(populator, orchestrator);
         }
 
         public override void execute(List<TriggerHandler.TriggerRecord> records) {
@@ -555,7 +510,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.context.sObjectType)) {
+            if (TriggerOrchestrator.TriggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handler)) {
                 return true;
             }
 
@@ -594,8 +549,8 @@ public with sharing class TriggerOrchestrator {
     }
 
     private class BeforeInsertValidatorHandlerAdapter extends TriggerHandlerAdapter implements Bypassable, ContinueOnError, Finalizer, NewRecordEnricher {
-        public BeforeInsertValidatorHandlerAdapter(BeforeInsert.Validator validator) {
-            super(validator);
+        public BeforeInsertValidatorHandlerAdapter(BeforeInsert.Validator validator, TriggerOrchestrator orchestrator) {
+            super(validator, orchestrator);
         }
 
         public override void execute(List<TriggerHandler.TriggerRecord> records) {
@@ -614,7 +569,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.context.sObjectType)) {
+            if (TriggerOrchestrator.TriggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handler)) {
                 return true;
             }
 
@@ -653,12 +608,12 @@ public with sharing class TriggerOrchestrator {
     }
 
     private class AfterInsertHandlerAdapter extends TriggerHandlerAdapter implements Bypassable, ContinueOnError, Finalizer, NewRecordEnricher {
-        public AfterInsertHandlerAdapter(AfterInsert.Handler handler) {
-            super(handler);
+        public AfterInsertHandlerAdapter(AfterInsert.Handler handler, TriggerOrchestrator orchestrator) {
+            super(handler, orchestrator);
         }
 
         public Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.context.sObjectType)) {
+            if (TriggerOrchestrator.TriggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handler)) {
                 return true;
             }
 
@@ -700,8 +655,8 @@ public with sharing class TriggerOrchestrator {
         private Map<Id, Integer> recursionDepthByRecord;
         private Integer maxRecursionDepth;
 
-        public BeforeUpdatePopulatorHandlerAdapter(BeforeUpdate.Populator populator) {
-            super(populator);
+        public BeforeUpdatePopulatorHandlerAdapter(BeforeUpdate.Populator populator, TriggerOrchestrator orchestrator) {
+            super(populator, orchestrator);
             String recursionScope = this.handlerName + ':BEFORE_UPDATE';
 
             if (!TriggerOrchestrator.TransactionState.recursionDepthByRecordByHandler.containsKey(recursionScope)) {
@@ -727,7 +682,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.context.sObjectType)) {
+            if (TriggerOrchestrator.TriggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handler)) {
                 return true;
             }
 
@@ -812,8 +767,8 @@ public with sharing class TriggerOrchestrator {
     }
 
     private class BeforeUpdateValidatorHandlerAdapter extends TriggerHandlerAdapter implements Bypassable, ContinueOnError, Finalizer, NewRecordEnricher, OldRecordEnricher {
-        public BeforeUpdateValidatorHandlerAdapter(BeforeUpdate.Validator validator) {
-            super(validator);
+        public BeforeUpdateValidatorHandlerAdapter(BeforeUpdate.Validator validator, TriggerOrchestrator orchestrator) {
+            super(validator, orchestrator);
         }
 
         public override void execute(List<TriggerHandler.TriggerRecord> records) {
@@ -832,7 +787,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.context.sObjectType)) {
+            if (TriggerOrchestrator.TriggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handler)) {
                 return true;
             }
 
@@ -882,8 +837,8 @@ public with sharing class TriggerOrchestrator {
         private Map<Id, Integer> recursionDepthByRecord;
         private Integer maxRecursionDepth;
 
-        public AfterUpdateHandlerAdapter(AfterUpdate.Handler handler) {
-            super(handler);
+        public AfterUpdateHandlerAdapter(AfterUpdate.Handler handler, TriggerOrchestrator orchestrator) {
+            super(handler, orchestrator);
             String recursionScope = this.handlerName + ':AFTER_UPDATE';
 
             if (!TriggerOrchestrator.TransactionState.recursionDepthByRecordByHandler.containsKey(recursionScope)) {
@@ -894,7 +849,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.context.sObjectType)) {
+            if (TriggerOrchestrator.TriggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handler)) {
                 return true;
             }
 
@@ -979,12 +934,12 @@ public with sharing class TriggerOrchestrator {
     }
 
     private class BeforeDeleteHandlerAdapter extends TriggerHandlerAdapter implements Bypassable, ContinueOnError, Finalizer, OldRecordEnricher {
-        public BeforeDeleteHandlerAdapter(BeforeDelete.Handler handler) {
-            super(handler);
+        public BeforeDeleteHandlerAdapter(BeforeDelete.Handler handler, TriggerOrchestrator orchestrator) {
+            super(handler, orchestrator);
         }
 
         public Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.context.sObjectType)) {
+            if (TriggerOrchestrator.TriggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handler)) {
                 return true;
             }
 
@@ -1023,12 +978,12 @@ public with sharing class TriggerOrchestrator {
     }
 
     private class AfterDeleteHandlerAdapter extends TriggerHandlerAdapter implements Bypassable, ContinueOnError, Finalizer, OldRecordEnricher {
-        public AfterDeleteHandlerAdapter(AfterDelete.Handler handler) {
-            super(handler);
+        public AfterDeleteHandlerAdapter(AfterDelete.Handler handler, TriggerOrchestrator orchestrator) {
+            super(handler, orchestrator);
         }
 
         public Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.context.sObjectType)) {
+            if (TriggerOrchestrator.TriggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handler)) {
                 return true;
             }
 
@@ -1067,12 +1022,12 @@ public with sharing class TriggerOrchestrator {
     }
 
     private class AfterUndeleteHandlerAdapter extends TriggerHandlerAdapter implements Bypassable, ContinueOnError, Finalizer, NewRecordEnricher {
-        public AfterUndeleteHandlerAdapter(AfterUndelete.Handler handler) {
-            super(handler);
+        public AfterUndeleteHandlerAdapter(AfterUndelete.Handler handler, TriggerOrchestrator orchestrator) {
+            super(handler, orchestrator);
         }
 
         public Boolean isBypassed() {
-            if (TriggerOrchestrator.isHandlerBypassedInMetadata(this.handler, this.orchestrator.context.sObjectType)) {
+            if (TriggerOrchestrator.TriggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handler)) {
                 return true;
             }
 

@@ -245,30 +245,6 @@ public with sharing class TriggerOrchestrator {
             this.parentRelationshipEnrichment.declareParentFields(this.activeHandlers);
         }
 
-        private void logError(Exception e, TriggerHandlerAdapter adapter) {
-            if (TriggerOrchestrator.TriggerSettings.logger == null) {
-                return;
-            }
-
-            Set<Id> recordIds = new Set<Id>();
-
-            for (SObject record : this.context.triggerNewRecords ?? this.context.triggerOldRecords) {
-                if (record.Id != null) {
-                    recordIds.add(record.Id);
-                }
-            }
-
-            TriggerError error = new TriggerError();
-
-            error.triggerException = e;
-            error.handlerName = adapter.handlerName;
-            error.operation = this.context.triggerOperation;
-            error.sObjectType = this.context.sObjectType;
-            error.recordIds = recordIds;
-
-            TriggerOrchestrator.TriggerSettings.logger.log(error);
-        }
-
         private void runHandlers() {
             List<TriggerHandler.TriggerRecord> recordsToEnrich = this.triggerRecords;
 
@@ -292,6 +268,14 @@ public with sharing class TriggerOrchestrator {
 
                 recordsToEnrich = adapter.getProcessedRecords();
             }
+        }
+
+        private void logError(Exception e, TriggerHandlerAdapter adapter) {
+            if (TriggerOrchestrator.TriggerSettings.logger == null) {
+                return;
+            }
+
+            TriggerOrchestrator.TriggerSettings.logger.log(new TriggerError().withException(e).withHandlerName(adapter.handlerName).withContext(this.context));
         }
     }
 
@@ -388,7 +372,7 @@ public with sharing class TriggerOrchestrator {
         public SObjectType sObjectType;
         public System.Exception triggerException;
         public System.TriggerOperation operation;
-        public Set<Id> recordIds;
+        public Set<Id> recordIds = new Set<Id>();
 
         public Exception getException() {
             return this.triggerException;
@@ -408,6 +392,31 @@ public with sharing class TriggerOrchestrator {
 
         public Set<Id> getRecordIds() {
             return this.recordIds;
+        }
+
+        public TriggerError withException(System.Exception error) {
+            this.triggerException = error;
+            return this;
+        }
+
+        public TriggerError withHandlerName(String handlerName) {
+            this.handlerName = handlerName;
+            return this;
+        }
+
+        public TriggerError withContext(TriggerContext context) {
+            this.sObjectType = context.sObjectType;
+            this.operation = context.triggerOperation;
+            this.setRecordIds(context);
+            return this;
+        }
+
+        private void setRecordIds(TriggerContext context) {
+            for (SObject record : context.triggerNewRecords ?? context.triggerOldRecords) {
+                if (record.Id != null) {
+                    this.recordIds.add(record.Id);
+                }
+            }
         }
     }
 

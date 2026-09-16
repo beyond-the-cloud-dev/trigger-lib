@@ -147,13 +147,8 @@ public with sharing class TriggerOrchestrator {
     }
 
     private class TriggerSettings {
-        public Logger logger;
-        public Map<String, MetadataSettings> metadataSettingsByObjectName;
-
-        public TriggerSettings() {
-            this.logger = this.resolveLogger();
-            this.metadataSettingsByObjectName = this.resolveMetadataSettings();
-        }
+        public Logger logger = this.resolveLogger();
+        public Map<String, MetadataSettings> metadataSettingsByObjectName = this.resolveMetadataSettings();
 
         public Boolean isSObjectTriggerBypassedInMetadata(TriggerContext context) {
             return this.metadataSettingsByObjectName.get(context.sObjectTypeName)?.sObjectSetting.Bypass__c == true;
@@ -340,10 +335,6 @@ public with sharing class TriggerOrchestrator {
         public MetadataSettings(TriggerObject__mdt triggerObject) {
             this.sObjectSetting = triggerObject;
             this.addHandlerSettings();
-        }
-
-        public Boolean isHandlerBypassed(Object handler) {
-            return this.settingByHandlerName.get(handler.toString().substringBefore(':').toLowerCase())?.Bypass__c == true;
         }
 
         private void addHandlerSettings() {
@@ -1067,10 +1058,10 @@ public with sharing class TriggerOrchestrator {
         private Map<SObjectField, Map<String, Id>> enrichedNewIdByRecordByParentField = new Map<SObjectField, Map<String, Id>>();
 
         private Boolean isResolved = false;
-        private Boolean isRecordMutable;
+        private Boolean canBeParentRelatioshipsChanged;
 
         public ParentRelationshipEnrichment(System.TriggerOperation triggerOperation) {
-            this.isRecordMutable = triggerOperation == System.TriggerOperation.BEFORE_INSERT || triggerOperation == System.TriggerOperation.BEFORE_UPDATE;
+            this.canBeParentRelatioshipsChanged = triggerOperation == System.TriggerOperation.BEFORE_INSERT || triggerOperation == System.TriggerOperation.BEFORE_UPDATE;
         }
 
         public void declareParentFields(List<TriggerHandlerAdapter> adapters) {
@@ -1100,7 +1091,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public void enrich(List<TriggerHandler.TriggerRecord> recordsToEnrich) {
-            if (this.isResolved && (!this.isRecordMutable || recordsToEnrich.isEmpty())) {
+            if (this.isResolved && (!this.canBeParentRelatioshipsChanged || recordsToEnrich.isEmpty())) {
                 return;
             }
 
@@ -1112,58 +1103,79 @@ public with sharing class TriggerOrchestrator {
         }
 
         private void enrichParentField(SObjectField parentField, List<TriggerHandler.TriggerRecord> recordsToScan) {
-            Map<Id, SObject> cachedParentById = this.cachedParentByIdByParentField.get(parentField);
-            Map<String, Id> enrichedNewIdByRecord = this.enrichedNewIdByRecordByParentField.get(parentField);
+            Map<String, Id> staleNewIdByRecord = this.findStaleNewParentIds(parentField, recordsToScan);
 
-            Boolean enrichNewSide = this.newRecordFieldsToEnrich.contains(parentField);
-            Boolean enrichOldSide = !this.isResolved && this.oldRecordFieldsToEnrich.contains(parentField);
-
-            Map<String, Id> staleNewIdByRecord = new Map<String, Id>();
-            Set<Id> parentIdsToQuery = new Set<Id>();
-
-            if (enrichNewSide) {
-                for (TriggerHandler.TriggerRecord record : recordsToScan) {
-                    Id parentId = record.getNewSObject()?.isSet(parentField) == true ? (Id) record.getNewSObject().get(parentField) : null;
-
-                    if (enrichedNewIdByRecord.get(record.getIdentifier()) == parentId) {
-                        continue;
-                    }
-
-                    staleNewIdByRecord.put(record.getIdentifier(), parentId);
-
-                    if (parentId != null && !cachedParentById.containsKey(parentId)) {
-                        parentIdsToQuery.add(parentId);
-                    }
-                }
-            }
-
-            if (enrichOldSide) {
-                for (TriggerHandler.TriggerRecord record : recordsToScan) {
-                    Id parentId = record.getOldSObject()?.isSet(parentField) == true ? (Id) record.getOldSObject().get(parentField) : null;
-
-                    if (parentId != null && !cachedParentById.containsKey(parentId)) {
-                        parentIdsToQuery.add(parentId);
-                    }
-                }
-            }
-
-            if (staleNewIdByRecord.isEmpty() && !enrichOldSide) {
+            if (staleNewIdByRecord.isEmpty() && !this.isOldSideEnriched(parentField)) {
                 return;
             }
 
-            if (!parentIdsToQuery.isEmpty()) {
-                Map<Id, SObject> queriedParentById = SOQL.of(parentField.getDescribe().getReferenceTo()[0])
-                    .with(new List<String>(this.selectedFieldsByParentField.get(parentField)))
-                    .byIds(parentIdsToQuery)
-                    .systemMode()
-                    .withoutSharing()
-                    .toMap();
+            this.cacheParents(parentField, recordsToScan, staleNewIdByRecord);
+            this.attachParents(parentField, recordsToScan, staleNewIdByRecord);
+        }
 
-                for (Id parentId : parentIdsToQuery) {
-                    cachedParentById.put(parentId, queriedParentById.get(parentId));
+        private Map<String, Id> findStaleNewParentIds(SObjectField parentField, List<TriggerHandler.TriggerRecord> recordsToScan) {
+            Map<String, Id> staleNewIdByRecord = new Map<String, Id>();
+
+            if (!this.newRecordFieldsToEnrich.contains(parentField)) {
+                return staleNewIdByRecord;
+            }
+
+            Map<String, Id> enrichedNewIdByRecord = this.enrichedNewIdByRecordByParentField.get(parentField);
+
+            for (TriggerHandler.TriggerRecord record : recordsToScan) {
+                Id parentId = this.getNewParentId(record, parentField);
+
+                if (enrichedNewIdByRecord.get(record.getIdentifier()) == parentId) {
+                    continue;
+                }
+
+                staleNewIdByRecord.put(record.getIdentifier(), parentId);
+            }
+
+            return staleNewIdByRecord;
+        }
+
+        private void cacheParents(SObjectField parentField, List<TriggerHandler.TriggerRecord> recordsToScan, Map<String, Id> staleNewIdByRecord) {
+            Map<Id, SObject> cachedParentById = this.cachedParentByIdByParentField.get(parentField);
+            Set<Id> parentIdsToQuery = new Set<Id>();
+
+            for (Id parentId : staleNewIdByRecord.values()) {
+                if (parentId != null && !cachedParentById.containsKey(parentId)) {
+                    parentIdsToQuery.add(parentId);
                 }
             }
 
+            if (this.isOldSideEnriched(parentField)) {
+                for (TriggerHandler.TriggerRecord record : recordsToScan) {
+                    Id parentId = this.getOldParentId(record, parentField);
+
+                    if (parentId != null && !cachedParentById.containsKey(parentId)) {
+                        parentIdsToQuery.add(parentId);
+                    }
+                }
+            }
+
+            if (parentIdsToQuery.isEmpty()) {
+                return;
+            }
+
+            Map<Id, SObject> queriedParentById = SOQL.of(parentField.getDescribe().getReferenceTo()[0])
+                .with(new List<String>(this.selectedFieldsByParentField.get(parentField)))
+                .byIds(parentIdsToQuery)
+                .systemMode()
+                .withoutSharing()
+                .toMap();
+
+            for (Id parentId : parentIdsToQuery) {
+                cachedParentById.put(parentId, queriedParentById.get(parentId));
+            }
+        }
+
+        private void attachParents(SObjectField parentField, List<TriggerHandler.TriggerRecord> recordsToScan, Map<String, Id> staleNewIdByRecord) {
+            Map<Id, SObject> cachedParentById = this.cachedParentByIdByParentField.get(parentField);
+            Map<String, Id> enrichedNewIdByRecord = this.enrichedNewIdByRecordByParentField.get(parentField);
+
+            Boolean enrichOldSide = this.isOldSideEnriched(parentField);
             String relationshipName = parentField.getDescribe().getRelationshipName();
 
             for (TriggerHandler.TriggerRecord record : recordsToScan) {
@@ -1173,12 +1185,21 @@ public with sharing class TriggerOrchestrator {
                 }
 
                 if (enrichOldSide) {
-                    record.enrichOld(
-                        relationshipName,
-                        cachedParentById.get(record.getOldSObject()?.isSet(parentField) == true ? (Id) record.getOldSObject().get(parentField) : null)
-                    );
+                    record.enrichOld(relationshipName, cachedParentById.get(this.getOldParentId(record, parentField)));
                 }
             }
+        }
+
+        private Boolean isOldSideEnriched(SObjectField parentField) {
+            return !this.isResolved && this.oldRecordFieldsToEnrich.contains(parentField);
+        }
+
+        private Id getNewParentId(TriggerHandler.TriggerRecord record, SObjectField parentField) {
+            return record.getNewSObject()?.isSet(parentField) == true ? (Id) record.getNewSObject().get(parentField) : null;
+        }
+
+        private Id getOldParentId(TriggerHandler.TriggerRecord record, SObjectField parentField) {
+            return record.getOldSObject()?.isSet(parentField) == true ? (Id) record.getOldSObject().get(parentField) : null;
         }
     }
 

@@ -21,12 +21,12 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Doe', Department = 'Sales'), new Contact(LastName = 'Roe', Department = 'Legal') };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -55,12 +55,12 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = firstContactId, LastName = 'Doe'), new Contact(Id = secondContactId, LastName = 'Roe') };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -92,13 +92,13 @@ private class TriggerOrchestratorTest {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = firstContactId, LastName = 'Old One'), new Contact(Id = secondContactId, LastName = 'Old Two') };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -130,13 +130,13 @@ private class TriggerOrchestratorTest {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = firstContactId, LastName = 'Old One'), new Contact(Id = secondContactId, LastName = 'Old Two') };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -175,12 +175,12 @@ private class TriggerOrchestratorTest {
         };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -213,12 +213,12 @@ private class TriggerOrchestratorTest {
         };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -248,12 +248,12 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = firstContactId, LastName = 'Restored One'), new Contact(Id = secondContactId, LastName = 'Restored Two') };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -284,12 +284,12 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = firstContactId, LastName = 'Doe'), new Contact(Id = secondContactId, LastName = 'Roe') };
         DispatchTwoHandlersOrchestrator orchestrator = new DispatchTwoHandlersOrchestrator();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -304,13 +304,13 @@ private class TriggerOrchestratorTest {
         DispatchPartialOrchestrator orchestrator = new DispatchPartialOrchestrator();
         Exception orchestratorException = null;
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -336,13 +336,13 @@ private class TriggerOrchestratorTest {
         DispatchPartialOrchestrator orchestrator = new DispatchPartialOrchestrator();
         Exception orchestratorException = null;
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -361,12 +361,12 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
         DispatchPartialOrchestrator orchestrator = new DispatchPartialOrchestrator();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -387,13 +387,13 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
         Exception orchestratorException = null;
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DispatchNoInterfacesOrchestrator());
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -408,13 +408,13 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
         Exception orchestratorException = null;
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator('Not an orchestrator');
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -432,13 +432,13 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
         Exception orchestratorException = null;
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(null);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -529,12 +529,12 @@ private class TriggerOrchestratorTest {
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
         Exception orchestratorException = null;
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -555,13 +555,13 @@ private class TriggerOrchestratorTest {
         DispatchEmptyListOrchestrator orchestrator = new DispatchEmptyListOrchestrator();
         Exception orchestratorException = null;
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -584,14 +584,14 @@ private class TriggerOrchestratorTest {
         DispatchEmptyListOrchestrator orchestrator = new DispatchEmptyListOrchestrator();
         Exception orchestratorException = null;
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -611,12 +611,12 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>();
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -637,18 +637,16 @@ private class TriggerOrchestratorTest {
     static void dispatchObjectBypassedInMetadataRunsNoHandler() {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Doe'), new Contact(LastName = 'Roe') };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
-        TriggerOrchestrator.MetadataSettings bypassedContact = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings bypassedContact = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt(Bypass__c = true));
         Exception orchestratorException = null;
 
-        bypassedContact.sObjectSetting = new TriggerObject__mdt(Bypass__c = true);
-
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => bypassedContact };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => bypassedContact };
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -669,17 +667,15 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New One') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old One') };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
-        TriggerOrchestrator.MetadataSettings bypassedContact = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings bypassedContact = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt(Bypass__c = true));
 
-        bypassedContact.sObjectSetting = new TriggerObject__mdt(Bypass__c = true);
-
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => bypassedContact };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => bypassedContact };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -694,16 +690,14 @@ private class TriggerOrchestratorTest {
     static void dispatchObjectBypassOfAnotherSObjectDoesNotStopDispatch() {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
-        TriggerOrchestrator.MetadataSettings bypassedAccount = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings bypassedAccount = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt(Bypass__c = true));
 
-        bypassedAccount.sObjectSetting = new TriggerObject__mdt(Bypass__c = true);
-
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'account' => bypassedAccount };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'account' => bypassedAccount };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -718,16 +712,14 @@ private class TriggerOrchestratorTest {
     static void dispatchObjectNotBypassedInMetadataRunsHandlers() {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
-        TriggerOrchestrator.MetadataSettings activeContact = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings activeContact = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt(Bypass__c = false));
 
-        activeContact.sObjectSetting = new TriggerObject__mdt(Bypass__c = false);
-
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => activeContact };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => activeContact };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -746,13 +738,13 @@ private class TriggerOrchestratorTest {
 
         orchestrator.handler.logger = logger;
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -1026,8 +1018,8 @@ private class TriggerOrchestratorTest {
 
         public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
             TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(new DispatchNestedUnimplementedContextOrchestrator());
-            orchestratorRunner2.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner2.triggerNewRecords = new List<Contact>{ new Contact(LastName = 'Nested') };
+            orchestratorRunner2.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner2.context.triggerNewRecords = new List<Contact>{ new Contact(LastName = 'Nested') };
             orchestratorRunner2.run();
             this.finalizeCountDuringHandler = this.logger.finalizeCount;
         }
@@ -1049,8 +1041,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -1072,8 +1064,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -1096,8 +1088,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -1116,8 +1108,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -1140,9 +1132,9 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -1168,9 +1160,9 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -1198,9 +1190,9 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -1221,8 +1213,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -1249,8 +1241,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -1273,8 +1265,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -1293,8 +1285,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -1314,9 +1306,9 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -1344,9 +1336,9 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -1367,9 +1359,9 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -1394,9 +1386,9 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -1424,9 +1416,9 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -1446,8 +1438,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -1476,9 +1468,9 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -1500,8 +1492,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -1510,188 +1502,6 @@ private class TriggerOrchestratorTest {
             String.join(executionLog, ','),
             'It should be handler by handler, because each handler is run over the whole record list before the next one starts, there is no shared qualification pass.'
         );
-    }
-
-    @IsTest
-    static void beforeInsertHandlerWithNoMainInterfaceIsRejected() {
-        List<SObject> records = new List<Contact>{ new Contact(LastName = 'A') };
-        RolesOrchestrator orchestrator = new RolesOrchestrator();
-        Exception orchestratorException = null;
-
-        orchestrator.insertHandlers.add(new RolesInsertMarkerHandler());
-
-        // Test
-        try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
-            orchestratorRunner.run();
-        } catch (Exception e) {
-            orchestratorException = e;
-        }
-
-        // Verify
-        Assert.isNotNull(orchestratorException, 'It should be thrown, because a before insert handler has to declare one role and the bare marker interface declares none.');
-        Assert.areEqual(
-            'RolesInsertMarkerHandler implements neither BeforeInsert.Populator nor BeforeInsert.Validator. A class must implement one main interface per context.',
-            orchestratorException.getMessage(),
-            'It should be the neither-interface message naming the class and both roles, because the framework has to tell the developer which interface is missing.'
-        );
-        Assert.isTrue(
-            orchestratorException.getTypeName().endsWith('TriggerOrchestratorException'),
-            'It should be true, because a contract violation the framework detects is raised as a TriggerOrchestratorException, never as a bare platform exception.'
-        );
-    }
-
-    @IsTest
-    static void beforeUpdateHandlerWithNoMainInterfaceIsRejected() {
-        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
-        List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'A', Title = 'New') };
-        List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'A', Title = 'Old') };
-        RolesOrchestrator orchestrator = new RolesOrchestrator();
-        Exception orchestratorException = null;
-
-        orchestrator.updateHandlers.add(new RolesUpdateMarkerHandler());
-
-        // Test
-        try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
-            orchestratorRunner.run();
-        } catch (Exception e) {
-            orchestratorException = e;
-        }
-
-        // Verify
-        Assert.isNotNull(orchestratorException, 'It should be thrown, because a before update handler has to declare one role and the bare marker interface declares none.');
-        Assert.areEqual(
-            'RolesUpdateMarkerHandler implements neither BeforeUpdate.Populator nor BeforeUpdate.Validator. A class must implement one main interface per context.',
-            orchestratorException.getMessage(),
-            'It should be the before update wording of the message, because the one-role rule is enforced per context and names the context it was broken in.'
-        );
-    }
-
-    @IsTest
-    static void handlerWithNoMainInterfaceIsRejectedBeforeAnyHandlerRuns() {
-        List<SObject> records = new List<Contact>{ new Contact(LastName = 'A') };
-        RolesInsertPopulator validHandler = new RolesInsertPopulator();
-        RolesOrchestrator orchestrator = new RolesOrchestrator();
-        Exception orchestratorException = null;
-
-        orchestrator.insertHandlers.add(validHandler);
-        orchestrator.insertHandlers.add(new RolesInsertMarkerHandler());
-
-        // Test
-        try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
-            orchestratorRunner.run();
-        } catch (Exception e) {
-            orchestratorException = e;
-        }
-
-        // Verify
-        Assert.isNotNull(orchestratorException, 'It should be thrown, because one handler with a wrong role fails the whole invocation.');
-        Assert.areEqual(0, validHandler.qualificationCount, 'It should be 0, because the role check runs while the handler list is collected, before any handler takes its turn.');
-        Assert.areEqual(0, validHandler.populateCount, 'It should be 0, because no handler runs when a later entry of the list breaks the one-role-per-context rule.');
-        Assert.isNull(((Contact) records[0]).Title, 'It should be null, because the invocation is aborted before the first populator writes anything.');
-    }
-
-    @IsTest
-    static void beforeInsertHandlerWithBothMainInterfacesIsRejected() {
-        List<SObject> records = new List<Contact>{ new Contact(LastName = 'A') };
-        RolesInsertPopulatorAndValidator handler = new RolesInsertPopulatorAndValidator();
-        RolesOrchestrator orchestrator = new RolesOrchestrator();
-        Exception orchestratorException = null;
-
-        orchestrator.insertHandlers.add(handler);
-
-        // Test
-        try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
-            orchestratorRunner.run();
-        } catch (Exception e) {
-            orchestratorException = e;
-        }
-
-        // Verify
-        Assert.isNotNull(orchestratorException, 'It should be thrown, because a class can hold only one role per context and this one holds two.');
-        Assert.areEqual(
-            'RolesInsertPopulatorAndValidator implements both BeforeInsert.Populator and BeforeInsert.Validator. A class can implement only one main interface per context.',
-            orchestratorException.getMessage(),
-            'It should be the both-interfaces message naming the class and both roles, because the framework has to say which pair of interfaces conflicts.'
-        );
-        Assert.areEqual(0, handler.callCount, 'It should be 0, because a rejected handler is never adapted, so neither of its role methods is ever called.');
-        Assert.isTrue(
-            orchestratorException.getTypeName().endsWith('TriggerOrchestratorException'),
-            'It should be true, because a contract violation the framework detects is raised as a TriggerOrchestratorException, never as a bare platform exception.'
-        );
-    }
-
-    @IsTest
-    static void beforeUpdateHandlerWithBothMainInterfacesIsRejected() {
-        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
-        List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'A', Title = 'New') };
-        List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'A', Title = 'Old') };
-        RolesUpdatePopulatorAndValidator handler = new RolesUpdatePopulatorAndValidator();
-        RolesOrchestrator orchestrator = new RolesOrchestrator();
-        Exception orchestratorException = null;
-
-        orchestrator.updateHandlers.add(handler);
-
-        // Test
-        try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
-            orchestratorRunner.run();
-        } catch (Exception e) {
-            orchestratorException = e;
-        }
-
-        // Verify
-        Assert.isNotNull(orchestratorException, 'It should be thrown, because a class can hold only one role per context and this one holds two.');
-        Assert.areEqual(
-            'RolesUpdatePopulatorAndValidator implements both BeforeUpdate.Populator and BeforeUpdate.Validator. A class can implement only one main interface per context.',
-            orchestratorException.getMessage(),
-            'It should be the before update wording of the message, because the one-role rule is enforced per context and names the context it was broken in.'
-        );
-        Assert.areEqual(0, handler.callCount, 'It should be 0, because a rejected handler is never adapted, so neither of its role methods is ever called.');
-    }
-
-    @IsTest
-    static void handlerWithBothMainInterfacesIsRejectedEvenWhenItIsBypassed() {
-        List<SObject> records = new List<Contact>{ new Contact(LastName = 'A') };
-        RolesBypassedInsertPopulatorAndValidator handler = new RolesBypassedInsertPopulatorAndValidator();
-        RolesOrchestrator orchestrator = new RolesOrchestrator();
-        Exception orchestratorException = null;
-
-        orchestrator.insertHandlers.add(handler);
-
-        // Test
-        try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
-            orchestratorRunner.run();
-        } catch (Exception e) {
-            orchestratorException = e;
-        }
-
-        // Verify
-        Assert.isNotNull(orchestratorException, 'It should be thrown, because the role check runs while handlers are collected, before bypasses are applied.');
-        Assert.areEqual(
-            'RolesBypassedInsertPopulatorAndValidator implements both BeforeInsert.Populator and BeforeInsert.Validator. A class can implement only one main interface per context.',
-            orchestratorException.getMessage(),
-            'It should be the both-interfaces message naming the bypassed class, because a handler that would have been bypassed still fails the invocation when its roles are wrong.'
-        );
-        Assert.areEqual(0, handler.bypassCount, 'It should be 0, because the invocation fails while the handler list is collected, so the bypass predicate is never asked.');
     }
 
     @IsTest
@@ -1705,8 +1515,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -1728,9 +1538,9 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -1753,14 +1563,14 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner2.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner2.triggerNewRecords = newRecords;
-        orchestratorRunner2.triggerOldRecords = oldRecords;
+        orchestratorRunner2.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner2.context.triggerNewRecords = newRecords;
+        orchestratorRunner2.context.triggerOldRecords = oldRecords;
         orchestratorRunner2.run();
 
         // Verify
@@ -1784,14 +1594,14 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner2.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner2.triggerNewRecords = newRecords;
-        orchestratorRunner2.triggerOldRecords = oldRecords;
+        orchestratorRunner2.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner2.context.triggerNewRecords = newRecords;
+        orchestratorRunner2.context.triggerOldRecords = oldRecords;
         orchestratorRunner2.run();
 
         // Verify
@@ -2007,82 +1817,6 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class RolesInsertMarkerHandler implements BeforeInsert.Handler {
-    }
-
-    private class RolesUpdateMarkerHandler implements BeforeUpdate.Handler {
-    }
-
-    private class RolesInsertPopulatorAndValidator implements BeforeInsert.Populator, BeforeInsert.Validator {
-        private Integer callCount = 0;
-
-        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
-            this.callCount++;
-            return true;
-        }
-
-        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
-            this.callCount++;
-        }
-
-        public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
-            this.callCount++;
-            return true;
-        }
-
-        public String beforeInsertValidationMessage(TriggerHandler.InsertRecord record) {
-            this.callCount++;
-            return 'Never attached.';
-        }
-    }
-
-    private class RolesUpdatePopulatorAndValidator implements BeforeUpdate.Populator, BeforeUpdate.Validator {
-        private Integer callCount = 0;
-
-        public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
-            this.callCount++;
-            return true;
-        }
-
-        public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
-            this.callCount++;
-        }
-
-        public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
-            this.callCount++;
-            return true;
-        }
-
-        public String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record) {
-            this.callCount++;
-            return 'Never attached.';
-        }
-    }
-
-    private class RolesBypassedInsertPopulatorAndValidator implements BeforeInsert.Populator, BeforeInsert.Validator, BeforeInsert.Bypassable {
-        private Integer bypassCount = 0;
-
-        public Boolean bypassOnBeforeInsertWhen() {
-            this.bypassCount++;
-            return true;
-        }
-
-        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
-            return true;
-        }
-
-        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
-        }
-
-        public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
-            return true;
-        }
-
-        public String beforeInsertValidationMessage(TriggerHandler.InsertRecord record) {
-            return 'Never attached.';
-        }
-    }
-
     private class RolesDualContextPopulator implements BeforeInsert.Populator, BeforeUpdate.Populator, BeforeInsert.Finalizer, BeforeUpdate.Finalizer {
         private Integer beforeInsertPopulateCount = 0;
         private Integer beforeUpdatePopulateCount = 0;
@@ -2144,12 +1878,12 @@ private class TriggerOrchestratorTest {
         EnrichmentAfterInsertHandler handler = new EnrichmentAfterInsertHandler();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -2182,13 +1916,13 @@ private class TriggerOrchestratorTest {
         EnrichmentAfterUpdateHandler handler = new EnrichmentAfterUpdateHandler();
         handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -2209,14 +1943,14 @@ private class TriggerOrchestratorTest {
 
         EnrichmentAfterInsertHandler handler = new EnrichmentAfterInsertHandler();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Integer queriesBefore = Limits.getQueries();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
@@ -2236,14 +1970,14 @@ private class TriggerOrchestratorTest {
         EnrichmentAfterInsertHandler handler = new EnrichmentAfterInsertHandler();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Integer queriesBefore = Limits.getQueries();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
@@ -2269,14 +2003,14 @@ private class TriggerOrchestratorTest {
         EnrichmentAfterInsertHandler handler = new EnrichmentAfterInsertHandler();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Integer queriesBefore = Limits.getQueries();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
@@ -2306,7 +2040,7 @@ private class TriggerOrchestratorTest {
         EnrichmentAfterInsertHandler countryHandler = new EnrichmentAfterInsertHandler();
         countryHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.BillingCountry));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Integer queriesBefore = Limits.getQueries();
 
@@ -2314,8 +2048,8 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
             new EnrichmentAfterInsertOrchestrator(new List<AfterInsert.Handler>{ nameHandler, industryHandler, countryHandler })
         );
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
@@ -2352,14 +2086,14 @@ private class TriggerOrchestratorTest {
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
         handler.declareNew(Contact.OwnerId, TriggerHandler.FieldSelection.with(User.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Integer queriesBefore = Limits.getQueries();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
@@ -2387,14 +2121,14 @@ private class TriggerOrchestratorTest {
         EnrichmentAfterInsertHandler handler = new EnrichmentAfterInsertHandler();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Integer queriesBefore = Limits.getQueries();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
@@ -2420,7 +2154,7 @@ private class TriggerOrchestratorTest {
         EnrichmentBeforeUpdateHandler readingHandler = new EnrichmentBeforeUpdateHandler();
         readingHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Integer queriesBefore = Limits.getQueries();
 
@@ -2428,9 +2162,9 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
             new EnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ repointingHandler, readingHandler })
         );
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
@@ -2462,7 +2196,7 @@ private class TriggerOrchestratorTest {
         EnrichmentBeforeInsertHandler readingHandler = new EnrichmentBeforeInsertHandler();
         readingHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Integer queriesBefore = Limits.getQueries();
 
@@ -2470,8 +2204,8 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
             new EnrichmentBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ populatingHandler, readingHandler })
         );
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
@@ -2522,7 +2256,7 @@ private class TriggerOrchestratorTest {
         EnrichmentBeforeUpdateHandler readingHandler = new EnrichmentBeforeUpdateHandler();
         readingHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Integer queriesBefore = Limits.getQueries();
 
@@ -2530,9 +2264,9 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
             new EnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ repointingHandler, readingHandler })
         );
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
@@ -2569,14 +2303,14 @@ private class TriggerOrchestratorTest {
             handlers.add(lastHandler);
         }
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Integer queriesBefore = Limits.getQueries();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentBeforeInsertOrchestrator(handlers));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
@@ -2614,7 +2348,7 @@ private class TriggerOrchestratorTest {
         EnrichmentBeforeUpdateHandler readingHandler = new EnrichmentBeforeUpdateHandler();
         readingHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Integer queriesBefore = Limits.getQueries();
 
@@ -2622,9 +2356,9 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
             new EnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ repointingHandler, readingHandler })
         );
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
@@ -2658,7 +2392,7 @@ private class TriggerOrchestratorTest {
         readingHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
         readingHandler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Integer queriesBefore = Limits.getQueries();
 
@@ -2666,9 +2400,9 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
             new EnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ repointingHandler, readingHandler })
         );
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
@@ -2703,15 +2437,15 @@ private class TriggerOrchestratorTest {
         EnrichmentAfterUpdateHandler readingHandler = new EnrichmentAfterUpdateHandler();
         readingHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Integer queriesBefore = Limits.getQueries();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ repointingHandler, readingHandler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
@@ -2738,15 +2472,15 @@ private class TriggerOrchestratorTest {
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
         handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Integer queriesBefore = Limits.getQueries();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
@@ -2971,12 +2705,12 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeInsertOrchestrator orchestrator = new BypassBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ bypassedHandler, activeHandler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -2996,12 +2730,12 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeInsertOrchestrator orchestrator = new BypassBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3018,12 +2752,12 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeInsertOrchestrator orchestrator = new BypassBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ bypassedValidator, activeHandler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3044,12 +2778,12 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeInsertOrchestrator orchestrator = new BypassBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ validator });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3075,12 +2809,12 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ bypassedHandler, activeHandler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3101,12 +2835,12 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3124,13 +2858,13 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeUpdateOrchestrator orchestrator = new BypassBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ bypassedHandler, activeHandler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -3152,13 +2886,13 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeUpdateOrchestrator orchestrator = new BypassBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -3181,13 +2915,13 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeUpdateOrchestrator orchestrator = new BypassBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ bypassedValidator, activeHandler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -3210,13 +2944,13 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeUpdateOrchestrator orchestrator = new BypassBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ validator });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -3243,13 +2977,13 @@ private class TriggerOrchestratorTest {
 
         BypassAfterUpdateOrchestrator orchestrator = new BypassAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ bypassedHandler, activeHandler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -3271,13 +3005,13 @@ private class TriggerOrchestratorTest {
 
         BypassAfterUpdateOrchestrator orchestrator = new BypassAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -3294,12 +3028,12 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeDeleteOrchestrator orchestrator = new BypassBeforeDeleteOrchestrator(new List<BeforeDelete.Handler>{ bypassedHandler, activeHandler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -3320,12 +3054,12 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeDeleteOrchestrator orchestrator = new BypassBeforeDeleteOrchestrator(new List<BeforeDelete.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -3342,12 +3076,12 @@ private class TriggerOrchestratorTest {
 
         BypassAfterDeleteOrchestrator orchestrator = new BypassAfterDeleteOrchestrator(new List<AfterDelete.Handler>{ bypassedHandler, activeHandler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -3368,12 +3102,12 @@ private class TriggerOrchestratorTest {
 
         BypassAfterDeleteOrchestrator orchestrator = new BypassAfterDeleteOrchestrator(new List<AfterDelete.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -3390,12 +3124,12 @@ private class TriggerOrchestratorTest {
 
         BypassAfterUndeleteOrchestrator orchestrator = new BypassAfterUndeleteOrchestrator(new List<AfterUndelete.Handler>{ bypassedHandler, activeHandler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3416,12 +3150,12 @@ private class TriggerOrchestratorTest {
 
         BypassAfterUndeleteOrchestrator orchestrator = new BypassAfterUndeleteOrchestrator(new List<AfterUndelete.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3442,12 +3176,12 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3469,12 +3203,12 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3490,12 +3224,12 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3513,14 +3247,14 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ bypassedHandler, readerHandler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Integer queriesBefore = Limits.getQueries();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3540,13 +3274,13 @@ private class TriggerOrchestratorTest {
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>());
         Exception orchestratorException = null;
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -3572,16 +3306,15 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ bypassedHandler, activeHandler });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
-        contactSettings.sObjectSetting = new TriggerObject__mdt(Bypass__c = false);
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt(Bypass__c = false));
         contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'bypassmetadatahandler' => new TriggerHandler__mdt(Bypass__c = true) };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3597,15 +3330,15 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
         contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'bypassmetadatahandler' => new TriggerHandler__mdt(Bypass__c = true) };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3625,15 +3358,15 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeInsertOrchestrator orchestrator = new BypassBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ bypassedHandler, activeHandler });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
         contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'bypassmetadatapopulator' => new TriggerHandler__mdt(Bypass__c = true) };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3650,18 +3383,17 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ firstHandler, secondHandler });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
-        contactSettings.sObjectSetting = new TriggerObject__mdt(Bypass__c = true);
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt(Bypass__c = true));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -3685,15 +3417,14 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler });
 
-        TriggerOrchestrator.MetadataSettings accountSettings = new TriggerOrchestrator.MetadataSettings();
-        accountSettings.sObjectSetting = new TriggerObject__mdt(Bypass__c = true);
+        TriggerOrchestrator.MetadataSettings accountSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt(Bypass__c = true));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'account' => accountSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'account' => accountSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3712,15 +3443,14 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
-        contactSettings.sObjectSetting = new TriggerObject__mdt(Bypass__c = false);
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt(Bypass__c = false));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3735,18 +3465,18 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
         contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{
             'triggerorchestratortest.bypassmetadatahandler' => new TriggerHandler__mdt(Bypass__c = true),
             'bypassmetadatahandler' => new TriggerHandler__mdt(Bypass__c = true)
         };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3765,15 +3495,15 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
         contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'bypassmetadatahandler' => new TriggerHandler__mdt(Bypass__c = true) };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3792,15 +3522,15 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
         contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'triggerorchestratortest.bypassmetadatahandler' => new TriggerHandler__mdt(Bypass__c = true) };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3819,18 +3549,18 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
         contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{
             'someotherouterclass.bypassmetadatahandler' => new TriggerHandler__mdt(Bypass__c = true),
             'bypassmetadatahandler' => new TriggerHandler__mdt(Bypass__c = true)
         };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3850,12 +3580,12 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ firstHandler, secondHandler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3879,16 +3609,16 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler });
 
-        Map<String, TriggerOrchestrator.MetadataSettings> eagerlyLoadedSettings = TriggerOrchestrator.metadataSettingsByObjectName;
+        Map<String, TriggerOrchestrator.MetadataSettings> eagerlyLoadedSettings = TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName;
 
         Integer queriesBefore = Limits.getQueries();
-        TriggerOrchestrator.metadataSettingsByObjectName = TriggerOrchestrator.resolveMetadataSettings();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = TriggerOrchestrator.TriggerSettings.resolveMetadataSettings();
         Integer queriesAfterLoad = Limits.getQueries();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3904,7 +3634,7 @@ private class TriggerOrchestratorTest {
         );
         Assert.isNotNull(eagerlyLoadedSettings, 'It should be not null, because the loader runs when the class is initialized and caches whatever it finds, even nothing.');
         Assert.isNull(
-            TriggerOrchestrator.metadataSettingsByObjectName.get('contact'),
+            TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName.get('contact'),
             'It should be null, because no TriggerObject__mdt record exists for Contact, so the object resolves to no settings at all.'
         );
         Assert.areEqual(1, handler.runCount, 'It should be 1, because with no metadata records every handler runs and nothing about the behaviour changes.');
@@ -3919,17 +3649,17 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ bypassedHandler, activeHandler });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
         contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'bypassmetadatahandler' => new TriggerHandler__mdt(Bypass__c = true) };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         Integer queriesBefore = Limits.getQueries();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -3943,42 +3673,6 @@ private class TriggerOrchestratorTest {
     }
 
     @IsTest
-    static void metadataBypassedHandlerIsStillValidatedOnBeforeInsert() {
-        List<SObject> records = new List<Contact>{ new Contact(LastName = 'Bypass') };
-        BypassBothInterfacesHandler handler = new BypassBothInterfacesHandler();
-
-        BypassBeforeInsertOrchestrator orchestrator = new BypassBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ handler });
-
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
-        contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'bypassbothinterfaceshandler' => new TriggerHandler__mdt(Bypass__c = true) };
-
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
-
-        Exception orchestratorException = null;
-
-        // Test
-        try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
-            orchestratorRunner.run();
-        } catch (Exception e) {
-            orchestratorException = e;
-        }
-
-        // Verify
-        Assert.isNotNull(
-            orchestratorException,
-            'It should be thrown, because handlers are validated while they are adapted, which happens before any handler is checked for a bypass.'
-        );
-        Assert.areEqual(
-            'BypassBothInterfacesHandler implements both BeforeInsert.Populator and BeforeInsert.Validator. A class can implement only one main interface per context.',
-            orchestratorException.getMessage(),
-            'It should be the both interfaces message naming the class, because a class can implement only one main interface per context and the name is taken from the handler instance.'
-        );
-    }
-
-    @IsTest
     static void qualifiedRecordRunsHandlerOnAfterInsert() {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> records = new List<Contact>{ new Contact(Id = contactId, LastName = 'Qualified') };
@@ -3987,12 +3681,12 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -4008,12 +3702,12 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -4035,12 +3729,12 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -4066,12 +3760,12 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -4087,12 +3781,12 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeInsertOrchestrator orchestrator = new BypassBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -4112,12 +3806,12 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeInsertOrchestrator orchestrator = new BypassBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -4133,12 +3827,12 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeInsertOrchestrator orchestrator = new BypassBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ validator });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -4162,12 +3856,12 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeInsertOrchestrator orchestrator = new BypassBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ validator });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -4185,13 +3879,13 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeUpdateOrchestrator orchestrator = new BypassBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -4209,13 +3903,13 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeUpdateOrchestrator orchestrator = new BypassBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -4233,13 +3927,13 @@ private class TriggerOrchestratorTest {
 
         BypassAfterUpdateOrchestrator orchestrator = new BypassAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -4256,13 +3950,13 @@ private class TriggerOrchestratorTest {
 
         BypassAfterUpdateOrchestrator orchestrator = new BypassAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -4279,12 +3973,12 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeDeleteOrchestrator orchestrator = new BypassBeforeDeleteOrchestrator(new List<BeforeDelete.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -4300,12 +3994,12 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeDeleteOrchestrator orchestrator = new BypassBeforeDeleteOrchestrator(new List<BeforeDelete.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -4321,12 +4015,12 @@ private class TriggerOrchestratorTest {
 
         BypassAfterDeleteOrchestrator orchestrator = new BypassAfterDeleteOrchestrator(new List<AfterDelete.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -4342,12 +4036,12 @@ private class TriggerOrchestratorTest {
 
         BypassAfterDeleteOrchestrator orchestrator = new BypassAfterDeleteOrchestrator(new List<AfterDelete.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -4363,12 +4057,12 @@ private class TriggerOrchestratorTest {
 
         BypassAfterUndeleteOrchestrator orchestrator = new BypassAfterUndeleteOrchestrator(new List<AfterUndelete.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -4384,12 +4078,12 @@ private class TriggerOrchestratorTest {
 
         BypassAfterUndeleteOrchestrator orchestrator = new BypassAfterUndeleteOrchestrator(new List<AfterUndelete.Handler>{ handler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -4404,12 +4098,12 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeInsertOrchestrator orchestrator = new BypassBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ firstHandler, secondHandler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -4434,12 +4128,12 @@ private class TriggerOrchestratorTest {
 
         BypassBeforeInsertOrchestrator orchestrator = new BypassBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ firstHandler, secondHandler });
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -4465,16 +4159,15 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler });
 
-        TriggerOrchestrator.MetadataSettings accountSettings = new TriggerOrchestrator.MetadataSettings();
-        accountSettings.sObjectSetting = new TriggerObject__mdt(Bypass__c = true);
+        TriggerOrchestrator.MetadataSettings accountSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt(Bypass__c = true));
 
-        TriggerOrchestrator.logger = loggerStub;
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'account' => accountSettings };
+        TriggerOrchestrator.TriggerSettings.logger = loggerStub;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'account' => accountSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -4514,11 +4207,11 @@ private class TriggerOrchestratorTest {
             List<SObject> nestedRecords = new List<Account>{ new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Nested') };
 
             TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(new BypassNestedAccountOrchestrator());
-            orchestratorRunner2.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner2.triggerNewRecords = nestedRecords;
+            orchestratorRunner2.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner2.context.triggerNewRecords = nestedRecords;
             orchestratorRunner2.run();
 
-            this.finalizeCountAfterNestedRun = ((BypassFinalizeCountingLogger) TriggerOrchestrator.logger).finalizeCount;
+            this.finalizeCountAfterNestedRun = ((BypassFinalizeCountingLogger) TriggerOrchestrator.TriggerSettings.logger).finalizeCount;
         }
     }
 
@@ -4943,34 +4636,13 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class BypassBothInterfacesHandler implements BeforeInsert.Populator, BeforeInsert.Validator, BeforeInsert.Bypassable {
-        public Boolean bypassOnBeforeInsertWhen() {
-            return true;
-        }
-
-        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
-            return true;
-        }
-
-        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
-        }
-
-        public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
-            return true;
-        }
-
-        public String beforeInsertValidationMessage(TriggerHandler.InsertRecord record) {
-            return 'Never reached';
-        }
-    }
-
     @IsTest
     static void defaultRecursionDepthStopsBeforeUpdateHandlerAfterThreePasses() {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionBeforeUpdateHandler handler = new RecursionBeforeUpdateHandler();
         RecursionBeforeUpdateOrchestrator orchestrator = new RecursionBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler });
@@ -4978,9 +4650,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -4998,7 +4670,7 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionAfterUpdateHandler handler = new RecursionAfterUpdateHandler();
         RecursionAfterUpdateOrchestrator orchestrator = new RecursionAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler });
@@ -5006,9 +4678,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -5026,7 +4698,7 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionGuardedBeforeUpdateHandler handler = new RecursionGuardedBeforeUpdateHandler(2);
         RecursionBeforeUpdateOrchestrator orchestrator = new RecursionBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler });
@@ -5034,9 +4706,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -5054,7 +4726,7 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionGuardedAfterUpdateHandler handler = new RecursionGuardedAfterUpdateHandler(2);
         RecursionAfterUpdateOrchestrator orchestrator = new RecursionAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler });
@@ -5062,9 +4734,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -5082,7 +4754,7 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionBeforeUpdateHandler firstHandler = new RecursionBeforeUpdateHandler();
         RecursionSecondBeforeUpdateHandler secondHandler = new RecursionSecondBeforeUpdateHandler();
@@ -5091,9 +4763,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 7; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -5116,7 +4788,7 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionAfterUpdateHandler firstHandler = new RecursionAfterUpdateHandler();
         RecursionSecondAfterUpdateHandler secondHandler = new RecursionSecondAfterUpdateHandler();
@@ -5125,9 +4797,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 7; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -5150,7 +4822,7 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionGuardedBeforeUpdateHandler guardedHandler = new RecursionGuardedBeforeUpdateHandler(2);
         RecursionBeforeUpdateHandler unguardedHandler = new RecursionBeforeUpdateHandler();
@@ -5159,9 +4831,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 7; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -5184,7 +4856,7 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionGuardedAfterUpdateHandler guardedHandler = new RecursionGuardedAfterUpdateHandler(2);
         RecursionAfterUpdateHandler unguardedHandler = new RecursionAfterUpdateHandler();
@@ -5193,9 +4865,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 7; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -5218,7 +4890,7 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionBeforeUpdateHandler firstHandler = new RecursionBeforeUpdateHandler();
         RecursionSecondBeforeUpdateHandler secondHandler = new RecursionSecondBeforeUpdateHandler();
@@ -5227,9 +4899,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 6; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -5244,7 +4916,7 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionAfterUpdateHandler firstHandler = new RecursionAfterUpdateHandler();
         RecursionSecondAfterUpdateHandler secondHandler = new RecursionSecondAfterUpdateHandler();
@@ -5253,9 +4925,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 6; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -5271,7 +4943,7 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = firstContactId, LastName = 'Ada'), new Contact(Id = secondContactId, LastName = 'Bob') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = firstContactId, LastName = 'Ada'), new Contact(Id = secondContactId, LastName = 'Bob') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionGuardedBeforeUpdateHandler handler = new RecursionGuardedBeforeUpdateHandler(2);
         RecursionBeforeUpdateOrchestrator orchestrator = new RecursionBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler });
@@ -5279,9 +4951,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -5306,7 +4978,7 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = firstContactId, LastName = 'Ada'), new Contact(Id = secondContactId, LastName = 'Bob') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = firstContactId, LastName = 'Ada'), new Contact(Id = secondContactId, LastName = 'Bob') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionGuardedAfterUpdateHandler handler = new RecursionGuardedAfterUpdateHandler(2);
         RecursionAfterUpdateOrchestrator orchestrator = new RecursionAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler });
@@ -5314,9 +4986,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -5345,16 +5017,16 @@ private class TriggerOrchestratorTest {
         List<SObject> firstNewRecords = new List<Contact>{ exhaustedContact };
         List<SObject> firstOldRecords = new List<Contact>{ exhaustedContact.clone(true) };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionGuardedAfterUpdateHandler handler = new RecursionGuardedAfterUpdateHandler(2);
         RecursionAfterUpdateOrchestrator orchestrator = new RecursionAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler });
 
         for (Integer i = 0; i < 3; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.triggerNewRecords = firstNewRecords;
-            orchestratorRunner.triggerOldRecords = firstOldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = firstNewRecords;
+            orchestratorRunner.context.triggerOldRecords = firstOldRecords;
             orchestratorRunner.run();
         }
 
@@ -5364,9 +5036,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 3; i++) {
             TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner2.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner2.triggerNewRecords = secondNewRecords;
-            orchestratorRunner2.triggerOldRecords = secondOldRecords;
+            orchestratorRunner2.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            orchestratorRunner2.context.triggerNewRecords = secondNewRecords;
+            orchestratorRunner2.context.triggerOldRecords = secondOldRecords;
             orchestratorRunner2.run();
         }
 
@@ -5391,16 +5063,16 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ qualifiedContact, rejectedContact };
         List<SObject> oldRecords = new List<Contact>{ qualifiedContact.clone(true), rejectedContact.clone(true) };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionSelectiveBeforeUpdateHandler handler = new RecursionSelectiveBeforeUpdateHandler();
         RecursionBeforeUpdateOrchestrator orchestrator = new RecursionBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler });
 
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -5409,9 +5081,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner2.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner2.triggerNewRecords = newRecords;
-            orchestratorRunner2.triggerOldRecords = oldRecords;
+            orchestratorRunner2.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner2.context.triggerNewRecords = newRecords;
+            orchestratorRunner2.context.triggerOldRecords = oldRecords;
             orchestratorRunner2.run();
         }
 
@@ -5435,16 +5107,16 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ qualifiedContact, rejectedContact };
         List<SObject> oldRecords = new List<Contact>{ qualifiedContact.clone(true), rejectedContact.clone(true) };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionSelectiveAfterUpdateHandler handler = new RecursionSelectiveAfterUpdateHandler();
         RecursionAfterUpdateOrchestrator orchestrator = new RecursionAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler });
 
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -5453,9 +5125,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner2.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner2.triggerNewRecords = newRecords;
-            orchestratorRunner2.triggerOldRecords = oldRecords;
+            orchestratorRunner2.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            orchestratorRunner2.context.triggerNewRecords = newRecords;
+            orchestratorRunner2.context.triggerOldRecords = oldRecords;
             orchestratorRunner2.run();
         }
 
@@ -5479,7 +5151,7 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ qualifiedContact, rejectedContact };
         List<SObject> oldRecords = new List<Contact>{ qualifiedContact.clone(true), rejectedContact.clone(true) };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionSelectiveAfterUpdateHandler handler = new RecursionSelectiveAfterUpdateHandler();
         RecursionAfterUpdateOrchestrator orchestrator = new RecursionAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler });
@@ -5487,9 +5159,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 4; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -5507,7 +5179,7 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionGuardedBeforeUpdateHandler guardedHandler = new RecursionGuardedBeforeUpdateHandler(1);
         RecursionBeforeUpdateHandler unguardedHandler = new RecursionBeforeUpdateHandler();
@@ -5516,9 +5188,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -5537,7 +5209,7 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionGuardedAfterUpdateHandler guardedHandler = new RecursionGuardedAfterUpdateHandler(1);
         RecursionAfterUpdateHandler unguardedHandler = new RecursionAfterUpdateHandler();
@@ -5546,9 +5218,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -5567,25 +5239,25 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionBothUpdatesHandler handler = new RecursionBothUpdatesHandler();
         RecursionBothUpdatesOrchestrator orchestrator = new RecursionBothUpdatesOrchestrator(handler);
 
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
         // Test
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner2.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner2.triggerNewRecords = newRecords;
-            orchestratorRunner2.triggerOldRecords = oldRecords;
+            orchestratorRunner2.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            orchestratorRunner2.context.triggerNewRecords = newRecords;
+            orchestratorRunner2.context.triggerOldRecords = oldRecords;
             orchestratorRunner2.run();
         }
 
@@ -5604,11 +5276,11 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionLogger logger = new RecursionLogger();
 
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         RecursionGuardedBeforeUpdateHandler handler = new RecursionGuardedBeforeUpdateHandler(1);
         RecursionBeforeUpdateOrchestrator orchestrator = new RecursionBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler });
@@ -5618,9 +5290,9 @@ private class TriggerOrchestratorTest {
         try {
             for (Integer i = 0; i < 3; i++) {
                 TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-                orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-                orchestratorRunner.triggerNewRecords = newRecords;
-                orchestratorRunner.triggerOldRecords = oldRecords;
+                orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+                orchestratorRunner.context.triggerNewRecords = newRecords;
+                orchestratorRunner.context.triggerOldRecords = oldRecords;
                 orchestratorRunner.run();
             }
         } catch (Exception e) {
@@ -5640,11 +5312,11 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionLogger logger = new RecursionLogger();
 
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         RecursionGuardedAfterUpdateHandler handler = new RecursionGuardedAfterUpdateHandler(1);
         RecursionAfterUpdateOrchestrator orchestrator = new RecursionAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler });
@@ -5654,9 +5326,9 @@ private class TriggerOrchestratorTest {
         try {
             for (Integer i = 0; i < 3; i++) {
                 TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-                orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-                orchestratorRunner.triggerNewRecords = newRecords;
-                orchestratorRunner.triggerOldRecords = oldRecords;
+                orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+                orchestratorRunner.context.triggerNewRecords = newRecords;
+                orchestratorRunner.context.triggerOldRecords = oldRecords;
                 orchestratorRunner.run();
             }
         } catch (Exception e) {
@@ -5676,7 +5348,7 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionFinalizingAfterUpdateHandler handler = new RecursionFinalizingAfterUpdateHandler(1);
         RecursionAfterUpdateOrchestrator orchestrator = new RecursionAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler });
@@ -5684,9 +5356,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 3; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -5705,7 +5377,7 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionAfterUpdateHandler firstInstance = new RecursionAfterUpdateHandler();
         RecursionAfterUpdateHandler secondInstance = new RecursionAfterUpdateHandler();
@@ -5714,9 +5386,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -5749,16 +5421,16 @@ private class TriggerOrchestratorTest {
         Id firstContactId = newRecords[0].Id;
         Id lastContactId = newRecords[200].Id;
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionBeforeUpdateHandler handler = new RecursionBeforeUpdateHandler();
         RecursionBeforeUpdateOrchestrator orchestrator = new RecursionBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler });
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -5790,7 +5462,7 @@ private class TriggerOrchestratorTest {
 
         Id lastContactId = newRecords[200].Id;
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionAfterUpdateHandler handler = new RecursionAfterUpdateHandler();
         RecursionAfterUpdateOrchestrator orchestrator = new RecursionAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler });
@@ -5798,9 +5470,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 4; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -5818,7 +5490,7 @@ private class TriggerOrchestratorTest {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionAfterInsertHandler handler = new RecursionAfterInsertHandler();
         RecursionAfterInsertOrchestrator orchestrator = new RecursionAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler });
@@ -5826,8 +5498,8 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
             orchestratorRunner.run();
         }
 
@@ -5841,7 +5513,7 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionBeforeUpdateValidator handler = new RecursionBeforeUpdateValidator();
         RecursionBeforeUpdateOrchestrator orchestrator = new RecursionBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler });
@@ -5849,9 +5521,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -5869,7 +5541,7 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         RecursionGuardedBeforeUpdateValidator handler = new RecursionGuardedBeforeUpdateValidator(2);
         RecursionBeforeUpdateOrchestrator orchestrator = new RecursionBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler });
@@ -5877,9 +5549,9 @@ private class TriggerOrchestratorTest {
         // Test
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
@@ -6223,8 +5895,8 @@ private class TriggerOrchestratorTest {
         ErrorsLoggingMutedFailingHandler failingHandler = new ErrorsLoggingMutedFailingHandler();
         ErrorsLoggingCountingHandler laterHandler = new ErrorsLoggingCountingHandler();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         Exception orchestratorException = null;
 
@@ -6233,8 +5905,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ failingHandler, laterHandler })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -6254,13 +5926,13 @@ private class TriggerOrchestratorTest {
         ErrorsLoggingMutedFailingHandler failingHandler = new ErrorsLoggingMutedFailingHandler();
         ErrorsLoggingCountingHandler laterHandler = new ErrorsLoggingCountingHandler();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ failingHandler, laterHandler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -6276,15 +5948,15 @@ private class TriggerOrchestratorTest {
         ErrorsLoggingMutedFailingHandler firstFailingHandler = new ErrorsLoggingMutedFailingHandler();
         ErrorsLoggingMutedBadCastHandler secondFailingHandler = new ErrorsLoggingMutedBadCastHandler();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
             new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ firstFailingHandler, secondFailingHandler })
         );
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -6308,8 +5980,8 @@ private class TriggerOrchestratorTest {
         ErrorsLoggingFailingHandler failingHandler = new ErrorsLoggingFailingHandler();
         ErrorsLoggingCountingHandler laterHandler = new ErrorsLoggingCountingHandler();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         Exception orchestratorException = null;
 
@@ -6318,8 +5990,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ failingHandler, laterHandler })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -6341,8 +6013,8 @@ private class TriggerOrchestratorTest {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Abort') };
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         Exception orchestratorException = null;
 
@@ -6351,8 +6023,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingFailingHandler() })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -6367,15 +6039,15 @@ private class TriggerOrchestratorTest {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Continue') };
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
             new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingMutedFailingHandler() })
         );
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -6402,8 +6074,8 @@ private class TriggerOrchestratorTest {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Abort') };
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         Exception orchestratorException = null;
 
@@ -6412,8 +6084,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingFailingHandler() })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -6441,16 +6113,16 @@ private class TriggerOrchestratorTest {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
             new ErrorsLoggingAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ new ErrorsLoggingMutedFailingAfterUpdateHandler() })
         );
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -6483,15 +6155,15 @@ private class TriggerOrchestratorTest {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Deleted') };
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
             new ErrorsLoggingAfterDeleteOrchestrator(new List<AfterDelete.Handler>{ new ErrorsLoggingMutedFailingAfterDeleteHandler() })
         );
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -6514,8 +6186,8 @@ private class TriggerOrchestratorTest {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Insert') };
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         Exception orchestratorException = null;
 
@@ -6524,8 +6196,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new ErrorsLoggingBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ new ErrorsLoggingFailingPopulator() })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -6547,8 +6219,8 @@ private class TriggerOrchestratorTest {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Qualify') };
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         Exception orchestratorException = null;
 
@@ -6557,8 +6229,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingFailingQualifierHandler() })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -6584,8 +6256,8 @@ private class TriggerOrchestratorTest {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Finalize') };
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         Exception orchestratorException = null;
 
@@ -6594,8 +6266,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingFailingFinalizerHandler() })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -6622,13 +6294,13 @@ private class TriggerOrchestratorTest {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
         ErrorsLoggingCountingHandler handler = new ErrorsLoggingCountingHandler();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -6642,8 +6314,8 @@ private class TriggerOrchestratorTest {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Abort') };
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         Exception orchestratorException = null;
 
@@ -6652,8 +6324,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingFailingHandler() })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -6669,21 +6341,21 @@ private class TriggerOrchestratorTest {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Chunk') };
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
             new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingCountingHandler(), new ErrorsLoggingCountingHandler() })
         );
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
         TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(
             new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingCountingHandler(), new ErrorsLoggingCountingHandler() })
         );
-        orchestratorRunner2.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner2.triggerNewRecords = records;
+        orchestratorRunner2.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner2.context.triggerNewRecords = records;
         orchestratorRunner2.run();
 
         // Verify
@@ -6704,13 +6376,13 @@ private class TriggerOrchestratorTest {
             logger
         );
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ outerHandler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -6729,13 +6401,13 @@ private class TriggerOrchestratorTest {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
         ErrorsLoggingNestedRunHandler outerHandler = new ErrorsLoggingNestedRunHandler(new ErrorsLoggingNoInterfaceOrchestrator(), logger);
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ outerHandler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -6757,8 +6429,8 @@ private class TriggerOrchestratorTest {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
         ErrorsLoggingCountingPopulator laterHandler = new ErrorsLoggingCountingPopulator();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         Exception orchestratorException = null;
 
@@ -6767,8 +6439,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new ErrorsLoggingBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ new ErrorsLoggingMutedDmlPopulator(), laterHandler })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -6789,8 +6461,8 @@ private class TriggerOrchestratorTest {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Guard') };
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         Exception orchestratorException = null;
 
@@ -6799,8 +6471,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new ErrorsLoggingBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ new ErrorsLoggingMutedDmlPopulator() })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -6833,11 +6505,11 @@ private class TriggerOrchestratorTest {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
         ErrorsLoggingCountingPopulator laterHandler = new ErrorsLoggingCountingPopulator();
         ErrorsLoggingMutedNestedRunPopulator outerHandler = new ErrorsLoggingMutedNestedRunPopulator(
-            new ErrorsLoggingBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ new ErrorsLoggingNoRoleHandler() })
+            new ErrorsLoggingBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ new ErrorsLoggingMutedRecordApiPopulator() })
         );
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         Exception orchestratorException = null;
 
@@ -6846,8 +6518,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new ErrorsLoggingBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ outerHandler, laterHandler })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -6856,15 +6528,24 @@ private class TriggerOrchestratorTest {
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because any framework exception raised while a handler runs is rethrown even under ContinueOnError.');
         Assert.areEqual(
-            'ErrorsLoggingNoRoleHandler implements neither BeforeInsert.Populator nor BeforeInsert.Validator. A class must implement one main interface per context.',
+            'Invoice__c has no record types, so isRecordTypeEqual cannot be used on it.',
             orchestratorException.getMessage(),
-            'It should be the role violation message, because the nested invocation rejected its own handler list.'
+            'It should be the handler exception message, because the nested invocation rethrows it unwrapped.'
         );
-        Assert.areEqual(1, logger.errors.size(), 'It should be 1, because the framework exception is logged against the handler that was running.');
+        Assert.areEqual(
+            2,
+            logger.errors.size(),
+            'It should be 2, because the nested invocation logs it against its own handler and the outer invocation logs it again against the handler that was running.'
+        );
+        Assert.areEqual(
+            'ErrorsLoggingMutedRecordApiPopulator',
+            logger.errors[0].getHandlerName(),
+            'It should be ErrorsLoggingMutedRecordApiPopulator, because the nested invocation reports the handler that raised it.'
+        );
         Assert.areEqual(
             'ErrorsLoggingMutedNestedRunPopulator',
-            logger.errors[0].getHandlerName(),
-            'It should be ErrorsLoggingMutedNestedRunPopulator, because the error names the handler being processed when it was raised.'
+            logger.errors[1].getHandlerName(),
+            'It should be ErrorsLoggingMutedNestedRunPopulator, because the outer invocation reports the handler being processed when it surfaced.'
         );
         Assert.areEqual(0, laterHandler.executionCount, 'It should be 0, because a framework failure aborts the invocation.');
     }
@@ -6875,8 +6556,8 @@ private class TriggerOrchestratorTest {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
         ErrorsLoggingCountingHandler laterHandler = new ErrorsLoggingCountingHandler();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         TriggerHandler.TriggerHandlerException recordApiException = null;
 
@@ -6885,8 +6566,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingMutedRecordApiHandler(), laterHandler })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (TriggerHandler.TriggerHandlerException e) {
             recordApiException = e;
@@ -6907,8 +6588,8 @@ private class TriggerOrchestratorTest {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Record API') };
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         Exception orchestratorException = null;
 
@@ -6917,8 +6598,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingMutedRecordApiHandler() })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -6940,8 +6621,8 @@ private class TriggerOrchestratorTest {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Platform') };
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         Exception orchestratorException = null;
 
@@ -6950,8 +6631,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingBadCastHandler() })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -6976,8 +6657,8 @@ private class TriggerOrchestratorTest {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Platform') };
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         Exception orchestratorException = null;
 
@@ -6986,8 +6667,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingNullDereferenceHandler() })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7013,15 +6694,15 @@ private class TriggerOrchestratorTest {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
         ErrorsLoggingCountingHandler laterHandler = new ErrorsLoggingCountingHandler();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
             new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingMutedBadCastHandler(), laterHandler })
         );
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -7035,52 +6716,20 @@ private class TriggerOrchestratorTest {
     }
 
     @IsTest
-    static void roleViolationIsNotSentToTheLogger() {
-        List<SObject> records = new List<Contact>{ new Contact(LastName = 'Role') };
-        ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
-
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
-
-        Exception orchestratorException = null;
-
-        // Test
-        try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new ErrorsLoggingBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ new ErrorsLoggingNoRoleHandler() })
-            );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
-            orchestratorRunner.run();
-        } catch (Exception e) {
-            orchestratorException = e;
-        }
-
-        // Verify
-        Assert.isNotNull(orchestratorException, 'It should be thrown, because a handler list entry must implement one main interface per context.');
-        Assert.areEqual(
-            0,
-            logger.errors.size(),
-            'It should be 0, because a role violation aborts the invocation before handler execution begins and is not attributed to a handler.'
-        );
-        Assert.areEqual(1, logger.finalizeCount, 'It should be 1, because finalize runs for a top level invocation that failed as well.');
-    }
-
-    @IsTest
     static void emptyHandlerListRunsNothing() {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Empty') };
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = logger;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = logger;
 
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>()));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7096,8 +6745,8 @@ private class TriggerOrchestratorTest {
     static void withoutALoggerAFailureStillPropagates() {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'No logger') };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = null;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = null;
 
         Exception orchestratorException = null;
 
@@ -7106,8 +6755,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingFailingHandler() })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7128,13 +6777,13 @@ private class TriggerOrchestratorTest {
         ErrorsLoggingMutedFailingHandler failingHandler = new ErrorsLoggingMutedFailingHandler();
         ErrorsLoggingCountingHandler laterHandler = new ErrorsLoggingCountingHandler();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-        TriggerOrchestrator.logger = null;
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.logger = null;
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ failingHandler, laterHandler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -7339,8 +6988,8 @@ private class TriggerOrchestratorTest {
             this.executionCount++;
 
             TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(this.nestedOrchestrator);
-            orchestratorRunner2.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner2.triggerNewRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Nested') };
+            orchestratorRunner2.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner2.context.triggerNewRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Nested') };
             orchestratorRunner2.run();
 
             this.finalizeCountAfterNestedRun = this.logger.finalizeCount;
@@ -7412,26 +7061,33 @@ private class TriggerOrchestratorTest {
 
         public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
             TriggerOrchestrator orchestratorRunner3 = new TriggerOrchestrator(this.nestedOrchestrator);
-            orchestratorRunner3.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner3.triggerNewRecords = new List<Contact>{ new Contact(LastName = 'Nested') };
+            orchestratorRunner3.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner3.context.triggerNewRecords = new List<Contact>{ new Contact(LastName = 'Nested') };
             orchestratorRunner3.run();
         }
     }
 
-    private class ErrorsLoggingNoRoleHandler implements BeforeInsert.Handler {
+    private class ErrorsLoggingMutedRecordApiPopulator implements BeforeInsert.Populator, BeforeInsert.ContinueOnError {
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return true;
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            throw new TriggerHandler.TriggerHandlerException('Invoice__c has no record types, so isRecordTypeEqual cannot be used on it.');
+        }
     }
 
     @IsTest
     static void beforeInsertPopulatorPerformingDmlThrows() {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Guard') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeInsertOrchestrator(new DmlGuardInsertPopulator()));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7453,14 +7109,14 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void beforeInsertValidatorPerformingDmlThrows() {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Guard') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeInsertOrchestrator(new DmlGuardInsertValidator()));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7478,15 +7134,15 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void beforeInsertFinalizerPerformingDmlThrows() {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Guard') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         DmlGuardInsertFinalizer handler = new DmlGuardInsertFinalizer();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeInsertOrchestrator(handler));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7505,15 +7161,15 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void beforeInsertQualificationPerformingDmlThrows() {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Guard') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         DmlGuardInsertQualifier handler = new DmlGuardInsertQualifier();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeInsertOrchestrator(handler));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7532,14 +7188,14 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void beforeInsertDmlBelowTheHandlerThrows() {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Guard') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeInsertOrchestrator(new DmlGuardInsertServicePopulator()));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7560,15 +7216,15 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void beforeInsertWithoutDmlDoesNotThrow() {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Guard') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         DmlGuardInsertSilentPopulator handler = new DmlGuardInsertSilentPopulator();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeInsertOrchestrator(handler));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7583,7 +7239,7 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void beforeInsertGuardNamesTheHandlerThatPerformedDml() {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Guard') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         DmlGuardInsertSilentPopulator cleanHandler = new DmlGuardInsertSilentPopulator();
         Exception orchestratorException = null;
 
@@ -7592,8 +7248,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new DmlGuardBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ cleanHandler, new DmlGuardInsertPopulator() })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7612,7 +7268,7 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void beforeInsertContinueOnErrorDoesNotSuppressGuard() {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Guard') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         DmlGuardInsertSilentPopulator laterHandler = new DmlGuardInsertSilentPopulator();
         Exception orchestratorException = null;
 
@@ -7621,8 +7277,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new DmlGuardBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ new DmlGuardInsertContinuePopulator(), laterHandler })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7641,14 +7297,14 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void beforeInsertGuardSurvivesHandlerException() {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Guard') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeInsertOrchestrator(new DmlGuardInsertContinueThrowingPopulator()));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7666,15 +7322,15 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void beforeInsertHandlerExceptionWithoutDmlStaysSilent() {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Guard') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         DmlGuardInsertContinueFailingPopulator handler = new DmlGuardInsertContinueFailingPopulator();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeInsertOrchestrator(handler));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7693,15 +7349,15 @@ private class TriggerOrchestratorTest {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeUpdateOrchestrator(new DmlGuardUpdatePopulator()));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7721,15 +7377,15 @@ private class TriggerOrchestratorTest {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeUpdateOrchestrator(new DmlGuardUpdateValidator()));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7749,16 +7405,16 @@ private class TriggerOrchestratorTest {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         DmlGuardUpdateFinalizer handler = new DmlGuardUpdateFinalizer();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeUpdateOrchestrator(handler));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7779,16 +7435,16 @@ private class TriggerOrchestratorTest {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         DmlGuardUpdateQualifier handler = new DmlGuardUpdateQualifier();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeUpdateOrchestrator(handler));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7811,15 +7467,15 @@ private class TriggerOrchestratorTest {
         insert existingAccount;
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeUpdateOrchestrator(new DmlGuardUpdateStatementPopulator(existingAccount)));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7839,16 +7495,16 @@ private class TriggerOrchestratorTest {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         DmlGuardUpdateSilentPopulator handler = new DmlGuardUpdateSilentPopulator();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeUpdateOrchestrator(handler));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7865,7 +7521,7 @@ private class TriggerOrchestratorTest {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         DmlGuardUpdateSilentPopulator laterHandler = new DmlGuardUpdateSilentPopulator();
         Exception orchestratorException = null;
 
@@ -7874,9 +7530,9 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new DmlGuardBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ new DmlGuardUpdateContinuePopulator(), laterHandler })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7897,15 +7553,15 @@ private class TriggerOrchestratorTest {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeUpdateOrchestrator(new DmlGuardUpdateContinueThrowingPopulator()));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7925,16 +7581,16 @@ private class TriggerOrchestratorTest {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         DmlGuardUpdateContinueFailingPopulator handler = new DmlGuardUpdateContinueFailingPopulator();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeUpdateOrchestrator(handler));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7952,14 +7608,14 @@ private class TriggerOrchestratorTest {
     static void afterInsertHandlerPerformingDmlIsAllowed() {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> records = new List<Contact>{ new Contact(Id = contactId, LastName = 'Guard') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardAfterInsertOrchestrator(new DmlGuardAfterInsertHandler()));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -7977,15 +7633,15 @@ private class TriggerOrchestratorTest {
     static void afterInsertFinalizerPerformingDmlIsAllowed() {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> records = new List<Contact>{ new Contact(Id = contactId, LastName = 'Guard') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         DmlGuardAfterInsertFinalizer handler = new DmlGuardAfterInsertFinalizer();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardAfterInsertOrchestrator(handler));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -8007,15 +7663,15 @@ private class TriggerOrchestratorTest {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardAfterUpdateOrchestrator(new DmlGuardAfterUpdateHandler()));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -8033,14 +7689,14 @@ private class TriggerOrchestratorTest {
     static void afterDeleteHandlerPerformingDmlIsAllowed() {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Deleted') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardAfterDeleteOrchestrator(new DmlGuardAfterDeleteHandler()));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -8055,14 +7711,14 @@ private class TriggerOrchestratorTest {
     static void afterUndeleteHandlerPerformingDmlIsAllowed() {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> records = new List<Contact>{ new Contact(Id = contactId, LastName = 'Restored') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardAfterUndeleteOrchestrator(new DmlGuardAfterUndeleteHandler()));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -8077,14 +7733,14 @@ private class TriggerOrchestratorTest {
     static void beforeDeleteHandlerPerformingDmlIsAllowed() {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Deleted') };
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
         Exception orchestratorException = null;
 
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeDeleteOrchestrator(new DmlGuardBeforeDeleteHandler()));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -8497,8 +8153,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeInsertOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -8513,8 +8169,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeInsertOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -8529,8 +8185,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -8550,9 +8206,9 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeUpdateOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -8572,9 +8228,9 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeUpdateOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -8594,9 +8250,9 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterUpdateOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -8612,8 +8268,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeDeleteOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        orchestratorRunner.triggerOldRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestratorRunner.context.triggerOldRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -8629,8 +8285,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterDeleteOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.triggerOldRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestratorRunner.context.triggerOldRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -8646,8 +8302,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterUndeleteOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -8663,8 +8319,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeInsertOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -8680,8 +8336,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeInsertOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -8697,8 +8353,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -8718,9 +8374,9 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeUpdateOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -8740,9 +8396,9 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeUpdateOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -8762,9 +8418,9 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterUpdateOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -8781,8 +8437,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeDeleteOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        orchestratorRunner.triggerOldRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestratorRunner.context.triggerOldRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -8799,8 +8455,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterDeleteOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.triggerOldRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestratorRunner.context.triggerOldRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -8817,8 +8473,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterUndeleteOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -8833,8 +8489,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -8855,8 +8511,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(new List<AfterInsert.Handler>{ firstHandler, secondHandler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -8879,8 +8535,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -8898,18 +8554,18 @@ private class TriggerOrchestratorTest {
 
         ShapesGuardedBeforeUpdatePopulator firstPass = new ShapesGuardedBeforeUpdatePopulator(1);
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeUpdateOrchestrator(firstPass));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         ShapesGuardedBeforeUpdatePopulator secondPass = new ShapesGuardedBeforeUpdatePopulator(1);
 
         // Test
         TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(new ShapesBeforeUpdateOrchestrator(secondPass));
-        orchestratorRunner2.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner2.triggerNewRecords = newRecords;
-        orchestratorRunner2.triggerOldRecords = oldRecords;
+        orchestratorRunner2.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner2.context.triggerNewRecords = newRecords;
+        orchestratorRunner2.context.triggerOldRecords = oldRecords;
         orchestratorRunner2.run();
 
         // Verify
@@ -8925,14 +8581,14 @@ private class TriggerOrchestratorTest {
         ShapesAfterInsertHandler handler = new ShapesAfterInsertHandler();
 
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = firstInvocation;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = firstInvocation;
         orchestratorRunner.run();
 
         // Test
         TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
-        orchestratorRunner2.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner2.triggerNewRecords = secondInvocation;
+        orchestratorRunner2.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner2.context.triggerNewRecords = secondInvocation;
         orchestratorRunner2.run();
 
         // Verify
@@ -8950,8 +8606,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -8973,8 +8629,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -8999,8 +8655,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -9022,8 +8678,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeInsertOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -9051,9 +8707,9 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterUpdateOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -9078,14 +8734,14 @@ private class TriggerOrchestratorTest {
         List<SObject> secondRecords = secondChunk;
 
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(new ShapesAfterInsertHandler('Chunk', state)));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = firstRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = firstRecords;
         orchestratorRunner.run();
 
         // Test
         TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(new ShapesAfterInsertHandler('Chunk', state)));
-        orchestratorRunner2.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner2.triggerNewRecords = secondRecords;
+        orchestratorRunner2.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner2.context.triggerNewRecords = secondRecords;
         orchestratorRunner2.run();
 
         // Verify
@@ -9106,14 +8762,14 @@ private class TriggerOrchestratorTest {
         ShapesAfterInsertHandler handler = new ShapesAfterInsertHandler();
 
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = firstAttempt;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = firstAttempt;
         orchestratorRunner.run();
 
         // Test
         TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
-        orchestratorRunner2.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner2.triggerNewRecords = retryAttempt;
+        orchestratorRunner2.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner2.context.triggerNewRecords = retryAttempt;
         orchestratorRunner2.run();
 
         // Verify
@@ -9139,16 +8795,16 @@ private class TriggerOrchestratorTest {
         ShapesAfterUpdateHandler handler = new ShapesAfterUpdateHandler();
 
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterUpdateOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.triggerNewRecords = firstNewRecords;
-        orchestratorRunner.triggerOldRecords = firstOldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = firstNewRecords;
+        orchestratorRunner.context.triggerOldRecords = firstOldRecords;
         orchestratorRunner.run();
 
         // Test
         TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(new ShapesAfterUpdateOrchestrator(handler));
-        orchestratorRunner2.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner2.triggerNewRecords = retryNewRecords;
-        orchestratorRunner2.triggerOldRecords = retryOldRecords;
+        orchestratorRunner2.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner2.context.triggerNewRecords = retryNewRecords;
+        orchestratorRunner2.context.triggerOldRecords = retryOldRecords;
         orchestratorRunner2.run();
 
         // Verify
@@ -9168,8 +8824,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeDeleteOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        orchestratorRunner.triggerOldRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestratorRunner.context.triggerOldRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -9185,8 +8841,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterDeleteOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.triggerOldRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestratorRunner.context.triggerOldRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -9205,8 +8861,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterDeleteOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.triggerOldRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestratorRunner.context.triggerOldRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -9229,8 +8885,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterDeleteOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.triggerOldRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestratorRunner.context.triggerOldRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -9246,8 +8902,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterDeleteOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.triggerOldRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestratorRunner.context.triggerOldRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -9268,8 +8924,8 @@ private class TriggerOrchestratorTest {
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterDeleteOrchestrator(new ShapesPuttingAfterDeleteHandler()));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-            orchestratorRunner.triggerOldRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+            orchestratorRunner.context.triggerOldRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -9294,8 +8950,8 @@ private class TriggerOrchestratorTest {
         // Test
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeDeleteOrchestrator(new ShapesPuttingBeforeDeleteHandler()));
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-            orchestratorRunner.triggerOldRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+            orchestratorRunner.context.triggerOldRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -9317,8 +8973,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeInsertOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -9337,8 +8993,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeInsertOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -9355,8 +9011,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -9381,9 +9037,9 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterUpdateOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -9419,8 +9075,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterUndeleteOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -9441,8 +9097,8 @@ private class TriggerOrchestratorTest {
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterUndeleteOrchestrator(handler));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -9850,15 +9506,15 @@ private class TriggerOrchestratorTest {
 
         GapMetadataBypassBeforeInsertOrchestrator orchestrator = new GapMetadataBypassBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ mutedPopulator, livePopulator });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
         contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'gapmetadatabypassmutedinsertpopulator' => new TriggerHandler__mdt(Bypass__c = true) };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -9883,15 +9539,15 @@ private class TriggerOrchestratorTest {
 
         GapMetadataBypassBeforeInsertOrchestrator orchestrator = new GapMetadataBypassBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ mutedValidator, liveValidator });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
         contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'gapmetadatabypassmutedinsertvalidator' => new TriggerHandler__mdt(Bypass__c = true) };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -9923,15 +9579,15 @@ private class TriggerOrchestratorTest {
 
         GapMetadataBypassAfterInsertOrchestrator orchestrator = new GapMetadataBypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ mutedHandler, liveHandler });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
         contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'gapmetadatabypassmutedafterinserthandler' => new TriggerHandler__mdt(Bypass__c = true) };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -9954,16 +9610,16 @@ private class TriggerOrchestratorTest {
 
         GapMetadataBypassBeforeUpdateOrchestrator orchestrator = new GapMetadataBypassBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ mutedPopulator, livePopulator });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
         contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'gapmetadatabypassmutedupdatepopulator' => new TriggerHandler__mdt(Bypass__c = true) };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -9990,16 +9646,16 @@ private class TriggerOrchestratorTest {
 
         GapMetadataBypassBeforeUpdateOrchestrator orchestrator = new GapMetadataBypassBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ mutedValidator, liveValidator });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
         contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'gapmetadatabypassmutedupdatevalidator' => new TriggerHandler__mdt(Bypass__c = true) };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -10032,16 +9688,16 @@ private class TriggerOrchestratorTest {
 
         GapMetadataBypassAfterUpdateOrchestrator orchestrator = new GapMetadataBypassAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ mutedHandler, liveHandler });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
         contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'gapmetadatabypassmutedafterupdatehandler' => new TriggerHandler__mdt(Bypass__c = true) };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -10063,15 +9719,15 @@ private class TriggerOrchestratorTest {
 
         GapMetadataBypassBeforeDeleteOrchestrator orchestrator = new GapMetadataBypassBeforeDeleteOrchestrator(new List<BeforeDelete.Handler>{ mutedHandler, liveHandler });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
         contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'gapmetadatabypassmutedbeforedeletehandler' => new TriggerHandler__mdt(Bypass__c = true) };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -10093,15 +9749,15 @@ private class TriggerOrchestratorTest {
 
         GapMetadataBypassAfterDeleteOrchestrator orchestrator = new GapMetadataBypassAfterDeleteOrchestrator(new List<AfterDelete.Handler>{ mutedHandler, liveHandler });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
         contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'gapmetadatabypassmutedafterdeletehandler' => new TriggerHandler__mdt(Bypass__c = true) };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -10123,15 +9779,15 @@ private class TriggerOrchestratorTest {
 
         GapMetadataBypassAfterUndeleteOrchestrator orchestrator = new GapMetadataBypassAfterUndeleteOrchestrator(new List<AfterUndelete.Handler>{ mutedHandler, liveHandler });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
         contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'gapmetadatabypassmutedafterundeletehandler' => new TriggerHandler__mdt(Bypass__c = true) };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.triggerNewRecords = records;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestratorRunner.context.triggerNewRecords = records;
         orchestratorRunner.run();
 
         // Verify
@@ -10154,19 +9810,19 @@ private class TriggerOrchestratorTest {
 
         GapMetadataBypassBeforeUpdateOrchestrator orchestrator = new GapMetadataBypassBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ dottedValidator, liveValidator });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
         contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{
             'triggerorchestratortest.gapmetadatabypassdottednamevalidator' => new TriggerHandler__mdt(Bypass__c = true),
             'gapmetadatabypassdottednamevalidator' => new TriggerHandler__mdt(Bypass__c = true)
         };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -10191,18 +9847,18 @@ private class TriggerOrchestratorTest {
 
         GapMetadataBypassBeforeUpdateOrchestrator orchestrator = new GapMetadataBypassBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ dottedValidator });
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings();
+        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
         contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{
             'triggerorchestratortest.gapmetadatabypassdottednamevalidator' => new TriggerHandler__mdt(Bypass__c = true)
         };
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -10578,12 +10234,12 @@ private class TriggerOrchestratorTest {
         GapEnrichmentBeforeInsertPopulator handler = new GapEnrichmentBeforeInsertPopulator();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -10614,12 +10270,12 @@ private class TriggerOrchestratorTest {
         GapEnrichmentBeforeInsertValidator handler = new GapEnrichmentBeforeInsertValidator();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -10653,14 +10309,14 @@ private class TriggerOrchestratorTest {
         GapEnrichmentBeforeInsertValidator validator = new GapEnrichmentBeforeInsertValidator();
         validator.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Integer queriesBefore = Limits.getQueries();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ populator, validator }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
@@ -10695,13 +10351,13 @@ private class TriggerOrchestratorTest {
         GapEnrichmentBeforeUpdatePopulator handler = new GapEnrichmentBeforeUpdatePopulator();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -10730,13 +10386,13 @@ private class TriggerOrchestratorTest {
         GapEnrichmentBeforeUpdatePopulator handler = new GapEnrichmentBeforeUpdatePopulator();
         handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -10770,15 +10426,15 @@ private class TriggerOrchestratorTest {
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
         handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Integer queriesBefore = Limits.getQueries();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
@@ -10809,13 +10465,13 @@ private class TriggerOrchestratorTest {
         GapEnrichmentBeforeUpdateValidator handler = new GapEnrichmentBeforeUpdateValidator();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -10848,13 +10504,13 @@ private class TriggerOrchestratorTest {
         GapEnrichmentBeforeUpdateValidator handler = new GapEnrichmentBeforeUpdateValidator();
         handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -10882,12 +10538,12 @@ private class TriggerOrchestratorTest {
         GapEnrichmentAfterInsertHandler handler = new GapEnrichmentAfterInsertHandler();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -10920,13 +10576,13 @@ private class TriggerOrchestratorTest {
         GapEnrichmentAfterUpdateHandler handler = new GapEnrichmentAfterUpdateHandler();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -10955,13 +10611,13 @@ private class TriggerOrchestratorTest {
         GapEnrichmentAfterUpdateHandler handler = new GapEnrichmentAfterUpdateHandler();
         handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.triggerNewRecords = newRecords;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -10993,12 +10649,12 @@ private class TriggerOrchestratorTest {
         GapEnrichmentBeforeDeleteHandler handler = new GapEnrichmentBeforeDeleteHandler();
         handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentBeforeDeleteOrchestrator(new List<BeforeDelete.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -11030,12 +10686,12 @@ private class TriggerOrchestratorTest {
         GapEnrichmentAfterDeleteHandler handler = new GapEnrichmentAfterDeleteHandler();
         handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentAfterDeleteOrchestrator(new List<AfterDelete.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestratorRunner.context.triggerOldRecords = oldRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -11067,12 +10723,12 @@ private class TriggerOrchestratorTest {
         GapEnrichmentAfterUndeleteHandler handler = new GapEnrichmentAfterUndeleteHandler();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentAfterUndeleteOrchestrator(new List<AfterUndelete.Handler>{ handler }));
-        orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.triggerNewRecords = newRecords;
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestratorRunner.context.triggerNewRecords = newRecords;
         orchestratorRunner.run();
 
         // Verify
@@ -11447,7 +11103,7 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorMutedBeforeInsertPopulator failingPopulator = new GapContinueOnErrorMutedBeforeInsertPopulator();
         GapContinueOnErrorCountingBeforeInsertPopulator laterPopulator = new GapContinueOnErrorCountingBeforeInsertPopulator();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Exception orchestratorException = null;
 
@@ -11456,8 +11112,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new GapContinueOnErrorBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ failingPopulator, laterPopulator })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -11478,7 +11134,7 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorFailingBeforeInsertPopulator failingPopulator = new GapContinueOnErrorFailingBeforeInsertPopulator();
         GapContinueOnErrorCountingBeforeInsertPopulator laterPopulator = new GapContinueOnErrorCountingBeforeInsertPopulator();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Exception orchestratorException = null;
 
@@ -11487,8 +11143,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new GapContinueOnErrorBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ failingPopulator, laterPopulator })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -11514,7 +11170,7 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorMutedBeforeInsertValidator failingValidator = new GapContinueOnErrorMutedBeforeInsertValidator();
         GapContinueOnErrorCountingBeforeInsertValidator laterValidator = new GapContinueOnErrorCountingBeforeInsertValidator();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Exception orchestratorException = null;
 
@@ -11523,8 +11179,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new GapContinueOnErrorBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ failingValidator, laterValidator })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -11546,7 +11202,7 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorFailingBeforeInsertValidator failingValidator = new GapContinueOnErrorFailingBeforeInsertValidator();
         GapContinueOnErrorCountingBeforeInsertValidator laterValidator = new GapContinueOnErrorCountingBeforeInsertValidator();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Exception orchestratorException = null;
 
@@ -11555,8 +11211,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new GapContinueOnErrorBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ failingValidator, laterValidator })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -11584,7 +11240,7 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorMutedAfterInsertHandler failingHandler = new GapContinueOnErrorMutedAfterInsertHandler();
         GapContinueOnErrorCountingAfterInsertHandler laterHandler = new GapContinueOnErrorCountingAfterInsertHandler();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Exception orchestratorException = null;
 
@@ -11593,8 +11249,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new GapContinueOnErrorAfterInsertOrchestrator(new List<AfterInsert.Handler>{ failingHandler, laterHandler })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -11613,7 +11269,7 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorFailingAfterInsertHandler failingHandler = new GapContinueOnErrorFailingAfterInsertHandler();
         GapContinueOnErrorCountingAfterInsertHandler laterHandler = new GapContinueOnErrorCountingAfterInsertHandler();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Exception orchestratorException = null;
 
@@ -11622,8 +11278,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new GapContinueOnErrorAfterInsertOrchestrator(new List<AfterInsert.Handler>{ failingHandler, laterHandler })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -11651,7 +11307,7 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorMutedBeforeUpdatePopulator failingPopulator = new GapContinueOnErrorMutedBeforeUpdatePopulator();
         GapContinueOnErrorCountingBeforeUpdatePopulator laterPopulator = new GapContinueOnErrorCountingBeforeUpdatePopulator();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Exception orchestratorException = null;
 
@@ -11660,9 +11316,9 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new GapContinueOnErrorBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ failingPopulator, laterPopulator })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -11685,7 +11341,7 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorFailingBeforeUpdatePopulator failingPopulator = new GapContinueOnErrorFailingBeforeUpdatePopulator();
         GapContinueOnErrorCountingBeforeUpdatePopulator laterPopulator = new GapContinueOnErrorCountingBeforeUpdatePopulator();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Exception orchestratorException = null;
 
@@ -11694,9 +11350,9 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new GapContinueOnErrorBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ failingPopulator, laterPopulator })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -11724,7 +11380,7 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorMutedBeforeUpdateValidator failingValidator = new GapContinueOnErrorMutedBeforeUpdateValidator();
         GapContinueOnErrorCountingBeforeUpdateValidator laterValidator = new GapContinueOnErrorCountingBeforeUpdateValidator();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Exception orchestratorException = null;
 
@@ -11733,9 +11389,9 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new GapContinueOnErrorBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ failingValidator, laterValidator })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -11759,7 +11415,7 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorFailingBeforeUpdateValidator failingValidator = new GapContinueOnErrorFailingBeforeUpdateValidator();
         GapContinueOnErrorCountingBeforeUpdateValidator laterValidator = new GapContinueOnErrorCountingBeforeUpdateValidator();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Exception orchestratorException = null;
 
@@ -11768,9 +11424,9 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new GapContinueOnErrorBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ failingValidator, laterValidator })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -11799,7 +11455,7 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorMutedAfterUpdateHandler failingHandler = new GapContinueOnErrorMutedAfterUpdateHandler();
         GapContinueOnErrorCountingAfterUpdateHandler laterHandler = new GapContinueOnErrorCountingAfterUpdateHandler();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Exception orchestratorException = null;
 
@@ -11808,9 +11464,9 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new GapContinueOnErrorAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ failingHandler, laterHandler })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -11830,7 +11486,7 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorFailingAfterUpdateHandler failingHandler = new GapContinueOnErrorFailingAfterUpdateHandler();
         GapContinueOnErrorCountingAfterUpdateHandler laterHandler = new GapContinueOnErrorCountingAfterUpdateHandler();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Exception orchestratorException = null;
 
@@ -11839,9 +11495,9 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new GapContinueOnErrorAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ failingHandler, laterHandler })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.triggerNewRecords = newRecords;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -11868,7 +11524,7 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorMutedBeforeDeleteHandler failingHandler = new GapContinueOnErrorMutedBeforeDeleteHandler();
         GapContinueOnErrorCountingBeforeDeleteHandler laterHandler = new GapContinueOnErrorCountingBeforeDeleteHandler();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Exception orchestratorException = null;
 
@@ -11877,8 +11533,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new GapContinueOnErrorBeforeDeleteOrchestrator(new List<BeforeDelete.Handler>{ failingHandler, laterHandler })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -11897,7 +11553,7 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorFailingBeforeDeleteHandler failingHandler = new GapContinueOnErrorFailingBeforeDeleteHandler();
         GapContinueOnErrorCountingBeforeDeleteHandler laterHandler = new GapContinueOnErrorCountingBeforeDeleteHandler();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Exception orchestratorException = null;
 
@@ -11906,8 +11562,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new GapContinueOnErrorBeforeDeleteOrchestrator(new List<BeforeDelete.Handler>{ failingHandler, laterHandler })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -11934,7 +11590,7 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorMutedAfterDeleteHandler failingHandler = new GapContinueOnErrorMutedAfterDeleteHandler();
         GapContinueOnErrorCountingAfterDeleteHandler laterHandler = new GapContinueOnErrorCountingAfterDeleteHandler();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Exception orchestratorException = null;
 
@@ -11943,8 +11599,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new GapContinueOnErrorAfterDeleteOrchestrator(new List<AfterDelete.Handler>{ failingHandler, laterHandler })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -11963,7 +11619,7 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorFailingAfterDeleteHandler failingHandler = new GapContinueOnErrorFailingAfterDeleteHandler();
         GapContinueOnErrorCountingAfterDeleteHandler laterHandler = new GapContinueOnErrorCountingAfterDeleteHandler();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Exception orchestratorException = null;
 
@@ -11972,8 +11628,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new GapContinueOnErrorAfterDeleteOrchestrator(new List<AfterDelete.Handler>{ failingHandler, laterHandler })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-            orchestratorRunner.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+            orchestratorRunner.context.triggerOldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -12000,7 +11656,7 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorMutedAfterUndeleteHandler failingHandler = new GapContinueOnErrorMutedAfterUndeleteHandler();
         GapContinueOnErrorCountingAfterUndeleteHandler laterHandler = new GapContinueOnErrorCountingAfterUndeleteHandler();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Exception orchestratorException = null;
 
@@ -12009,8 +11665,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new GapContinueOnErrorAfterUndeleteOrchestrator(new List<AfterUndelete.Handler>{ failingHandler, laterHandler })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
@@ -12032,7 +11688,7 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorFailingAfterUndeleteHandler failingHandler = new GapContinueOnErrorFailingAfterUndeleteHandler();
         GapContinueOnErrorCountingAfterUndeleteHandler laterHandler = new GapContinueOnErrorCountingAfterUndeleteHandler();
 
-        TriggerOrchestrator.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        TriggerOrchestrator.TriggerSettings.metadataSettingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         Exception orchestratorException = null;
 
@@ -12041,8 +11697,8 @@ private class TriggerOrchestratorTest {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
                 new GapContinueOnErrorAfterUndeleteOrchestrator(new List<AfterUndelete.Handler>{ failingHandler, laterHandler })
             );
-            orchestratorRunner.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-            orchestratorRunner.triggerNewRecords = records;
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+            orchestratorRunner.context.triggerNewRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;

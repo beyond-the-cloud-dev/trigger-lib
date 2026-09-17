@@ -271,55 +271,18 @@ public with sharing class TriggerOrchestrator {
     }
 
     private abstract class ExecutionStrategy {
-        protected List<TriggerHandlerAdapter> activeHandlers = new List<TriggerHandlerAdapter>();
-        protected List<TriggerHandler.TriggerRecord> triggerRecords = new List<TriggerHandler.TriggerRecord>();
-        protected ParentRelationshipEnrichment parentRelationshipEnrichment;
-
-        private TriggerContext context;
-
         public void execute(TriggerOrchestrator orchestrator) {
-            this.context = orchestrator.context;
+            List<TriggerHandler.TriggerRecord> triggerRecords = this.getTriggerRecords(orchestrator);
+            List<TriggerHandlerAdapter> activeHandlers = this.getActiveHandlers(orchestrator);
 
-            this.enhanceRecords();
-            this.getActiveHandlers(orchestrator);
-            this.enrichParentRelationships();
+            ParentRelationshipEnrichment parentRelationshipEnrichment = new ParentRelationshipEnrichment();
 
-            this.runHandlers();
-        }
+            parentRelationshipEnrichment.extractFieldsToEnrich(activeHandlers);
+            parentRelationshipEnrichment.enrichRecordsLookups(triggerRecords);
 
-        protected abstract List<TriggerHandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator);
-
-        protected virtual void refreshParentRelationships(List<TriggerHandler.TriggerRecord> records) {
-        }
-
-        private void enhanceRecords() {
-            for (Integer i = 0; i < this.context.recordsCount; i++) {
-                this.triggerRecords.add(new TriggerHandler.TriggerRecord(this.context.triggerNewRecords?.get(i), this.context.triggerOldRecords?.get(i)));
-            }
-        }
-
-        private void getActiveHandlers(TriggerOrchestrator orchestrator) {
-            for (TriggerHandlerAdapter adapter : this.adaptHandlers(orchestrator)) {
-                if (!adapter.isBypassed()) {
-                    this.activeHandlers.add(adapter);
-                }
-            }
-        }
-
-        private void enrichParentRelationships() {
-            this.parentRelationshipEnrichment = new ParentRelationshipEnrichment();
-            this.parentRelationshipEnrichment.extractFieldsToEnrich(this.activeHandlers);
-            this.parentRelationshipEnrichment.enrichRecordsLookups(this.triggerRecords);
-        }
-
-        private void runHandlers() {
-            List<TriggerHandler.TriggerRecord> recordsToRefresh = new List<TriggerHandler.TriggerRecord>();
-
-            for (TriggerHandlerAdapter adapter : this.activeHandlers) {
-                this.refreshParentRelationships(recordsToRefresh);
-
+            for (TriggerHandlerAdapter adapter : activeHandlers) {
                 try {
-                    adapter.execute(this.triggerRecords);
+                    adapter.execute(triggerRecords);
                 } catch (TriggerOrchestratorException e) {
                     adapter.logError(e);
                     throw e;
@@ -334,16 +297,36 @@ public with sharing class TriggerOrchestrator {
                     }
                 }
 
-                recordsToRefresh = adapter.getProcessedRecords();
+                parentRelationshipEnrichment.requeryWhenParentLookupChanged(adapter.getProcessedRecords());
             }
         }
+
+        private List<TriggerHandler.TriggerRecord> getTriggerRecords(TriggerOrchestrator orchestrator) {
+            List<TriggerHandler.TriggerRecord> triggerRecords = new List<TriggerHandler.TriggerRecord>();
+
+            for (Integer i = 0; i < orchestrator.context.recordsCount; i++) {
+                triggerRecords.add(new TriggerHandler.TriggerRecord(orchestrator.context.triggerNewRecords?.get(i), orchestrator.context.triggerOldRecords?.get(i)));
+            }
+
+            return triggerRecords;
+        }
+
+        private List<TriggerHandlerAdapter> getActiveHandlers(TriggerOrchestrator orchestrator) {
+            List<TriggerHandlerAdapter> activeHandlers = new List<TriggerHandlerAdapter>();
+
+            for (TriggerHandlerAdapter adapter : this.adaptHandlers(orchestrator)) {
+                if (!adapter.isBypassed()) {
+                    activeHandlers.add(adapter);
+                }
+            }
+
+            return activeHandlers;
+        }
+
+        protected abstract List<TriggerHandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator);
     }
 
     private class BeforeInsertExecutionStrategy extends ExecutionStrategy {
-        protected override void refreshParentRelationships(List<TriggerHandler.TriggerRecord> records) {
-            this.parentRelationshipEnrichment.refreshWhenNeeded(records);
-        }
-
         public override List<TriggerHandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator) {
             List<TriggerHandlerAdapter> handlerAdapters = new List<TriggerHandlerAdapter>();
 
@@ -372,10 +355,6 @@ public with sharing class TriggerOrchestrator {
     }
 
     private class BeforeUpdateExecutionStrategy extends ExecutionStrategy {
-        protected override void refreshParentRelationships(List<TriggerHandler.TriggerRecord> records) {
-            this.parentRelationshipEnrichment.refreshWhenNeeded(records);
-        }
-
         public override List<TriggerHandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator) {
             List<TriggerHandlerAdapter> handlerAdapters = new List<TriggerHandlerAdapter>();
 
@@ -1134,7 +1113,7 @@ public with sharing class TriggerOrchestrator {
             }
         }
 
-        public void refreshWhenNeeded(List<TriggerHandler.TriggerRecord> records) {
+        public void requeryWhenParentLookupChanged(List<TriggerHandler.TriggerRecord> records) {
             if (records.isEmpty()) {
                 return;
             }

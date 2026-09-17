@@ -69,8 +69,8 @@ public with sharing class TriggerOrchestrator {
     // Implementations
 
     @TestVisible
-    private static TriggerSettings TriggerSettings = new TriggerSettings();
-    private static TransactionState TransactionState = new TransactionState();
+    private static TriggerSettings triggerSettings = new TriggerSettings();
+    private static TransactionState transactionState = new TransactionState();
 
     @TestVisible
     private TriggerContext context;
@@ -91,7 +91,7 @@ public with sharing class TriggerOrchestrator {
                 throw new TriggerOrchestratorException('Called outside of a trigger context, or the trigger operation is not supported.');
             }
 
-            if (TriggerOrchestrator.TriggerSettings.isSObjectTriggerBypassedInMetadata(this.context)) {
+            if (TriggerOrchestrator.triggerSettings.isSObjectTriggerBypassedInMetadata(this.context)) {
                 return;
             }
 
@@ -113,7 +113,7 @@ public with sharing class TriggerOrchestrator {
                 return;
             }
 
-            TriggerOrchestrator.TransactionState.executionStack.add(executionStrategy);
+            TriggerOrchestrator.transactionState.executionStack.add(executionStrategy);
 
             executionStrategy.execute(this);
         } finally {
@@ -126,10 +126,10 @@ public with sharing class TriggerOrchestrator {
             return;
         }
 
-        TriggerOrchestrator.TransactionState.executionStack.remove(TriggerOrchestrator.TransactionState.executionStack.size() - 1);
+        TriggerOrchestrator.transactionState.executionStack.remove(TriggerOrchestrator.transactionState.executionStack.size() - 1);
 
-        if (TriggerOrchestrator.TransactionState.executionStack.isEmpty()) {
-            TriggerOrchestrator.TriggerSettings.logger?.finalize();
+        if (TriggerOrchestrator.transactionState.executionStack.isEmpty()) {
+            TriggerOrchestrator.triggerSettings.logger?.finalize();
         }
     }
 
@@ -137,24 +137,9 @@ public with sharing class TriggerOrchestrator {
         public System.TriggerOperation triggerOperation = Trigger.operationType;
         public List<SObject> triggerNewRecords = Trigger.new;
         public List<SObject> triggerOldRecords = Trigger.old;
-
-        public SObjectType sObjectType {
-            get {
-                return (this.triggerNewRecords ?? this.triggerOldRecords)?.getSObjectType();
-            }
-        }
-
-        public Integer recordsCount {
-            get {
-                return (this.triggerNewRecords ?? this.triggerOldRecords).size();
-            }
-        }
-
-        public String sObjectTypeName {
-            get {
-                return this.sObjectType?.toString()?.toLowerCase();
-            }
-        }
+        public SObjectType sObjectType = (this.triggerNewRecords ?? this.triggerOldRecords)?.getSObjectType();
+        public Integer recordsCount = (this.triggerNewRecords ?? this.triggerOldRecords).size();
+        public String sObjectTypeName = (this.sObjectType?.toString()?.toLowerCase());
     }
 
     private class TransactionState {
@@ -171,9 +156,8 @@ public with sharing class TriggerOrchestrator {
             return this.metadataSettingsByObjectName.get(context.sObjectTypeName)?.sObjectSetting.Bypass__c == true;
         }
 
-        public Boolean isHandlerBypassedInMetadata(TriggerContext context, Object handler) {
-            String handlerClassName = handler.toString().substringBefore(':').toLowerCase();
-            return this.metadataSettingsByObjectName.get(context.sObjectTypeName)?.settingByHandlerName.get(handlerClassName)?.Bypass__c == true;
+        public Boolean isHandlerBypassedInMetadata(TriggerContext context, String handlerName) {
+            return this.metadataSettingsByObjectName.get(context.sObjectTypeName)?.settingByHandlerName.get(handlerName.toLowerCase())?.Bypass__c == true;
         }
 
         private Logger resolveLogger() {
@@ -512,7 +496,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public void logError(Exception e) {
-            TriggerOrchestrator.TriggerSettings.logger?.log(new TriggerError().withException(e).withHandlerName(this.handlerName).withContext(this.orchestrator.context));
+            TriggerOrchestrator.triggerSettings.logger?.log(new TriggerError().withException(e).withHandlerName(this.handlerName).withContext(this.orchestrator.context));
         }
 
         protected virtual Boolean isRecursionDepthExceeded(TriggerHandler.TriggerRecord record) {
@@ -550,7 +534,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isBypassed() {
-            if (TriggerOrchestrator.TriggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handler)) {
+            if (TriggerOrchestrator.triggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handlerName)) {
                 return true;
             }
 
@@ -609,7 +593,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isBypassed() {
-            if (TriggerOrchestrator.TriggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handler)) {
+            if (TriggerOrchestrator.triggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handlerName)) {
                 return true;
             }
 
@@ -653,7 +637,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isBypassed() {
-            if (TriggerOrchestrator.TriggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handler)) {
+            if (TriggerOrchestrator.triggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handlerName)) {
                 return true;
             }
 
@@ -699,11 +683,11 @@ public with sharing class TriggerOrchestrator {
             super(populator, orchestrator);
             String recursionScope = this.handlerName + ':BEFORE_UPDATE';
 
-            if (!TriggerOrchestrator.TransactionState.recursionDepthByRecordByHandler.containsKey(recursionScope)) {
-                TriggerOrchestrator.TransactionState.recursionDepthByRecordByHandler.put(recursionScope, new Map<Id, Integer>());
+            if (!TriggerOrchestrator.transactionState.recursionDepthByRecordByHandler.containsKey(recursionScope)) {
+                TriggerOrchestrator.transactionState.recursionDepthByRecordByHandler.put(recursionScope, new Map<Id, Integer>());
             }
 
-            this.recursionDepthByRecord = TriggerOrchestrator.TransactionState.recursionDepthByRecordByHandler.get(recursionScope);
+            this.recursionDepthByRecord = TriggerOrchestrator.transactionState.recursionDepthByRecordByHandler.get(recursionScope);
         }
 
         public override void execute(List<TriggerHandler.TriggerRecord> records) {
@@ -722,7 +706,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isBypassed() {
-            if (TriggerOrchestrator.TriggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handler)) {
+            if (TriggerOrchestrator.triggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handlerName)) {
                 return true;
             }
 
@@ -827,7 +811,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isBypassed() {
-            if (TriggerOrchestrator.TriggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handler)) {
+            if (TriggerOrchestrator.triggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handlerName)) {
                 return true;
             }
 
@@ -881,15 +865,15 @@ public with sharing class TriggerOrchestrator {
             super(handler, orchestrator);
             String recursionScope = this.handlerName + ':AFTER_UPDATE';
 
-            if (!TriggerOrchestrator.TransactionState.recursionDepthByRecordByHandler.containsKey(recursionScope)) {
-                TriggerOrchestrator.TransactionState.recursionDepthByRecordByHandler.put(recursionScope, new Map<Id, Integer>());
+            if (!TriggerOrchestrator.transactionState.recursionDepthByRecordByHandler.containsKey(recursionScope)) {
+                TriggerOrchestrator.transactionState.recursionDepthByRecordByHandler.put(recursionScope, new Map<Id, Integer>());
             }
 
-            this.recursionDepthByRecord = TriggerOrchestrator.TransactionState.recursionDepthByRecordByHandler.get(recursionScope);
+            this.recursionDepthByRecord = TriggerOrchestrator.transactionState.recursionDepthByRecordByHandler.get(recursionScope);
         }
 
         public override Boolean isBypassed() {
-            if (TriggerOrchestrator.TriggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handler)) {
+            if (TriggerOrchestrator.triggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handlerName)) {
                 return true;
             }
 
@@ -979,7 +963,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isBypassed() {
-            if (TriggerOrchestrator.TriggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handler)) {
+            if (TriggerOrchestrator.triggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handlerName)) {
                 return true;
             }
 
@@ -1023,7 +1007,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isBypassed() {
-            if (TriggerOrchestrator.TriggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handler)) {
+            if (TriggerOrchestrator.triggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handlerName)) {
                 return true;
             }
 
@@ -1067,7 +1051,7 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isBypassed() {
-            if (TriggerOrchestrator.TriggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handler)) {
+            if (TriggerOrchestrator.triggerSettings.isHandlerBypassedInMetadata(this.orchestrator.context, this.handlerName)) {
                 return true;
             }
 
@@ -1131,6 +1115,7 @@ public with sharing class TriggerOrchestrator {
                 parentIdsToQuery.addAll(this.notQueriedOldParentIds(parentField, records));
 
                 this.queryParentsRelationships(parentField, parentIdsToQuery);
+
                 this.attachNewToTriggerRecords(parentField, records);
                 this.attachOldToTriggerRecords(parentField, records);
             }
@@ -1143,6 +1128,7 @@ public with sharing class TriggerOrchestrator {
 
             for (SObjectField parentField : this.fieldsToQueryByParentLookup.keySet()) {
                 this.queryParentsRelationships(parentField, this.notQueriedNewParentIds(parentField, records));
+                
                 this.attachNewToTriggerRecords(parentField, records);
             }
         }

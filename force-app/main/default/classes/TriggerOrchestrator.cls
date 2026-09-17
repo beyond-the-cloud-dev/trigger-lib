@@ -298,18 +298,8 @@ public with sharing class TriggerOrchestrator {
             for (TriggerHandlerAdapter adapter : activeHandlers) {
                 try {
                     adapter.execute(triggerRecords);
-                } catch (TriggerOrchestratorException e) {
-                    adapter.logError(e);
-                    throw e;
-                } catch (TriggerHandler.TriggerHandlerException e) {
-                    adapter.logError(e);
-                    throw e;
                 } catch (Exception e) {
-                    adapter.logError(e);
-
-                    if (!adapter.continuesOnError()) {
-                        throw e;
-                    }
+                    adapter.handleException(e);
                 }
 
                 this.requeryChangedParentLookups(parentRelationshipEnrichment, adapter.getProcessedRecords());
@@ -544,7 +534,15 @@ public with sharing class TriggerOrchestrator {
             return this.processedRecords;
         }
 
-        public void logError(Exception e) {
+        public void handleException(Exception e) {
+            this.logError(e);
+
+            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !this.continuesOnError()) {
+                throw e;
+            }
+        }
+
+        private void logError(Exception e) {
             TriggerOrchestrator.triggerLogger.log(new TriggerError().withException(e).withHandlerName(this.handlerName).withContext(this.orchestrator.context));
         }
 

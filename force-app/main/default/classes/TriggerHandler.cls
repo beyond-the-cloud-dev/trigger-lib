@@ -304,6 +304,7 @@ public with sharing class TriggerHandler {
 
     // Implementation
 
+    public static RandomIdGenerator IdGenerator = new RandomIdGenerator();
     private static RecordTypesInfo RecordTypesInfo = new RecordTypesInfo();
 
     public class FieldSelector implements FieldSelection {
@@ -418,7 +419,7 @@ public with sharing class TriggerHandler {
         public TriggerRecord(SObject newRecord, SObject oldRecord) {
             this.newRecord = newRecord;
             this.oldRecord = oldRecord;
-            // Delete contexts have no new record, so the type comes from the deleted row.
+
             this.sObjectType = (newRecord ?? oldRecord).getSObjectType();
             this.identifier = (newRecord ?? oldRecord).get('Id')?.toString() ?? UUID.randomUUID().toString();
         }
@@ -732,11 +733,11 @@ public with sharing class TriggerHandler {
         }
 
         public Id getNewParentId(SObjectField parentField) {
-            return this.newRecord?.isSet(parentField) ? (Id) this.newRecord.get(parentField) : null;
+            return this.newRecord?.isSet(parentField) == true ? (Id) this.newRecord.get(parentField) : null;
         }
 
         public Id getOldParentId(SObjectField parentField) {
-            return this.oldRecord?.isSet(parentField) ? (Id) this.oldRecord.get(parentField) : null;
+            return this.oldRecord?.isSet(parentField) == true ? (Id) this.oldRecord.get(parentField) : null;
         }
 
         public void enrichOld(String relationshipName, SObject relatedRecord) {
@@ -778,11 +779,6 @@ public with sharing class TriggerHandler {
         }
     }
 
-    public class TriggerHandlerException extends Exception {
-    }
-
-    public static RandomIdGenerator IdGenerator = new RandomIdGenerator();
-
     public class RandomIdGenerator {
         private final String RANDOM_STRING_CHARACTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz';
 
@@ -800,5 +796,8 @@ public with sharing class TriggerHandler {
 
             return Id.valueOf(prefix + '0000' + randomPart);
         }
+    }
+
+    public class TriggerHandlerException extends Exception {
     }
 }

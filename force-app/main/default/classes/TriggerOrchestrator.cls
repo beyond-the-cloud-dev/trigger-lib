@@ -142,9 +142,24 @@ public with sharing class TriggerOrchestrator {
         public System.TriggerOperation triggerOperation = Trigger.operationType;
         public List<SObject> triggerNewRecords = Trigger.new;
         public List<SObject> triggerOldRecords = Trigger.old;
-        public SObjectType sObjectType = (this.triggerNewRecords ?? this.triggerOldRecords)?.getSObjectType();
-        public Integer recordsCount = (this.triggerNewRecords ?? this.triggerOldRecords).size();
-        public String sObjectTypeName = (this.sObjectType?.toString()?.toLowerCase());
+
+        public SObjectType sObjectType {
+            get {
+                return (this.triggerNewRecords ?? this.triggerOldRecords)?.getSObjectType();
+            }
+        }
+
+        public Integer recordsCount {
+            get {
+                return (this.triggerNewRecords ?? this.triggerOldRecords).size();
+            }
+        }
+
+        public String sObjectTypeName {
+            get {
+                return this.sObjectType?.toString()?.toLowerCase();
+            }
+        }
     }
 
     private class TriggerStack {
@@ -297,7 +312,7 @@ public with sharing class TriggerOrchestrator {
                     }
                 }
 
-                parentRelationshipEnrichment.requeryWhenParentLookupChanged(adapter.getProcessedRecords());
+                this.requeryChangedParentLookups(parentRelationshipEnrichment, adapter.getProcessedRecords());
             }
         }
 
@@ -324,9 +339,16 @@ public with sharing class TriggerOrchestrator {
         }
 
         protected abstract List<TriggerHandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator);
+
+        protected virtual void requeryChangedParentLookups(ParentRelationshipEnrichment parentRelationshipEnrichment, List<TriggerHandler.TriggerRecord> records) {
+        }
     }
 
     private class BeforeInsertExecutionStrategy extends ExecutionStrategy {
+        protected override void requeryChangedParentLookups(ParentRelationshipEnrichment parentRelationshipEnrichment, List<TriggerHandler.TriggerRecord> records) {
+            parentRelationshipEnrichment.requeryWhenParentLookupChanged(records);
+        }
+
         public override List<TriggerHandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator) {
             List<TriggerHandlerAdapter> handlerAdapters = new List<TriggerHandlerAdapter>();
 
@@ -355,6 +377,10 @@ public with sharing class TriggerOrchestrator {
     }
 
     private class BeforeUpdateExecutionStrategy extends ExecutionStrategy {
+        protected override void requeryChangedParentLookups(ParentRelationshipEnrichment parentRelationshipEnrichment, List<TriggerHandler.TriggerRecord> records) {
+            parentRelationshipEnrichment.requeryWhenParentLookupChanged(records);
+        }
+
         public override List<TriggerHandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator) {
             List<TriggerHandlerAdapter> handlerAdapters = new List<TriggerHandlerAdapter>();
 

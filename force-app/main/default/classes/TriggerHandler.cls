@@ -731,6 +731,14 @@ public with sharing class TriggerHandler {
             this.newRelatedRecords.put(relationshipName, relatedRecord);
         }
 
+        public Id getNewParentId(SObjectField parentField) {
+            return this.newRecord?.isSet(parentField) ? (Id) this.newRecord.get(parentField) : null;
+        }
+
+        public Id getOldParentId(SObjectField parentField) {
+            return this.oldRecord?.isSet(parentField) ? (Id) this.oldRecord.get(parentField) : null;
+        }
+
         public void enrichOld(String relationshipName, SObject relatedRecord) {
             this.oldRelatedRecords.put(relationshipName, relatedRecord);
         }

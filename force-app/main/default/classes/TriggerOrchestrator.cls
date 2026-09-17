@@ -543,6 +543,14 @@ public with sharing class TriggerOrchestrator {
             TriggerOrchestrator.triggerLogger.log(new TriggerError().withException(e).withHandlerName(this.handlerName).withContext(this.orchestrator.context));
         }
 
+        public Boolean isBypassed() {
+            return this.isBypassedBySettings() || this.isBypassedByHandler();
+        }
+
+        private Boolean isBypassedBySettings() {
+            return TriggerOrchestrator.triggerSettings.isHandlerBypassed(this.orchestrator.context, this.handlerName);
+        }
+
         protected virtual Boolean isRecursionDepthExceeded(TriggerHandler.TriggerRecord record) {
             return false;
         }
@@ -550,7 +558,7 @@ public with sharing class TriggerOrchestrator {
         protected virtual void registerRecord(TriggerHandler.TriggerRecord record) {
         }
 
-        public abstract Boolean isBypassed();
+        public abstract Boolean isBypassedByHandler();
         public abstract Boolean continuesOnError();
         public abstract Boolean isQualified(TriggerHandler.TriggerRecord record);
         public abstract void finalizeHandler();
@@ -577,11 +585,7 @@ public with sharing class TriggerOrchestrator {
             }
         }
 
-        public override Boolean isBypassed() {
-            if (TriggerOrchestrator.triggerSettings.isHandlerBypassed(this.orchestrator.context, this.handlerName)) {
-                return true;
-            }
-
+        public override Boolean isBypassedByHandler() {
             if (this.handler instanceof BeforeInsert.Bypassable) {
                 return ((BeforeInsert.Bypassable) this.handler).bypassOnBeforeInsertWhen();
             }
@@ -636,11 +640,7 @@ public with sharing class TriggerOrchestrator {
             }
         }
 
-        public override Boolean isBypassed() {
-            if (TriggerOrchestrator.triggerSettings.isHandlerBypassed(this.orchestrator.context, this.handlerName)) {
-                return true;
-            }
-
+        public override Boolean isBypassedByHandler() {
             if (this.handler instanceof BeforeInsert.Bypassable) {
                 return ((BeforeInsert.Bypassable) this.handler).bypassOnBeforeInsertWhen();
             }
@@ -680,11 +680,7 @@ public with sharing class TriggerOrchestrator {
             super(handler, orchestrator);
         }
 
-        public override Boolean isBypassed() {
-            if (TriggerOrchestrator.triggerSettings.isHandlerBypassed(this.orchestrator.context, this.handlerName)) {
-                return true;
-            }
-
+        public override Boolean isBypassedByHandler() {
             if (this.handler instanceof AfterInsert.Bypassable) {
                 return ((AfterInsert.Bypassable) this.handler).bypassOnAfterInsertWhen();
             }
@@ -748,11 +744,7 @@ public with sharing class TriggerOrchestrator {
             }
         }
 
-        public override Boolean isBypassed() {
-            if (TriggerOrchestrator.triggerSettings.isHandlerBypassed(this.orchestrator.context, this.handlerName)) {
-                return true;
-            }
-
+        public override Boolean isBypassedByHandler() {
             if (this.handler instanceof BeforeUpdate.Bypassable) {
                 return ((BeforeUpdate.Bypassable) this.handler).bypassOnBeforeUpdateWhen();
             }
@@ -853,11 +845,7 @@ public with sharing class TriggerOrchestrator {
             }
         }
 
-        public override Boolean isBypassed() {
-            if (TriggerOrchestrator.triggerSettings.isHandlerBypassed(this.orchestrator.context, this.handlerName)) {
-                return true;
-            }
-
+        public override Boolean isBypassedByHandler() {
             if (this.handler instanceof BeforeUpdate.Bypassable) {
                 return ((BeforeUpdate.Bypassable) this.handler).bypassOnBeforeUpdateWhen();
             }
@@ -913,11 +901,7 @@ public with sharing class TriggerOrchestrator {
             this.recursionDepthByRecord = TriggerOrchestrator.triggerDepth.getForRecursionScope(recursionScope);
         }
 
-        public override Boolean isBypassed() {
-            if (TriggerOrchestrator.triggerSettings.isHandlerBypassed(this.orchestrator.context, this.handlerName)) {
-                return true;
-            }
-
+        public override Boolean isBypassedByHandler() {
             if (this.handler instanceof AfterUpdate.Bypassable) {
                 return ((AfterUpdate.Bypassable) this.handler).bypassOnAfterUpdateWhen();
             }
@@ -1003,11 +987,7 @@ public with sharing class TriggerOrchestrator {
             super(handler, orchestrator);
         }
 
-        public override Boolean isBypassed() {
-            if (TriggerOrchestrator.triggerSettings.isHandlerBypassed(this.orchestrator.context, this.handlerName)) {
-                return true;
-            }
-
+        public override Boolean isBypassedByHandler() {
             if (this.handler instanceof BeforeDelete.Bypassable) {
                 return ((BeforeDelete.Bypassable) this.handler).bypassOnBeforeDeleteWhen();
             }
@@ -1047,11 +1027,7 @@ public with sharing class TriggerOrchestrator {
             super(handler, orchestrator);
         }
 
-        public override Boolean isBypassed() {
-            if (TriggerOrchestrator.triggerSettings.isHandlerBypassed(this.orchestrator.context, this.handlerName)) {
-                return true;
-            }
-
+        public override Boolean isBypassedByHandler() {
             if (this.handler instanceof AfterDelete.Bypassable) {
                 return ((AfterDelete.Bypassable) this.handler).bypassOnAfterDeleteWhen();
             }
@@ -1091,11 +1067,7 @@ public with sharing class TriggerOrchestrator {
             super(handler, orchestrator);
         }
 
-        public override Boolean isBypassed() {
-            if (TriggerOrchestrator.triggerSettings.isHandlerBypassed(this.orchestrator.context, this.handlerName)) {
-                return true;
-            }
-
+        public override Boolean isBypassedByHandler() {
             if (this.handler instanceof AfterUndelete.Bypassable) {
                 return ((AfterUndelete.Bypassable) this.handler).bypassOnAfterUndeleteWhen();
             }

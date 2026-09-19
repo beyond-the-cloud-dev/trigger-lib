@@ -66,15 +66,26 @@ public with sharing class TriggerOrchestrator {
         new TriggerOrchestrator(orchestrator).run();
     }
 
+    public static Bypassable bypass() {
+        return TriggerOrchestrator.triggerBypass;
+    }
+
+    public interface Bypassable {
+        Bypassable sObject(SObjectType sObjectType);
+        Bypassable orchestrator(System.Type orchestrator);
+        Bypassable handler(System.Type handler);
+        void all();
+        void clear();
+    }
+
     // Implementations
 
     @TestVisible
     private static TriggerLogger triggerLogger = new TriggerLogger();
     @TestVisible
     private static TriggerSettings triggerSettings = new TriggerSettings();
-    @TestVisible
+    private static TriggerBypass triggerBypass = new TriggerBypass();
     private static TriggerStack triggerStack = new TriggerStack();
-    @TestVisible
     private static TriggerDepth triggerDepth = new TriggerDepth();
 
     @TestVisible
@@ -94,6 +105,10 @@ public with sharing class TriggerOrchestrator {
         try {
             if (this.context.triggerOperation == null) {
                 throw new TriggerOrchestratorException('Called outside of a trigger context, or the trigger operation is not supported.');
+            }
+
+            if (TriggerOrchestrator.triggerBypass.isRunBypassed(this)) {
+                return;
             }
 
             if (TriggerOrchestrator.triggerSettings.isSObjectTriggerBypassed(this.context)) {
@@ -140,25 +155,77 @@ public with sharing class TriggerOrchestrator {
 
     private class TriggerContext {
         public System.TriggerOperation triggerOperation = Trigger.operationType;
-        public List<SObject> triggerNewRecords = Trigger.new;
-        public List<SObject> triggerOldRecords = Trigger.old;
+
+        public List<SObject> newRecords = Trigger.new;
+        public List<SObject> oldRecords = Trigger.old;
 
         public SObjectType sObjectType {
             get {
-                return (this.triggerNewRecords ?? this.triggerOldRecords)?.getSObjectType();
+                if (this.sObjectType == null) {
+                    this.sObjectType = (this.newRecords ?? this.oldRecords)?.getSObjectType();
+                }
+
+                return this.sObjectType;
             }
+            private set;
         }
 
-        public Integer recordsCount {
+        public List<TriggerHandler.TriggerRecord> triggerRecords {
             get {
-                return (this.triggerNewRecords ?? this.triggerOldRecords).size();
+                if (this.triggerRecords == null) {
+                    this.triggerRecords = new List<TriggerHandler.TriggerRecord>();
+
+                    Integer recordCount = (this.newRecords ?? this.oldRecords)?.size() ?? 0;
+
+                    for (Integer i = 0; i < recordCount; i++) {
+                        this.triggerRecords.add(new TriggerHandler.TriggerRecord(this.newRecords?.get(i), this.oldRecords?.get(i)));
+                    }
+                }
+
+                return this.triggerRecords;
             }
+            private set;
+        }
+    }
+
+    private class TriggerBypass implements Bypassable {
+        private Set<String> bypassedSObjects = new Set<String>();
+        private Set<String> bypassedOrchestrators = new Set<String>();
+        private Set<String> bypassedHandlers = new Set<String>();
+
+        public Bypassable sObject(SObjectType sObjectType) {
+            this.bypassedSObjects.add(sObjectType.toString().toLowerCase());
+            return this;
         }
 
-        public String sObjectTypeName {
-            get {
-                return this.sObjectType?.toString()?.toLowerCase();
-            }
+        public Bypassable orchestrator(System.Type orchestratorType) {
+            this.bypassedOrchestrators.add(orchestratorType.getName().toLowerCase());
+            return this;
+        }
+
+        public Bypassable handler(System.Type handlerType) {
+            this.bypassedHandlers.add(handlerType.getName().toLowerCase());
+            return this;
+        }
+
+        public void all() {
+            this.bypassedSObjects.add('ALL');
+        }
+
+        public void clear() {
+            this.bypassedSObjects.clear();
+            this.bypassedOrchestrators.clear();
+            this.bypassedHandlers.clear();
+        }
+
+        public Boolean isRunBypassed(TriggerOrchestrator orchestrator) {
+            return this.bypassedSObjects.contains('ALL') ||
+                this.bypassedSObjects.contains(orchestrator.context.sObjectType?.toString()?.toLowerCase()) ||
+                this.bypassedOrchestrators.contains(orchestrator.orchestrator?.toString()?.substringBefore(':')?.toLowerCase());
+        }
+
+        public Boolean isHandlerBypassed(String handlerName) {
+            return this.bypassedHandlers.contains(handlerName.toLowerCase());
         }
     }
 
@@ -213,6 +280,7 @@ public with sharing class TriggerOrchestrator {
                 .whereAre(SOQL.Filter.with(ApexTypeImplementor.IsConcrete).isTrue())
                 .systemMode()
                 .setLimit(2)
+                .mockId('ApexTypeImplementor')
                 .toList();
 
             if (implementors.size() > 1) {
@@ -233,11 +301,11 @@ public with sharing class TriggerOrchestrator {
         private Map<String, MetadataSettings> settingsByObjectName = this.resolveMetadataSettings();
 
         public Boolean isSObjectTriggerBypassed(TriggerContext context) {
-            return this.settingsByObjectName.get(context.sObjectTypeName)?.sObjectSetting.Bypass__c == true;
+            return this.settingsByObjectName.get(context.sObjectType.toString().toLowerCase())?.sObjectSetting.Bypass__c == true;
         }
 
         public Boolean isHandlerBypassed(TriggerContext context, String handlerName) {
-            return this.settingsByObjectName.get(context.sObjectTypeName)?.settingByHandlerName.get(handlerName.toLowerCase())?.Bypass__c == true;
+            return this.settingsByObjectName.get(context.sObjectType.toString().toLowerCase())?.settingByHandlerName.get(handlerName.toLowerCase())?.Bypass__c == true;
         }
 
         @TestVisible
@@ -249,6 +317,7 @@ public with sharing class TriggerOrchestrator {
                     .with(TriggerObject__mdt.ObjectAPIName__c, TriggerObject__mdt.Bypass__c)
                     .with(SOQL.SubQuery.of('TriggerHandlers__r').with(TriggerHandler__mdt.ApexClassName__c, TriggerHandler__mdt.Bypass__c))
                     .systemMode()
+                    .mockId('TriggerObject__mdt')
                     .toList()
             ) {
                 settingsByObjectName.put(triggerObject.ObjectAPIName__c.trim().toLowerCase(), new MetadataSettings(triggerObject));
@@ -287,7 +356,7 @@ public with sharing class TriggerOrchestrator {
 
     private abstract class ExecutionStrategy {
         public void execute(TriggerOrchestrator orchestrator) {
-            List<TriggerHandler.TriggerRecord> triggerRecords = this.getTriggerRecords(orchestrator);
+            List<TriggerHandler.TriggerRecord> triggerRecords = orchestrator.context.triggerRecords;
             List<TriggerHandlerAdapter> activeHandlers = this.getActiveHandlers(orchestrator);
 
             ParentRelationshipEnrichment parentRelationshipEnrichment = new ParentRelationshipEnrichment();
@@ -304,16 +373,6 @@ public with sharing class TriggerOrchestrator {
 
                 this.requeryChangedParentLookups(parentRelationshipEnrichment, adapter.getProcessedRecords());
             }
-        }
-
-        private List<TriggerHandler.TriggerRecord> getTriggerRecords(TriggerOrchestrator orchestrator) {
-            List<TriggerHandler.TriggerRecord> triggerRecords = new List<TriggerHandler.TriggerRecord>();
-
-            for (Integer i = 0; i < orchestrator.context.recordsCount; i++) {
-                triggerRecords.add(new TriggerHandler.TriggerRecord(orchestrator.context.triggerNewRecords?.get(i), orchestrator.context.triggerOldRecords?.get(i)));
-            }
-
-            return triggerRecords;
         }
 
         private List<TriggerHandlerAdapter> getActiveHandlers(TriggerOrchestrator orchestrator) {
@@ -479,9 +538,9 @@ public with sharing class TriggerOrchestrator {
         }
 
         private void setRecordIds(TriggerContext context) {
-            for (SObject record : context.triggerNewRecords ?? context.triggerOldRecords) {
-                if (record.Id != null) {
-                    this.recordIds.add(record.Id);
+            for (TriggerHandler.TriggerRecord record : context.triggerRecords) {
+                if (record.getId() != null) {
+                    this.recordIds.add(record.getId());
                 }
             }
         }
@@ -551,7 +610,8 @@ public with sharing class TriggerOrchestrator {
         }
 
         private Boolean isBypassedBySettings() {
-            return TriggerOrchestrator.triggerSettings.isHandlerBypassed(this.orchestrator.context, this.handlerName);
+            return TriggerOrchestrator.triggerBypass.isHandlerBypassed(this.handlerName) ||
+                TriggerOrchestrator.triggerSettings.isHandlerBypassed(this.orchestrator.context, this.handlerName);
         }
 
         protected virtual Boolean isRecursionDepthExceeded(TriggerHandler.TriggerRecord record) {

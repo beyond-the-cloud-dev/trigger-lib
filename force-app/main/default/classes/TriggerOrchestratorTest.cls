@@ -16,6 +16,9 @@
 @SuppressWarnings('PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.NcssTypeCount,PMD.ExcessivePublicCount,PMD.TooManyFields,PMD.ApexUnitTestClassShouldHaveRunAs')
 @IsTest(IsParallel=true)
 private class TriggerOrchestratorTest {
+    private class DispatchNonOrchestrator {
+    }
+
     @IsTest
     static void dispatchBeforeInsertRunsTheHandlersOfItsOwnList() {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Doe', Department = 'Sales'), new Contact(LastName = 'Roe', Department = 'Legal') };
@@ -24,10 +27,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Contact firstHandledNewRecord = (Contact) orchestrator.beforeInsertHandler.handledNewRecords[0];
@@ -58,10 +64,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -95,11 +104,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Contact firstHandledNewRecord = (Contact) orchestrator.beforeUpdateHandler.handledNewRecords[0];
@@ -133,11 +145,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -178,10 +193,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Contact firstHandledOldRecord = (Contact) orchestrator.beforeDeleteHandler.handledOldRecords[0];
@@ -216,10 +234,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Contact secondHandledOldRecord = (Contact) orchestrator.afterDeleteHandler.handledOldRecords[1];
@@ -251,10 +272,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -287,10 +311,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(2, orchestrator.firstHandler.runCount, 'It should be 2, because every handler of the list takes its own full turn over all trigger records.');
@@ -307,14 +334,17 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.newRecords = newRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(orchestratorException, 'It should be null, because a context the orchestrator does not implement is a silent no-op and the DML succeeds.');
@@ -339,14 +369,17 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(orchestratorException, 'It should be null, because a delete context the orchestrator does not implement is a silent no-op and the DML succeeds.');
@@ -364,10 +397,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -390,14 +426,17 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DispatchNoInterfacesOrchestrator());
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.newRecords = newRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(orchestratorException, 'It should be null, because an orchestrator that implements no context interface resolves to no context, which is a silent no-op.');
@@ -411,14 +450,17 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator('Not an orchestrator');
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DispatchNonOrchestrator());
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.newRecords = newRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(
@@ -435,14 +477,17 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(null);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.newRecords = newRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(
@@ -457,12 +502,14 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.run();
+            TriggerOrchestrator.run(orchestrator);
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because run() is only valid inside a trigger.');
@@ -486,12 +533,14 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(null);
-            orchestratorRunner.run();
+            TriggerOrchestrator.run(null);
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because the missing trigger context is checked before the argument is looked at.');
@@ -507,12 +556,14 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator('Not an orchestrator');
-            orchestratorRunner.run();
+            TriggerOrchestrator.run(new DispatchNonOrchestrator());
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because the missing trigger context is checked before the argument is looked at.');
@@ -532,13 +583,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.run();
+            TriggerOrchestrator.run(orchestrator);
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because the operation type alone decides whether there is a trigger context.');
@@ -558,14 +610,17 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.newRecords = newRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(orchestratorException, 'It should be null, because an empty handler list is a valid answer and the DML succeeds.');
@@ -587,15 +642,18 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(orchestratorException, 'It should be null, because an empty handler list behaves exactly like an unimplemented context and the DML succeeds.');
@@ -614,10 +672,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -637,20 +698,22 @@ private class TriggerOrchestratorTest {
     static void dispatchObjectBypassedInMetadataRunsNoHandler() {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Doe'), new Contact(LastName = 'Roe') };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
-        TriggerOrchestrator.MetadataSettings bypassedContact = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt(Bypass__c = true));
         Exception orchestratorException = null;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => bypassedContact };
+        SOQL.mock('TriggerObject__mdt').thenReturn(new TriggerObject__mdt(ObjectAPIName__c = 'Contact', Bypass__c = true));
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.newRecords = newRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(orchestratorException, 'It should be null, because a bypassed object stops the framework silently and the DML succeeds.');
@@ -672,11 +735,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => bypassedContact };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, orchestrator.totalRunCount(), 'It should be 0, because an object bypass switches off every context of that object, not only the before ones.');
@@ -695,10 +761,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'account' => bypassedAccount };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -717,10 +786,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => activeContact };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -742,10 +814,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -1019,7 +1094,7 @@ private class TriggerOrchestratorTest {
         public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
             TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(new DispatchNestedUnimplementedContextOrchestrator());
             orchestratorRunner2.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner2.context.triggerNewRecords = new List<Contact>{ new Contact(LastName = 'Nested') };
+            orchestratorRunner2.context.newRecords = new List<Contact>{ new Contact(LastName = 'Nested') };
             orchestratorRunner2.run();
             this.finalizeCountDuringHandler = this.logger.finalizeCount;
         }
@@ -1040,10 +1115,13 @@ private class TriggerOrchestratorTest {
         orchestrator.insertHandlers.add(handler);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -1063,10 +1141,13 @@ private class TriggerOrchestratorTest {
         orchestrator.insertHandlers.add(handler);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Contact firstRecord = (Contact) records[0];
@@ -1087,10 +1168,13 @@ private class TriggerOrchestratorTest {
         orchestrator.insertHandlers.add(handler);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.qualificationCount, 'It should be 1, because the predicate is still evaluated for the record before it is dropped.');
@@ -1107,10 +1191,13 @@ private class TriggerOrchestratorTest {
         orchestrator.insertHandlers.add(handler);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Contact firstRecord = (Contact) records[0];
@@ -1131,11 +1218,14 @@ private class TriggerOrchestratorTest {
         orchestrator.updateHandlers.add(handler);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -1159,11 +1249,14 @@ private class TriggerOrchestratorTest {
         orchestrator.updateHandlers.add(handler);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.qualificationCount, 'It should be 1, because the predicate is still evaluated for the record before it is dropped.');
@@ -1189,11 +1282,14 @@ private class TriggerOrchestratorTest {
         orchestrator.updateHandlers.add(handler);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Contact firstNewRecord = (Contact) newRecords[0];
@@ -1212,10 +1308,13 @@ private class TriggerOrchestratorTest {
         orchestrator.insertHandlers.add(handler);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -1240,10 +1339,13 @@ private class TriggerOrchestratorTest {
         orchestrator.insertHandlers.add(handler);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.messageCount, 'It should be 1, because beforeInsertValidationMessage is asked once for every qualified record.');
@@ -1264,10 +1366,13 @@ private class TriggerOrchestratorTest {
         orchestrator.insertHandlers.add(handler);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.isTrue(records[0].getErrors().isEmpty(), 'It should be empty, because a record the validator predicate rejected saves untouched.');
@@ -1284,10 +1389,13 @@ private class TriggerOrchestratorTest {
         orchestrator.insertHandlers.add(handler);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, records[0].getErrors().size(), 'It should be 1, because the predicate is evaluated per record and this record is the one it qualified.');
@@ -1305,11 +1413,14 @@ private class TriggerOrchestratorTest {
         orchestrator.updateHandlers.add(handler);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -1335,11 +1446,14 @@ private class TriggerOrchestratorTest {
         orchestrator.updateHandlers.add(handler);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, newRecords[0].getErrors().size(), 'It should be 1, because addError is called on getNewSObject, the record the DML is saving.');
@@ -1358,11 +1472,14 @@ private class TriggerOrchestratorTest {
         orchestrator.updateHandlers.add(handler);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.messageCount, 'It should be 1, because beforeUpdateValidationMessage is asked once for every qualified record.');
@@ -1385,11 +1502,14 @@ private class TriggerOrchestratorTest {
         orchestrator.updateHandlers.add(handler);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.isTrue(newRecords[0].getErrors().isEmpty(), 'It should be empty, because a record the validator predicate rejected saves untouched.');
@@ -1415,11 +1535,14 @@ private class TriggerOrchestratorTest {
         orchestrator.updateHandlers.add(handler);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, newRecords[0].getErrors().size(), 'It should be 1, because the predicate is evaluated per record and the changed Title qualified this one.');
@@ -1437,10 +1560,13 @@ private class TriggerOrchestratorTest {
         orchestrator.insertHandlers.add(new RolesLoggingInsertPopulator('Third', executionLog));
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -1467,11 +1593,14 @@ private class TriggerOrchestratorTest {
         orchestrator.updateHandlers.add(new RolesLoggingUpdatePopulator('Second', executionLog));
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -1491,10 +1620,13 @@ private class TriggerOrchestratorTest {
         orchestrator.insertHandlers.add(new RolesLoggingInsertPopulator('Second', executionLog));
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -1514,10 +1646,13 @@ private class TriggerOrchestratorTest {
         orchestrator.updateHandlers.add(handler);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.beforeInsertPopulateCount, 'It should be 1, because the one-role rule is per context and the class holds a valid role in before insert.');
@@ -1537,11 +1672,14 @@ private class TriggerOrchestratorTest {
         orchestrator.updateHandlers.add(handler);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.beforeUpdatePopulateCount, 'It should be 1, because the one-role rule is per context and the class holds a valid role in before update too.');
@@ -1562,16 +1700,19 @@ private class TriggerOrchestratorTest {
         orchestrator.updateHandlers.add(handler);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
 
         TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(orchestrator);
         orchestratorRunner2.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner2.context.triggerNewRecords = newRecords;
-        orchestratorRunner2.context.triggerOldRecords = oldRecords;
+        orchestratorRunner2.context.newRecords = newRecords;
+        orchestratorRunner2.context.oldRecords = oldRecords;
         orchestratorRunner2.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.beforeInsertFinalizeCount, 'It should be 1, because a finalizer fires once per handler execution and only for the context it belongs to.');
@@ -1593,16 +1734,19 @@ private class TriggerOrchestratorTest {
         orchestrator.updateHandlers.add(handler);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
 
         TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(orchestrator);
         orchestratorRunner2.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner2.context.triggerNewRecords = newRecords;
-        orchestratorRunner2.context.triggerOldRecords = oldRecords;
+        orchestratorRunner2.context.newRecords = newRecords;
+        orchestratorRunner2.context.oldRecords = oldRecords;
         orchestratorRunner2.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -1881,10 +2025,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -1919,11 +2066,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -1945,15 +2095,17 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
-        Integer queriesBefore = Limits.getQueries();
-
         // Test
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(handler.seenNewParents[0], 'It should be null, because a relationship no active handler declared is never attached, even when the lookup holds a real id.');
@@ -1972,15 +2124,17 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
-        Integer queriesBefore = Limits.getQueries();
-
         // Test
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -2005,15 +2159,17 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
-        Integer queriesBefore = Limits.getQueries();
-
         // Test
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, queriesAfter - queriesBefore, 'It should be 0, because a lookup with no populated value on any record of the invocation is not queried at all.');
@@ -2042,17 +2198,17 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
-        Integer queriesBefore = Limits.getQueries();
-
         // Test
-        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-            new EnrichmentAfterInsertOrchestrator(new List<AfterInsert.Handler>{ nameHandler, industryHandler, countryHandler })
-        );
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterInsertOrchestrator(new List<AfterInsert.Handler>{ nameHandler, industryHandler, countryHandler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -2088,15 +2244,17 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
-        Integer queriesBefore = Limits.getQueries();
-
         // Test
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(2, queriesAfter - queriesBefore, 'It should be 2, because the cost is one query per declared lookup field, and two lookup fields were declared.');
@@ -2123,15 +2281,17 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
-        Integer queriesBefore = Limits.getQueries();
-
         // Test
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(handler.seenNewParents[0], 'It should be null, because a lookup pointing at a record the query did not return attaches nothing and raises no error.');
@@ -2156,18 +2316,18 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
-        Integer queriesBefore = Limits.getQueries();
-
         // Test
-        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-            new EnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ repointingHandler, readingHandler })
-        );
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ repointingHandler, readingHandler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -2198,17 +2358,17 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
-        Integer queriesBefore = Limits.getQueries();
-
         // Test
-        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-            new EnrichmentBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ populatingHandler, readingHandler })
-        );
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ populatingHandler, readingHandler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(populatingHandler.seenNewParents[0], 'It should be null, because the declared lookup was still empty when the first handler took its turn.');
@@ -2258,18 +2418,18 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
-        Integer queriesBefore = Limits.getQueries();
-
         // Test
-        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-            new EnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ repointingHandler, readingHandler })
-        );
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ repointingHandler, readingHandler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
+
+        Test.stopTest();
 
         // Verify
         Account firstSeenNewParent = (Account) readingHandler.seenNewParents[0];
@@ -2305,15 +2465,17 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
-        Integer queriesBefore = Limits.getQueries();
-
         // Test
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentBeforeInsertOrchestrator(handlers));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, queriesAfter - queriesBefore, 'It should be 1, because the re-check between handlers costs nothing when no handler changed a declared lookup.');
@@ -2350,18 +2512,18 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
-        Integer queriesBefore = Limits.getQueries();
-
         // Test
-        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-            new EnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ repointingHandler, readingHandler })
-        );
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ repointingHandler, readingHandler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -2394,18 +2556,18 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
-        Integer queriesBefore = Limits.getQueries();
-
         // Test
-        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-            new EnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ repointingHandler, readingHandler })
-        );
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ repointingHandler, readingHandler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -2439,16 +2601,18 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
-        Integer queriesBefore = Limits.getQueries();
-
         // Test
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ repointingHandler, readingHandler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -2474,16 +2638,18 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
-        Integer queriesBefore = Limits.getQueries();
-
         // Test
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -2708,10 +2874,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -2733,10 +2902,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.runCount, 'It should be 1, because bypassOnBeforeInsertWhen returning false leaves the handler in the invocation.');
@@ -2755,10 +2927,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -2781,10 +2956,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -2812,10 +2990,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -2838,10 +3019,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.runCount, 'It should be 1, because bypassOnAfterInsertWhen returning false leaves the handler in the invocation.');
@@ -2861,11 +3045,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -2889,11 +3076,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.runCount, 'It should be 1, because bypassOnBeforeUpdateWhen returning false leaves the handler in the invocation.');
@@ -2918,11 +3108,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -2947,11 +3140,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -2980,11 +3176,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -3008,11 +3207,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.runCount, 'It should be 1, because bypassOnAfterUpdateWhen returning false leaves the handler in the invocation.');
@@ -3031,10 +3233,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -3057,10 +3262,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.runCount, 'It should be 1, because bypassOnBeforeDeleteWhen returning false leaves the handler in the invocation.');
@@ -3079,10 +3287,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -3105,10 +3316,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.runCount, 'It should be 1, because bypassOnAfterDeleteWhen returning false leaves the handler in the invocation.');
@@ -3127,10 +3341,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -3153,10 +3370,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.runCount, 'It should be 1, because bypassOnAfterUndeleteWhen returning false leaves the handler in the invocation.');
@@ -3179,10 +3399,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -3206,10 +3429,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, handler.qualifyCount, 'It should be 0, because the bypass step runs before any predicate, so a bypassed handler never has its qualification called.');
@@ -3227,10 +3453,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.runCount, 'It should be 1, because the adapter falls through to false when the handler implements neither the metadata bypass nor Bypassable.');
@@ -3249,18 +3478,21 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
-        Integer queriesBefore = Limits.getQueries();
-
         // Test
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Integer queriesAfterRun = Limits.getQueries();
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
             0,
-            Limits.getQueries() - queriesBefore,
+            queriesAfterRun - queriesBefore,
             'It should be 0, because parent fields are declared from the surviving handlers only, so a bypassed handler contributes nothing to query.'
         );
         Assert.areEqual(1, readerHandler.runCount, 'It should be 1, because the reader itself is not bypassed and still receives the record.');
@@ -3277,14 +3509,17 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(
@@ -3312,10 +3547,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, bypassedHandler.runCount, 'It should be 0, because a TriggerHandler__mdt record naming the class with Bypass__c checked switches that handler off.');
@@ -3336,10 +3574,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -3364,10 +3605,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, bypassedHandler.runCount, 'It should be 0, because the metadata bypass is keyed by class name alone, so it applies in every context the class runs in.');
@@ -3390,14 +3634,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(orchestratorException, 'It should be null, because an object bypass returns silently and the DML is left to succeed.');
@@ -3422,10 +3669,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'account' => accountSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -3448,10 +3698,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.runCount, 'It should be 1, because metadata records only ever turn things off and an unchecked Bypass__c changes nothing.');
@@ -3474,10 +3727,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -3501,10 +3757,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -3528,10 +3787,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -3558,10 +3820,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -3583,10 +3848,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -3616,10 +3884,15 @@ private class TriggerOrchestratorTest {
         Integer queriesAfterLoad = Limits.getQueries();
 
         // Test
+        Test.startTest();
+        Integer queriesBeforeRun = Limits.getQueries();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Integer queriesAfterRun = Limits.getQueries();
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -3629,7 +3902,7 @@ private class TriggerOrchestratorTest {
         );
         Assert.areEqual(
             0,
-            Limits.getQueries() - queriesAfterLoad,
+            queriesAfterRun - queriesBeforeRun,
             'It should be 0, because the loader ran once when the class was initialized and the invocation only reads the cached map.'
         );
         Assert.isNotNull(eagerlyLoadedSettings, 'It should be not null, because the loader runs when the class is initialized and caches whatever it finds, even nothing.');
@@ -3654,18 +3927,21 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
-        Integer queriesBefore = Limits.getQueries();
-
         // Test
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Integer queriesAfterRun = Limits.getQueries();
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
             0,
-            Limits.getQueries() - queriesBefore,
+            queriesAfterRun - queriesBefore,
             'It should be 0, because the settings are read once per transaction and every later lookup, one per handler plus the object check, comes from the cache.'
         );
         Assert.areEqual(0, bypassedHandler.runCount, 'It should be 0, because the cached settings still bypass the named handler.');
@@ -3684,10 +3960,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.runCount, 'It should be 1, because a record whose qualify method returns true is passed on to the handler action.');
@@ -3705,10 +3984,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, handler.runCount, 'It should be 0, because a record whose qualify method returns false never reaches the handler action.');
@@ -3732,10 +4014,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.processedRecordIds.size(), 'It should be 1, because qualification is a per record predicate and only one record of the three matched it.');
@@ -3763,10 +4048,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(3, handler.qualifyCount, 'It should be 3, because at a handler turn the framework walks the records and asks the predicate exactly once for each of them.');
@@ -3784,10 +4072,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.runCount, 'It should be 1, because populateOnBeforeInsertWhen returning true hands the record to populateOnBeforeInsert.');
@@ -3809,10 +4100,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, handler.runCount, 'It should be 0, because populateOnBeforeInsert is never called for a record the predicate rejected.');
@@ -3830,10 +4124,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -3859,10 +4156,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, records[0].getErrors().size(), 'It should be 0, because a validator predicate returning false leaves the record to save untouched.');
@@ -3882,11 +4182,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.runCount, 'It should be 1, because populateOnBeforeUpdateWhen returning true hands the record to populateOnBeforeUpdate.');
@@ -3906,11 +4209,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, handler.runCount, 'It should be 0, because populateOnBeforeUpdate is never called for a record the predicate rejected.');
@@ -3930,11 +4236,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.runCount, 'It should be 1, because qualifiesForAfterUpdateWhen returning true hands the record to onAfterUpdate.');
@@ -3953,11 +4262,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, handler.runCount, 'It should be 0, because onAfterUpdate is never called for a record the predicate rejected.');
@@ -3976,10 +4288,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.runCount, 'It should be 1, because a delete context qualifies on the deleted row and the predicate returned true for it.');
@@ -3997,10 +4312,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, handler.runCount, 'It should be 0, because onBeforeDelete is never called for a record the predicate rejected.');
@@ -4018,10 +4336,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.runCount, 'It should be 1, because a delete context qualifies on the deleted row and the predicate returned true for it.');
@@ -4039,10 +4360,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, handler.runCount, 'It should be 0, because onAfterDelete is never called for a record the predicate rejected.');
@@ -4060,10 +4384,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.runCount, 'It should be 1, because an undelete context qualifies on the restored record and the predicate returned true for it.');
@@ -4081,10 +4408,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, handler.runCount, 'It should be 0, because onAfterUndelete is never called for a record the predicate rejected.');
@@ -4101,10 +4431,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, firstHandler.runCount, 'It should be 1, because the first handler qualified the record on the blank title it arrived with.');
@@ -4131,10 +4464,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -4165,10 +4501,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'account' => accountSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.runCount, 'It should be 1, because the outer invocation is not bypassed and its handler is the one that fires the nested trigger.');
@@ -4208,7 +4547,7 @@ private class TriggerOrchestratorTest {
 
             TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(new BypassNestedAccountOrchestrator());
             orchestratorRunner2.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner2.context.triggerNewRecords = nestedRecords;
+            orchestratorRunner2.context.newRecords = nestedRecords;
             orchestratorRunner2.run();
 
             this.finalizeCountAfterNestedRun = ((BypassFinalizeCountingLogger) TriggerOrchestrator.triggerLogger.logger).finalizeCount;
@@ -4648,13 +4987,16 @@ private class TriggerOrchestratorTest {
         RecursionBeforeUpdateOrchestrator orchestrator = new RecursionBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler });
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -4676,13 +5018,16 @@ private class TriggerOrchestratorTest {
         RecursionAfterUpdateOrchestrator orchestrator = new RecursionAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler });
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -4704,13 +5049,16 @@ private class TriggerOrchestratorTest {
         RecursionBeforeUpdateOrchestrator orchestrator = new RecursionBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler });
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -4732,13 +5080,16 @@ private class TriggerOrchestratorTest {
         RecursionAfterUpdateOrchestrator orchestrator = new RecursionAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler });
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -4761,13 +5112,16 @@ private class TriggerOrchestratorTest {
         RecursionGuardedBeforeUpdateOrchestrator orchestrator = new RecursionGuardedBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ firstHandler, secondHandler }, 5);
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 7; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -4795,13 +5149,16 @@ private class TriggerOrchestratorTest {
         RecursionGuardedAfterUpdateOrchestrator orchestrator = new RecursionGuardedAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ firstHandler, secondHandler }, 5);
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 7; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -4829,13 +5186,16 @@ private class TriggerOrchestratorTest {
         RecursionGuardedBeforeUpdateOrchestrator orchestrator = new RecursionGuardedBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ guardedHandler, unguardedHandler }, 5);
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 7; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -4863,13 +5223,16 @@ private class TriggerOrchestratorTest {
         RecursionGuardedAfterUpdateOrchestrator orchestrator = new RecursionGuardedAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ guardedHandler, unguardedHandler }, 5);
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 7; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -4897,13 +5260,16 @@ private class TriggerOrchestratorTest {
         RecursionBeforeUpdateOrchestrator orchestrator = new RecursionBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ firstHandler, secondHandler });
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 6; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(3, firstHandler.runCount, 'It should be 3, because neither the orchestrator nor the handler declares a RecursionGuard, so the framework default applies.');
@@ -4923,13 +5289,16 @@ private class TriggerOrchestratorTest {
         RecursionAfterUpdateOrchestrator orchestrator = new RecursionAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ firstHandler, secondHandler });
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 6; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(3, firstHandler.runCount, 'It should be 3, because neither the orchestrator nor the handler declares a RecursionGuard, so the framework default applies.');
@@ -4949,13 +5318,16 @@ private class TriggerOrchestratorTest {
         RecursionBeforeUpdateOrchestrator orchestrator = new RecursionBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler });
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(4, handler.runCount, 'It should be 4, because a guard of two passes and two records in one run gives two executions per record, four in total.');
@@ -4984,13 +5356,16 @@ private class TriggerOrchestratorTest {
         RecursionAfterUpdateOrchestrator orchestrator = new RecursionAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler });
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(4, handler.runCount, 'It should be 4, because a guard of two passes and two records in one run gives two executions per record, four in total.');
@@ -5025,8 +5400,8 @@ private class TriggerOrchestratorTest {
         for (Integer i = 0; i < 3; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = firstNewRecords;
-            orchestratorRunner.context.triggerOldRecords = firstOldRecords;
+            orchestratorRunner.context.newRecords = firstNewRecords;
+            orchestratorRunner.context.oldRecords = firstOldRecords;
             orchestratorRunner.run();
         }
 
@@ -5034,13 +5409,16 @@ private class TriggerOrchestratorTest {
         List<SObject> secondOldRecords = new List<Contact>{ exhaustedContact.clone(true), lateContact.clone(true) };
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 3; i++) {
             TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(orchestrator);
             orchestratorRunner2.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner2.context.triggerNewRecords = secondNewRecords;
-            orchestratorRunner2.context.triggerOldRecords = secondOldRecords;
+            orchestratorRunner2.context.newRecords = secondNewRecords;
+            orchestratorRunner2.context.oldRecords = secondOldRecords;
             orchestratorRunner2.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -5071,21 +5449,24 @@ private class TriggerOrchestratorTest {
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
         rejectedContact.LastName = 'Qualified';
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(orchestrator);
             orchestratorRunner2.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner2.context.triggerNewRecords = newRecords;
-            orchestratorRunner2.context.triggerOldRecords = oldRecords;
+            orchestratorRunner2.context.newRecords = newRecords;
+            orchestratorRunner2.context.oldRecords = oldRecords;
             orchestratorRunner2.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(3, handler.runCountByRecordId.get(qualifiedContactId), 'It should be 3, because the qualified record spent the framework default of three passes.');
@@ -5115,21 +5496,24 @@ private class TriggerOrchestratorTest {
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
         rejectedContact.LastName = 'Qualified';
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(orchestrator);
             orchestratorRunner2.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner2.context.triggerNewRecords = newRecords;
-            orchestratorRunner2.context.triggerOldRecords = oldRecords;
+            orchestratorRunner2.context.newRecords = newRecords;
+            orchestratorRunner2.context.oldRecords = oldRecords;
             orchestratorRunner2.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(3, handler.runCountByRecordId.get(qualifiedContactId), 'It should be 3, because the qualified record spent the framework default of three passes.');
@@ -5157,13 +5541,16 @@ private class TriggerOrchestratorTest {
         RecursionAfterUpdateOrchestrator orchestrator = new RecursionAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler });
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 4; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -5186,13 +5573,16 @@ private class TriggerOrchestratorTest {
         RecursionBeforeUpdateOrchestrator orchestrator = new RecursionBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ guardedHandler, unguardedHandler });
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, guardedHandler.runCount, 'It should be 1, because the counter is keyed by handler class, so this handler spends only its own single pass.');
@@ -5216,13 +5606,16 @@ private class TriggerOrchestratorTest {
         RecursionAfterUpdateOrchestrator orchestrator = new RecursionAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ guardedHandler, unguardedHandler });
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, guardedHandler.runCount, 'It should be 1, because the counter is keyed by handler class, so this handler spends only its own single pass.');
@@ -5247,19 +5640,22 @@ private class TriggerOrchestratorTest {
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(orchestrator);
             orchestratorRunner2.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner2.context.triggerNewRecords = newRecords;
-            orchestratorRunner2.context.triggerOldRecords = oldRecords;
+            orchestratorRunner2.context.newRecords = newRecords;
+            orchestratorRunner2.context.oldRecords = oldRecords;
             orchestratorRunner2.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(3, handler.beforeUpdateRunCount, 'It should be 3, because the before update budget of the handler stops at the framework default.');
@@ -5287,17 +5683,20 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             for (Integer i = 0; i < 3; i++) {
                 TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
                 orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-                orchestratorRunner.context.triggerNewRecords = newRecords;
-                orchestratorRunner.context.triggerOldRecords = oldRecords;
+                orchestratorRunner.context.newRecords = newRecords;
+                orchestratorRunner.context.oldRecords = oldRecords;
                 orchestratorRunner.run();
             }
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(orchestratorException, 'It should be null, because a record over its recursion budget is skipped silently instead of raising an exception.');
@@ -5323,17 +5722,20 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             for (Integer i = 0; i < 3; i++) {
                 TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
                 orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-                orchestratorRunner.context.triggerNewRecords = newRecords;
-                orchestratorRunner.context.triggerOldRecords = oldRecords;
+                orchestratorRunner.context.newRecords = newRecords;
+                orchestratorRunner.context.oldRecords = oldRecords;
                 orchestratorRunner.run();
             }
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(orchestratorException, 'It should be null, because a record over its recursion budget is skipped silently instead of raising an exception.');
@@ -5354,13 +5756,16 @@ private class TriggerOrchestratorTest {
         RecursionAfterUpdateOrchestrator orchestrator = new RecursionAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler });
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 3; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.runCount, 'It should be 1, because a guard of one lets each record reach the handler once per transaction and skips every later pass.');
@@ -5384,13 +5789,16 @@ private class TriggerOrchestratorTest {
         RecursionAfterUpdateOrchestrator orchestrator = new RecursionAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ firstInstance, secondInstance });
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -5427,11 +5835,14 @@ private class TriggerOrchestratorTest {
         RecursionBeforeUpdateOrchestrator orchestrator = new RecursionBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler });
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(201, handler.runCount, 'It should be 201, because a batch crossing the chunk boundary is processed record by record exactly once.');
@@ -5468,13 +5879,16 @@ private class TriggerOrchestratorTest {
         RecursionAfterUpdateOrchestrator orchestrator = new RecursionAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler });
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 4; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(603, handler.runCount, 'It should be 603, because each of the 201 records keeps its own budget of three passes.');
@@ -5496,12 +5910,15 @@ private class TriggerOrchestratorTest {
         RecursionAfterInsertOrchestrator orchestrator = new RecursionAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler });
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
+            orchestratorRunner.context.newRecords = newRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(5, handler.runCount, 'It should be 5, because recursion control covers the update contexts only, so after insert keeps no counter at all.');
@@ -5519,13 +5936,16 @@ private class TriggerOrchestratorTest {
         RecursionBeforeUpdateOrchestrator orchestrator = new RecursionBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler });
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -5547,13 +5967,16 @@ private class TriggerOrchestratorTest {
         RecursionBeforeUpdateOrchestrator orchestrator = new RecursionBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler });
 
         // Test
+        Test.startTest();
         for (Integer i = 0; i < 5; i++) {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -5901,16 +6324,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ failingHandler, laterHandler })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ failingHandler, laterHandler }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(orchestratorException, 'It should be null, because ContinueOnError keeps a handler failure from ending the invocation.');
@@ -5930,10 +6354,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ failingHandler, laterHandler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, failingHandler.executionCount, 'It should be 1, because the exception ends that handler turn, so its remaining records are not processed.');
@@ -5952,12 +6379,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
-        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-            new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ firstFailingHandler, secondFailingHandler })
-        );
+        Test.startTest();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ firstFailingHandler, secondFailingHandler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(2, logger.errors.size(), 'It should be 2, because every handler that fails reaches the logger, and ContinueOnError only stops the exception.');
@@ -5986,16 +6414,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ failingHandler, laterHandler })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ failingHandler, laterHandler }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because a handler without ContinueOnError ends the invocation.');
@@ -6019,16 +6448,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingFailingHandler() })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingFailingHandler() }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isTrue(orchestratorException instanceof ErrorsLoggingException, 'It should be the handler own exception type, because the framework never wraps a handler failure.');
@@ -6043,12 +6473,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
-        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-            new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingMutedFailingHandler() })
-        );
+        Test.startTest();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingMutedFailingHandler() }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, logger.errors.size(), 'It should be 1, because a muted failure is still reported to the logger.');
@@ -6080,16 +6511,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingFailingHandler() })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingFailingHandler() }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because the handler does not implement ContinueOnError.');
@@ -6117,13 +6549,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
-        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-            new ErrorsLoggingAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ new ErrorsLoggingMutedFailingAfterUpdateHandler() })
-        );
+        Test.startTest();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ new ErrorsLoggingMutedFailingAfterUpdateHandler() }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, logger.errors.size(), 'It should be 1, because the failing handler turn is reported once.');
@@ -6159,12 +6592,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
-        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-            new ErrorsLoggingAfterDeleteOrchestrator(new List<AfterDelete.Handler>{ new ErrorsLoggingMutedFailingAfterDeleteHandler() })
-        );
+        Test.startTest();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterDeleteOrchestrator(new List<AfterDelete.Handler>{ new ErrorsLoggingMutedFailingAfterDeleteHandler() }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, logger.errors.size(), 'It should be 1, because the failing handler turn is reported once.');
@@ -6192,16 +6626,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new ErrorsLoggingBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ new ErrorsLoggingFailingPopulator() })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ new ErrorsLoggingFailingPopulator() }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because the populator has no ContinueOnError.');
@@ -6225,16 +6660,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingFailingQualifierHandler() })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingFailingQualifierHandler() }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because a failure in the qualification predicate ends the invocation like any other handler failure.');
@@ -6262,16 +6698,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingFailingFinalizerHandler() })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingFailingFinalizerHandler() }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because the finalizer runs inside the handler turn.');
@@ -6298,10 +6735,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.executionCount, 'It should be 1, because the handler qualifies the only record in the chunk.');
@@ -6320,16 +6760,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingFailingHandler() })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingFailingHandler() }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because the handler does not implement ContinueOnError.');
@@ -6345,18 +6786,17 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
-        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-            new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingCountingHandler(), new ErrorsLoggingCountingHandler() })
-        );
+        Test.startTest();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingCountingHandler(), new ErrorsLoggingCountingHandler() }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
-        TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(
-            new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingCountingHandler(), new ErrorsLoggingCountingHandler() })
-        );
+        TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingCountingHandler(), new ErrorsLoggingCountingHandler() }));
         orchestratorRunner2.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner2.context.triggerNewRecords = records;
+        orchestratorRunner2.context.newRecords = records;
         orchestratorRunner2.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -6380,10 +6820,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ outerHandler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, nestedHandler.executionCount, 'It should be 1, because a nested run dispatches its own handler list over the same chunk.');
@@ -6405,10 +6848,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ outerHandler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -6435,16 +6881,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new ErrorsLoggingBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ new ErrorsLoggingMutedDmlPopulator(), laterHandler })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ new ErrorsLoggingMutedDmlPopulator(), laterHandler }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because ContinueOnError covers a handler own exceptions, never a framework contract violation.');
@@ -6467,16 +6914,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new ErrorsLoggingBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ new ErrorsLoggingMutedDmlPopulator() })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ new ErrorsLoggingMutedDmlPopulator() }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because the logger sees the framework exception first and it still propagates.');
@@ -6514,16 +6962,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new ErrorsLoggingBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ outerHandler, laterHandler })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ outerHandler, laterHandler }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because any framework exception raised while a handler runs is rethrown even under ContinueOnError.');
@@ -6562,16 +7011,17 @@ private class TriggerOrchestratorTest {
         TriggerHandler.TriggerHandlerException recordApiException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingMutedRecordApiHandler(), laterHandler })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingMutedRecordApiHandler(), laterHandler }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (TriggerHandler.TriggerHandlerException e) {
             recordApiException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(recordApiException, 'It should be thrown, because a TriggerHandlerException is a framework failure that ContinueOnError never suppresses.');
@@ -6594,16 +7044,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingMutedRecordApiHandler() })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingMutedRecordApiHandler() }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because a record API failure is logged and then rethrown.');
@@ -6627,16 +7078,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingBadCastHandler() })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingBadCastHandler() }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because a handler without ContinueOnError ends the invocation.');
@@ -6663,16 +7115,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingNullDereferenceHandler() })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingNullDereferenceHandler() }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -6698,12 +7151,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
-        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-            new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingMutedBadCastHandler(), laterHandler })
-        );
+        Test.startTest();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingMutedBadCastHandler(), laterHandler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, laterHandler.executionCount, 'It should be 1, because ContinueOnError applies to a platform exception like any other exception the handler raises.');
@@ -6726,14 +7180,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>()));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(orchestratorException, 'It should be null, because an orchestrator that returns an empty list runs nothing and lets the DML through.');
@@ -6751,16 +7208,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingFailingHandler() })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ new ErrorsLoggingFailingHandler() }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because no Logger implementation means errors are simply rethrown.');
@@ -6781,10 +7239,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerLogger.logger = null;
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ErrorsLoggingAfterInsertOrchestrator(new List<AfterInsert.Handler>{ failingHandler, laterHandler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, failingHandler.executionCount, 'It should be 1, because the handler that fails is still executed when no logger is implemented.');
@@ -6989,7 +7450,7 @@ private class TriggerOrchestratorTest {
 
             TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(this.nestedOrchestrator);
             orchestratorRunner2.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner2.context.triggerNewRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Nested') };
+            orchestratorRunner2.context.newRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Nested') };
             orchestratorRunner2.run();
 
             this.finalizeCountAfterNestedRun = this.logger.finalizeCount;
@@ -7062,7 +7523,7 @@ private class TriggerOrchestratorTest {
         public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
             TriggerOrchestrator orchestratorRunner3 = new TriggerOrchestrator(this.nestedOrchestrator);
             orchestratorRunner3.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner3.context.triggerNewRecords = new List<Contact>{ new Contact(LastName = 'Nested') };
+            orchestratorRunner3.context.newRecords = new List<Contact>{ new Contact(LastName = 'Nested') };
             orchestratorRunner3.run();
         }
     }
@@ -7084,14 +7545,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeInsertOrchestrator(new DmlGuardInsertPopulator()));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because a before insert populator performed DML and the guard has no opt-out.');
@@ -7113,14 +7577,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeInsertOrchestrator(new DmlGuardInsertValidator()));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because the guard applies to a Validator exactly as it applies to a Populator.');
@@ -7139,14 +7606,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeInsertOrchestrator(handler));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isTrue(handler.isFinalized, 'It should be true, because a handler that qualified at least one record always gets its finalizer.');
@@ -7166,14 +7636,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeInsertOrchestrator(handler));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, handler.populateCount, 'It should be 0, because a predicate that returns false qualifies no record and the action method never runs.');
@@ -7192,14 +7665,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeInsertOrchestrator(new DmlGuardInsertServicePopulator()));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(
@@ -7221,14 +7697,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeInsertOrchestrator(handler));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(orchestratorException, 'It should be null, because the guard fires only when the DML statement counter increases across the handler span.');
@@ -7244,16 +7723,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new DmlGuardBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ cleanHandler, new DmlGuardInsertPopulator() })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ cleanHandler, new DmlGuardInsertPopulator() }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, cleanHandler.populateCount, 'It should be 1, because handlers run in list order and a handler that performs no DML passes its own span untouched.');
@@ -7273,16 +7753,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new DmlGuardBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ new DmlGuardInsertContinuePopulator(), laterHandler })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ new DmlGuardInsertContinuePopulator(), laterHandler }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because ContinueOnError covers a handler own exceptions, never a framework contract violation.');
@@ -7301,14 +7782,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeInsertOrchestrator(new DmlGuardInsertContinueThrowingPopulator()));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because the guard runs in a finally, so throwing after the DML is not a way past it.');
@@ -7327,14 +7811,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeInsertOrchestrator(handler));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isTrue(handler.hasThrown, 'It should be true, because ContinueOnError mutes the error afterwards, it does not stop the handler from running.');
@@ -7353,15 +7840,18 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeUpdateOrchestrator(new DmlGuardUpdatePopulator()));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because the guard covers before update exactly as it covers before insert.');
@@ -7381,15 +7871,18 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeUpdateOrchestrator(new DmlGuardUpdateValidator()));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because the guard applies to a Validator exactly as it applies to a Populator.');
@@ -7410,15 +7903,18 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeUpdateOrchestrator(handler));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isTrue(handler.isFinalized, 'It should be true, because a handler that qualified at least one record always gets its finalizer.');
@@ -7440,15 +7936,18 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeUpdateOrchestrator(handler));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, handler.populateCount, 'It should be 0, because a predicate that returns false qualifies no record and the action method never runs.');
@@ -7471,15 +7970,18 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeUpdateOrchestrator(new DmlGuardUpdateStatementPopulator(existingAccount)));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because the guard counts DML statements of every kind, not only inserts.');
@@ -7500,15 +8002,18 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeUpdateOrchestrator(handler));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(orchestratorException, 'It should be null, because the guard fires only when the DML statement counter increases across the handler span.');
@@ -7526,17 +8031,18 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new DmlGuardBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ new DmlGuardUpdateContinuePopulator(), laterHandler })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ new DmlGuardUpdateContinuePopulator(), laterHandler }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because ContinueOnError covers a handler own exceptions, never a framework contract violation.');
@@ -7557,15 +8063,18 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeUpdateOrchestrator(new DmlGuardUpdateContinueThrowingPopulator()));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because the guard runs in a finally, so throwing after the DML is not a way past it.');
@@ -7586,15 +8095,18 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeUpdateOrchestrator(handler));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isTrue(handler.hasThrown, 'It should be true, because ContinueOnError mutes the error afterwards, it does not stop the handler from running.');
@@ -7612,14 +8124,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardAfterInsertOrchestrator(new DmlGuardAfterInsertHandler()));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(
@@ -7638,14 +8153,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardAfterInsertOrchestrator(handler));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.handledCount, 'It should be 1, because the action method runs once for the single qualified record and performs no DML of its own.');
@@ -7667,15 +8185,18 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardAfterUpdateOrchestrator(new DmlGuardAfterUpdateHandler()));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(
@@ -7693,14 +8214,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardAfterDeleteOrchestrator(new DmlGuardAfterDeleteHandler()));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(orchestratorException, 'It should be null, because the guard covers before insert and before update only.');
@@ -7715,14 +8239,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardAfterUndeleteOrchestrator(new DmlGuardAfterUndeleteHandler()));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(orchestratorException, 'It should be null, because the guard covers before insert and before update only.');
@@ -7737,14 +8264,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new DmlGuardBeforeDeleteOrchestrator(new DmlGuardBeforeDeleteHandler()));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(
@@ -8152,10 +8682,13 @@ private class TriggerOrchestratorTest {
         ShapesBeforeInsertPopulator handler = new ShapesBeforeInsertPopulator();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeInsertOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(2, handler.actionCount, 'It should be 2, because the action method runs once for every qualified record.');
@@ -8168,10 +8701,13 @@ private class TriggerOrchestratorTest {
         ShapesBeforeInsertValidator handler = new ShapesBeforeInsertValidator();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeInsertOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(2, handler.actionCount, 'It should be 2, because a validator is asked for its message once for every qualified record.');
@@ -8184,10 +8720,13 @@ private class TriggerOrchestratorTest {
         ShapesAfterInsertHandler handler = new ShapesAfterInsertHandler();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(2, handler.actionCount, 'It should be 2, because the action method runs once for every qualified record.');
@@ -8205,11 +8744,14 @@ private class TriggerOrchestratorTest {
         ShapesBeforeUpdatePopulator handler = new ShapesBeforeUpdatePopulator();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeUpdateOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(2, handler.actionCount, 'It should be 2, because the action method runs once for every qualified record.');
@@ -8227,11 +8769,14 @@ private class TriggerOrchestratorTest {
         ShapesBeforeUpdateValidator handler = new ShapesBeforeUpdateValidator();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeUpdateOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(2, handler.actionCount, 'It should be 2, because a validator is asked for its message once for every qualified record.');
@@ -8249,11 +8794,14 @@ private class TriggerOrchestratorTest {
         ShapesAfterUpdateHandler handler = new ShapesAfterUpdateHandler();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterUpdateOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(2, handler.actionCount, 'It should be 2, because the action method runs once for every qualified record.');
@@ -8267,10 +8815,13 @@ private class TriggerOrchestratorTest {
         ShapesBeforeDeleteHandler handler = new ShapesBeforeDeleteHandler();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeDeleteOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        orchestratorRunner.context.triggerOldRecords = records;
+        orchestratorRunner.context.oldRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(2, handler.actionCount, 'It should be 2, because the action method runs once for every qualified record.');
@@ -8284,10 +8835,13 @@ private class TriggerOrchestratorTest {
         ShapesAfterDeleteHandler handler = new ShapesAfterDeleteHandler();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterDeleteOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.context.triggerOldRecords = records;
+        orchestratorRunner.context.oldRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(2, handler.actionCount, 'It should be 2, because the action method runs once for every qualified record.');
@@ -8301,10 +8855,13 @@ private class TriggerOrchestratorTest {
         ShapesAfterUndeleteHandler handler = new ShapesAfterUndeleteHandler();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterUndeleteOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(2, handler.actionCount, 'It should be 2, because the action method runs once for every qualified record.');
@@ -8318,10 +8875,13 @@ private class TriggerOrchestratorTest {
         handler.qualifies = false;
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeInsertOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, handler.actionCount, 'It should be 0, because the action method never runs for a record the predicate rejected.');
@@ -8335,10 +8895,13 @@ private class TriggerOrchestratorTest {
         handler.qualifies = false;
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeInsertOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, handler.actionCount, 'It should be 0, because a validator whose predicate returned false attaches no message.');
@@ -8352,10 +8915,13 @@ private class TriggerOrchestratorTest {
         handler.qualifies = false;
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, handler.actionCount, 'It should be 0, because the action method never runs for a record the predicate rejected.');
@@ -8373,11 +8939,14 @@ private class TriggerOrchestratorTest {
         handler.qualifies = false;
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeUpdateOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, handler.actionCount, 'It should be 0, because the action method never runs for a record the predicate rejected.');
@@ -8395,11 +8964,14 @@ private class TriggerOrchestratorTest {
         handler.qualifies = false;
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeUpdateOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, handler.actionCount, 'It should be 0, because a validator whose predicate returned false attaches no message.');
@@ -8417,11 +8989,14 @@ private class TriggerOrchestratorTest {
         handler.qualifies = false;
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterUpdateOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, handler.actionCount, 'It should be 0, because the action method never runs for a record the predicate rejected.');
@@ -8436,10 +9011,13 @@ private class TriggerOrchestratorTest {
         handler.qualifies = false;
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeDeleteOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        orchestratorRunner.context.triggerOldRecords = records;
+        orchestratorRunner.context.oldRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, handler.actionCount, 'It should be 0, because the action method never runs for a record the predicate rejected.');
@@ -8454,10 +9032,13 @@ private class TriggerOrchestratorTest {
         handler.qualifies = false;
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterDeleteOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.context.triggerOldRecords = records;
+        orchestratorRunner.context.oldRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, handler.actionCount, 'It should be 0, because the action method never runs for a record the predicate rejected.');
@@ -8472,10 +9053,13 @@ private class TriggerOrchestratorTest {
         handler.qualifies = false;
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterUndeleteOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, handler.actionCount, 'It should be 0, because the action method never runs for a record the predicate rejected.');
@@ -8488,10 +9072,13 @@ private class TriggerOrchestratorTest {
         ShapesAfterInsertHandler handler = new ShapesAfterInsertHandler();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -8510,10 +9097,13 @@ private class TriggerOrchestratorTest {
         ShapesAfterInsertHandler secondHandler = new ShapesAfterInsertHandler('Second', state);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(new List<AfterInsert.Handler>{ firstHandler, secondHandler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -8534,10 +9124,13 @@ private class TriggerOrchestratorTest {
         handler.qualifyingLeadSource = 'Web';
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.actionCount, 'It should be 1, because only the record the predicate accepted reaches the action method.');
@@ -8555,18 +9148,21 @@ private class TriggerOrchestratorTest {
         ShapesGuardedBeforeUpdatePopulator firstPass = new ShapesGuardedBeforeUpdatePopulator(1);
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeUpdateOrchestrator(firstPass));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
 
         ShapesGuardedBeforeUpdatePopulator secondPass = new ShapesGuardedBeforeUpdatePopulator(1);
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(new ShapesBeforeUpdateOrchestrator(secondPass));
         orchestratorRunner2.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner2.context.triggerNewRecords = newRecords;
-        orchestratorRunner2.context.triggerOldRecords = oldRecords;
+        orchestratorRunner2.context.newRecords = newRecords;
+        orchestratorRunner2.context.oldRecords = oldRecords;
         orchestratorRunner2.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, secondPass.actionCount, 'It should be 0, because the record exhausted its recursion budget and is skipped before qualification is even asked.');
@@ -8582,14 +9178,17 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = firstInvocation;
+        orchestratorRunner.context.newRecords = firstInvocation;
         orchestratorRunner.run();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
         orchestratorRunner2.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner2.context.triggerNewRecords = secondInvocation;
+        orchestratorRunner2.context.newRecords = secondInvocation;
         orchestratorRunner2.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -8605,10 +9204,13 @@ private class TriggerOrchestratorTest {
         ShapesAfterInsertHandler handler = new ShapesAfterInsertHandler();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(0, handler.qualifyCount, 'It should be 0, because an empty invocation has no record to qualify.');
@@ -8628,10 +9230,13 @@ private class TriggerOrchestratorTest {
         ShapesAfterInsertHandler handler = new ShapesAfterInsertHandler();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(201, handler.actionCount, 'It should be 201, because every record of the invocation reaches the handler, with no internal 200-record cap.');
@@ -8654,10 +9259,13 @@ private class TriggerOrchestratorTest {
         handler.qualifyingLeadSource = 'Web';
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(201, handler.qualifyCount, 'It should be 201, because qualification is evaluated once for every record of the invocation.');
@@ -8677,10 +9285,13 @@ private class TriggerOrchestratorTest {
         ShapesBeforeInsertPopulator handler = new ShapesBeforeInsertPopulator();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeInsertOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(201, handler.actionCount, 'It should be 201, because a before context populates every record of the invocation.');
@@ -8706,11 +9317,14 @@ private class TriggerOrchestratorTest {
         ShapesAfterUpdateHandler handler = new ShapesAfterUpdateHandler();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterUpdateOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(201, handler.actionCount, 'It should be 201, because the recursion budget is keyed per record, so chunk size never exhausts it.');
@@ -8735,14 +9349,17 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(new ShapesAfterInsertHandler('Chunk', state)));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = firstRecords;
+        orchestratorRunner.context.newRecords = firstRecords;
         orchestratorRunner.run();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(new ShapesAfterInsertHandler('Chunk', state)));
         orchestratorRunner2.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner2.context.triggerNewRecords = secondRecords;
+        orchestratorRunner2.context.newRecords = secondRecords;
         orchestratorRunner2.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(201, state.processedCount, 'It should be 201, because state a handler carries across chunks never makes the framework skip a record.');
@@ -8763,14 +9380,17 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = firstAttempt;
+        orchestratorRunner.context.newRecords = firstAttempt;
         orchestratorRunner.run();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
         orchestratorRunner2.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner2.context.triggerNewRecords = retryAttempt;
+        orchestratorRunner2.context.newRecords = retryAttempt;
         orchestratorRunner2.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -8796,16 +9416,19 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterUpdateOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = firstNewRecords;
-        orchestratorRunner.context.triggerOldRecords = firstOldRecords;
+        orchestratorRunner.context.newRecords = firstNewRecords;
+        orchestratorRunner.context.oldRecords = firstOldRecords;
         orchestratorRunner.run();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner2 = new TriggerOrchestrator(new ShapesAfterUpdateOrchestrator(handler));
         orchestratorRunner2.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner2.context.triggerNewRecords = retryNewRecords;
-        orchestratorRunner2.context.triggerOldRecords = retryOldRecords;
+        orchestratorRunner2.context.newRecords = retryNewRecords;
+        orchestratorRunner2.context.oldRecords = retryOldRecords;
         orchestratorRunner2.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -8823,10 +9446,13 @@ private class TriggerOrchestratorTest {
         ShapesBeforeDeleteHandler handler = new ShapesBeforeDeleteHandler();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeDeleteOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        orchestratorRunner.context.triggerOldRecords = records;
+        orchestratorRunner.context.oldRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(handler.newRecords[0], 'It should be null, because a delete context has no new record, only the row being deleted.');
@@ -8840,10 +9466,13 @@ private class TriggerOrchestratorTest {
         ShapesAfterDeleteHandler handler = new ShapesAfterDeleteHandler();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterDeleteOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.context.triggerOldRecords = records;
+        orchestratorRunner.context.oldRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(handler.newRecords[0], 'It should be null, because a delete context has no new record, only the row being deleted.');
@@ -8860,10 +9489,13 @@ private class TriggerOrchestratorTest {
         ShapesAfterDeleteHandler handler = new ShapesAfterDeleteHandler();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterDeleteOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.context.triggerOldRecords = records;
+        orchestratorRunner.context.oldRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -8884,10 +9516,13 @@ private class TriggerOrchestratorTest {
         handler.qualifyingLeadSource = 'Web';
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterDeleteOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.context.triggerOldRecords = records;
+        orchestratorRunner.context.oldRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.actionCount, 'It should be 1, because a delete context has no new record, so value predicates read the deleted row instead.');
@@ -8901,10 +9536,13 @@ private class TriggerOrchestratorTest {
         ShapesAfterDeleteHandler handler = new ShapesAfterDeleteHandler();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterDeleteOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.context.triggerOldRecords = records;
+        orchestratorRunner.context.oldRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -8922,14 +9560,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterDeleteOrchestrator(new ShapesPuttingAfterDeleteHandler()));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-            orchestratorRunner.context.triggerOldRecords = records;
+            orchestratorRunner.context.oldRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because a handler that casts its way past DeleteRecord finds no new record to write to.');
@@ -8948,14 +9589,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
             TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeDeleteOrchestrator(new ShapesPuttingBeforeDeleteHandler()));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-            orchestratorRunner.context.triggerOldRecords = records;
+            orchestratorRunner.context.oldRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown, because a handler that casts its way past DeleteRecord finds no new record to write to.');
@@ -8972,10 +9616,13 @@ private class TriggerOrchestratorTest {
         ShapesBeforeInsertPopulator handler = new ShapesBeforeInsertPopulator();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeInsertOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -8992,10 +9639,13 @@ private class TriggerOrchestratorTest {
         ShapesBeforeInsertPopulator handler = new ShapesBeforeInsertPopulator();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesBeforeInsertOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(handler.recordIds[0], 'It should be null, because in before insert the record has not been assigned an id yet.');
@@ -9010,10 +9660,13 @@ private class TriggerOrchestratorTest {
         ShapesAfterInsertHandler handler = new ShapesAfterInsertHandler();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterInsertOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -9036,11 +9689,14 @@ private class TriggerOrchestratorTest {
         ShapesAfterUpdateHandler handler = new ShapesAfterUpdateHandler();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterUpdateOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -9074,10 +9730,13 @@ private class TriggerOrchestratorTest {
         ShapesAfterUndeleteHandler handler = new ShapesAfterUndeleteHandler();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterUndeleteOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual('Restored', handler.newRecords[0].get(Contact.LastName), 'It should be Restored, because after undelete carries the recycled record as the new one.');
@@ -9096,10 +9755,13 @@ private class TriggerOrchestratorTest {
         handler.qualifyingLeadSource = 'Web';
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new ShapesAfterUndeleteOrchestrator(handler));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(1, handler.actionCount, 'It should be 1, because value predicates in after undelete read the restored record on the new side.');
@@ -9512,10 +10174,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -9545,10 +10210,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -9585,10 +10253,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -9616,11 +10287,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -9652,11 +10326,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -9694,11 +10371,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -9725,10 +10405,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -9755,10 +10438,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -9785,10 +10471,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.context.triggerNewRecords = records;
+        orchestratorRunner.context.newRecords = records;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -9819,11 +10508,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -9855,11 +10547,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(orchestrator);
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -10237,10 +10932,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -10273,10 +10971,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -10311,15 +11012,17 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
-        Integer queriesBefore = Limits.getQueries();
-
         // Test
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ populator, validator }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -10354,11 +11057,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -10389,11 +11095,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -10428,16 +11137,18 @@ private class TriggerOrchestratorTest {
 
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
-        Integer queriesBefore = Limits.getQueries();
-
         // Test
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
 
         Integer queriesAfter = Limits.getQueries();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -10468,11 +11179,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -10507,11 +11221,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -10541,10 +11258,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -10579,11 +11299,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -10614,11 +11337,14 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -10652,10 +11378,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentBeforeDeleteOrchestrator(new List<BeforeDelete.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -10689,10 +11418,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentAfterDeleteOrchestrator(new List<AfterDelete.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        orchestratorRunner.context.triggerOldRecords = oldRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -10726,10 +11458,13 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
 
         // Test
+        Test.startTest();
         TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapEnrichmentAfterUndeleteOrchestrator(new List<AfterUndelete.Handler>{ handler }));
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        orchestratorRunner.context.triggerNewRecords = newRecords;
+        orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
+
+        Test.stopTest();
 
         // Verify
         Assert.areEqual(
@@ -11108,16 +11843,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new GapContinueOnErrorBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ failingPopulator, laterPopulator })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapContinueOnErrorBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ failingPopulator, laterPopulator }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(
@@ -11139,16 +11875,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new GapContinueOnErrorBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ failingPopulator, laterPopulator })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapContinueOnErrorBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ failingPopulator, laterPopulator }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(
@@ -11175,16 +11912,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new GapContinueOnErrorBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ failingValidator, laterValidator })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapContinueOnErrorBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ failingValidator, laterValidator }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(
@@ -11207,16 +11945,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new GapContinueOnErrorBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ failingValidator, laterValidator })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapContinueOnErrorBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ failingValidator, laterValidator }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(
@@ -11245,16 +11984,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new GapContinueOnErrorAfterInsertOrchestrator(new List<AfterInsert.Handler>{ failingHandler, laterHandler })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapContinueOnErrorAfterInsertOrchestrator(new List<AfterInsert.Handler>{ failingHandler, laterHandler }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(orchestratorException, 'It should be null, because the after insert adapter continues on error for a handler that implements AfterInsert.ContinueOnError.');
@@ -11274,16 +12014,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new GapContinueOnErrorAfterInsertOrchestrator(new List<AfterInsert.Handler>{ failingHandler, laterHandler })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapContinueOnErrorAfterInsertOrchestrator(new List<AfterInsert.Handler>{ failingHandler, laterHandler }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(
@@ -11312,17 +12053,18 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new GapContinueOnErrorBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ failingPopulator, laterPopulator })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapContinueOnErrorBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ failingPopulator, laterPopulator }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(
@@ -11346,17 +12088,18 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new GapContinueOnErrorBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ failingPopulator, laterPopulator })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapContinueOnErrorBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ failingPopulator, laterPopulator }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(
@@ -11385,17 +12128,18 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new GapContinueOnErrorBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ failingValidator, laterValidator })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapContinueOnErrorBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ failingValidator, laterValidator }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(
@@ -11420,17 +12164,18 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new GapContinueOnErrorBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ failingValidator, laterValidator })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapContinueOnErrorBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ failingValidator, laterValidator }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(
@@ -11460,17 +12205,18 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new GapContinueOnErrorAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ failingHandler, laterHandler })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapContinueOnErrorAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ failingHandler, laterHandler }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(orchestratorException, 'It should be null, because the after update adapter continues on error for a handler that implements AfterUpdate.ContinueOnError.');
@@ -11491,17 +12237,18 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new GapContinueOnErrorAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ failingHandler, laterHandler })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapContinueOnErrorAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ failingHandler, laterHandler }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.triggerNewRecords = newRecords;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(
@@ -11529,16 +12276,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new GapContinueOnErrorBeforeDeleteOrchestrator(new List<BeforeDelete.Handler>{ failingHandler, laterHandler })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapContinueOnErrorBeforeDeleteOrchestrator(new List<BeforeDelete.Handler>{ failingHandler, laterHandler }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(orchestratorException, 'It should be null, because the before delete adapter continues on error for a handler that implements BeforeDelete.ContinueOnError.');
@@ -11558,16 +12306,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new GapContinueOnErrorBeforeDeleteOrchestrator(new List<BeforeDelete.Handler>{ failingHandler, laterHandler })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapContinueOnErrorBeforeDeleteOrchestrator(new List<BeforeDelete.Handler>{ failingHandler, laterHandler }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(
@@ -11595,16 +12344,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new GapContinueOnErrorAfterDeleteOrchestrator(new List<AfterDelete.Handler>{ failingHandler, laterHandler })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapContinueOnErrorAfterDeleteOrchestrator(new List<AfterDelete.Handler>{ failingHandler, laterHandler }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(orchestratorException, 'It should be null, because the after delete adapter continues on error for a handler that implements AfterDelete.ContinueOnError.');
@@ -11624,16 +12374,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new GapContinueOnErrorAfterDeleteOrchestrator(new List<AfterDelete.Handler>{ failingHandler, laterHandler })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapContinueOnErrorAfterDeleteOrchestrator(new List<AfterDelete.Handler>{ failingHandler, laterHandler }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-            orchestratorRunner.context.triggerOldRecords = oldRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(
@@ -11661,16 +12412,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new GapContinueOnErrorAfterUndeleteOrchestrator(new List<AfterUndelete.Handler>{ failingHandler, laterHandler })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapContinueOnErrorAfterUndeleteOrchestrator(new List<AfterUndelete.Handler>{ failingHandler, laterHandler }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNull(
@@ -11693,16 +12445,17 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         // Test
+        Test.startTest();
         try {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new GapContinueOnErrorAfterUndeleteOrchestrator(new List<AfterUndelete.Handler>{ failingHandler, laterHandler })
-            );
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new GapContinueOnErrorAfterUndeleteOrchestrator(new List<AfterUndelete.Handler>{ failingHandler, laterHandler }));
             orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-            orchestratorRunner.context.triggerNewRecords = records;
+            orchestratorRunner.context.newRecords = records;
             orchestratorRunner.run();
         } catch (Exception e) {
             orchestratorException = e;
         }
+
+        Test.stopTest();
 
         // Verify
         Assert.isNotNull(

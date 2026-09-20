@@ -15,6 +15,7 @@ jobs:
       sf-cli-version: "latest"
       scratch-org-duration: 1
       test-level: "RunLocalTests"
+      template-ref: feat/deploy-error-report
       upload-to-codecov: true
       codecov-slug: ${{ github.repository }} # Automatically uses current repository
     secrets:

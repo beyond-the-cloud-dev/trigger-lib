@@ -608,14 +608,15 @@ public with sharing class TriggerOrchestrator {
             Integer dmlStatementsBefore = Limits.getDmlStatements();
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
-            try {
-                super.execute(records);
-            } finally {
-                if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
-                    throw new TriggerOrchestratorException(
-                        this.handlerName + ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
-                    );
-                }
+            super.execute(records);
+
+            Integer dmlStatementsAfter = Limits.getDmlStatements();
+            Integer immediateEventsAfter = Limits.getPublishImmediateDML();
+
+            if (dmlStatementsAfter > dmlStatementsBefore || immediateEventsAfter > immediateEventsBefore) {
+                throw new TriggerOrchestratorException(
+                    this.handlerName + ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
+                );
             }
         }
 
@@ -663,14 +664,15 @@ public with sharing class TriggerOrchestrator {
             Integer dmlStatementsBefore = Limits.getDmlStatements();
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
-            try {
-                super.execute(records);
-            } finally {
-                if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
-                    throw new TriggerOrchestratorException(
-                        this.handlerName + ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
-                    );
-                }
+            super.execute(records);
+
+            Integer dmlStatementsAfter = Limits.getDmlStatements();
+            Integer immediateEventsAfter = Limits.getPublishImmediateDML();
+
+            if (dmlStatementsAfter > dmlStatementsBefore || immediateEventsAfter > immediateEventsBefore) {
+                throw new TriggerOrchestratorException(
+                    this.handlerName + ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
+                );
             }
         }
 
@@ -767,14 +769,15 @@ public with sharing class TriggerOrchestrator {
             Integer dmlStatementsBefore = Limits.getDmlStatements();
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
-            try {
-                super.execute(records);
-            } finally {
-                if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
-                    throw new TriggerOrchestratorException(
-                        this.handlerName + ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
-                    );
-                }
+            super.execute(records);
+
+            Integer dmlStatementsAfter = Limits.getDmlStatements();
+            Integer immediateEventsAfter = Limits.getPublishImmediateDML();
+
+            if (dmlStatementsAfter > dmlStatementsBefore || immediateEventsAfter > immediateEventsBefore) {
+                throw new TriggerOrchestratorException(
+                    this.handlerName + ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
+                );
             }
         }
 
@@ -868,14 +871,15 @@ public with sharing class TriggerOrchestrator {
             Integer dmlStatementsBefore = Limits.getDmlStatements();
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
-            try {
-                super.execute(records);
-            } finally {
-                if (Limits.getDmlStatements() > dmlStatementsBefore || Limits.getPublishImmediateDML() > immediateEventsBefore) {
-                    throw new TriggerOrchestratorException(
-                        this.handlerName + ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
-                    );
-                }
+            super.execute(records);
+
+            Integer dmlStatementsAfter = Limits.getDmlStatements();
+            Integer immediateEventsAfter = Limits.getPublishImmediateDML();
+
+            if (dmlStatementsAfter > dmlStatementsBefore || immediateEventsAfter > immediateEventsBefore) {
+                throw new TriggerOrchestratorException(
+                    this.handlerName + ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
+                );
             }
         }
 

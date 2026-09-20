@@ -343,11 +343,7 @@ public with sharing class TriggerOrchestrator {
             orchestrator.lookupEnrichment.queryParentRelationships(activeHandlers);
 
             for (TriggerHandlerAdapter adapter : activeHandlers) {
-                try {
-                    adapter.execute(orchestrator.context.triggerRecords);
-                } catch (Exception e) {
-                    adapter.handleException(e);
-                }
+                adapter.execute(orchestrator.context.triggerRecords);
 
                 orchestrator.lookupEnrichment.requeryWhenParentLookupChanged(adapter.getProcessedRecords());
             }
@@ -535,20 +531,24 @@ public with sharing class TriggerOrchestrator {
         }
 
         public virtual void execute(List<TriggerHandler.TriggerRecord> records) {
-            for (TriggerHandler.TriggerRecord record : records) {
-                if (this.isRecursionDepthExceeded(record)) {
-                    continue;
+            try {
+                for (TriggerHandler.TriggerRecord record : records) {
+                    if (this.isRecursionDepthExceeded(record)) {
+                        continue;
+                    }
+
+                    if (!this.isQualified(record)) {
+                        continue;
+                    }
+
+                    this.registerRecord(record);
+
+                    this.processedRecords.add(record);
+
+                    this.executeOn(record);
                 }
-
-                if (!this.isQualified(record)) {
-                    continue;
-                }
-
-                this.registerRecord(record);
-
-                this.processedRecords.add(record);
-
-                this.executeOn(record);
+            } catch (Exception e) {
+                this.handleException(e);
             }
 
             if (!this.processedRecords.isEmpty()) {
@@ -561,15 +561,11 @@ public with sharing class TriggerOrchestrator {
         }
 
         public void handleException(Exception e) {
-            this.logError(e);
+            TriggerOrchestrator.triggerLogger.log(new TriggerError().withException(e).withHandlerName(this.handlerName).withContext(this.orchestrator.context));
 
             if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !this.continuesOnError()) {
                 throw e;
             }
-        }
-
-        private void logError(Exception e) {
-            TriggerOrchestrator.triggerLogger.log(new TriggerError().withException(e).withHandlerName(this.handlerName).withContext(this.orchestrator.context));
         }
 
         public Boolean isBypassed() {

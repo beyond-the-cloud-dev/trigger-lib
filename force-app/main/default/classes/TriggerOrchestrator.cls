@@ -89,11 +89,13 @@ public with sharing class TriggerOrchestrator {
     @TestVisible
     private TriggerContext context;
     private Object orchestrator;
+    private LookupEnrichment lookupEnrichment;
 
     @TestVisible
     private TriggerOrchestrator(Object orchestrator) {
         this.orchestrator = orchestrator;
         this.context = new TriggerContext();
+        this.lookupEnrichment = new LookupEnrichment(this.context.triggerRecords);
     }
 
     @TestVisible
@@ -340,22 +342,18 @@ public with sharing class TriggerOrchestrator {
 
     private abstract class ExecutionStrategy {
         public void execute(TriggerOrchestrator orchestrator) {
-            List<TriggerHandler.TriggerRecord> triggerRecords = orchestrator.context.triggerRecords;
             List<TriggerHandlerAdapter> activeHandlers = this.getActiveHandlers(orchestrator);
 
-            ParentRelationshipEnrichment parentRelationshipEnrichment = new ParentRelationshipEnrichment();
-
-            parentRelationshipEnrichment.extractFieldsToEnrich(activeHandlers);
-            parentRelationshipEnrichment.enrichRecordsLookups(triggerRecords);
+            orchestrator.lookupEnrichment.queryParentRelationships(activeHandlers);
 
             for (TriggerHandlerAdapter adapter : activeHandlers) {
                 try {
-                    adapter.execute(triggerRecords);
+                    adapter.execute(orchestrator.context.triggerRecords);
                 } catch (Exception e) {
                     adapter.handleException(e);
                 }
 
-                this.requeryChangedParentLookups(parentRelationshipEnrichment, adapter.getProcessedRecords());
+                orchestrator.lookupEnrichment.requeryWhenParentLookupChanged(adapter.getProcessedRecords());
             }
         }
 
@@ -372,16 +370,9 @@ public with sharing class TriggerOrchestrator {
         }
 
         protected abstract List<TriggerHandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator);
-
-        protected virtual void requeryChangedParentLookups(ParentRelationshipEnrichment parentRelationshipEnrichment, List<TriggerHandler.TriggerRecord> records) {
-        }
     }
 
     private class BeforeInsertExecutionStrategy extends ExecutionStrategy {
-        protected override void requeryChangedParentLookups(ParentRelationshipEnrichment parentRelationshipEnrichment, List<TriggerHandler.TriggerRecord> records) {
-            parentRelationshipEnrichment.requeryWhenParentLookupChanged(records);
-        }
-
         public override List<TriggerHandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator) {
             List<TriggerHandlerAdapter> handlerAdapters = new List<TriggerHandlerAdapter>();
 
@@ -410,10 +401,6 @@ public with sharing class TriggerOrchestrator {
     }
 
     private class BeforeUpdateExecutionStrategy extends ExecutionStrategy {
-        protected override void requeryChangedParentLookups(ParentRelationshipEnrichment parentRelationshipEnrichment, List<TriggerHandler.TriggerRecord> records) {
-            parentRelationshipEnrichment.requeryWhenParentLookupChanged(records);
-        }
-
         public override List<TriggerHandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator) {
             List<TriggerHandlerAdapter> handlerAdapters = new List<TriggerHandlerAdapter>();
 
@@ -1149,14 +1136,25 @@ public with sharing class TriggerOrchestrator {
         }
     }
 
-    private class ParentRelationshipEnrichment {
+    private class LookupEnrichment {
         private Set<SObjectField> newParentLookupsToEnrich = new Set<SObjectField>();
         private Set<SObjectField> oldParentLookupsToEnrich = new Set<SObjectField>();
 
         private Map<SObjectField, Set<String>> fieldsToQueryByParentLookup = new Map<SObjectField, Set<String>>();
         private Map<SObjectField, Map<Id, SObject>> cachedParentByParentLookup = new Map<SObjectField, Map<Id, SObject>>();
 
-        public void extractFieldsToEnrich(List<TriggerHandlerAdapter> handlers) {
+        private List<TriggerHandler.TriggerRecord> triggerRecords;
+
+        public LookupEnrichment(List<TriggerHandler.TriggerRecord> triggerRecords) {
+            this.triggerRecords = triggerRecords;
+        }
+
+        public void queryParentRelationships(List<TriggerHandlerAdapter> handlers) {
+            this.extractFieldsToEnrichList(handlers);
+            this.enrichRecordsLookups();
+        }
+
+        private void extractFieldsToEnrichList(List<TriggerHandlerAdapter> handlers) {
             for (TriggerHandlerAdapter handler : handlers) {
                 if (handler instanceof NewRecordEnricher) {
                     this.declareNewFieldsToEnrich(((NewRecordEnricher) handler).getNewFieldsToEnrich());
@@ -1167,17 +1165,17 @@ public with sharing class TriggerOrchestrator {
             }
         }
 
-        public void enrichRecordsLookups(List<TriggerHandler.TriggerRecord> records) {
+        private void enrichRecordsLookups() {
             for (SObjectField parentField : this.fieldsToQueryByParentLookup.keySet()) {
                 Set<Id> parentIdsToQuery = new Set<Id>();
 
-                parentIdsToQuery.addAll(this.notQueriedNewParentIds(parentField, records));
-                parentIdsToQuery.addAll(this.notQueriedOldParentIds(parentField, records));
+                parentIdsToQuery.addAll(this.notQueriedNewParentIds(parentField, this.triggerRecords));
+                parentIdsToQuery.addAll(this.notQueriedOldParentIds(parentField, this.triggerRecords));
 
                 this.queryParentsRelationships(parentField, parentIdsToQuery);
 
-                this.attachNewToTriggerRecords(parentField, records);
-                this.attachOldToTriggerRecords(parentField, records);
+                this.attachNewToTriggerRecords(parentField, this.triggerRecords);
+                this.attachOldToTriggerRecords(parentField, this.triggerRecords);
             }
         }
 

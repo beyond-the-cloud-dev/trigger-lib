@@ -304,8 +304,21 @@ public with sharing class TriggerHandler {
 
     // Implementation
 
-    public static RandomIdGenerator IdGenerator = new RandomIdGenerator();
+    @TestVisible
+    private static RandomIdGenerator IdGenerator = new RandomIdGenerator();
     private static RecordTypesInfo RecordTypesInfo = new RecordTypesInfo();
+
+    public static List<TriggerRecord> getTriggerRecordsFrom(List<SObject> newRecords, List<SObject> oldRecords) {
+        List<TriggerRecord> triggerRecords = new List<TriggerRecord>();
+
+        Integer recordCount = (newRecords ?? oldRecords)?.size() ?? 0;
+
+        for (Integer i = 0; i < recordCount; i++) {
+            triggerRecords.add(new TriggerRecord(newRecords?.get(i), oldRecords?.get(i)));
+        }
+
+        return triggerRecords;
+    }
 
     public class FieldSelector implements FieldSelection {
         private List<String> fields = new List<String>();

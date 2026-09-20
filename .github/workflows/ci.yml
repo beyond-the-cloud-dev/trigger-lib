@@ -9,7 +9,7 @@ on:
 
 jobs:
   salesforce-ci:
-    uses: beyond-the-cloud-dev/cicd-template/.github/workflows/salesforce-ci.yml@main
+    uses: beyond-the-cloud-dev/cicd-template/.github/workflows/salesforce-ci.yml@feat/deploy-error-report
     with:
       node-version: "22"
       sf-cli-version: "latest"

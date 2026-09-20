@@ -3333,134 +3333,6 @@ private class TriggerOrchestratorTest {
     }
 
     @IsTest
-    static void orchestratorRecursionGuardAppliesToEveryBeforeUpdateHandler() {
-        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
-        List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
-        List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
-
-        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
-        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
-
-        RecursionBeforeUpdateHandler firstHandler = new RecursionBeforeUpdateHandler();
-        RecursionSecondBeforeUpdateHandler secondHandler = new RecursionSecondBeforeUpdateHandler();
-
-        // Test
-        Test.startTest();
-        for (Integer i = 0; i < 7; i++) {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new RecursionGuardedBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ firstHandler, secondHandler }, 5)
-            );
-            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.newRecords = newRecords;
-            orchestratorRunner.context.oldRecords = oldRecords;
-            orchestratorRunner.run();
-        }
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(5, firstHandler.runCount, 'It should be 5.');
-        Assert.areEqual(5, secondHandler.runCount, 'It should be 5.');
-    }
-
-    @IsTest
-    static void orchestratorRecursionGuardAppliesToEveryAfterUpdateHandler() {
-        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
-        List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
-        List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
-
-        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
-        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
-
-        RecursionAfterUpdateHandler firstHandler = new RecursionAfterUpdateHandler();
-        RecursionSecondAfterUpdateHandler secondHandler = new RecursionSecondAfterUpdateHandler();
-
-        // Test
-        Test.startTest();
-        for (Integer i = 0; i < 7; i++) {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new RecursionGuardedAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ firstHandler, secondHandler }, 5)
-            );
-            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.newRecords = newRecords;
-            orchestratorRunner.context.oldRecords = oldRecords;
-            orchestratorRunner.run();
-        }
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(5, firstHandler.runCount, 'It should be 5.');
-        Assert.areEqual(5, secondHandler.runCount, 'It should be 5.');
-    }
-
-    @IsTest
-    static void handlerRecursionGuardBeatsOrchestratorRecursionGuardOnBeforeUpdate() {
-        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
-        List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
-        List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
-
-        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
-        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
-
-        RecursionGuardedBeforeUpdateHandler guardedHandler = new RecursionGuardedBeforeUpdateHandler(2);
-        RecursionBeforeUpdateHandler unguardedHandler = new RecursionBeforeUpdateHandler();
-
-        // Test
-        Test.startTest();
-        for (Integer i = 0; i < 7; i++) {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new RecursionGuardedBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ guardedHandler, unguardedHandler }, 5)
-            );
-            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.newRecords = newRecords;
-            orchestratorRunner.context.oldRecords = oldRecords;
-            orchestratorRunner.run();
-        }
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            2,
-            guardedHandler.runCount,
-            'It should be 2, because BeforeUpdate.RecursionGuard on the handler is resolved last and always wins over TriggerOrchestrator.RecursionGuard.'
-        );
-        Assert.areEqual(5, unguardedHandler.runCount, 'It should be 5.');
-    }
-
-    @IsTest
-    static void handlerRecursionGuardBeatsOrchestratorRecursionGuardOnAfterUpdate() {
-        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
-        List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
-        List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
-
-        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
-        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
-
-        RecursionGuardedAfterUpdateHandler guardedHandler = new RecursionGuardedAfterUpdateHandler(2);
-        RecursionAfterUpdateHandler unguardedHandler = new RecursionAfterUpdateHandler();
-
-        // Test
-        Test.startTest();
-        for (Integer i = 0; i < 7; i++) {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new RecursionGuardedAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ guardedHandler, unguardedHandler }, 5)
-            );
-            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.newRecords = newRecords;
-            orchestratorRunner.context.oldRecords = oldRecords;
-            orchestratorRunner.run();
-        }
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            2,
-            guardedHandler.runCount,
-            'It should be 2, because AfterUpdate.RecursionGuard on the handler is resolved last and always wins over TriggerOrchestrator.RecursionGuard.'
-        );
-        Assert.areEqual(5, unguardedHandler.runCount, 'It should be 5.');
-    }
-
-    @IsTest
     static void noRecursionGuardAnywhereFallsBackToThreePassesOnBeforeUpdate() {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
@@ -9094,47 +8966,11 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class RecursionGuardedBeforeUpdateOrchestrator implements TriggerOrchestrator.BeforeUpdate, TriggerOrchestrator.RecursionGuard {
-        private List<BeforeUpdate.Handler> handlers;
-        private Integer maxRecursionDepth;
-
-        public RecursionGuardedBeforeUpdateOrchestrator(List<BeforeUpdate.Handler> handlers, Integer maxRecursionDepth) {
-            this.handlers = handlers;
-            this.maxRecursionDepth = maxRecursionDepth;
-        }
-
-        public Integer maxRecursionDepth() {
-            return this.maxRecursionDepth;
-        }
-
-        public List<BeforeUpdate.Handler> beforeUpdateHandlers() {
-            return this.handlers;
-        }
-    }
-
     private class RecursionAfterUpdateOrchestrator implements TriggerOrchestrator.AfterUpdate {
         private List<AfterUpdate.Handler> handlers;
 
         public RecursionAfterUpdateOrchestrator(List<AfterUpdate.Handler> handlers) {
             this.handlers = handlers;
-        }
-
-        public List<AfterUpdate.Handler> afterUpdateHandlers() {
-            return this.handlers;
-        }
-    }
-
-    private class RecursionGuardedAfterUpdateOrchestrator implements TriggerOrchestrator.AfterUpdate, TriggerOrchestrator.RecursionGuard {
-        private List<AfterUpdate.Handler> handlers;
-        private Integer maxRecursionDepth;
-
-        public RecursionGuardedAfterUpdateOrchestrator(List<AfterUpdate.Handler> handlers, Integer maxRecursionDepth) {
-            this.handlers = handlers;
-            this.maxRecursionDepth = maxRecursionDepth;
-        }
-
-        public Integer maxRecursionDepth() {
-            return this.maxRecursionDepth;
         }
 
         public List<AfterUpdate.Handler> afterUpdateHandlers() {

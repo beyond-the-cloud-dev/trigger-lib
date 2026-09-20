@@ -1,8 +1,4 @@
-public with sharing class AccountTriggerOrchestrator implements TriggerOrchestrator.BeforeInsert, TriggerOrchestrator.AfterInsert, TriggerOrchestrator.BeforeUpdate, TriggerOrchestrator.AfterUpdate, TriggerOrchestrator.RecursionGuard {
-    public Integer maxRecursionDepth() {
-        return 2;
-    }
-
+public with sharing class AccountTriggerOrchestrator implements TriggerOrchestrator.BeforeInsert, TriggerOrchestrator.AfterInsert, TriggerOrchestrator.BeforeUpdate, TriggerOrchestrator.AfterUpdate {
     public List<BeforeInsert.Handler> beforeInsertHandlers() {
         return new List<BeforeInsert.Handler>{
             new AccountParentDefaultsPopulator(),

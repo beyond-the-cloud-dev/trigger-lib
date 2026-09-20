@@ -45,10 +45,6 @@ public with sharing class TriggerOrchestrator {
         List<AfterUndelete.Handler> afterUndeleteHandlers();
     }
 
-    public interface RecursionGuard {
-        Integer maxRecursionDepth();
-    }
-
     public interface Logger {
         void log(TriggerOrchestrator.Error error);
         void finalize();
@@ -810,34 +806,8 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isRecursionDepthExceeded(TriggerHandler.TriggerRecord record) {
-            if (this.maxRecursionDepth == null) {
-                this.maxRecursionDepth = 3;
-
-                if (this.orchestrator.orchestrator instanceof TriggerOrchestrator.RecursionGuard) {
-                    this.maxRecursionDepth = ((TriggerOrchestrator.RecursionGuard) this.orchestrator.orchestrator).maxRecursionDepth();
-
-                    if (this.maxRecursionDepth == null || this.maxRecursionDepth < 1) {
-                        throw new TriggerOrchestratorException(
-                            this.orchestrator.toString().substringBefore(':') +
-                                ' returned a recursion depth of ' +
-                                this.maxRecursionDepth +
-                                ' from maxRecursionDepth(). The minimum is 1, meaning the handler runs once per record.'
-                        );
-                    }
-                }
-
-                if (this.handler instanceof BeforeUpdate.RecursionGuard) {
-                    this.maxRecursionDepth = ((BeforeUpdate.RecursionGuard) this.handler).maxRecursionDepthOnBeforeUpdate();
-
-                    if (this.maxRecursionDepth == null || this.maxRecursionDepth < 1) {
-                        throw new TriggerOrchestratorException(
-                            this.handlerName +
-                                ' returned a recursion depth of ' +
-                                this.maxRecursionDepth +
-                                ' from maxRecursionDepthOnBeforeUpdate(). The minimum is 1, meaning the handler runs once per record.'
-                        );
-                    }
-                }
+            if (this.maxRecursionDepth == null && this.handler instanceof BeforeUpdate.RecursionGuard) {
+                this.maxRecursionDepth = ((BeforeUpdate.RecursionGuard) this.handler).maxRecursionDepthOnBeforeUpdate();
             }
 
             return (this.recursionDepthByRecord.get(record.getId()) ?? 0) >= this.maxRecursionDepth;
@@ -964,34 +934,8 @@ public with sharing class TriggerOrchestrator {
         }
 
         public override Boolean isRecursionDepthExceeded(TriggerHandler.TriggerRecord record) {
-            if (this.maxRecursionDepth == null) {
-                this.maxRecursionDepth = 3;
-
-                if (this.orchestrator.orchestrator instanceof TriggerOrchestrator.RecursionGuard) {
-                    this.maxRecursionDepth = ((TriggerOrchestrator.RecursionGuard) this.orchestrator.orchestrator).maxRecursionDepth();
-
-                    if (this.maxRecursionDepth == null || this.maxRecursionDepth < 1) {
-                        throw new TriggerOrchestratorException(
-                            this.orchestrator.toString().substringBefore(':') +
-                                ' returned a recursion depth of ' +
-                                this.maxRecursionDepth +
-                                ' from maxRecursionDepth(). The minimum is 1, meaning the handler runs once per record.'
-                        );
-                    }
-                }
-
-                if (this.handler instanceof AfterUpdate.RecursionGuard) {
-                    this.maxRecursionDepth = ((AfterUpdate.RecursionGuard) this.handler).maxRecursionDepthOnAfterUpdate();
-
-                    if (this.maxRecursionDepth == null || this.maxRecursionDepth < 1) {
-                        throw new TriggerOrchestratorException(
-                            this.handlerName +
-                                ' returned a recursion depth of ' +
-                                this.maxRecursionDepth +
-                                ' from maxRecursionDepthOnAfterUpdate(). The minimum is 1, meaning the handler runs once per record.'
-                        );
-                    }
-                }
+            if (this.maxRecursionDepth == null && this.handler instanceof AfterUpdate.RecursionGuard) {
+                this.maxRecursionDepth = ((AfterUpdate.RecursionGuard) this.handler).maxRecursionDepthOnAfterUpdate();
             }
 
             return (this.recursionDepthByRecord.get(record.getId()) ?? 0) >= this.maxRecursionDepth;

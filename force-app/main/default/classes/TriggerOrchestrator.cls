@@ -80,10 +80,8 @@ public with sharing class TriggerOrchestrator {
 
     // Implementations
 
-    @TestVisible
-    private static TriggerLogger triggerLogger = new TriggerLogger();
-    @TestVisible
     private static TriggerSettings triggerSettings = new TriggerSettings();
+    private static TriggerLogger triggerLogger = new TriggerLogger();
     private static TriggerBypass triggerBypass = new TriggerBypass();
     private static TriggerStack triggerStack = new TriggerStack();
     private static TriggerDepth triggerDepth = new TriggerDepth();
@@ -164,7 +162,6 @@ public with sharing class TriggerOrchestrator {
                 if (this.sObjectType == null) {
                     this.sObjectType = (this.newRecords ?? this.oldRecords)?.getSObjectType();
                 }
-
                 return this.sObjectType;
             }
             private set;
@@ -173,15 +170,8 @@ public with sharing class TriggerOrchestrator {
         public List<TriggerHandler.TriggerRecord> triggerRecords {
             get {
                 if (this.triggerRecords == null) {
-                    this.triggerRecords = new List<TriggerHandler.TriggerRecord>();
-
-                    Integer recordCount = (this.newRecords ?? this.oldRecords)?.size() ?? 0;
-
-                    for (Integer i = 0; i < recordCount; i++) {
-                        this.triggerRecords.add(new TriggerHandler.TriggerRecord(this.newRecords?.get(i), this.oldRecords?.get(i)));
-                    }
+                    this.triggerRecords = TriggerHandler.getTriggerRecordsFrom(this.newRecords, this.oldRecords);
                 }
-
                 return this.triggerRecords;
             }
             private set;
@@ -189,43 +179,39 @@ public with sharing class TriggerOrchestrator {
     }
 
     private class TriggerBypass implements Bypassable {
-        private Set<String> bypassedSObjects = new Set<String>();
-        private Set<String> bypassedOrchestrators = new Set<String>();
-        private Set<String> bypassedHandlers = new Set<String>();
+        private Set<String> bypassed = new Set<String>();
 
         public Bypassable sObject(SObjectType sObjectType) {
-            this.bypassedSObjects.add(sObjectType.toString().toLowerCase());
+            this.bypassed.add(sObjectType.toString().toLowerCase());
             return this;
         }
 
         public Bypassable orchestrator(System.Type orchestratorType) {
-            this.bypassedOrchestrators.add(orchestratorType.getName().toLowerCase());
+            this.bypassed.add(orchestratorType.getName().toLowerCase());
             return this;
         }
 
         public Bypassable handler(System.Type handlerType) {
-            this.bypassedHandlers.add(handlerType.getName().toLowerCase());
+            this.bypassed.add(handlerType.getName().toLowerCase());
             return this;
         }
 
         public void all() {
-            this.bypassedSObjects.add('ALL');
+            this.bypassed.add('ALL');
         }
 
         public void clear() {
-            this.bypassedSObjects.clear();
-            this.bypassedOrchestrators.clear();
-            this.bypassedHandlers.clear();
+            this.bypassed.clear();
         }
 
         public Boolean isRunBypassed(TriggerOrchestrator orchestrator) {
-            return this.bypassedSObjects.contains('ALL') ||
-                this.bypassedSObjects.contains(orchestrator.context.sObjectType?.toString()?.toLowerCase()) ||
-                this.bypassedOrchestrators.contains(orchestrator.orchestrator?.toString()?.substringBefore(':')?.toLowerCase());
+            return this.bypassed.contains('ALL') ||
+                this.bypassed.contains(orchestrator.context.sObjectType?.toString()?.toLowerCase()) ||
+                this.bypassed.contains(orchestrator.orchestrator?.toString()?.substringBefore(':')?.toLowerCase());
         }
 
         public Boolean isHandlerBypassed(String handlerName) {
-            return this.bypassedHandlers.contains(handlerName.toLowerCase());
+            return this.bypassed.contains('ALL') || this.bypassed.contains(handlerName.toLowerCase());
         }
     }
 
@@ -248,7 +234,7 @@ public with sharing class TriggerOrchestrator {
     private class TriggerDepth {
         private Map<String, Map<Id, Integer>> recursionDepthByRecordByHandler = new Map<String, Map<Id, Integer>>();
 
-        public void initForHandler(String recursionScope) {
+        public void registerScope(String recursionScope) {
             if (!this.recursionDepthByRecordByHandler.containsKey(recursionScope)) {
                 this.recursionDepthByRecordByHandler.put(recursionScope, new Map<Id, Integer>());
             }
@@ -297,7 +283,6 @@ public with sharing class TriggerOrchestrator {
 
     @TestVisible
     private class TriggerSettings {
-        @TestVisible
         private Map<String, MetadataSettings> settingsByObjectName = this.resolveMetadataSettings();
 
         public Boolean isSObjectTriggerBypassed(TriggerContext context) {
@@ -308,7 +293,6 @@ public with sharing class TriggerOrchestrator {
             return this.settingsByObjectName.get(context.sObjectType.toString().toLowerCase())?.settingByHandlerName.get(handlerName.toLowerCase())?.Bypass__c == true;
         }
 
-        @TestVisible
         private Map<String, MetadataSettings> resolveMetadataSettings() {
             Map<String, MetadataSettings> settingsByObjectName = new Map<String, MetadataSettings>();
 
@@ -787,7 +771,7 @@ public with sharing class TriggerOrchestrator {
 
             String recursionScope = this.handlerName + ':BEFORE_UPDATE';
 
-            TriggerOrchestrator.triggerDepth.initForHandler(recursionScope);
+            TriggerOrchestrator.triggerDepth.registerScope(recursionScope);
 
             this.recursionDepthByRecord = TriggerOrchestrator.triggerDepth.getForRecursionScope(recursionScope);
         }
@@ -959,7 +943,7 @@ public with sharing class TriggerOrchestrator {
             super(handler, orchestrator);
             String recursionScope = this.handlerName + ':AFTER_UPDATE';
 
-            TriggerOrchestrator.triggerDepth.initForHandler(recursionScope);
+            TriggerOrchestrator.triggerDepth.registerScope(recursionScope);
 
             this.recursionDepthByRecord = TriggerOrchestrator.triggerDepth.getForRecursionScope(recursionScope);
         }

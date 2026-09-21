@@ -21,18 +21,18 @@ The old side is never refreshed in any context. `Trigger.old` is immutable, so `
 
 ## Declaring Fields
 
-Implement `NewRecordEnrichment` and return a map from the lookup field on the triggering object to a [`TriggerHandler.FieldSelection`](/api/field-selection) listing the parent fields.
+Implement `ParentQuery` and return a map from the lookup field on the triggering object to a [`TriggerHandler.ParentFields`](/api/field-selection) listing the parent fields.
 
 ```apex
-public with sharing class ContactAccountHandler implements AfterInsert.Handler, AfterInsert.NewRecordEnrichment {
-  public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterInsert() {
-    return new Map<SObjectField, TriggerHandler.FieldSelection>{
-      Contact.AccountId => TriggerHandler.FieldSelection.with(
+public with sharing class ContactAccountHandler implements AfterInsert.Handler, AfterInsert.ParentQuery {
+  public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert() {
+    return new Map<SObjectField, TriggerHandler.ParentFields>{
+      Contact.AccountId => TriggerHandler.ParentFields.with(
         Account.Name,
         Account.Industry,
         Account.BillingCountry
       ),
-      Contact.CreatedById => TriggerHandler.FieldSelection.with(
+      Contact.CreatedById => TriggerHandler.ParentFields.with(
         User.Name,
         User.Email
       )
@@ -79,10 +79,10 @@ String industry = account?.Industry;
 
 ## Nested Relationships
 
-`FieldSelection.with(relationshipName, fields...)` adds fields through a further relationship on the parent.
+`ParentFields.with(relationshipName, fields...)` adds fields through a further relationship on the parent.
 
 ```apex
-Contact.AccountId => TriggerHandler.FieldSelection
+Contact.AccountId => TriggerHandler.ParentFields
     .with(Account.Name, Account.Industry)
     .with('Owner', User.Name, User.Email)
     .with('Parent', Account.Name)
@@ -96,19 +96,19 @@ String parentName = account.Parent?.Name;
 
 ## Old Record Enrichment
 
-Update and delete contexts also have an old version of the record. Implement `OldRecordEnrichment` when the handler needs the parent the record pointed to before the change, and read it with `getOldRelated`.
+Update and delete contexts also have an old version of the record. Implement `PriorParentQuery` when the handler needs the parent the record pointed to before the change, and read it with `getOldRelated`.
 
 ```apex
-public with sharing class ContactAccountMoveHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment, AfterUpdate.OldRecordEnrichment {
-  public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterUpdate() {
-    return new Map<SObjectField, TriggerHandler.FieldSelection>{
-      Contact.AccountId => TriggerHandler.FieldSelection.with(Account.Name)
+public with sharing class ContactAccountMoveHandler implements AfterUpdate.Handler, AfterUpdate.ParentQuery, AfterUpdate.PriorParentQuery {
+  public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
+    return new Map<SObjectField, TriggerHandler.ParentFields>{
+      Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name)
     };
   }
 
-  public Map<SObjectField, TriggerHandler.FieldSelection> oldFieldsToEnrichOnAfterUpdate() {
-    return new Map<SObjectField, TriggerHandler.FieldSelection>{
-      Contact.AccountId => TriggerHandler.FieldSelection.with(Account.Name)
+  public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnAfterUpdate() {
+    return new Map<SObjectField, TriggerHandler.ParentFields>{
+      Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name)
     };
   }
 
@@ -129,7 +129,7 @@ The two sides are declared independently. Declaring `Contact.AccountId` on the n
 
 Which side is available depends on the context, and so does the record interface the handler methods receive:
 
-| Context        | Record interface                 | `NewRecordEnrichment` | `OldRecordEnrichment` |
+| Context        | Record interface                 | `ParentQuery` | `PriorParentQuery` |
 | -------------- | -------------------------------- | :-------------------: | :-------------------: |
 | Before Insert  | `TriggerHandler.InsertRecord`    |          ✅           |                       |
 | After Insert   | `TriggerHandler.InsertRecord`    |          ✅           |                       |

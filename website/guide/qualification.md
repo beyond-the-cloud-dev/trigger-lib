@@ -170,9 +170,9 @@ public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
 Parent records are [enriched](/guide/enrichment) once, before any handler runs, so a predicate can read them:
 
 ```apex
-public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterInsert() {
-    return new Map<SObjectField, TriggerHandler.FieldSelection>{
-        Contact.AccountId => TriggerHandler.FieldSelection.with(Account.Type)
+public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert() {
+    return new Map<SObjectField, TriggerHandler.ParentFields>{
+        Contact.AccountId => TriggerHandler.ParentFields.with(Account.Type)
     };
 }
 

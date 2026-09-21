@@ -4099,7 +4099,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void withOneField() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with(Account.Name).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with(Account.Name).getFields();
 
         // Verify
         Assert.areEqual(new List<String>{ 'Name' }, fields, 'It should contain only Name, because with() appends each requested field in order.');
@@ -4108,7 +4108,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void withTwoFields() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with(Account.Name, Account.Industry).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with(Account.Name, Account.Industry).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4121,7 +4121,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void withThreeFields() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with(Account.Name, Account.Industry, Account.Description).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with(Account.Name, Account.Industry, Account.Description).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4134,7 +4134,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void withFourFields() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with(Account.Name, Account.Industry, Account.Description, Account.Website).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with(Account.Name, Account.Industry, Account.Description, Account.Website).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4147,7 +4147,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void withFiveFields() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with(Account.Name, Account.Industry, Account.Description, Account.Website, Account.NumberOfEmployees).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with(Account.Name, Account.Industry, Account.Description, Account.Website, Account.NumberOfEmployees).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4169,7 +4169,7 @@ private class TriggerHandlerTest {
         };
 
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with(fieldsToSelect).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with(fieldsToSelect).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4182,7 +4182,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void withEmptyIterableOfFields() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with(new List<SObjectField>()).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with(new List<SObjectField>()).getFields();
 
         // Verify
         Assert.areEqual(new List<String>(), fields, 'It should be empty, because the iterable overload appends one entry per element and an empty iterable yields none.');
@@ -4191,7 +4191,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void withRelationshipAndOneField() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with('Parent', Account.Name).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with('Parent', Account.Name).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4204,7 +4204,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void withRelationshipAndTwoFields() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with('Parent', Account.Name, Account.Industry).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with('Parent', Account.Name, Account.Industry).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4217,7 +4217,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void withRelationshipAndThreeFields() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with('Parent', Account.Name, Account.Industry, Account.Description).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with('Parent', Account.Name, Account.Industry, Account.Description).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4230,7 +4230,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void withRelationshipAndFourFields() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with('Parent', Account.Name, Account.Industry, Account.Description, Account.Website).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with('Parent', Account.Name, Account.Industry, Account.Description, Account.Website).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4243,7 +4243,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void withRelationshipAndFiveFields() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection
+        List<String> fields = TriggerHandler.ParentFields
             .with('Parent', Account.Name, Account.Industry, Account.Description, Account.Website, Account.NumberOfEmployees)
             .getFields();
 
@@ -4267,7 +4267,7 @@ private class TriggerHandlerTest {
         };
 
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with('Parent', fieldsToSelect).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with('Parent', fieldsToSelect).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4280,7 +4280,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void withRelationshipAndEmptyIterableOfFields() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with('Parent', new List<SObjectField>()).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with('Parent', new List<SObjectField>()).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4293,7 +4293,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void withCustomRelationshipName() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with('Custom_Lookup__r', Account.Name, Account.Industry).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with('Custom_Lookup__r', Account.Name, Account.Industry).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4306,7 +4306,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void withMultiLevelRelationshipName() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with('Parent.Parent', Account.Name).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with('Parent.Parent', Account.Name).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4319,7 +4319,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void withEmptyRelationshipName() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with('', Account.Name).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with('', Account.Name).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4332,7 +4332,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void withPlainAndRelationshipFieldsChained() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with(Account.Name, Account.Industry).with('Parent', Account.Name).with(Account.Website).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with(Account.Name, Account.Industry).with('Parent', Account.Name).with(Account.Website).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4345,7 +4345,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void withDifferentRelationshipsChained() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with('Account', Account.Name).with('ReportsTo', Contact.Email).with('Account', Account.Industry).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with('Account', Account.Name).with('ReportsTo', Contact.Email).with('Account', Account.Industry).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4358,7 +4358,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void withEveryOverloadChained() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection
+        List<String> fields = TriggerHandler.ParentFields
             .with(Account.Name)
             .with(Account.Industry, Account.Description)
             .with(Account.Website, Account.NumberOfEmployees, Account.AnnualRevenue)
@@ -4416,10 +4416,10 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void withReturnsTheSameSelection() {
-        TriggerHandler.FieldSelection selection = TriggerHandler.FieldSelection.with(Account.Name);
+        TriggerHandler.ParentFields selection = TriggerHandler.ParentFields.with(Account.Name);
 
         // Test
-        TriggerHandler.FieldSelection chainedSelection = selection.with(Account.Industry);
+        TriggerHandler.ParentFields chainedSelection = selection.with(Account.Industry);
 
         // Verify
         Assert.areEqual(
@@ -4436,10 +4436,10 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void withRelationshipReturnsTheSameSelection() {
-        TriggerHandler.FieldSelection selection = TriggerHandler.FieldSelection.with(Account.Name);
+        TriggerHandler.ParentFields selection = TriggerHandler.ParentFields.with(Account.Name);
 
         // Test
-        TriggerHandler.FieldSelection chainedSelection = selection.with('Parent', Account.Industry);
+        TriggerHandler.ParentFields chainedSelection = selection.with('Parent', Account.Industry);
 
         // Verify
         Assert.areEqual(
@@ -4456,7 +4456,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void withAccumulatesAcrossSeparateStatements() {
-        TriggerHandler.FieldSelection selection = TriggerHandler.FieldSelection;
+        TriggerHandler.ParentFields selection = TriggerHandler.ParentFields;
 
         selection.with(Account.Name);
         selection.with('Parent', Account.Industry);
@@ -4475,7 +4475,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void fieldSelectionPropertyStartsEmpty() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.getFields();
+        List<String> fields = TriggerHandler.ParentFields.getFields();
 
         // Verify
         Assert.areEqual(new List<String>(), fields, 'It should be empty, because the property getter returns a brand new FieldSelector whose backing list starts out empty.');
@@ -4483,8 +4483,8 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void fieldSelectionPropertyReturnsNewSelectionOnEveryRead() {
-        TriggerHandler.FieldSelection firstSelection = TriggerHandler.FieldSelection.with(Account.Name);
-        TriggerHandler.FieldSelection secondSelection = TriggerHandler.FieldSelection.with(Account.Industry);
+        TriggerHandler.ParentFields firstSelection = TriggerHandler.ParentFields.with(Account.Name);
+        TriggerHandler.ParentFields secondSelection = TriggerHandler.ParentFields.with(Account.Industry);
 
         // Test
         firstSelection.with(Account.Website);
@@ -4504,10 +4504,10 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void fieldSelectionPropertyDoesNotShareFieldsBetweenReads() {
-        TriggerHandler.FieldSelection.with(Account.Name, Account.Industry);
+        TriggerHandler.ParentFields.with(Account.Name, Account.Industry);
 
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.getFields();
+        List<String> fields = TriggerHandler.ParentFields.getFields();
 
         // Verify
         Assert.areEqual(
@@ -4520,7 +4520,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void getFieldsPreservesInsertionOrder() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with(Account.Website).with(Account.Name).with(Account.Industry, Account.Description).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with(Account.Website).with(Account.Name).with(Account.Industry, Account.Description).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4533,7 +4533,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void getFieldsDoesNotDeduplicateRepeatedField() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with(Account.Name).with(Account.Industry).with(Account.Name).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with(Account.Name).with(Account.Industry).with(Account.Name).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4546,7 +4546,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void getFieldsDoesNotDeduplicateRepeatedFieldInSingleCall() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with(Account.Name, Account.Name, Account.Name).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with(Account.Name, Account.Name, Account.Name).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4559,7 +4559,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void getFieldsDoesNotDeduplicateRepeatedRelationshipField() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with('Parent', Account.Name).with('Parent', Account.Name).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with('Parent', Account.Name).with('Parent', Account.Name).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4572,7 +4572,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void getFieldsKeepsPlainAndRelationshipFieldApart() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with(Account.Name).with('Parent', Account.Name).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with(Account.Name).with('Parent', Account.Name).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4584,7 +4584,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void getFieldsReturnsTheSelectionsOwnList() {
-        TriggerHandler.FieldSelection selection = TriggerHandler.FieldSelection.with(Account.Name);
+        TriggerHandler.ParentFields selection = TriggerHandler.ParentFields.with(Account.Name);
         List<String> fields = selection.getFields();
 
         // Test
@@ -4601,7 +4601,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void withFieldsFromDifferentSObjects() {
         // Test
-        List<String> fields = TriggerHandler.FieldSelection.with(Account.Name, Contact.LastName, Opportunity.Amount).getFields();
+        List<String> fields = TriggerHandler.ParentFields.with(Account.Name, Contact.LastName, Opportunity.Amount).getFields();
 
         // Verify
         Assert.areEqual(
@@ -4613,8 +4613,8 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void fieldSelectionAsEnrichmentDeclaration() {
-        Map<SObjectField, TriggerHandler.FieldSelection> fieldsToEnrich = new Map<SObjectField, TriggerHandler.FieldSelection>{
-            Contact.AccountId => TriggerHandler.FieldSelection.with(Account.Name, Account.Industry).with('Parent', Account.Name)
+        Map<SObjectField, TriggerHandler.ParentFields> fieldsToEnrich = new Map<SObjectField, TriggerHandler.ParentFields>{
+            Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name, Account.Industry).with('Parent', Account.Name)
         };
 
         // Test
@@ -4630,9 +4630,9 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void fieldSelectionsInOneEnrichmentDeclarationAreIndependent() {
-        Map<SObjectField, TriggerHandler.FieldSelection> fieldsToEnrich = new Map<SObjectField, TriggerHandler.FieldSelection>{
-            Contact.AccountId => TriggerHandler.FieldSelection.with(Account.Name),
-            Contact.ReportsToId => TriggerHandler.FieldSelection.with(Contact.LastName)
+        Map<SObjectField, TriggerHandler.ParentFields> fieldsToEnrich = new Map<SObjectField, TriggerHandler.ParentFields>{
+            Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name),
+            Contact.ReportsToId => TriggerHandler.ParentFields.with(Contact.LastName)
         };
 
         // Test

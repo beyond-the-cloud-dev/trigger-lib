@@ -4,8 +4,8 @@ public class AfterDelete {
         void onAfterDelete(TriggerHandler.DeleteRecord record);
     }
 
-    public interface OldRecordEnrichment {
-        Map<SObjectField, TriggerHandler.FieldSelection> oldFieldsToEnrichOnAfterDelete();
+    public interface PriorParentQuery {
+        Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterDelete();
     }
 
     public interface Bypassable {
@@ -16,5 +16,6 @@ public class AfterDelete {
         void finalizeAfterDelete();
     }
 
-    public interface ContinueOnError {}
+    public interface ContinueOnError {
+    }
 }

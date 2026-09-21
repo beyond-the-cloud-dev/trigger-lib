@@ -67,12 +67,12 @@ public with sharing class ContactTriggerOrchestrator implements TriggerOrchestra
 **Handler**
 
 ```apex
-public with sharing class ContactAccountSyncHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment, AfterUpdate.Finalizer {
+public with sharing class ContactAccountSyncHandler implements AfterUpdate.Handler, AfterUpdate.ParentQuery, AfterUpdate.Finalizer {
   private List<Account> accountsToUpdate = new List<Account>();
 
-  public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterUpdate() {
-    return new Map<SObjectField, TriggerHandler.FieldSelection>{
-      Contact.AccountId => TriggerHandler.FieldSelection.with(
+  public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
+    return new Map<SObjectField, TriggerHandler.ParentFields>{
+      Contact.AccountId => TriggerHandler.ParentFields.with(
         Account.Name,
         Account.Industry
       )

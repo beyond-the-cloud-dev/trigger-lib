@@ -1254,10 +1254,11 @@ private class TriggerOrchestratorTest {
         Account parentAccount = new Account(Name = 'Umbrella Corp', Industry = 'Technology');
         insert parentAccount;
 
-        List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Sanders', AccountId = parentAccount.Id) };
+        List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Sanders', Email = 'sanders@example.com', AccountId = parentAccount.Id) };
+        insert newRecords;
 
         EnrichmentAfterInsertHandler handler = new EnrichmentAfterInsertHandler();
-        handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        handler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -1286,7 +1287,7 @@ private class TriggerOrchestratorTest {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Moved', AccountId = accounts[0].Id) };
 
         EnrichmentAfterUpdateHandler handler = new EnrichmentAfterUpdateHandler();
-        handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        handler.declareOld(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -1338,10 +1339,14 @@ private class TriggerOrchestratorTest {
         Account parentAccount = new Account(Name = 'Umbrella Corp');
         insert parentAccount;
 
-        List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'With Parent', AccountId = parentAccount.Id), new Contact(LastName = 'Without Parent') };
+        List<SObject> newRecords = new List<Contact>{
+            new Contact(LastName = 'With Parent', Email = 'with.parent@example.com', AccountId = parentAccount.Id),
+            new Contact(LastName = 'Without Parent', Email = 'without.parent@example.com')
+        };
+        insert newRecords;
 
         EnrichmentAfterInsertHandler handler = new EnrichmentAfterInsertHandler();
-        handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        handler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -1364,19 +1369,19 @@ private class TriggerOrchestratorTest {
             'It should be Umbrella Corp, because a record holding a value in the declared lookup still gets its parent.'
         );
         Assert.isNull(handler.seenNewParents[1], 'It should be null, because an unset lookup fetches nothing for that record and raises no error.');
-        Assert.areEqual(
-            1,
-            queriesAfter - queriesBefore,
-            'It should be 1, because the record with no lookup value contributes no id and the declared field is still resolved in a single query.'
-        );
+        Assert.areEqual(1, queriesAfter - queriesBefore, 'It should be 1.');
     }
 
     @IsTest
-    static void enrichmentUnsetLookupOnEveryRecordIssuesNoQuery() {
-        List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'First'), new Contact(LastName = 'Second') };
+    static void enrichmentUnsetLookupOnEveryRecordAttachesNothing() {
+        List<SObject> newRecords = new List<Contact>{
+            new Contact(LastName = 'First', Email = 'first@example.com'),
+            new Contact(LastName = 'Second', Email = 'second@example.com')
+        };
+        insert newRecords;
 
         EnrichmentAfterInsertHandler handler = new EnrichmentAfterInsertHandler();
-        handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        handler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -1393,7 +1398,7 @@ private class TriggerOrchestratorTest {
         Test.stopTest();
 
         // Verify
-        Assert.areEqual(0, queriesAfterRun - queriesBeforeRun, 'It should be 0.');
+        Assert.areEqual(1, queriesAfterRun - queriesBeforeRun, 'It should be 1, because saved records are read once whatever their lookups hold.');
         Assert.isNull(handler.seenNewParents[0], 'It should be null.');
         Assert.isNull(handler.seenNewParents[1], 'It should be null.');
     }
@@ -1404,18 +1409,19 @@ private class TriggerOrchestratorTest {
         insert parentAccount;
 
         List<SObject> newRecords = new List<Contact>{
-            new Contact(LastName = 'First', AccountId = parentAccount.Id),
-            new Contact(LastName = 'Second', AccountId = parentAccount.Id)
+            new Contact(LastName = 'First', Email = 'first@example.com', AccountId = parentAccount.Id),
+            new Contact(LastName = 'Second', Email = 'second@example.com', AccountId = parentAccount.Id)
         };
+        insert newRecords;
 
         EnrichmentAfterInsertHandler nameHandler = new EnrichmentAfterInsertHandler();
-        nameHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        nameHandler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         EnrichmentAfterInsertHandler industryHandler = new EnrichmentAfterInsertHandler();
-        industryHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Industry));
+        industryHandler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Industry));
 
         EnrichmentAfterInsertHandler countryHandler = new EnrichmentAfterInsertHandler();
-        countryHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.BillingCountry));
+        countryHandler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.BillingCountry));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -1434,11 +1440,7 @@ private class TriggerOrchestratorTest {
         Test.stopTest();
 
         // Verify
-        Assert.areEqual(
-            1,
-            queriesAfter - queriesBefore,
-            'It should be 1, because the cost is one query per declared lookup field per invocation, whatever the number of handlers or records.'
-        );
+        Assert.areEqual(1, queriesAfter - queriesBefore, 'It should be 1, because every declared field is read through the saved records in one query.');
         Assert.areEqual(
             'Technology',
             ((Account) nameHandler.seenNewParents[0]).Industry,
@@ -1452,18 +1454,19 @@ private class TriggerOrchestratorTest {
     }
 
     @IsTest
-    static void enrichmentTwoDeclaredLookupsCostOneQueryEach() {
+    static void enrichmentTwoDeclaredLookupsCostOneQueryOnSavedRecords() {
         Account parentAccount = new Account(Name = 'Umbrella Corp');
         insert parentAccount;
 
         List<SObject> newRecords = new List<Contact>{
-            new Contact(LastName = 'First', AccountId = parentAccount.Id, OwnerId = UserInfo.getUserId()),
-            new Contact(LastName = 'Second', AccountId = parentAccount.Id, OwnerId = UserInfo.getUserId())
+            new Contact(LastName = 'First', Email = 'first@example.com', AccountId = parentAccount.Id, OwnerId = UserInfo.getUserId()),
+            new Contact(LastName = 'Second', Email = 'second@example.com', AccountId = parentAccount.Id, OwnerId = UserInfo.getUserId())
         };
+        insert newRecords;
 
         EnrichmentAfterInsertHandler handler = new EnrichmentAfterInsertHandler();
-        handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
-        handler.declareNew(Contact.OwnerId, TriggerHandler.FieldSelection.with(User.Name));
+        handler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
+        handler.declareNew(Contact.OwnerId, TriggerHandler.ParentFields.with(User.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -1480,17 +1483,13 @@ private class TriggerOrchestratorTest {
         Test.stopTest();
 
         // Verify
-        Assert.areEqual(2, queriesAfter - queriesBefore, 'It should be 2, because the cost is one query per declared lookup field, and two lookup fields were declared.');
+        Assert.areEqual(1, queriesAfter - queriesBefore, 'It should be 1, because saved records carry every declared parent in one query.');
         Assert.areEqual(
             'Umbrella Corp',
             ((Account) handler.seenNewParents[0]).Name,
             'It should be Umbrella Corp, because each declared lookup is attached under its own relationship name.'
         );
-        Assert.areEqual(
-            UserInfo.getUserId(),
-            handler.seenNewOwners[0].Id,
-            'It should be the running user id, because Contact.OwnerId is resolved separately and read through the Owner relationship name.'
-        );
+        Assert.areEqual(UserInfo.getUserId(), handler.seenNewOwners[0].Id, 'It should be the running user id.');
     }
 
     @IsTest
@@ -1499,8 +1498,8 @@ private class TriggerOrchestratorTest {
 
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Sanders', AccountId = missingAccountId) };
 
-        EnrichmentAfterInsertHandler handler = new EnrichmentAfterInsertHandler();
-        handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        EnrichmentBeforeInsertHandler handler = new EnrichmentBeforeInsertHandler();
+        handler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -1508,8 +1507,8 @@ private class TriggerOrchestratorTest {
         // Test
         Test.startTest();
         Integer queriesBefore = Limits.getQueries();
-        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler }));
-        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ handler }));
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
         orchestratorRunner.context.newRecords = newRecords;
         orchestratorRunner.run();
 
@@ -1531,11 +1530,11 @@ private class TriggerOrchestratorTest {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Sanders', AccountId = accounts[0].Id) };
 
         EnrichmentBeforeUpdateHandler repointingHandler = new EnrichmentBeforeUpdateHandler();
-        repointingHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        repointingHandler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
         repointingHandler.accountIdsToSet = new List<Id>{ accounts[1].Id };
 
         EnrichmentBeforeUpdateHandler readingHandler = new EnrichmentBeforeUpdateHandler();
-        readingHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        readingHandler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -1579,7 +1578,7 @@ private class TriggerOrchestratorTest {
         populatingHandler.accountIdsToSet = new List<Id>{ parentAccount.Id };
 
         EnrichmentBeforeInsertHandler readingHandler = new EnrichmentBeforeInsertHandler();
-        readingHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        readingHandler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -1641,7 +1640,7 @@ private class TriggerOrchestratorTest {
         repointingHandler.accountIdsToSet = repointedAccountIds;
 
         EnrichmentBeforeUpdateHandler readingHandler = new EnrichmentBeforeUpdateHandler();
-        readingHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        readingHandler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -1688,7 +1687,7 @@ private class TriggerOrchestratorTest {
 
         for (Integer i = 0; i < 10; i++) {
             lastHandler = new EnrichmentBeforeInsertHandler();
-            lastHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+            lastHandler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
             handlers.add(lastHandler);
         }
 
@@ -1737,7 +1736,7 @@ private class TriggerOrchestratorTest {
         repointingHandler.accountIdsToSet = new List<Id>{ accounts[1].Id };
 
         EnrichmentBeforeUpdateHandler readingHandler = new EnrichmentBeforeUpdateHandler();
-        readingHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        readingHandler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -1782,8 +1781,8 @@ private class TriggerOrchestratorTest {
         repointingHandler.accountIdsToSet = new List<Id>{ accounts[1].Id };
 
         EnrichmentBeforeUpdateHandler readingHandler = new EnrichmentBeforeUpdateHandler();
-        readingHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
-        readingHandler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        readingHandler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
+        readingHandler.declareOld(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -1821,16 +1820,18 @@ private class TriggerOrchestratorTest {
         List<Account> accounts = new List<Account>{ new Account(Name = 'First Parent'), new Account(Name = 'Second Parent') };
         insert accounts;
 
-        Id contactId = new EnrichmentIdFactory().next(Contact.SObjectType);
-        List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Sanders', AccountId = accounts[0].Id) };
-        List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Sanders', AccountId = accounts[0].Id) };
+        Contact savedContact = new Contact(LastName = 'Sanders', Email = 'sanders@example.com', AccountId = accounts[0].Id);
+        insert savedContact;
+
+        List<SObject> newRecords = new List<Contact>{ new Contact(Id = savedContact.Id, LastName = 'Sanders', AccountId = accounts[0].Id) };
+        List<SObject> oldRecords = new List<Contact>{ new Contact(Id = savedContact.Id, LastName = 'Sanders', AccountId = accounts[0].Id) };
 
         EnrichmentAfterUpdateHandler repointingHandler = new EnrichmentAfterUpdateHandler();
-        repointingHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        repointingHandler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
         repointingHandler.accountIdsToSet = new List<Id>{ accounts[1].Id };
 
         EnrichmentAfterUpdateHandler readingHandler = new EnrichmentAfterUpdateHandler();
-        readingHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        readingHandler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -1857,17 +1858,19 @@ private class TriggerOrchestratorTest {
     }
 
     @IsTest
-    static void enrichmentResolvesBothSidesInOneQuery() {
+    static void enrichmentChangedLookupCostsOneQueryPerSide() {
         List<Account> accounts = new List<Account>{ new Account(Name = 'Previous Parent'), new Account(Name = 'Current Parent') };
         insert accounts;
 
-        Id contactId = new EnrichmentIdFactory().next(Contact.SObjectType);
-        List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Moved', AccountId = accounts[1].Id) };
-        List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Moved', AccountId = accounts[0].Id) };
+        Contact savedContact = new Contact(LastName = 'Moved', Email = 'moved@example.com', AccountId = accounts[1].Id);
+        insert savedContact;
+
+        List<SObject> newRecords = new List<Contact>{ new Contact(Id = savedContact.Id, LastName = 'Moved', AccountId = accounts[1].Id) };
+        List<SObject> oldRecords = new List<Contact>{ new Contact(Id = savedContact.Id, LastName = 'Moved', AccountId = accounts[0].Id) };
 
         EnrichmentAfterUpdateHandler handler = new EnrichmentAfterUpdateHandler();
-        handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
-        handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        handler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
+        handler.declareOld(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -1895,7 +1898,43 @@ private class TriggerOrchestratorTest {
             ((Account) handler.seenNewParents[0]).Name,
             'It should be Current Parent, because getNewRelated returns the parent the record points at now.'
         );
-        Assert.areEqual(1, queriesAfter - queriesBefore, 'It should be 1, because both sides of the same lookup field are gathered into a single query for the invocation.');
+        Assert.areEqual(2, queriesAfter - queriesBefore, 'It should be 2, because the saved record carries the current parent and the previous one is fetched by id.');
+    }
+
+    @IsTest
+    static void enrichmentUnchangedLookupResolvesBothSidesInOneQuery() {
+        Account parentAccount = new Account(Name = 'Steady Parent');
+        insert parentAccount;
+
+        Contact savedContact = new Contact(LastName = 'Steady', Email = 'steady@example.com', AccountId = parentAccount.Id);
+        insert savedContact;
+
+        List<SObject> newRecords = new List<Contact>{ new Contact(Id = savedContact.Id, LastName = 'Steady', AccountId = parentAccount.Id) };
+        List<SObject> oldRecords = new List<Contact>{ new Contact(Id = savedContact.Id, LastName = 'Steady', AccountId = parentAccount.Id) };
+
+        EnrichmentAfterUpdateHandler handler = new EnrichmentAfterUpdateHandler();
+        handler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
+        handler.declareOld(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        // Test
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler }));
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = oldRecords;
+        orchestratorRunner.run();
+
+        Integer queriesAfter = Limits.getQueries();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual('Steady Parent', ((Account) handler.seenOldParents[0]).Name, 'It should be Steady Parent.');
+        Assert.areEqual('Steady Parent', ((Account) handler.seenNewParents[0]).Name, 'It should be Steady Parent.');
+        Assert.areEqual(1, queriesAfter - queriesBefore, 'It should be 1, because an unchanged lookup serves both sides from the saved record.');
     }
 
     @IsTest
@@ -6781,7 +6820,7 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Sanders', AccountId = parentAccount.Id) };
 
         GapEnrichmentBeforeInsertPopulator handler = new GapEnrichmentBeforeInsertPopulator();
-        handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        handler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -6807,7 +6846,7 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Sanders', AccountId = parentAccount.Id) };
 
         GapEnrichmentBeforeInsertValidator handler = new GapEnrichmentBeforeInsertValidator();
-        handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        handler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -6837,10 +6876,10 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Sanders', AccountId = parentAccount.Id) };
 
         GapEnrichmentBeforeInsertPopulator populator = new GapEnrichmentBeforeInsertPopulator();
-        populator.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        populator.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         GapEnrichmentBeforeInsertValidator validator = new GapEnrichmentBeforeInsertValidator();
-        validator.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        validator.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -6884,7 +6923,7 @@ private class TriggerOrchestratorTest {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Moved', AccountId = parentAccount.Id) };
 
         GapEnrichmentBeforeUpdatePopulator handler = new GapEnrichmentBeforeUpdatePopulator();
-        handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        handler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -6913,7 +6952,7 @@ private class TriggerOrchestratorTest {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Moved', AccountId = accounts[0].Id) };
 
         GapEnrichmentBeforeUpdatePopulator handler = new GapEnrichmentBeforeUpdatePopulator();
-        handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        handler.declareOld(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -6942,8 +6981,8 @@ private class TriggerOrchestratorTest {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Moved', AccountId = accounts[0].Id) };
 
         GapEnrichmentBeforeUpdatePopulator handler = new GapEnrichmentBeforeUpdatePopulator();
-        handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
-        handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        handler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
+        handler.declareOld(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -6984,7 +7023,7 @@ private class TriggerOrchestratorTest {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Moved', AccountId = parentAccount.Id) };
 
         GapEnrichmentBeforeUpdateValidator handler = new GapEnrichmentBeforeUpdateValidator();
-        handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        handler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -7013,7 +7052,7 @@ private class TriggerOrchestratorTest {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Moved', AccountId = accounts[0].Id) };
 
         GapEnrichmentBeforeUpdateValidator handler = new GapEnrichmentBeforeUpdateValidator();
-        handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        handler.declareOld(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -7037,10 +7076,11 @@ private class TriggerOrchestratorTest {
         Account parentAccount = new Account(Name = 'Inserted Parent');
         insert parentAccount;
 
-        List<SObject> newRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Sanders', AccountId = parentAccount.Id) };
+        List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Sanders', Email = 'sanders@example.com', AccountId = parentAccount.Id) };
+        insert newRecords;
 
         GapEnrichmentAfterInsertHandler handler = new GapEnrichmentAfterInsertHandler();
-        handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        handler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -7060,15 +7100,17 @@ private class TriggerOrchestratorTest {
 
     @IsTest
     static void gapEnrichmentAfterUpdateHandlerReceivesDeclaredParentOnNewSide() {
-        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         Account parentAccount = new Account(Name = 'Current Parent');
         insert parentAccount;
 
-        List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Moved', AccountId = parentAccount.Id) };
-        List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Moved', AccountId = parentAccount.Id) };
+        Contact savedContact = new Contact(LastName = 'Moved', Email = 'moved@example.com', AccountId = parentAccount.Id);
+        insert savedContact;
+
+        List<SObject> newRecords = new List<Contact>{ new Contact(Id = savedContact.Id, LastName = 'Moved', AccountId = parentAccount.Id) };
+        List<SObject> oldRecords = new List<Contact>{ new Contact(Id = savedContact.Id, LastName = 'Moved', AccountId = parentAccount.Id) };
 
         GapEnrichmentAfterUpdateHandler handler = new GapEnrichmentAfterUpdateHandler();
-        handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        handler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -7097,7 +7139,7 @@ private class TriggerOrchestratorTest {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Moved', AccountId = accounts[0].Id) };
 
         GapEnrichmentAfterUpdateHandler handler = new GapEnrichmentAfterUpdateHandler();
-        handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        handler.declareOld(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -7124,7 +7166,7 @@ private class TriggerOrchestratorTest {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Deleted', AccountId = parentAccount.Id) };
 
         GapEnrichmentBeforeDeleteHandler handler = new GapEnrichmentBeforeDeleteHandler();
-        handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        handler.declareOld(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -7150,7 +7192,7 @@ private class TriggerOrchestratorTest {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Deleted', AccountId = parentAccount.Id) };
 
         GapEnrichmentAfterDeleteHandler handler = new GapEnrichmentAfterDeleteHandler();
-        handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        handler.declareOld(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -7173,10 +7215,11 @@ private class TriggerOrchestratorTest {
         Account parentAccount = new Account(Name = 'Restored Child Parent');
         insert parentAccount;
 
-        List<SObject> newRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Restored', AccountId = parentAccount.Id) };
+        List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Restored', Email = 'restored@example.com', AccountId = parentAccount.Id) };
+        insert newRecords;
 
         GapEnrichmentAfterUndeleteHandler handler = new GapEnrichmentAfterUndeleteHandler();
-        handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
+        handler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
@@ -8360,18 +8403,18 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class EnrichmentBeforeInsertHandler implements BeforeInsert.Populator, BeforeInsert.NewRecordEnrichment {
+    private class EnrichmentBeforeInsertHandler implements BeforeInsert.Populator, BeforeInsert.ParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public List<Id> accountIdsToSet = new List<Id>();
 
-        private Map<SObjectField, TriggerHandler.FieldSelection> newDeclaration = new Map<SObjectField, TriggerHandler.FieldSelection>();
+        private Map<SObjectField, TriggerHandler.ParentFields> newDeclaration = new Map<SObjectField, TriggerHandler.ParentFields>();
         private Integer repointIndex = 0;
 
-        public void declareNew(SObjectField parentField, TriggerHandler.FieldSelection fields) {
+        public void declareNew(SObjectField parentField, TriggerHandler.ParentFields fields) {
             this.newDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnBeforeInsert() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert() {
             return this.newDeclaration;
         }
 
@@ -8391,17 +8434,17 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class EnrichmentAfterInsertHandler implements AfterInsert.Handler, AfterInsert.NewRecordEnrichment {
+    private class EnrichmentAfterInsertHandler implements AfterInsert.Handler, AfterInsert.ParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public List<SObject> seenNewOwners = new List<SObject>();
 
-        private Map<SObjectField, TriggerHandler.FieldSelection> newDeclaration = new Map<SObjectField, TriggerHandler.FieldSelection>();
+        private Map<SObjectField, TriggerHandler.ParentFields> newDeclaration = new Map<SObjectField, TriggerHandler.ParentFields>();
 
-        public void declareNew(SObjectField parentField, TriggerHandler.FieldSelection fields) {
+        public void declareNew(SObjectField parentField, TriggerHandler.ParentFields fields) {
             this.newDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterInsert() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert() {
             return this.newDeclaration;
         }
 
@@ -8415,28 +8458,28 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class EnrichmentBeforeUpdateHandler implements BeforeUpdate.Populator, BeforeUpdate.NewRecordEnrichment, BeforeUpdate.OldRecordEnrichment {
+    private class EnrichmentBeforeUpdateHandler implements BeforeUpdate.Populator, BeforeUpdate.ParentQuery, BeforeUpdate.PriorParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public List<SObject> seenOldParents = new List<SObject>();
         public List<Id> accountIdsToSet = new List<Id>();
 
-        private Map<SObjectField, TriggerHandler.FieldSelection> newDeclaration = new Map<SObjectField, TriggerHandler.FieldSelection>();
-        private Map<SObjectField, TriggerHandler.FieldSelection> oldDeclaration = new Map<SObjectField, TriggerHandler.FieldSelection>();
+        private Map<SObjectField, TriggerHandler.ParentFields> newDeclaration = new Map<SObjectField, TriggerHandler.ParentFields>();
+        private Map<SObjectField, TriggerHandler.ParentFields> oldDeclaration = new Map<SObjectField, TriggerHandler.ParentFields>();
         private Integer repointIndex = 0;
 
-        public void declareNew(SObjectField parentField, TriggerHandler.FieldSelection fields) {
+        public void declareNew(SObjectField parentField, TriggerHandler.ParentFields fields) {
             this.newDeclaration.put(parentField, fields);
         }
 
-        public void declareOld(SObjectField parentField, TriggerHandler.FieldSelection fields) {
+        public void declareOld(SObjectField parentField, TriggerHandler.ParentFields fields) {
             this.oldDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnBeforeUpdate() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate() {
             return this.newDeclaration;
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> oldFieldsToEnrichOnBeforeUpdate() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnBeforeUpdate() {
             return this.oldDeclaration;
         }
 
@@ -8457,28 +8500,28 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class EnrichmentAfterUpdateHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment, AfterUpdate.OldRecordEnrichment {
+    private class EnrichmentAfterUpdateHandler implements AfterUpdate.Handler, AfterUpdate.ParentQuery, AfterUpdate.PriorParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public List<SObject> seenOldParents = new List<SObject>();
         public List<Id> accountIdsToSet = new List<Id>();
 
-        private Map<SObjectField, TriggerHandler.FieldSelection> newDeclaration = new Map<SObjectField, TriggerHandler.FieldSelection>();
-        private Map<SObjectField, TriggerHandler.FieldSelection> oldDeclaration = new Map<SObjectField, TriggerHandler.FieldSelection>();
+        private Map<SObjectField, TriggerHandler.ParentFields> newDeclaration = new Map<SObjectField, TriggerHandler.ParentFields>();
+        private Map<SObjectField, TriggerHandler.ParentFields> oldDeclaration = new Map<SObjectField, TriggerHandler.ParentFields>();
         private Integer repointIndex = 0;
 
-        public void declareNew(SObjectField parentField, TriggerHandler.FieldSelection fields) {
+        public void declareNew(SObjectField parentField, TriggerHandler.ParentFields fields) {
             this.newDeclaration.put(parentField, fields);
         }
 
-        public void declareOld(SObjectField parentField, TriggerHandler.FieldSelection fields) {
+        public void declareOld(SObjectField parentField, TriggerHandler.ParentFields fields) {
             this.oldDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterUpdate() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
             return this.newDeclaration;
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> oldFieldsToEnrichOnAfterUpdate() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnAfterUpdate() {
             return this.oldDeclaration;
         }
 
@@ -8882,7 +8925,7 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class BypassEnrichmentAfterInsertHandler implements AfterInsert.Handler, AfterInsert.Bypassable, AfterInsert.NewRecordEnrichment {
+    private class BypassEnrichmentAfterInsertHandler implements AfterInsert.Handler, AfterInsert.Bypassable, AfterInsert.ParentQuery {
         public Boolean isBypassed = false;
         public Integer runCount = 0;
 
@@ -8890,8 +8933,8 @@ private class TriggerOrchestratorTest {
             return this.isBypassed;
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterInsert() {
-            return new Map<SObjectField, TriggerHandler.FieldSelection>{ Contact.AccountId => TriggerHandler.FieldSelection.with(Account.Name) };
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert() {
+            return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
         }
 
         public Boolean qualifiesForAfterInsertWhen(TriggerHandler.InsertRecord record) {
@@ -10753,17 +10796,17 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class GapEnrichmentBeforeInsertPopulator implements BeforeInsert.Populator, BeforeInsert.NewRecordEnrichment {
+    private class GapEnrichmentBeforeInsertPopulator implements BeforeInsert.Populator, BeforeInsert.ParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public Integer newDeclarationRequestCount = 0;
 
-        private Map<SObjectField, TriggerHandler.FieldSelection> newDeclaration = new Map<SObjectField, TriggerHandler.FieldSelection>();
+        private Map<SObjectField, TriggerHandler.ParentFields> newDeclaration = new Map<SObjectField, TriggerHandler.ParentFields>();
 
-        public void declareNew(SObjectField parentField, TriggerHandler.FieldSelection fields) {
+        public void declareNew(SObjectField parentField, TriggerHandler.ParentFields fields) {
             this.newDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnBeforeInsert() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert() {
             this.newDeclarationRequestCount++;
             return this.newDeclaration;
         }
@@ -10780,17 +10823,17 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class GapEnrichmentBeforeInsertValidator implements BeforeInsert.Validator, BeforeInsert.NewRecordEnrichment {
+    private class GapEnrichmentBeforeInsertValidator implements BeforeInsert.Validator, BeforeInsert.ParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public Integer newDeclarationRequestCount = 0;
 
-        private Map<SObjectField, TriggerHandler.FieldSelection> newDeclaration = new Map<SObjectField, TriggerHandler.FieldSelection>();
+        private Map<SObjectField, TriggerHandler.ParentFields> newDeclaration = new Map<SObjectField, TriggerHandler.ParentFields>();
 
-        public void declareNew(SObjectField parentField, TriggerHandler.FieldSelection fields) {
+        public void declareNew(SObjectField parentField, TriggerHandler.ParentFields fields) {
             this.newDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnBeforeInsert() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert() {
             this.newDeclarationRequestCount++;
             return this.newDeclaration;
         }
@@ -10807,29 +10850,29 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class GapEnrichmentBeforeUpdatePopulator implements BeforeUpdate.Populator, BeforeUpdate.NewRecordEnrichment, BeforeUpdate.OldRecordEnrichment {
+    private class GapEnrichmentBeforeUpdatePopulator implements BeforeUpdate.Populator, BeforeUpdate.ParentQuery, BeforeUpdate.PriorParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public List<SObject> seenOldParents = new List<SObject>();
         public Integer newDeclarationRequestCount = 0;
         public Integer oldDeclarationRequestCount = 0;
 
-        private Map<SObjectField, TriggerHandler.FieldSelection> newDeclaration = new Map<SObjectField, TriggerHandler.FieldSelection>();
-        private Map<SObjectField, TriggerHandler.FieldSelection> oldDeclaration = new Map<SObjectField, TriggerHandler.FieldSelection>();
+        private Map<SObjectField, TriggerHandler.ParentFields> newDeclaration = new Map<SObjectField, TriggerHandler.ParentFields>();
+        private Map<SObjectField, TriggerHandler.ParentFields> oldDeclaration = new Map<SObjectField, TriggerHandler.ParentFields>();
 
-        public void declareNew(SObjectField parentField, TriggerHandler.FieldSelection fields) {
+        public void declareNew(SObjectField parentField, TriggerHandler.ParentFields fields) {
             this.newDeclaration.put(parentField, fields);
         }
 
-        public void declareOld(SObjectField parentField, TriggerHandler.FieldSelection fields) {
+        public void declareOld(SObjectField parentField, TriggerHandler.ParentFields fields) {
             this.oldDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnBeforeUpdate() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate() {
             this.newDeclarationRequestCount++;
             return this.newDeclaration;
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> oldFieldsToEnrichOnBeforeUpdate() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnBeforeUpdate() {
             this.oldDeclarationRequestCount++;
             return this.oldDeclaration;
         }
@@ -10844,29 +10887,29 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class GapEnrichmentBeforeUpdateValidator implements BeforeUpdate.Validator, BeforeUpdate.NewRecordEnrichment, BeforeUpdate.OldRecordEnrichment {
+    private class GapEnrichmentBeforeUpdateValidator implements BeforeUpdate.Validator, BeforeUpdate.ParentQuery, BeforeUpdate.PriorParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public List<SObject> seenOldParents = new List<SObject>();
         public Integer newDeclarationRequestCount = 0;
         public Integer oldDeclarationRequestCount = 0;
 
-        private Map<SObjectField, TriggerHandler.FieldSelection> newDeclaration = new Map<SObjectField, TriggerHandler.FieldSelection>();
-        private Map<SObjectField, TriggerHandler.FieldSelection> oldDeclaration = new Map<SObjectField, TriggerHandler.FieldSelection>();
+        private Map<SObjectField, TriggerHandler.ParentFields> newDeclaration = new Map<SObjectField, TriggerHandler.ParentFields>();
+        private Map<SObjectField, TriggerHandler.ParentFields> oldDeclaration = new Map<SObjectField, TriggerHandler.ParentFields>();
 
-        public void declareNew(SObjectField parentField, TriggerHandler.FieldSelection fields) {
+        public void declareNew(SObjectField parentField, TriggerHandler.ParentFields fields) {
             this.newDeclaration.put(parentField, fields);
         }
 
-        public void declareOld(SObjectField parentField, TriggerHandler.FieldSelection fields) {
+        public void declareOld(SObjectField parentField, TriggerHandler.ParentFields fields) {
             this.oldDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnBeforeUpdate() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate() {
             this.newDeclarationRequestCount++;
             return this.newDeclaration;
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> oldFieldsToEnrichOnBeforeUpdate() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnBeforeUpdate() {
             this.oldDeclarationRequestCount++;
             return this.oldDeclaration;
         }
@@ -10884,17 +10927,17 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class GapEnrichmentAfterInsertHandler implements AfterInsert.Handler, AfterInsert.NewRecordEnrichment {
+    private class GapEnrichmentAfterInsertHandler implements AfterInsert.Handler, AfterInsert.ParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public Integer newDeclarationRequestCount = 0;
 
-        private Map<SObjectField, TriggerHandler.FieldSelection> newDeclaration = new Map<SObjectField, TriggerHandler.FieldSelection>();
+        private Map<SObjectField, TriggerHandler.ParentFields> newDeclaration = new Map<SObjectField, TriggerHandler.ParentFields>();
 
-        public void declareNew(SObjectField parentField, TriggerHandler.FieldSelection fields) {
+        public void declareNew(SObjectField parentField, TriggerHandler.ParentFields fields) {
             this.newDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterInsert() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert() {
             this.newDeclarationRequestCount++;
             return this.newDeclaration;
         }
@@ -10908,29 +10951,29 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class GapEnrichmentAfterUpdateHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment, AfterUpdate.OldRecordEnrichment {
+    private class GapEnrichmentAfterUpdateHandler implements AfterUpdate.Handler, AfterUpdate.ParentQuery, AfterUpdate.PriorParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public List<SObject> seenOldParents = new List<SObject>();
         public Integer newDeclarationRequestCount = 0;
         public Integer oldDeclarationRequestCount = 0;
 
-        private Map<SObjectField, TriggerHandler.FieldSelection> newDeclaration = new Map<SObjectField, TriggerHandler.FieldSelection>();
-        private Map<SObjectField, TriggerHandler.FieldSelection> oldDeclaration = new Map<SObjectField, TriggerHandler.FieldSelection>();
+        private Map<SObjectField, TriggerHandler.ParentFields> newDeclaration = new Map<SObjectField, TriggerHandler.ParentFields>();
+        private Map<SObjectField, TriggerHandler.ParentFields> oldDeclaration = new Map<SObjectField, TriggerHandler.ParentFields>();
 
-        public void declareNew(SObjectField parentField, TriggerHandler.FieldSelection fields) {
+        public void declareNew(SObjectField parentField, TriggerHandler.ParentFields fields) {
             this.newDeclaration.put(parentField, fields);
         }
 
-        public void declareOld(SObjectField parentField, TriggerHandler.FieldSelection fields) {
+        public void declareOld(SObjectField parentField, TriggerHandler.ParentFields fields) {
             this.oldDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterUpdate() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
             this.newDeclarationRequestCount++;
             return this.newDeclaration;
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> oldFieldsToEnrichOnAfterUpdate() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnAfterUpdate() {
             this.oldDeclarationRequestCount++;
             return this.oldDeclaration;
         }
@@ -10945,17 +10988,17 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class GapEnrichmentBeforeDeleteHandler implements BeforeDelete.Handler, BeforeDelete.OldRecordEnrichment {
+    private class GapEnrichmentBeforeDeleteHandler implements BeforeDelete.Handler, BeforeDelete.PriorParentQuery {
         public List<SObject> seenOldParents = new List<SObject>();
         public Integer oldDeclarationRequestCount = 0;
 
-        private Map<SObjectField, TriggerHandler.FieldSelection> oldDeclaration = new Map<SObjectField, TriggerHandler.FieldSelection>();
+        private Map<SObjectField, TriggerHandler.ParentFields> oldDeclaration = new Map<SObjectField, TriggerHandler.ParentFields>();
 
-        public void declareOld(SObjectField parentField, TriggerHandler.FieldSelection fields) {
+        public void declareOld(SObjectField parentField, TriggerHandler.ParentFields fields) {
             this.oldDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> oldFieldsToEnrichOnBeforeDelete() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeDelete() {
             this.oldDeclarationRequestCount++;
             return this.oldDeclaration;
         }
@@ -10969,17 +11012,17 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class GapEnrichmentAfterDeleteHandler implements AfterDelete.Handler, AfterDelete.OldRecordEnrichment {
+    private class GapEnrichmentAfterDeleteHandler implements AfterDelete.Handler, AfterDelete.PriorParentQuery {
         public List<SObject> seenOldParents = new List<SObject>();
         public Integer oldDeclarationRequestCount = 0;
 
-        private Map<SObjectField, TriggerHandler.FieldSelection> oldDeclaration = new Map<SObjectField, TriggerHandler.FieldSelection>();
+        private Map<SObjectField, TriggerHandler.ParentFields> oldDeclaration = new Map<SObjectField, TriggerHandler.ParentFields>();
 
-        public void declareOld(SObjectField parentField, TriggerHandler.FieldSelection fields) {
+        public void declareOld(SObjectField parentField, TriggerHandler.ParentFields fields) {
             this.oldDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> oldFieldsToEnrichOnAfterDelete() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterDelete() {
             this.oldDeclarationRequestCount++;
             return this.oldDeclaration;
         }
@@ -10993,17 +11036,17 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class GapEnrichmentAfterUndeleteHandler implements AfterUndelete.Handler, AfterUndelete.NewRecordEnrichment {
+    private class GapEnrichmentAfterUndeleteHandler implements AfterUndelete.Handler, AfterUndelete.ParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public Integer newDeclarationRequestCount = 0;
 
-        private Map<SObjectField, TriggerHandler.FieldSelection> newDeclaration = new Map<SObjectField, TriggerHandler.FieldSelection>();
+        private Map<SObjectField, TriggerHandler.ParentFields> newDeclaration = new Map<SObjectField, TriggerHandler.ParentFields>();
 
-        public void declareNew(SObjectField parentField, TriggerHandler.FieldSelection fields) {
+        public void declareNew(SObjectField parentField, TriggerHandler.ParentFields fields) {
             this.newDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterUndelete() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUndelete() {
             this.newDeclarationRequestCount++;
             return this.newDeclaration;
         }

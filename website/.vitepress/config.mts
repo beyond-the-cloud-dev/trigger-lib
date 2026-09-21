@@ -150,7 +150,7 @@ export default defineConfig({
           { text: 'Context Interfaces', link: '/api/context-interfaces' },
           { text: 'Record Interfaces', link: '/api/record' },
           {
-            text: 'TriggerHandler.FieldSelection',
+            text: 'TriggerHandler.ParentFields',
             link: '/api/field-selection'
           }
         ]

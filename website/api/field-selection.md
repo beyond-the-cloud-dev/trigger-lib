@@ -2,15 +2,15 @@
 outline: deep
 ---
 
-# TriggerHandler.FieldSelection
+# TriggerHandler.ParentFields
 
-Describes which fields to query on a parent record during [enrichment](/guide/enrichment). A new selection starts from the `TriggerHandler.FieldSelection` static property and every `with` call returns the same selection, so calls chain.
+Describes which fields to query on a parent record during [enrichment](/guide/enrichment). A new selection starts from the `TriggerHandler.ParentFields` static property and every `with` call returns the same selection, so calls chain.
 
 ```apex
-public with sharing class ContactAccountHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment {
-  public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterUpdate() {
-    return new Map<SObjectField, TriggerHandler.FieldSelection>{
-      Contact.AccountId => TriggerHandler.FieldSelection
+public with sharing class ContactAccountHandler implements AfterUpdate.Handler, AfterUpdate.ParentQuery {
+  public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
+    return new Map<SObjectField, TriggerHandler.ParentFields>{
+      Contact.AccountId => TriggerHandler.ParentFields
         .with(Account.Name, Account.Industry)
         .with('Owner', User.Name, User.Email)
     };
@@ -28,7 +28,7 @@ public with sharing class ContactAccountHandler implements AfterUpdate.Handler, 
 }
 ```
 
-Reading the `TriggerHandler.FieldSelection` property hands back a new, empty selection every time, so each map entry starts from scratch.
+Reading the `TriggerHandler.ParentFields` property hands back a new, empty selection every time, so each map entry starts from scratch.
 
 ## The Map Key
 
@@ -42,7 +42,7 @@ The key also decides the name the parent is read back under. The framework uses 
 | `Contact.OwnerId`    | `User`                | `getNewRelated('Owner')`    |
 | `Contact.CreatedById`| `User`                | `getNewRelated('CreatedBy')`|
 
-`OldRecordEnrichment` uses the same keys and the same names, read with `getOldRelated`. Declaring a lookup on one side does not declare it on the other.
+`PriorParentQuery` uses the same keys and the same names, read with `getOldRelated`. Declaring a lookup on one side does not declare it on the other.
 
 ## Methods
 
@@ -53,22 +53,22 @@ Adds fields of the parent object.
 **Signatures**
 
 ```apex
-FieldSelection with(SObjectField field)
-FieldSelection with(SObjectField field1, SObjectField field2)
-FieldSelection with(SObjectField field1, SObjectField field2, SObjectField field3)
-FieldSelection with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4)
-FieldSelection with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5)
-FieldSelection with(Iterable<SObjectField> fields)
+ParentFields with(SObjectField field)
+ParentFields with(SObjectField field1, SObjectField field2)
+ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3)
+ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4)
+ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5)
+ParentFields with(Iterable<SObjectField> fields)
 ```
 
 **Example**
 
 ```apex
-TriggerHandler.FieldSelection.with(Account.Name, Account.Industry, Account.BillingCountry)
+TriggerHandler.ParentFields.with(Account.Name, Account.Industry, Account.BillingCountry)
 ```
 
 ```apex
-TriggerHandler.FieldSelection.with(new List<SObjectField>{ Account.Name, Account.Industry })
+TriggerHandler.ParentFields.with(new List<SObjectField>{ Account.Name, Account.Industry })
 ```
 
 ### with relationship
@@ -78,12 +78,12 @@ Adds fields reached through a relationship on the parent object. `relationshipNa
 **Signatures**
 
 ```apex
-FieldSelection with(String relationshipName, SObjectField field)
-FieldSelection with(String relationshipName, SObjectField field1, SObjectField field2)
-FieldSelection with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3)
-FieldSelection with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4)
-FieldSelection with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5)
-FieldSelection with(String relationshipName, Iterable<SObjectField> fields)
+ParentFields with(String relationshipName, SObjectField field)
+ParentFields with(String relationshipName, SObjectField field1, SObjectField field2)
+ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3)
+ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4)
+ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5)
+ParentFields with(String relationshipName, Iterable<SObjectField> fields)
 ```
 
 Each field is added to the query as `relationshipName.Field`, so it is read by traversing the parent record that comes back. The relationship name does not change how the parent itself is read back, only what it carries.
@@ -91,7 +91,7 @@ Each field is added to the query as `relationshipName.Field`, so it is read by t
 **Example**
 
 ```apex
-Contact.AccountId => TriggerHandler.FieldSelection
+Contact.AccountId => TriggerHandler.ParentFields
   .with(Account.Name)
   .with('Owner', User.Name, User.Email)
   .with('Parent', Account.Name)

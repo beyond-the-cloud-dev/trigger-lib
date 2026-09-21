@@ -1,4 +1,4 @@
-public with sharing class AccountOwnerTransferHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment, AfterUpdate.OldRecordEnrichment, AfterUpdate.Bypassable, AfterUpdate.Finalizer {
+public with sharing class AccountOwnerTransferHandler implements AfterUpdate.Handler, AfterUpdate.ParentQuery, AfterUpdate.PriorParentQuery, AfterUpdate.Bypassable, AfterUpdate.Finalizer {
     public static Boolean isDisabled = false;
 
     private Map<Id, Id> newOwnerIdByAccountId = new Map<Id, Id>();
@@ -8,12 +8,12 @@ public with sharing class AccountOwnerTransferHandler implements AfterUpdate.Han
         return isDisabled || System.isBatch();
     }
 
-    public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterUpdate() {
-        return new Map<SObjectField, TriggerHandler.FieldSelection>{ Account.OwnerId => TriggerHandler.FieldSelection.with(User.Name) };
+    public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
+        return new Map<SObjectField, TriggerHandler.ParentFields>{ Account.OwnerId => TriggerHandler.ParentFields.with(User.Name) };
     }
 
-    public Map<SObjectField, TriggerHandler.FieldSelection> oldFieldsToEnrichOnAfterUpdate() {
-        return new Map<SObjectField, TriggerHandler.FieldSelection>{ Account.OwnerId => TriggerHandler.FieldSelection.with(User.Name) };
+    public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnAfterUpdate() {
+        return new Map<SObjectField, TriggerHandler.ParentFields>{ Account.OwnerId => TriggerHandler.ParentFields.with(User.Name) };
     }
 
     public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {

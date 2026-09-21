@@ -569,7 +569,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNullWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.isNull(Contact.Description);
@@ -580,7 +580,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNullWhenFieldIsEmptyString() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''), null);
 
         // Test
         Boolean result = record.isNull(Contact.Description);
@@ -591,7 +591,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNullWhenFieldIsWhitespace() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = '   '));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = '   '), null);
 
         // Test
         Boolean result = record.isNull(Contact.Description);
@@ -601,7 +601,7 @@ private class TriggerHandlerTest {
     }
     @IsTest
     static void isNullWhenFieldIsPopulated() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Populated'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Populated'), null);
 
         // Test
         Boolean result = record.isNull(Contact.Description);
@@ -612,7 +612,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNullWhenNumberFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme'), null);
 
         // Test
         Boolean result = record.isNull(Account.NumberOfEmployees);
@@ -623,7 +623,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNullWhenNumberFieldIsZero() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', NumberOfEmployees = 0));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', NumberOfEmployees = 0), null);
 
         // Test
         Boolean result = record.isNull(Account.NumberOfEmployees);
@@ -634,7 +634,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNullWhenBooleanFieldIsFalse() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal', IsPrivate = false));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal', IsPrivate = false), null);
 
         // Test
         Boolean result = record.isNull(Opportunity.IsPrivate);
@@ -678,7 +678,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNotNullWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.isNotNull(Contact.Description);
@@ -689,7 +689,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNotNullWhenFieldIsEmptyString() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''), null);
 
         // Test
         Boolean result = record.isNotNull(Contact.Description);
@@ -700,7 +700,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNotNullWhenFieldIsWhitespace() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = '   '));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = '   '), null);
 
         // Test
         Boolean result = record.isNotNull(Contact.Description);
@@ -711,7 +711,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNotNullWhenFieldIsPopulated() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Populated'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Populated'), null);
 
         // Test
         Boolean result = record.isNotNull(Contact.Description);
@@ -722,7 +722,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNotNullWhenNumberFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme'), null);
 
         // Test
         Boolean result = record.isNotNull(Account.NumberOfEmployees);
@@ -733,7 +733,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNotNullWhenNumberFieldIsZero() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', NumberOfEmployees = 0));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', NumberOfEmployees = 0), null);
 
         // Test
         Boolean result = record.isNotNull(Account.NumberOfEmployees);
@@ -755,7 +755,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isEmptyWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.isEmpty(Contact.Description);
@@ -766,7 +766,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isEmptyWhenFieldIsEmptyString() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''), null);
 
         // Test
         Boolean result = record.isEmpty(Contact.Description);
@@ -777,7 +777,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isEmptyWhenFieldIsWhitespace() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = '   '));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = '   '), null);
 
         // Test
         Boolean result = record.isEmpty(Contact.Description);
@@ -788,7 +788,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isEmptyWhenFieldIsPopulated() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Populated'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Populated'), null);
 
         // Test
         Boolean result = record.isEmpty(Contact.Description);
@@ -799,7 +799,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isEmptyWhenNumberFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme'), null);
 
         // Test
         Boolean result = record.isEmpty(Account.NumberOfEmployees);
@@ -810,7 +810,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isEmptyWhenNumberFieldIsZero() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', NumberOfEmployees = 0));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', NumberOfEmployees = 0), null);
 
         // Test
         Boolean result = record.isEmpty(Account.NumberOfEmployees);
@@ -821,7 +821,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isEmptyWhenCurrencyFieldIsZero() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', AnnualRevenue = 0));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', AnnualRevenue = 0), null);
 
         // Test
         Boolean result = record.isEmpty(Account.AnnualRevenue);
@@ -832,7 +832,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isEmptyWhenBooleanFieldIsFalse() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal', IsPrivate = false));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal', IsPrivate = false), null);
 
         // Test
         Boolean result = record.isEmpty(Opportunity.IsPrivate);
@@ -843,7 +843,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isEmptyWhenDateFieldIsPopulated() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Birthdate = Date.newInstance(2024, 1, 1)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Birthdate = Date.newInstance(2024, 1, 1)), null);
 
         // Test
         Boolean result = record.isEmpty(Contact.Birthdate);
@@ -876,7 +876,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNotEmptyWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.isNotEmpty(Contact.Description);
@@ -887,7 +887,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNotEmptyWhenFieldIsEmptyString() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''), null);
 
         // Test
         Boolean result = record.isNotEmpty(Contact.Description);
@@ -898,7 +898,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNotEmptyWhenFieldIsWhitespace() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = '   '));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = '   '), null);
 
         // Test
         Boolean result = record.isNotEmpty(Contact.Description);
@@ -909,7 +909,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNotEmptyWhenFieldIsPopulated() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Populated'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Populated'), null);
 
         // Test
         Boolean result = record.isNotEmpty(Contact.Description);
@@ -920,7 +920,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNotEmptyWhenNumberFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme'), null);
 
         // Test
         Boolean result = record.isNotEmpty(Account.NumberOfEmployees);
@@ -931,7 +931,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNotEmptyWhenNumberFieldIsZero() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', NumberOfEmployees = 0));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', NumberOfEmployees = 0), null);
 
         // Test
         Boolean result = record.isNotEmpty(Account.NumberOfEmployees);
@@ -953,7 +953,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isBlankWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.isBlank(Contact.Description);
@@ -964,7 +964,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isBlankWhenFieldIsEmptyString() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''), null);
 
         // Test
         Boolean result = record.isBlank(Contact.Description);
@@ -975,7 +975,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isBlankWhenFieldIsWhitespace() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = '   '));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = '   '), null);
 
         // Test
         Boolean result = record.isBlank(Contact.Description);
@@ -986,7 +986,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isBlankWhenFieldIsTabAndNewLine() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = '\t\n'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = '\t\n'), null);
 
         // Test
         Boolean result = record.isBlank(Contact.Description);
@@ -997,7 +997,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isBlankWhenFieldIsPopulated() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Populated'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Populated'), null);
 
         // Test
         Boolean result = record.isBlank(Contact.Description);
@@ -1008,7 +1008,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isBlankWhenFieldHasSurroundingWhitespace() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = '   Populated   '));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = '   Populated   '), null);
 
         // Test
         Boolean result = record.isBlank(Contact.Description);
@@ -1019,7 +1019,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isBlankWhenNumberFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme'), null);
 
         // Test
         Boolean result = record.isBlank(Account.NumberOfEmployees);
@@ -1030,7 +1030,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isBlankWhenNumberFieldIsZero() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', NumberOfEmployees = 0));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', NumberOfEmployees = 0), null);
 
         // Test
         Boolean result = record.isBlank(Account.NumberOfEmployees);
@@ -1041,7 +1041,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isBlankWhenCurrencyFieldIsZero() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', AnnualRevenue = 0));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', AnnualRevenue = 0), null);
 
         // Test
         Boolean result = record.isBlank(Account.AnnualRevenue);
@@ -1052,7 +1052,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isBlankWhenBooleanFieldIsFalse() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal', IsPrivate = false));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal', IsPrivate = false), null);
 
         // Test
         Boolean result = record.isBlank(Opportunity.IsPrivate);
@@ -1063,7 +1063,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isBlankWhenDateFieldIsPopulated() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Birthdate = Date.newInstance(2024, 1, 1)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Birthdate = Date.newInstance(2024, 1, 1)), null);
 
         // Test
         Boolean result = record.isBlank(Contact.Birthdate);
@@ -1123,7 +1123,7 @@ private class TriggerHandlerTest {
     }
     @IsTest
     static void isNotBlankWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.isNotBlank(Contact.Description);
@@ -1134,7 +1134,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNotBlankWhenFieldIsEmptyString() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''), null);
 
         // Test
         Boolean result = record.isNotBlank(Contact.Description);
@@ -1145,7 +1145,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNotBlankWhenFieldIsWhitespace() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = '   '));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = '   '), null);
 
         // Test
         Boolean result = record.isNotBlank(Contact.Description);
@@ -1156,7 +1156,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNotBlankWhenFieldIsPopulated() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Populated'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Populated'), null);
 
         // Test
         Boolean result = record.isNotBlank(Contact.Description);
@@ -1167,7 +1167,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNotBlankWhenNumberFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme'), null);
 
         // Test
         Boolean result = record.isNotBlank(Account.NumberOfEmployees);
@@ -1178,7 +1178,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isNotBlankWhenNumberFieldIsZero() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', NumberOfEmployees = 0));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', NumberOfEmployees = 0), null);
 
         // Test
         Boolean result = record.isNotBlank(Account.NumberOfEmployees);
@@ -1200,7 +1200,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void equalsWhenValueMatches() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.equals(Contact.LastName, 'Doe');
@@ -1211,7 +1211,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void equalsWhenValueDoesNotMatch() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.equals(Contact.LastName, 'Smith');
@@ -1222,7 +1222,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void equalsIsCaseInsensitiveForText() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.equals(Contact.LastName, 'DOE');
@@ -1233,7 +1233,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void equalsWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.equals(Contact.Description, 'Anything');
@@ -1244,7 +1244,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void equalsWhenExpectedValueIsNullAndFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.equals(Contact.Description, null);
@@ -1255,7 +1255,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void equalsWhenExpectedValueIsNullAndFieldIsPopulated() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Note'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Note'), null);
 
         // Test
         Boolean result = record.equals(Contact.Description, null);
@@ -1266,7 +1266,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void equalsWhenFieldIsEmptyText() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''), null);
 
         // Test
         Boolean result = record.equals(Contact.Description, '');
@@ -1277,7 +1277,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void equalsWhenFieldIsEmptyTextAndExpectedValueIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''), null);
 
         // Test
         Boolean result = record.equals(Contact.Description, null);
@@ -1288,7 +1288,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void equalsWhenBooleanFieldMatches() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal', IsPrivate = true));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal', IsPrivate = true), null);
 
         // Test
         Boolean result = record.equals(Opportunity.IsPrivate, true);
@@ -1299,7 +1299,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void equalsWhenNumberFieldMatches() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', NumberOfEmployees = 1500));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', NumberOfEmployees = 1500), null);
 
         // Test
         Boolean result = record.equals(Account.NumberOfEmployees, 1500);
@@ -1310,7 +1310,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void equalsWhenDateFieldMatches() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Birthdate = Date.newInstance(2026, 1, 1)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Birthdate = Date.newInstance(2026, 1, 1)), null);
 
         // Test
         Boolean result = record.equals(Contact.Birthdate, Date.newInstance(2026, 1, 1));
@@ -1322,7 +1322,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void equalsWhenLookupFieldMatches() {
         Id accountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', AccountId = accountId));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', AccountId = accountId), null);
 
         // Test
         Boolean result = record.equals(Contact.AccountId, accountId);
@@ -1366,7 +1366,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void equalsOnUndeleteReadsRestoredValue() {
-        TriggerHandler.UndeleteRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Restored'));
+        TriggerHandler.UndeleteRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Restored'), null);
 
         // Test
         Boolean result = record.equals(Contact.LastName, 'Restored');
@@ -1377,7 +1377,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void doesNotEqualWhenValueDiffers() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.doesNotEqual(Contact.LastName, 'Smith');
@@ -1388,7 +1388,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void doesNotEqualWhenValueMatches() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.doesNotEqual(Contact.LastName, 'Doe');
@@ -1399,7 +1399,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void doesNotEqualIsCaseInsensitiveForText() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.doesNotEqual(Contact.LastName, 'DOE');
@@ -1410,7 +1410,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void doesNotEqualWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.doesNotEqual(Contact.Description, 'Anything');
@@ -1421,7 +1421,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void doesNotEqualWhenExpectedValueIsNullAndFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.doesNotEqual(Contact.Description, null);
@@ -1432,7 +1432,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void doesNotEqualWhenExpectedValueIsNullAndFieldIsPopulated() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Note'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Note'), null);
 
         // Test
         Boolean result = record.doesNotEqual(Contact.Description, null);
@@ -1465,7 +1465,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void containsWhenValueIsPresent() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
 
         // Test
         Boolean result = record.contains(Contact.Description, 'World');
@@ -1476,7 +1476,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void containsWhenValueIsAbsent() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
 
         // Test
         Boolean result = record.contains(Contact.Description, 'Goodbye');
@@ -1487,7 +1487,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void containsWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.contains(Contact.Description, 'World');
@@ -1498,7 +1498,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void containsIsCaseSensitive() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
 
         // Test
         Boolean result = record.contains(Contact.Description, 'world');
@@ -1509,7 +1509,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void containsWhenValueIsTheWholeFieldValue() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
 
         // Test
         Boolean result = record.contains(Contact.Description, 'Hello World');
@@ -1520,7 +1520,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void containsWhenFieldIsEmptyText() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''), null);
 
         // Test
         Boolean result = record.contains(Contact.Description, 'World');
@@ -1531,7 +1531,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void containsOnNumberFieldUsesTextValue() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', NumberOfEmployees = 1500));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', NumberOfEmployees = 1500), null);
 
         // Test
         Boolean result = record.contains(Account.NumberOfEmployees, '50');
@@ -1567,7 +1567,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void doesNotContainWhenValueIsAbsent() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
 
         // Test
         Boolean result = record.doesNotContain(Contact.Description, 'Goodbye');
@@ -1578,7 +1578,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void doesNotContainWhenValueIsPresent() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
 
         // Test
         Boolean result = record.doesNotContain(Contact.Description, 'World');
@@ -1589,7 +1589,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void doesNotContainWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.doesNotContain(Contact.Description, 'World');
@@ -1600,7 +1600,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void doesNotContainIsCaseSensitive() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
 
         // Test
         Boolean result = record.doesNotContain(Contact.Description, 'world');
@@ -1611,7 +1611,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void doesNotContainWhenValueIsTheWholeFieldValue() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
 
         // Test
         Boolean result = record.doesNotContain(Contact.Description, 'Hello World');
@@ -1622,7 +1622,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void doesNotContainWhenFieldIsEmptyText() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''), null);
 
         // Test
         Boolean result = record.doesNotContain(Contact.Description, 'World');
@@ -1660,7 +1660,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void startsWithWhenPrefixMatches() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
 
         // Test
         Boolean result = record.startsWith(Contact.Description, 'Hello');
@@ -1671,7 +1671,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void startsWithWhenPrefixDoesNotMatch() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
 
         // Test
         Boolean result = record.startsWith(Contact.Description, 'Goodbye');
@@ -1682,7 +1682,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void startsWithWhenValueIsNotAtTheStart() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
 
         // Test
         Boolean result = record.startsWith(Contact.Description, 'World');
@@ -1693,7 +1693,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void startsWithWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.startsWith(Contact.Description, 'Hello');
@@ -1704,7 +1704,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void startsWithIsCaseSensitive() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
 
         // Test
         Boolean result = record.startsWith(Contact.Description, 'hello');
@@ -1715,7 +1715,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void startsWithWhenPrefixIsTheWholeFieldValue() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
 
         // Test
         Boolean result = record.startsWith(Contact.Description, 'Hello World');
@@ -1751,7 +1751,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void endsWithWhenSuffixMatches() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
 
         // Test
         Boolean result = record.endsWith(Contact.Description, 'World');
@@ -1762,7 +1762,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void endsWithWhenSuffixDoesNotMatch() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
 
         // Test
         Boolean result = record.endsWith(Contact.Description, 'Goodbye');
@@ -1773,7 +1773,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void endsWithWhenValueIsNotAtTheEnd() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
 
         // Test
         Boolean result = record.endsWith(Contact.Description, 'Hello');
@@ -1784,7 +1784,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void endsWithWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.endsWith(Contact.Description, 'World');
@@ -1795,7 +1795,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void endsWithIsCaseSensitive() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
 
         // Test
         Boolean result = record.endsWith(Contact.Description, 'WORLD');
@@ -1806,7 +1806,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void endsWithWhenSuffixIsTheWholeFieldValue() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
 
         // Test
         Boolean result = record.endsWith(Contact.Description, 'Hello World');
@@ -1842,7 +1842,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isTrueWhenFieldIsTrue() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal', IsPrivate = true));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal', IsPrivate = true), null);
 
         // Test
         Boolean result = record.isTrue(Opportunity.IsPrivate);
@@ -1853,7 +1853,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isTrueWhenFieldIsFalse() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal', IsPrivate = false));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal', IsPrivate = false), null);
 
         // Test
         Boolean result = record.isTrue(Opportunity.IsPrivate);
@@ -1864,7 +1864,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isTrueWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal'), null);
 
         // Test
         Boolean result = record.isTrue(Opportunity.IsPrivate);
@@ -1875,7 +1875,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isTrueWhenFieldIsText() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.isTrue(Contact.LastName);
@@ -1908,7 +1908,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isFalseWhenFieldIsFalse() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal', IsPrivate = false));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal', IsPrivate = false), null);
 
         // Test
         Boolean result = record.isFalse(Opportunity.IsPrivate);
@@ -1919,7 +1919,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isFalseWhenFieldIsTrue() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal', IsPrivate = true));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal', IsPrivate = true), null);
 
         // Test
         Boolean result = record.isFalse(Opportunity.IsPrivate);
@@ -1930,7 +1930,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isFalseWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal'), null);
 
         // Test
         Boolean result = record.isFalse(Opportunity.IsPrivate);
@@ -1941,7 +1941,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isFalseWhenFieldIsText() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
         // Test
         Boolean result = record.isFalse(Contact.LastName);
@@ -1974,7 +1974,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanIntegerWhenFieldIsGreater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
 
         // Test
         Boolean result = record.greaterThan(Account.NumberOfEmployees, 50);
@@ -1985,7 +1985,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanIntegerWhenFieldIsLower() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
 
         // Test
         Boolean result = record.greaterThan(Account.NumberOfEmployees, 150);
@@ -1996,7 +1996,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanIntegerWhenValuesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
 
         // Test
         Boolean result = record.greaterThan(Account.NumberOfEmployees, 100);
@@ -2007,7 +2007,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanIntegerWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'), null);
 
         // Test
         Boolean result = record.greaterThan(Account.NumberOfEmployees, 50);
@@ -2018,7 +2018,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToIntegerWhenFieldIsGreater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
 
         // Test
         Boolean result = record.greaterThanOrEqualTo(Account.NumberOfEmployees, 50);
@@ -2029,7 +2029,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToIntegerWhenFieldIsLower() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
 
         // Test
         Boolean result = record.greaterThanOrEqualTo(Account.NumberOfEmployees, 150);
@@ -2040,7 +2040,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToIntegerWhenValuesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
 
         // Test
         Boolean result = record.greaterThanOrEqualTo(Account.NumberOfEmployees, 100);
@@ -2051,7 +2051,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToIntegerWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'), null);
 
         // Test
         Boolean result = record.greaterThanOrEqualTo(Account.NumberOfEmployees, 50);
@@ -2062,7 +2062,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanIntegerWhenFieldIsLower() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
 
         // Test
         Boolean result = record.lessThan(Account.NumberOfEmployees, 150);
@@ -2073,7 +2073,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanIntegerWhenFieldIsGreater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
 
         // Test
         Boolean result = record.lessThan(Account.NumberOfEmployees, 50);
@@ -2084,7 +2084,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanIntegerWhenValuesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
 
         // Test
         Boolean result = record.lessThan(Account.NumberOfEmployees, 100);
@@ -2095,7 +2095,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanIntegerWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'), null);
 
         // Test
         Boolean result = record.lessThan(Account.NumberOfEmployees, 150);
@@ -2106,7 +2106,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToIntegerWhenFieldIsLower() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
 
         // Test
         Boolean result = record.lessThanOrEqualTo(Account.NumberOfEmployees, 150);
@@ -2117,7 +2117,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToIntegerWhenFieldIsGreater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
 
         // Test
         Boolean result = record.lessThanOrEqualTo(Account.NumberOfEmployees, 50);
@@ -2128,7 +2128,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToIntegerWhenValuesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
 
         // Test
         Boolean result = record.lessThanOrEqualTo(Account.NumberOfEmployees, 100);
@@ -2139,7 +2139,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToIntegerWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'), null);
 
         // Test
         Boolean result = record.lessThanOrEqualTo(Account.NumberOfEmployees, 150);
@@ -2150,7 +2150,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanDoubleWhenFieldIsGreater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5), null);
         Double value = 2500.25;
 
         // Test
@@ -2162,7 +2162,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanDoubleWhenFieldIsLower() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5), null);
         Double value = 7500.75;
 
         // Test
@@ -2173,7 +2173,7 @@ private class TriggerHandlerTest {
     }
     @IsTest
     static void greaterThanDoubleWhenValuesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5), null);
         Double value = 5000.5;
 
         // Test
@@ -2185,7 +2185,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanDoubleWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'), null);
         Double value = 2500.25;
 
         // Test
@@ -2197,7 +2197,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToDoubleWhenFieldIsGreater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5), null);
         Double value = 2500.25;
 
         // Test
@@ -2209,7 +2209,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToDoubleWhenFieldIsLower() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5), null);
         Double value = 7500.75;
 
         // Test
@@ -2221,7 +2221,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToDoubleWhenValuesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5), null);
         Double value = 5000.5;
 
         // Test
@@ -2233,7 +2233,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToDoubleWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'), null);
         Double value = 2500.25;
 
         // Test
@@ -2245,7 +2245,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanDoubleWhenFieldIsLower() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5), null);
         Double value = 7500.75;
 
         // Test
@@ -2257,7 +2257,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanDoubleWhenFieldIsGreater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5), null);
         Double value = 2500.25;
 
         // Test
@@ -2269,7 +2269,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanDoubleWhenValuesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5), null);
         Double value = 5000.5;
 
         // Test
@@ -2281,7 +2281,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanDoubleWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'), null);
         Double value = 7500.75;
 
         // Test
@@ -2293,7 +2293,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToDoubleWhenFieldIsLower() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5), null);
         Double value = 7500.75;
 
         // Test
@@ -2305,7 +2305,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToDoubleWhenFieldIsGreater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5), null);
         Double value = 2500.25;
 
         // Test
@@ -2317,7 +2317,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToDoubleWhenValuesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5), null);
         Double value = 5000.5;
 
         // Test
@@ -2329,7 +2329,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToDoubleWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'), null);
         Double value = 7500.75;
 
         // Test
@@ -2341,7 +2341,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanDecimalWhenFieldIsGreater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75), null);
         Decimal value = 1000.50;
 
         // Test
@@ -2353,7 +2353,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanDecimalWhenFieldIsLower() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75), null);
         Decimal value = 2000.25;
 
         // Test
@@ -2365,7 +2365,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanDecimalWhenValuesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75), null);
         Decimal value = 1500.75;
 
         // Test
@@ -2377,7 +2377,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanDecimalWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Test'), null);
         Decimal value = 1000.50;
 
         // Test
@@ -2389,7 +2389,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToDecimalWhenFieldIsGreater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75), null);
         Decimal value = 1000.50;
 
         // Test
@@ -2401,7 +2401,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToDecimalWhenFieldIsLower() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75), null);
         Decimal value = 2000.25;
 
         // Test
@@ -2413,7 +2413,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToDecimalWhenValuesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75), null);
         Decimal value = 1500.75;
 
         // Test
@@ -2425,7 +2425,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToDecimalWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Test'), null);
         Decimal value = 1000.50;
 
         // Test
@@ -2437,7 +2437,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanDecimalWhenFieldIsLower() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75), null);
         Decimal value = 2000.25;
 
         // Test
@@ -2449,7 +2449,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanDecimalWhenFieldIsGreater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75), null);
         Decimal value = 1000.50;
 
         // Test
@@ -2461,7 +2461,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanDecimalWhenValuesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75), null);
         Decimal value = 1500.75;
 
         // Test
@@ -2473,7 +2473,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanDecimalWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Test'), null);
         Decimal value = 2000.25;
 
         // Test
@@ -2485,7 +2485,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToDecimalWhenFieldIsLower() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75), null);
         Decimal value = 2000.25;
 
         // Test
@@ -2497,7 +2497,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToDecimalWhenFieldIsGreater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75), null);
         Decimal value = 1000.50;
 
         // Test
@@ -2509,7 +2509,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToDecimalWhenValuesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Amount = 1500.75), null);
         Decimal value = 1500.75;
 
         // Test
@@ -2521,7 +2521,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToDecimalWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Test'), null);
         Decimal value = 2000.25;
 
         // Test
@@ -2533,7 +2533,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanDateWhenFieldIsLater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)), null);
         Date value = Date.newInstance(1989, 12, 31);
 
         // Test
@@ -2545,7 +2545,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanDateWhenFieldIsEarlier() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)), null);
         Date value = Date.newInstance(1990, 1, 2);
 
         // Test
@@ -2557,7 +2557,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanDateWhenDatesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)), null);
         Date value = Date.newInstance(1990, 1, 1);
 
         // Test
@@ -2569,7 +2569,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanDateWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test'), null);
         Date value = Date.newInstance(1989, 12, 31);
 
         // Test
@@ -2581,7 +2581,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToDateWhenFieldIsLater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)), null);
         Date value = Date.newInstance(1989, 12, 31);
 
         // Test
@@ -2593,7 +2593,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToDateWhenFieldIsEarlier() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)), null);
         Date value = Date.newInstance(1990, 1, 2);
 
         // Test
@@ -2605,7 +2605,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToDateWhenDatesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)), null);
         Date value = Date.newInstance(1990, 1, 1);
 
         // Test
@@ -2617,7 +2617,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToDateWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test'), null);
         Date value = Date.newInstance(1989, 12, 31);
 
         // Test
@@ -2629,7 +2629,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanDateWhenFieldIsEarlier() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)), null);
         Date value = Date.newInstance(1990, 1, 2);
 
         // Test
@@ -2641,7 +2641,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanDateWhenFieldIsLater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)), null);
         Date value = Date.newInstance(1989, 12, 31);
 
         // Test
@@ -2653,7 +2653,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanDateWhenDatesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)), null);
         Date value = Date.newInstance(1990, 1, 1);
 
         // Test
@@ -2665,7 +2665,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanDateWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test'), null);
         Date value = Date.newInstance(1990, 1, 2);
 
         // Test
@@ -2677,7 +2677,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToDateWhenFieldIsEarlier() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)), null);
         Date value = Date.newInstance(1990, 1, 2);
 
         // Test
@@ -2689,7 +2689,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToDateWhenFieldIsLater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)), null);
         Date value = Date.newInstance(1989, 12, 31);
 
         // Test
@@ -2701,7 +2701,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToDateWhenDatesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)), null);
         Date value = Date.newInstance(1990, 1, 1);
 
         // Test
@@ -2713,7 +2713,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToDateWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test'), null);
         Date value = Date.newInstance(1990, 1, 2);
 
         // Test
@@ -2725,7 +2725,10 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanDateTimeWhenFieldIsLater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(
+            new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)),
+            null
+        );
         DateTime value = DateTime.newInstanceGmt(2024, 1, 1, 11, 0, 0);
 
         // Test
@@ -2736,7 +2739,10 @@ private class TriggerHandlerTest {
     }
     @IsTest
     static void greaterThanDateTimeWhenFieldIsEarlier() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(
+            new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)),
+            null
+        );
         DateTime value = DateTime.newInstanceGmt(2024, 1, 1, 13, 0, 0);
 
         // Test
@@ -2748,7 +2754,10 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanDateTimeWhenDateTimesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(
+            new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)),
+            null
+        );
         DateTime value = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0);
 
         // Test
@@ -2760,7 +2769,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanDateTimeWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test'), null);
         DateTime value = DateTime.newInstanceGmt(2024, 1, 1, 11, 0, 0);
 
         // Test
@@ -2772,7 +2781,10 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToDateTimeWhenFieldIsLater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(
+            new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)),
+            null
+        );
         DateTime value = DateTime.newInstanceGmt(2024, 1, 1, 11, 0, 0);
 
         // Test
@@ -2784,7 +2796,10 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToDateTimeWhenFieldIsEarlier() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(
+            new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)),
+            null
+        );
         DateTime value = DateTime.newInstanceGmt(2024, 1, 1, 13, 0, 0);
 
         // Test
@@ -2796,7 +2811,10 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToDateTimeWhenDateTimesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(
+            new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)),
+            null
+        );
         DateTime value = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0);
 
         // Test
@@ -2808,7 +2826,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToDateTimeWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test'), null);
         DateTime value = DateTime.newInstanceGmt(2024, 1, 1, 11, 0, 0);
 
         // Test
@@ -2820,7 +2838,10 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanDateTimeWhenFieldIsEarlier() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(
+            new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)),
+            null
+        );
         DateTime value = DateTime.newInstanceGmt(2024, 1, 1, 13, 0, 0);
 
         // Test
@@ -2832,7 +2853,10 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanDateTimeWhenFieldIsLater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(
+            new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)),
+            null
+        );
         DateTime value = DateTime.newInstanceGmt(2024, 1, 1, 11, 0, 0);
 
         // Test
@@ -2844,7 +2868,10 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanDateTimeWhenDateTimesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(
+            new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)),
+            null
+        );
         DateTime value = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0);
 
         // Test
@@ -2856,7 +2883,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanDateTimeWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test'), null);
         DateTime value = DateTime.newInstanceGmt(2024, 1, 1, 13, 0, 0);
 
         // Test
@@ -2868,7 +2895,10 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToDateTimeWhenFieldIsEarlier() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(
+            new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)),
+            null
+        );
         DateTime value = DateTime.newInstanceGmt(2024, 1, 1, 13, 0, 0);
 
         // Test
@@ -2880,7 +2910,10 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToDateTimeWhenFieldIsLater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(
+            new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)),
+            null
+        );
         DateTime value = DateTime.newInstanceGmt(2024, 1, 1, 11, 0, 0);
 
         // Test
@@ -2892,7 +2925,10 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToDateTimeWhenDateTimesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(
+            new Contact(LastName = 'Test', EmailBouncedDate = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0)),
+            null
+        );
         DateTime value = DateTime.newInstanceGmt(2024, 1, 1, 12, 0, 0);
 
         // Test
@@ -2904,7 +2940,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToDateTimeWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Test'), null);
         DateTime value = DateTime.newInstanceGmt(2024, 1, 1, 13, 0, 0);
 
         // Test
@@ -2916,7 +2952,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanLongWhenFieldIsGreater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
         Long value = 50L;
 
         // Test
@@ -2928,7 +2964,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanLongWhenFieldIsLower() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
         Long value = 150L;
 
         // Test
@@ -2940,7 +2976,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanLongWhenValuesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
         Long value = 100L;
 
         // Test
@@ -2952,7 +2988,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanLongWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'), null);
         Long value = 50L;
 
         // Test
@@ -2964,7 +3000,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToLongWhenFieldIsGreater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
         Long value = 50L;
 
         // Test
@@ -2976,7 +3012,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToLongWhenFieldIsLower() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
         Long value = 150L;
 
         // Test
@@ -2988,7 +3024,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToLongWhenValuesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
         Long value = 100L;
 
         // Test
@@ -3000,7 +3036,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToLongWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'), null);
         Long value = 50L;
 
         // Test
@@ -3012,7 +3048,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanLongBeyondDoublePrecisionWhenFieldIsGreater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 9007199254740993L));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 9007199254740993L), null);
         Long value = 9007199254740992L;
 
         // Test
@@ -3027,7 +3063,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanLongBeyondDoublePrecisionWhenValuesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 9007199254740993L));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 9007199254740993L), null);
         Long value = 9007199254740993L;
 
         // Test
@@ -3039,7 +3075,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToLongBeyondDoublePrecisionWhenFieldIsLower() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 9007199254740992L));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 9007199254740992L), null);
         Long value = 9007199254740993L;
 
         // Test
@@ -3051,7 +3087,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void greaterThanOrEqualToLongBeyondDoublePrecisionWhenValuesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 9007199254740993L));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 9007199254740993L), null);
         Long value = 9007199254740993L;
 
         // Test
@@ -3063,7 +3099,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanLongWhenFieldIsLower() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
         Long value = 150L;
 
         // Test
@@ -3075,7 +3111,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanLongWhenFieldIsGreater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
         Long value = 50L;
 
         // Test
@@ -3087,7 +3123,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanLongWhenValuesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
         Long value = 100L;
 
         // Test
@@ -3099,7 +3135,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanLongWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'), null);
         Long value = 150L;
 
         // Test
@@ -3114,7 +3150,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToLongWhenFieldIsLower() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
         Long value = 150L;
 
         // Test
@@ -3126,7 +3162,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToLongWhenFieldIsGreater() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
         Long value = 50L;
 
         // Test
@@ -3138,7 +3174,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToLongWhenValuesAreEqual() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 100), null);
         Long value = 100L;
 
         // Test
@@ -3150,7 +3186,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void lessThanOrEqualToLongWhenFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'));
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Test'), null);
         Long value = 150L;
 
         // Test
@@ -3218,7 +3254,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isRecordTypeEqualWhenSObjectHasNoRecordTypes() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new User());
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new User(), null);
         Exception handlerException = null;
 
         // Test
@@ -3246,7 +3282,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isRecordTypeNotEqualWhenSObjectHasNoRecordTypes() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new User());
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new User(), null);
         Exception handlerException = null;
 
         // Test
@@ -3361,7 +3397,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isRecordTypeEqualOnUndeleteRecord() {
-        TriggerHandler.UndeleteRecord record = new TriggerHandler.TriggerRecord(new User());
+        TriggerHandler.UndeleteRecord record = new TriggerHandler.TriggerRecord(new User(), null);
         Exception handlerException = null;
 
         // Test
@@ -3381,7 +3417,7 @@ private class TriggerHandlerTest {
     }
     @IsTest
     static void isRecordTypeNotEqualOnUndeleteRecord() {
-        TriggerHandler.UndeleteRecord record = new TriggerHandler.TriggerRecord(new User());
+        TriggerHandler.UndeleteRecord record = new TriggerHandler.TriggerRecord(new User(), null);
         Exception handlerException = null;
 
         // Test
@@ -3402,7 +3438,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isRecordTypeEqualNamesTheSObjectTypeInTheMessage() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Group());
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Group(), null);
         Exception handlerException = null;
 
         // Test
@@ -3423,7 +3459,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void multipleIsRecordTypeEqualExecutions() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new User());
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new User(), null);
         Exception firstException = null;
         Exception secondException = null;
 
@@ -3458,7 +3494,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void newSObjectIsReturnedWhenBuiltFromASingleRecord() {
         Contact newContact = new Contact(LastName = 'New');
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(newContact);
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(newContact, null);
 
         // Test
         SObject result = record.getNewSObject();
@@ -3469,7 +3505,7 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void oldSObjectIsNullWhenBuiltFromASingleRecord() {
-        TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'));
+        TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'), null);
 
         // Test
         SObject result = record.getOldSObject();
@@ -3588,7 +3624,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void newSObjectIsTheInstanceThatWasPassedIn() {
         Contact newContact = new Contact(LastName = 'New');
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(newContact);
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(newContact, null);
         newContact.Title = 'Manager';
 
         // Test
@@ -4057,124 +4093,6 @@ private class TriggerHandlerTest {
             'Manager',
             result.get(Contact.LastName),
             'It should be Manager, because each relationship is stored under its own name, so enriching one does not disturb another.'
-        );
-    }
-
-    @IsTest
-    static void getIdentifierReturnsTheRecordId() {
-        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
-        TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(Id = contactId, LastName = 'New'), null);
-
-        // Test
-        String result = record.getIdentifier();
-
-        // Verify
-        Assert.areEqual(contactId, result, 'It should be the record id, because the identifier falls back to a generated UUID only when the record has no id.');
-    }
-    @IsTest
-    static void getIdentifierFallsBackToTheOldRecordIdWhenNewRecordIsNull() {
-        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
-        TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(null, new Contact(Id = contactId, LastName = 'Old'));
-
-        // Test
-        String result = record.getIdentifier();
-
-        // Verify
-        Assert.areEqual(
-            contactId,
-            result,
-            'It should be the id of the old record, because the identifier falls back to the old record when there is no new record, as in delete shape.'
-        );
-    }
-
-    @IsTest
-    static void getIdentifierPrefersTheNewRecordId() {
-        Id firstContactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
-        Id secondContactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
-        TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(
-            new Contact(Id = firstContactId, LastName = 'New'),
-            new Contact(Id = secondContactId, LastName = 'Old')
-        );
-
-        // Test
-        String result = record.getIdentifier();
-
-        // Verify
-        Assert.areEqual(
-            firstContactId,
-            result,
-            'It should be the id of the new record, because the identifier reads the new record first and only falls back to the old one when the new record is null.'
-        );
-    }
-
-    @IsTest
-    static void getIdentifierIsNotNullWhenTheRecordHasNoId() {
-        TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'), null);
-
-        // Test
-        String result = record.getIdentifier();
-
-        // Verify
-        Assert.isNotNull(result, 'It should be not null, because a record with no id is given a random UUID as its identifier.');
-    }
-
-    @IsTest
-    static void getIdentifierIsUniquePerRecordWithoutAnId() {
-        TriggerHandler.TriggerRecord firstRecord = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'), null);
-        TriggerHandler.TriggerRecord secondRecord = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'), null);
-        String secondIdentifier = secondRecord.getIdentifier();
-
-        // Test
-        String result = firstRecord.getIdentifier();
-
-        // Verify
-        Assert.areNotEqual(secondIdentifier, result, 'It should differ from the other identifier, because every record without an id gets its own random UUID.');
-    }
-
-    @IsTest
-    static void getIdentifierIsSharedByTwoRecordsWrappingTheSameRow() {
-        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
-        TriggerHandler.TriggerRecord firstRecord = new TriggerHandler.TriggerRecord(new Contact(Id = contactId, LastName = 'New'), null);
-        TriggerHandler.TriggerRecord secondRecord = new TriggerHandler.TriggerRecord(new Contact(Id = contactId, LastName = 'New'), null);
-        String secondIdentifier = secondRecord.getIdentifier();
-
-        // Test
-        String result = firstRecord.getIdentifier();
-
-        // Verify
-        Assert.areEqual(secondIdentifier, result, 'It should be the same identifier, because the record id is used as the identifier whenever the wrapped row has one.');
-    }
-
-    @IsTest
-    static void getIdentifierIsStableAcrossCalls() {
-        TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'), null);
-        String firstIdentifier = record.getIdentifier();
-
-        // Test
-        String result = record.getIdentifier();
-
-        // Verify
-        Assert.areEqual(
-            firstIdentifier,
-            result,
-            'It should be the identifier returned by the first call, because the identifier is computed once in the constructor and stored on the record.'
-        );
-    }
-
-    @IsTest
-    static void getIdentifierIsNotChangedByPut() {
-        TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'), null);
-        String identifierBeforePut = record.getIdentifier();
-        record.put(Contact.Title, 'Manager');
-
-        // Test
-        String result = record.getIdentifier();
-
-        // Verify
-        Assert.areEqual(
-            identifierBeforePut,
-            result,
-            'It should be the identifier taken before the write, because the identifier is fixed at construction time and put only writes to the wrapped SObject.'
         );
     }
 

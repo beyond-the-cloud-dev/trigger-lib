@@ -3,8 +3,8 @@ public with sharing class ContactOwnerAlignmentHandler implements AfterInsert.Ha
 
     private List<Contact> contactsToReassign = new List<Contact>();
 
-    public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterInsert() {
-        return new Map<SObjectField, TriggerHandler.FieldSelection>{ Contact.AccountId => TriggerHandler.FieldSelection.with(Account.OwnerId).with('Owner', User.IsActive) };
+    public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnAfterInsert() {
+        return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.OwnerId).with('Owner', User.IsActive) };
     }
 
     public Boolean bypassOnAfterInsertWhen() {

@@ -125,7 +125,7 @@ Declares parent fields to query for the new version of each record. Read them wi
 
 ```apex
 public interface NewRecordEnrichment {
-  Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnBeforeInsert();
+  Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnBeforeInsert();
 }
 ```
 
@@ -137,7 +137,7 @@ public interface NewRecordEnrichment {
 | After Update   | `newFieldsToEnrichOnAfterUpdate`   |
 | After Undelete | `newFieldsToEnrichOnAfterUndelete` |
 
-See [Parent Enrichment](/guide/enrichment) and [TriggerHandler.FieldSelection](/api/field-selection).
+See [Parent Enrichment](/guide/enrichment) and [TriggerHandler.ParentFields](/api/field-selection).
 
 ## OldRecordEnrichment
 
@@ -145,7 +145,7 @@ Declares parent fields to query for the old version of each record. Read them wi
 
 ```apex
 public interface OldRecordEnrichment {
-  Map<SObjectField, TriggerHandler.FieldSelection> oldFieldsToEnrichOnBeforeUpdate();
+  Map<SObjectField, TriggerHandler.ParentFields> oldFieldsToEnrichOnBeforeUpdate();
 }
 ```
 

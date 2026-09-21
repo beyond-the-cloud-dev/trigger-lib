@@ -5,7 +5,7 @@ public class AfterDelete {
     }
 
     public interface OldRecordEnrichment {
-        Map<SObjectField, TriggerHandler.FieldSelection> oldFieldsToEnrichOnAfterDelete();
+        Map<SObjectField, TriggerHandler.ParentFields> oldFieldsToEnrichOnAfterDelete();
     }
 
     public interface Bypassable {
@@ -16,5 +16,6 @@ public class AfterDelete {
         void finalizeAfterDelete();
     }
 
-    public interface ContinueOnError {}
+    public interface ContinueOnError {
+    }
 }

@@ -1,10 +1,10 @@
-public with sharing class ContactAccountTransferPopulator implements BeforeUpdate.Populator, BeforeUpdate.NewRecordEnrichment, BeforeUpdate.OldRecordEnrichment, BeforeUpdate.RecursionGuard {
-    public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnBeforeUpdate() {
-        return new Map<SObjectField, TriggerHandler.FieldSelection>{ Contact.AccountId => TriggerHandler.FieldSelection.with(Account.Name) };
+public with sharing class ContactAccountTransferPopulator implements BeforeUpdate.Populator, BeforeUpdate.ParentQuery, BeforeUpdate.PriorParentQuery, BeforeUpdate.RecursionGuard {
+    public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate() {
+        return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
     }
 
-    public Map<SObjectField, TriggerHandler.FieldSelection> oldFieldsToEnrichOnBeforeUpdate() {
-        return new Map<SObjectField, TriggerHandler.FieldSelection>{ Contact.AccountId => TriggerHandler.FieldSelection.with(Account.Name) };
+    public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnBeforeUpdate() {
+        return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
     }
 
     public Integer maxRecursionDepthOnBeforeUpdate() {

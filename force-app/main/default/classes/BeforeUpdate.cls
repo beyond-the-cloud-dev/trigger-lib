@@ -13,12 +13,12 @@ public class BeforeUpdate {
 
     // additional interfaces - use as needed
 
-    public interface NewRecordEnrichment {
-        Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnBeforeUpdate();
+    public interface ParentQuery {
+        Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate();
     }
 
-    public interface OldRecordEnrichment {
-        Map<SObjectField, TriggerHandler.FieldSelection> oldFieldsToEnrichOnBeforeUpdate();
+    public interface PriorParentQuery {
+        Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnBeforeUpdate();
     }
 
     public interface Bypassable {
@@ -33,7 +33,8 @@ public class BeforeUpdate {
         void finalizeBeforeUpdate();
     }
 
-    public interface ContinueOnError {}
+    public interface ContinueOnError {
+    }
 
     // internal
 

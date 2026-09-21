@@ -13,8 +13,8 @@ public class BeforeInsert {
 
     // additional interfaces
 
-    public interface NewRecordEnrichment {
-        Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnBeforeInsert();
+    public interface ParentQuery {
+        Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert();
     }
 
     public interface Bypassable {
@@ -25,9 +25,11 @@ public class BeforeInsert {
         void finalizeBeforeInsert();
     }
 
-    public interface ContinueOnError {}
+    public interface ContinueOnError {
+    }
 
     // internal
 
-    public interface Handler {}
+    public interface Handler {
+    }
 }

@@ -475,7 +475,7 @@ finalizers a context object with no DML capability instead.
 - **Pair new and old rows by Id, not by list index** (`TriggerOrchestrator.cls:102-104`, `:110-112`).
   One map construction removes an undocumented platform assumption.
 - **Enrichment must support a non-Id join key.** `fieldsToEnrich()` returns
-  `Map<SObjectField, FieldSelection>`, so it can only join by a lookup — but ~15% of real providers
+  `Map<SObjectField, ParentFields>`, so it can only join by a lookup — but ~15% of real providers
   join by an external text key, and that is a first-class before-insert workload.
 - **Keep qualification free of related data, and keep the current bypass → qualify → enrich → execute
   ordering.** The TODO at `TriggerOrchestrator.cls:184-185` is answered by the evidence: not one of the

@@ -17,8 +17,8 @@ Before insert and before update are the two contexts with **roles**: a handler t
 | `Populator`           |      ✅       |               |      ✅       |               |               |               |                |
 | `Validator`           |      ✅       |               |      ✅       |               |               |               |                |
 | `Handler`             |    marker     |      ✅       |    marker     |      ✅       |      ✅       |      ✅       |       ✅       |
-| `NewRecordEnrichment` |      ✅       |      ✅       |      ✅       |      ✅       |               |               |       ✅       |
-| `OldRecordEnrichment` |               |               |      ✅       |      ✅       |      ✅       |      ✅       |                |
+| `ParentQuery` |      ✅       |      ✅       |      ✅       |      ✅       |               |               |       ✅       |
+| `PriorParentQuery` |               |               |      ✅       |      ✅       |      ✅       |      ✅       |                |
 | `Bypassable`          |      ✅       |      ✅       |      ✅       |      ✅       |      ✅       |      ✅       |       ✅       |
 | `RecursionGuard`      |               |               |      ✅       |      ✅       |               |               |                |
 | `Finalizer`           |      ✅       |      ✅       |      ✅       |      ✅       |      ✅       |      ✅       |       ✅       |
@@ -119,42 +119,42 @@ public interface Handler {}
 
 See [Handlers](/guide/handlers) and [Record Qualification](/guide/qualification).
 
-## NewRecordEnrichment
+## ParentQuery
 
 Declares parent fields to query for the new version of each record. Read them with `record.getNewRelated(relationshipName)`.
 
 ```apex
-public interface NewRecordEnrichment {
-  Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnBeforeInsert();
+public interface ParentQuery {
+  Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert();
 }
 ```
 
 | Context        | Method                             |
 | -------------- | ---------------------------------- |
-| Before Insert  | `newFieldsToEnrichOnBeforeInsert`  |
-| After Insert   | `newFieldsToEnrichOnAfterInsert`   |
-| Before Update  | `newFieldsToEnrichOnBeforeUpdate`  |
-| After Update   | `newFieldsToEnrichOnAfterUpdate`   |
-| After Undelete | `newFieldsToEnrichOnAfterUndelete` |
+| Before Insert  | `queryParentsOnBeforeInsert`  |
+| After Insert   | `queryParentsOnAfterInsert`   |
+| Before Update  | `queryParentsOnBeforeUpdate`  |
+| After Update   | `queryParentsOnAfterUpdate`   |
+| After Undelete | `queryParentsOnAfterUndelete` |
 
-See [Parent Enrichment](/guide/enrichment) and [TriggerHandler.FieldSelection](/api/field-selection).
+See [Parent Enrichment](/guide/enrichment) and [TriggerHandler.ParentFields](/api/field-selection).
 
-## OldRecordEnrichment
+## PriorParentQuery
 
 Declares parent fields to query for the old version of each record. Read them with `record.getOldRelated(relationshipName)`.
 
 ```apex
-public interface OldRecordEnrichment {
-  Map<SObjectField, TriggerHandler.FieldSelection> oldFieldsToEnrichOnBeforeUpdate();
+public interface PriorParentQuery {
+  Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnBeforeUpdate();
 }
 ```
 
 | Context       | Method                            |
 | ------------- | --------------------------------- |
-| Before Update | `oldFieldsToEnrichOnBeforeUpdate` |
-| After Update  | `oldFieldsToEnrichOnAfterUpdate`  |
-| Before Delete | `oldFieldsToEnrichOnBeforeDelete` |
-| After Delete  | `oldFieldsToEnrichOnAfterDelete`  |
+| Before Update | `queryPriorParentsOnBeforeUpdate` |
+| After Update  | `queryPriorParentsOnAfterUpdate`  |
+| Before Delete | `queryParentsOnBeforeDelete` |
+| After Delete  | `queryParentsOnAfterDelete`  |
 
 The two sides are declared independently. Declaring a lookup on the new side does not attach a parent to the old record.
 

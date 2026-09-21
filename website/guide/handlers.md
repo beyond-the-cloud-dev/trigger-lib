@@ -143,8 +143,8 @@ Capabilities are opt-in interfaces from the same context class. Implement the on
 
 | Capability            | Purpose                                             | Available in                       | Guide                                         |
 | --------------------- | --------------------------------------------------- | ---------------------------------- | --------------------------------------------- |
-| `NewRecordEnrichment` | Declare parent fields to query for the new record   | every context except the two deletes | [Parent Enrichment](/guide/enrichment)      |
-| `OldRecordEnrichment` | Declare parent fields to query for the old record   | update and delete contexts         | [Parent Enrichment](/guide/enrichment)        |
+| `ParentQuery` | Declare parent fields to query for the new record   | every context except the two deletes | [Parent Enrichment](/guide/enrichment)      |
+| `PriorParentQuery` | Declare parent fields to query for the old record   | update and delete contexts         | [Parent Enrichment](/guide/enrichment)        |
 | `Bypassable`          | Skip the handler for the whole invocation           | all contexts                       | [Bypasses](/guide/bypasses)                   |
 | `RecursionGuard`      | Override the per-record pass limit                  | before update and after update     | [Recursion Control](/guide/recursion-control) |
 | `Finalizer`           | Run once after all qualified records were processed | all contexts                       | [Finalizers](/guide/finalizers)               |

@@ -1,4 +1,4 @@
-public with sharing class OpportunityWinTaskHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment, AfterUpdate.Finalizer, AfterUpdate.ContinueOnError {
+public with sharing class OpportunityWinTaskHandler implements AfterUpdate.Handler, AfterUpdate.ParentQuery, AfterUpdate.Finalizer, AfterUpdate.ContinueOnError {
     private List<Task> onboardingTasks = new List<Task>();
 
     public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {

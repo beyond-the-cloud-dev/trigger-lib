@@ -21,10 +21,10 @@ The old side is never refreshed in any context. `Trigger.old` is immutable, so `
 
 ## Declaring Fields
 
-Implement `NewRecordEnrichment` and return a map from the lookup field on the triggering object to a [`TriggerHandler.ParentFields`](/api/field-selection) listing the parent fields.
+Implement `ParentQuery` and return a map from the lookup field on the triggering object to a [`TriggerHandler.ParentFields`](/api/field-selection) listing the parent fields.
 
 ```apex
-public with sharing class ContactAccountHandler implements AfterInsert.Handler, AfterInsert.NewRecordEnrichment {
+public with sharing class ContactAccountHandler implements AfterInsert.Handler, AfterInsert.ParentQuery {
   public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert() {
     return new Map<SObjectField, TriggerHandler.ParentFields>{
       Contact.AccountId => TriggerHandler.ParentFields.with(
@@ -96,10 +96,10 @@ String parentName = account.Parent?.Name;
 
 ## Old Record Enrichment
 
-Update and delete contexts also have an old version of the record. Implement `OldRecordEnrichment` when the handler needs the parent the record pointed to before the change, and read it with `getOldRelated`.
+Update and delete contexts also have an old version of the record. Implement `PriorParentQuery` when the handler needs the parent the record pointed to before the change, and read it with `getOldRelated`.
 
 ```apex
-public with sharing class ContactAccountMoveHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment, AfterUpdate.OldRecordEnrichment {
+public with sharing class ContactAccountMoveHandler implements AfterUpdate.Handler, AfterUpdate.ParentQuery, AfterUpdate.PriorParentQuery {
   public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
     return new Map<SObjectField, TriggerHandler.ParentFields>{
       Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name)
@@ -129,7 +129,7 @@ The two sides are declared independently. Declaring `Contact.AccountId` on the n
 
 Which side is available depends on the context, and so does the record interface the handler methods receive:
 
-| Context        | Record interface                 | `NewRecordEnrichment` | `OldRecordEnrichment` |
+| Context        | Record interface                 | `ParentQuery` | `PriorParentQuery` |
 | -------------- | -------------------------------- | :-------------------: | :-------------------: |
 | Before Insert  | `TriggerHandler.InsertRecord`    |          ✅           |                       |
 | After Insert   | `TriggerHandler.InsertRecord`    |          ✅           |                       |

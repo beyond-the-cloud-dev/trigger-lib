@@ -103,7 +103,7 @@ SObject getNewRelated(String relationshipName)
 
 Available on `InsertRecord`, `UpdateRecord` and `UndeleteRecord`.
 
-The parent record fetched for the new version of the record. Requires the context's `NewRecordEnrichment` interface. `relationshipName` is the relationship name of the lookup, so `Contact.AccountId` is read back as `'Account'` and a custom lookup `My_Lookup__c` as `'My_Lookup__r'`.
+The parent record fetched for the new version of the record. Requires the context's `ParentQuery` interface. `relationshipName` is the relationship name of the lookup, so `Contact.AccountId` is read back as `'Account'` and a custom lookup `My_Lookup__c` as `'My_Lookup__r'`.
 
 ```apex
 Account account = (Account) record.getNewRelated('Account');
@@ -119,7 +119,7 @@ SObject getOldRelated(String relationshipName)
 
 Available on `UpdateRecord` and `DeleteRecord`.
 
-The parent record fetched for the old version of the record. Requires the context's `OldRecordEnrichment` interface. A handler that wants both sides of the same lookup has to declare it on both sides.
+The parent record fetched for the old version of the record. Requires the context's `PriorParentQuery` interface. A handler that wants both sides of the same lookup has to declare it on both sides.
 
 ```apex
 Account priorAccount = (Account) record.getOldRelated('Account');

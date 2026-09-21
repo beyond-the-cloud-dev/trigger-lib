@@ -1,4 +1,4 @@
-public with sharing class AccountWelcomeTaskHandler implements AfterInsert.Handler, AfterInsert.NewRecordEnrichment, AfterInsert.Finalizer, AfterInsert.ContinueOnError {
+public with sharing class AccountWelcomeTaskHandler implements AfterInsert.Handler, AfterInsert.ParentQuery, AfterInsert.Finalizer, AfterInsert.ContinueOnError {
     private List<Task> onboardingTasks = new List<Task>();
 
     public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert() {

@@ -1,4 +1,4 @@
-public with sharing class ContactMailingAddressPopulator implements BeforeInsert.Populator, BeforeInsert.NewRecordEnrichment {
+public with sharing class ContactMailingAddressPopulator implements BeforeInsert.Populator, BeforeInsert.ParentQuery {
     public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert() {
         return new Map<SObjectField, TriggerHandler.ParentFields>{
             Contact.AccountId => TriggerHandler.ParentFields

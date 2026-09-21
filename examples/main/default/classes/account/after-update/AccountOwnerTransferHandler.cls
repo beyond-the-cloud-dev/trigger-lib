@@ -1,4 +1,4 @@
-public with sharing class AccountOwnerTransferHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment, AfterUpdate.OldRecordEnrichment, AfterUpdate.Bypassable, AfterUpdate.Finalizer {
+public with sharing class AccountOwnerTransferHandler implements AfterUpdate.Handler, AfterUpdate.ParentQuery, AfterUpdate.PriorParentQuery, AfterUpdate.Bypassable, AfterUpdate.Finalizer {
     public static Boolean isDisabled = false;
 
     private Map<Id, Id> newOwnerIdByAccountId = new Map<Id, Id>();

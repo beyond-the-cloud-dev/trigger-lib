@@ -4,7 +4,7 @@ public class AfterUndelete {
         void onAfterUndelete(TriggerHandler.UndeleteRecord record);
     }
 
-    public interface NewRecordEnrichment {
+    public interface ParentQuery {
         Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUndelete();
     }
 

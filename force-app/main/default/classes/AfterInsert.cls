@@ -4,7 +4,7 @@ public class AfterInsert {
         void onAfterInsert(TriggerHandler.InsertRecord record);
     }
 
-    public interface NewRecordEnrichment {
+    public interface ParentQuery {
         Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert();
     }
 

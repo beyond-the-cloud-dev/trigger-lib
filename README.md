@@ -67,7 +67,7 @@ public with sharing class ContactTriggerOrchestrator implements TriggerOrchestra
 **Handler**
 
 ```apex
-public with sharing class ContactAccountSyncHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment, AfterUpdate.Finalizer {
+public with sharing class ContactAccountSyncHandler implements AfterUpdate.Handler, AfterUpdate.ParentQuery, AfterUpdate.Finalizer {
   private List<Account> accountsToUpdate = new List<Account>();
 
   public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {

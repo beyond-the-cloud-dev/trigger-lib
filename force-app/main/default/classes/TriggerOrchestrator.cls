@@ -12,9 +12,10 @@
  * - StdCyclomaticComplexity: Dispatch has to branch over all seven trigger contexts
  * - CognitiveComplexity: Dispatch has to branch over all seven trigger contexts
  * - AvoidNonRestrictiveQueries: The bypass configuration is custom metadata, it is read once and does not count against SOQL limits
+ * - FieldDeclarationsShouldBeAtStart: Developer who uses lib should see what's important at start
  **/
 @SuppressWarnings(
-    'PMD.ExcessiveClassLength,PMD.NcssTypeCount,PMD.NcssMethodCount,PMD.CyclomaticComplexity,PMD.StdCyclomaticComplexity,PMD.CognitiveComplexity,PMD.AvoidNonRestrictiveQueries'
+    'PMD.ExcessiveClassLength,PMD.NcssTypeCount,PMD.NcssMethodCount,PMD.CyclomaticComplexity,PMD.StdCyclomaticComplexity,PMD.CognitiveComplexity,PMD.AvoidNonRestrictiveQueries,PMD.FieldDeclarationsShouldBeAtStart'
 )
 public with sharing class TriggerOrchestrator {
     public interface BeforeInsert {
@@ -76,8 +77,9 @@ public with sharing class TriggerOrchestrator {
 
     // Implementations
 
-    private static TriggerSettings triggerSettings = new TriggerSettings();
+    @TestVisible
     private static TriggerLogger triggerLogger = new TriggerLogger();
+    private static TriggerSettings triggerSettings = new TriggerSettings();
     private static TriggerBypass triggerBypass = new TriggerBypass();
     private static TriggerStack triggerStack = new TriggerStack();
     private static TriggerDepth triggerDepth = new TriggerDepth();
@@ -91,7 +93,7 @@ public with sharing class TriggerOrchestrator {
     private TriggerOrchestrator(Object orchestrator) {
         this.orchestrator = orchestrator;
         this.context = new TriggerContext();
-        this.lookupEnrichment = new LookupEnrichment(this.context.triggerRecords);
+        this.lookupEnrichment = new LookupEnrichment(this.context);
     }
 
     @TestVisible
@@ -338,27 +340,25 @@ public with sharing class TriggerOrchestrator {
 
     private abstract class ExecutionStrategy {
         public void execute(TriggerOrchestrator orchestrator) {
-            List<TriggerHandlerAdapter> activeHandlers = this.getActiveHandlers(orchestrator);
+            List<TriggerHandlerAdapter> activeAdapters = this.getActiveAdapters(orchestrator);
 
-            orchestrator.lookupEnrichment.queryParentRelationships(activeHandlers);
+            orchestrator.lookupEnrichment.queryParentRelationships(activeAdapters);
 
-            for (TriggerHandlerAdapter adapter : activeHandlers) {
+            for (TriggerHandlerAdapter adapter : activeAdapters) {
                 adapter.execute(orchestrator.context.triggerRecords);
-
-                orchestrator.lookupEnrichment.requeryWhenParentLookupChanged(adapter.getProcessedRecords());
             }
         }
 
-        private List<TriggerHandlerAdapter> getActiveHandlers(TriggerOrchestrator orchestrator) {
-            List<TriggerHandlerAdapter> activeHandlers = new List<TriggerHandlerAdapter>();
+        private List<TriggerHandlerAdapter> getActiveAdapters(TriggerOrchestrator orchestrator) {
+            List<TriggerHandlerAdapter> activeAdapters = new List<TriggerHandlerAdapter>();
 
             for (TriggerHandlerAdapter adapter : this.adaptHandlers(orchestrator)) {
                 if (!adapter.isBypassed()) {
-                    activeHandlers.add(adapter);
+                    activeAdapters.add(adapter);
                 }
             }
 
-            return activeHandlers;
+            return activeAdapters;
         }
 
         protected abstract List<TriggerHandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator);
@@ -366,93 +366,93 @@ public with sharing class TriggerOrchestrator {
 
     private class BeforeInsertExecutionStrategy extends ExecutionStrategy {
         public override List<TriggerHandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator) {
-            List<TriggerHandlerAdapter> handlerAdapters = new List<TriggerHandlerAdapter>();
+            List<TriggerHandlerAdapter> adapters = new List<TriggerHandlerAdapter>();
 
             for (BeforeInsert.Handler handler : ((TriggerOrchestrator.BeforeInsert) orchestrator.orchestrator).beforeInsertHandlers()) {
                 if (handler instanceof BeforeInsert.Populator) {
-                    handlerAdapters.add(new BeforeInsertPopulatorHandlerAdapter((BeforeInsert.Populator) handler, orchestrator));
+                    adapters.add(new BeforeInsertPopulatorAdapter((BeforeInsert.Populator) handler, orchestrator));
                 } else if (handler instanceof BeforeInsert.Validator) {
-                    handlerAdapters.add(new BeforeInsertValidatorHandlerAdapter((BeforeInsert.Validator) handler, orchestrator));
+                    adapters.add(new BeforeInsertValidatorAdapter((BeforeInsert.Validator) handler, orchestrator));
                 }
             }
 
-            return handlerAdapters;
+            return adapters;
         }
     }
 
     private class AfterInsertExecutionStrategy extends ExecutionStrategy {
         public override List<TriggerHandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator) {
-            List<TriggerHandlerAdapter> handlerAdapters = new List<TriggerHandlerAdapter>();
+            List<TriggerHandlerAdapter> adapters = new List<TriggerHandlerAdapter>();
 
             for (AfterInsert.Handler handler : ((TriggerOrchestrator.AfterInsert) orchestrator.orchestrator).afterInsertHandlers()) {
-                handlerAdapters.add(new AfterInsertHandlerAdapter(handler, orchestrator));
+                adapters.add(new AfterInsertHandlerAdapter(handler, orchestrator));
             }
 
-            return handlerAdapters;
+            return adapters;
         }
     }
 
     private class BeforeUpdateExecutionStrategy extends ExecutionStrategy {
         public override List<TriggerHandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator) {
-            List<TriggerHandlerAdapter> handlerAdapters = new List<TriggerHandlerAdapter>();
+            List<TriggerHandlerAdapter> adapters = new List<TriggerHandlerAdapter>();
 
             for (BeforeUpdate.Handler handler : ((TriggerOrchestrator.BeforeUpdate) orchestrator.orchestrator).beforeUpdateHandlers()) {
                 if (handler instanceof BeforeUpdate.Populator) {
-                    handlerAdapters.add(new BeforeUpdatePopulatorHandlerAdapter((BeforeUpdate.Populator) handler, orchestrator));
+                    adapters.add(new BeforeUpdatePopulatorAdapter((BeforeUpdate.Populator) handler, orchestrator));
                 } else if (handler instanceof BeforeUpdate.Validator) {
-                    handlerAdapters.add(new BeforeUpdateValidatorHandlerAdapter((BeforeUpdate.Validator) handler, orchestrator));
+                    adapters.add(new BeforeUpdateValidatorAdapter((BeforeUpdate.Validator) handler, orchestrator));
                 }
             }
 
-            return handlerAdapters;
+            return adapters;
         }
     }
 
     private class AfterUpdateExecutionStrategy extends ExecutionStrategy {
         public override List<TriggerHandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator) {
-            List<TriggerHandlerAdapter> handlerAdapters = new List<TriggerHandlerAdapter>();
+            List<TriggerHandlerAdapter> adapters = new List<TriggerHandlerAdapter>();
 
             for (AfterUpdate.Handler handler : ((TriggerOrchestrator.AfterUpdate) orchestrator.orchestrator).afterUpdateHandlers()) {
-                handlerAdapters.add(new AfterUpdateHandlerAdapter(handler, orchestrator));
+                adapters.add(new AfterUpdateHandlerAdapter(handler, orchestrator));
             }
 
-            return handlerAdapters;
+            return adapters;
         }
     }
 
     private class BeforeDeleteExecutionStrategy extends ExecutionStrategy {
         public override List<TriggerHandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator) {
-            List<TriggerHandlerAdapter> handlerAdapters = new List<TriggerHandlerAdapter>();
+            List<TriggerHandlerAdapter> adapters = new List<TriggerHandlerAdapter>();
 
             for (BeforeDelete.Handler handler : ((TriggerOrchestrator.BeforeDelete) orchestrator.orchestrator).beforeDeleteHandlers()) {
-                handlerAdapters.add(new BeforeDeleteHandlerAdapter(handler, orchestrator));
+                adapters.add(new BeforeDeleteHandlerAdapter(handler, orchestrator));
             }
 
-            return handlerAdapters;
+            return adapters;
         }
     }
 
     private class AfterDeleteExecutionStrategy extends ExecutionStrategy {
         public override List<TriggerHandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator) {
-            List<TriggerHandlerAdapter> handlerAdapters = new List<TriggerHandlerAdapter>();
+            List<TriggerHandlerAdapter> adapters = new List<TriggerHandlerAdapter>();
 
             for (AfterDelete.Handler handler : ((TriggerOrchestrator.AfterDelete) orchestrator.orchestrator).afterDeleteHandlers()) {
-                handlerAdapters.add(new AfterDeleteHandlerAdapter(handler, orchestrator));
+                adapters.add(new AfterDeleteHandlerAdapter(handler, orchestrator));
             }
 
-            return handlerAdapters;
+            return adapters;
         }
     }
 
     private class AfterUndeleteExecutionStrategy extends ExecutionStrategy {
         public override List<TriggerHandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator) {
-            List<TriggerHandlerAdapter> handlerAdapters = new List<TriggerHandlerAdapter>();
+            List<TriggerHandlerAdapter> adapters = new List<TriggerHandlerAdapter>();
 
             for (AfterUndelete.Handler handler : ((TriggerOrchestrator.AfterUndelete) orchestrator.orchestrator).afterUndeleteHandlers()) {
-                handlerAdapters.add(new AfterUndeleteHandlerAdapter(handler, orchestrator));
+                adapters.add(new AfterUndeleteHandlerAdapter(handler, orchestrator));
             }
 
-            return handlerAdapters;
+            return adapters;
         }
     }
 
@@ -518,58 +518,20 @@ public with sharing class TriggerOrchestrator {
     }
 
     private abstract class TriggerHandlerAdapter {
-        public String handlerName;
-
-        protected Object handler;
+        protected String handlerName;
         protected TriggerOrchestrator orchestrator;
         protected List<TriggerHandler.TriggerRecord> processedRecords = new List<TriggerHandler.TriggerRecord>();
 
         public TriggerHandlerAdapter(Object handler, TriggerOrchestrator orchestrator) {
-            this.handler = handler;
-            this.orchestrator = orchestrator;
             this.handlerName = handler.toString().substringBefore(':');
+            this.orchestrator = orchestrator;
         }
 
-        public virtual void execute(List<TriggerHandler.TriggerRecord> records) {
-            try {
-                for (TriggerHandler.TriggerRecord record : records) {
-                    if (this.isRecursionDepthExceeded(record)) {
-                        continue;
-                    }
-
-                    if (!this.isQualified(record)) {
-                        continue;
-                    }
-
-                    this.registerRecord(record);
-
-                    this.processedRecords.add(record);
-
-                    this.executeOn(record);
-                }
-            } catch (Exception e) {
-                this.handleException(e);
-            }
-
-            if (!this.processedRecords.isEmpty()) {
-                this.finalizeHandler();
-            }
-        }
-
-        public List<TriggerHandler.TriggerRecord> getProcessedRecords() {
-            return this.processedRecords;
-        }
-
-        public void handleException(Exception e) {
-            TriggerOrchestrator.triggerLogger.log(new TriggerError().withException(e).withHandlerName(this.handlerName).withContext(this.orchestrator.context));
-
-            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !this.continuesOnError()) {
-                throw e;
-            }
-        }
+        public abstract void execute(List<TriggerHandler.TriggerRecord> records);
+        public abstract Boolean isBypassedByInterface();
 
         public Boolean isBypassed() {
-            return this.isBypassedBySettings() || this.isBypassedByHandler();
+            return this.isBypassedBySettings() || this.isBypassedByInterface();
         }
 
         private Boolean isBypassedBySettings() {
@@ -577,143 +539,171 @@ public with sharing class TriggerOrchestrator {
                 TriggerOrchestrator.triggerSettings.isHandlerBypassed(this.orchestrator.context, this.handlerName);
         }
 
-        protected virtual Boolean isRecursionDepthExceeded(TriggerHandler.TriggerRecord record) {
-            return false;
+        protected void logError(Exception e) {
+            TriggerOrchestrator.triggerLogger.log(new TriggerError().withException(e).withHandlerName(this.handlerName).withContext(this.orchestrator.context));
         }
-
-        protected virtual void registerRecord(TriggerHandler.TriggerRecord record) {
-        }
-
-        public abstract Boolean isBypassedByHandler();
-        public abstract Boolean continuesOnError();
-        public abstract Boolean isQualified(TriggerHandler.TriggerRecord record);
-        public abstract void finalizeHandler();
-        public abstract void executeOn(TriggerHandler.TriggerRecord record);
     }
 
-    private class BeforeInsertPopulatorHandlerAdapter extends TriggerHandlerAdapter implements NewRecordEnricher {
-        public BeforeInsertPopulatorHandlerAdapter(BeforeInsert.Populator populator, TriggerOrchestrator orchestrator) {
+    private class BeforeInsertPopulatorAdapter extends TriggerHandlerAdapter implements NewRecordEnricher {
+        private BeforeInsert.Populator populator;
+
+        public BeforeInsertPopulatorAdapter(BeforeInsert.Populator populator, TriggerOrchestrator orchestrator) {
             super(populator, orchestrator);
+            this.populator = populator;
+        }
+
+        public override Boolean isBypassedByInterface() {
+            return (this.populator instanceof BeforeInsert.Bypassable && ((BeforeInsert.Bypassable) this.populator).bypassOnBeforeInsertWhen());
+        }
+
+        public Map<SObjectField, TriggerHandler.FieldSelection> getNewFieldsToEnrich() {
+            if (this.populator instanceof BeforeInsert.NewRecordEnrichment) {
+                return ((BeforeInsert.NewRecordEnrichment) this.populator).newFieldsToEnrichOnBeforeInsert();
+            }
+
+            return new Map<SObjectField, TriggerHandler.FieldSelection>();
         }
 
         public override void execute(List<TriggerHandler.TriggerRecord> records) {
             Integer dmlStatementsBefore = Limits.getDmlStatements();
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
-            super.execute(records);
+            try {
+                for (TriggerHandler.TriggerRecord record : records) {
+                    this.populate(record);
+                }
+
+                this.finalize();
+            } catch (Exception e) {
+                this.handleException(e);
+            }
 
             Integer dmlStatementsAfter = Limits.getDmlStatements();
             Integer immediateEventsAfter = Limits.getPublishImmediateDML();
 
             if (dmlStatementsAfter > dmlStatementsBefore || immediateEventsAfter > immediateEventsBefore) {
-                throw new TriggerOrchestratorException(
+                TriggerOrchestratorException guardException = new TriggerOrchestratorException(
                     this.handlerName + ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
                 );
-            }
-        }
 
-        public override Boolean isBypassedByHandler() {
-            if (this.handler instanceof BeforeInsert.Bypassable) {
-                return ((BeforeInsert.Bypassable) this.handler).bypassOnBeforeInsertWhen();
+                this.logError(guardException);
+
+                throw guardException;
             }
 
-            return false;
+            this.orchestrator.lookupEnrichment.requeryWhenParentLookupChanged(this.processedRecords);
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> getNewFieldsToEnrich() {
-            if (this.handler instanceof BeforeInsert.NewRecordEnrichment) {
-                return ((BeforeInsert.NewRecordEnrichment) this.handler).newFieldsToEnrichOnBeforeInsert();
+        private void populate(TriggerHandler.TriggerRecord record) {
+            if (!this.populator.populateOnBeforeInsertWhen(record)) {
+                return;
             }
 
-            return new Map<SObjectField, TriggerHandler.FieldSelection>();
+            this.processedRecords.add(record);
+            this.populator.populateOnBeforeInsert(record);
         }
 
-        public override Boolean continuesOnError() {
-            return this.handler instanceof BeforeInsert.ContinueOnError;
+        private void finalize() {
+            if (this.processedRecords.isEmpty() || !(this.populator instanceof BeforeInsert.Finalizer)) {
+                return;
+            }
+
+            ((BeforeInsert.Finalizer) this.populator).finalizeBeforeInsert();
         }
 
-        public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
-            return ((BeforeInsert.Populator) this.handler).populateOnBeforeInsertWhen(record);
-        }
+        private void handleException(Exception e) {
+            this.logError(e);
 
-        public override void executeOn(TriggerHandler.TriggerRecord record) {
-            ((BeforeInsert.Populator) this.handler).populateOnBeforeInsert(record);
-        }
-
-        public override void finalizeHandler() {
-            if (this.handler instanceof BeforeInsert.Finalizer) {
-                ((BeforeInsert.Finalizer) this.handler).finalizeBeforeInsert();
+            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.populator instanceof BeforeInsert.ContinueOnError)) {
+                throw e;
             }
         }
     }
 
-    private class BeforeInsertValidatorHandlerAdapter extends TriggerHandlerAdapter implements NewRecordEnricher {
-        public BeforeInsertValidatorHandlerAdapter(BeforeInsert.Validator validator, TriggerOrchestrator orchestrator) {
+    private class BeforeInsertValidatorAdapter extends TriggerHandlerAdapter implements NewRecordEnricher {
+        private BeforeInsert.Validator validator;
+
+        public BeforeInsertValidatorAdapter(BeforeInsert.Validator validator, TriggerOrchestrator orchestrator) {
             super(validator, orchestrator);
+            this.validator = validator;
+        }
+
+        public override Boolean isBypassedByInterface() {
+            return (this.validator instanceof BeforeInsert.Bypassable && ((BeforeInsert.Bypassable) this.validator).bypassOnBeforeInsertWhen());
+        }
+
+        public Map<SObjectField, TriggerHandler.FieldSelection> getNewFieldsToEnrich() {
+            if (this.validator instanceof BeforeInsert.NewRecordEnrichment) {
+                return ((BeforeInsert.NewRecordEnrichment) this.validator).newFieldsToEnrichOnBeforeInsert();
+            }
+
+            return new Map<SObjectField, TriggerHandler.FieldSelection>();
         }
 
         public override void execute(List<TriggerHandler.TriggerRecord> records) {
             Integer dmlStatementsBefore = Limits.getDmlStatements();
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
-            super.execute(records);
+            try {
+                for (TriggerHandler.TriggerRecord record : records) {
+                    this.validate(record);
+                }
+
+                this.finalize();
+            } catch (Exception e) {
+                this.handleException(e);
+            }
 
             Integer dmlStatementsAfter = Limits.getDmlStatements();
             Integer immediateEventsAfter = Limits.getPublishImmediateDML();
 
             if (dmlStatementsAfter > dmlStatementsBefore || immediateEventsAfter > immediateEventsBefore) {
-                throw new TriggerOrchestratorException(
+                TriggerOrchestratorException guardException = new TriggerOrchestratorException(
                     this.handlerName + ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
                 );
+
+                this.logError(guardException);
+
+                throw guardException;
             }
         }
 
-        public override Boolean isBypassedByHandler() {
-            if (this.handler instanceof BeforeInsert.Bypassable) {
-                return ((BeforeInsert.Bypassable) this.handler).bypassOnBeforeInsertWhen();
+        private void validate(TriggerHandler.TriggerRecord record) {
+            if (!this.validator.errorShouldBeAttachedOnBeforeInsertWhen(record)) {
+                return;
             }
 
-            return false;
+            this.processedRecords.add(record);
+            record.getNewSObject().addError(this.validator.beforeInsertValidationMessage(record));
         }
 
-        public Map<SObjectField, TriggerHandler.FieldSelection> getNewFieldsToEnrich() {
-            if (this.handler instanceof BeforeInsert.NewRecordEnrichment) {
-                return ((BeforeInsert.NewRecordEnrichment) this.handler).newFieldsToEnrichOnBeforeInsert();
+        private void finalize() {
+            if (this.processedRecords.isEmpty() || !(this.validator instanceof BeforeInsert.Finalizer)) {
+                return;
             }
 
-            return new Map<SObjectField, TriggerHandler.FieldSelection>();
+            ((BeforeInsert.Finalizer) this.validator).finalizeBeforeInsert();
         }
 
-        public override Boolean continuesOnError() {
-            return this.handler instanceof BeforeInsert.ContinueOnError;
-        }
+        private void handleException(Exception e) {
+            this.logError(e);
 
-        public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
-            return ((BeforeInsert.Validator) this.handler).errorShouldBeAttachedOnBeforeInsertWhen(record);
-        }
-
-        public override void executeOn(TriggerHandler.TriggerRecord record) {
-            record.getNewSObject().addError(((BeforeInsert.Validator) this.handler).beforeInsertValidationMessage(record));
-        }
-
-        public override void finalizeHandler() {
-            if (this.handler instanceof BeforeInsert.Finalizer) {
-                ((BeforeInsert.Finalizer) this.handler).finalizeBeforeInsert();
+            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.validator instanceof BeforeInsert.ContinueOnError)) {
+                throw e;
             }
         }
     }
 
     private class AfterInsertHandlerAdapter extends TriggerHandlerAdapter implements NewRecordEnricher {
+        private AfterInsert.Handler handler;
+
         public AfterInsertHandlerAdapter(AfterInsert.Handler handler, TriggerOrchestrator orchestrator) {
             super(handler, orchestrator);
+            this.handler = handler;
         }
 
-        public override Boolean isBypassedByHandler() {
-            if (this.handler instanceof AfterInsert.Bypassable) {
-                return ((AfterInsert.Bypassable) this.handler).bypassOnAfterInsertWhen();
-            }
-
-            return false;
+        public override Boolean isBypassedByInterface() {
+            return (this.handler instanceof AfterInsert.Bypassable && ((AfterInsert.Bypassable) this.handler).bypassOnAfterInsertWhen());
         }
 
         public Map<SObjectField, TriggerHandler.FieldSelection> getNewFieldsToEnrich() {
@@ -724,193 +714,241 @@ public with sharing class TriggerOrchestrator {
             return new Map<SObjectField, TriggerHandler.FieldSelection>();
         }
 
-        public override Boolean continuesOnError() {
-            return this.handler instanceof AfterInsert.ContinueOnError;
+        public override void execute(List<TriggerHandler.TriggerRecord> records) {
+            try {
+                for (TriggerHandler.TriggerRecord record : records) {
+                    this.handle(record);
+                }
+
+                this.finalize();
+            } catch (Exception e) {
+                this.handleException(e);
+            }
         }
 
-        public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
-            return ((AfterInsert.Handler) this.handler).qualifiesForAfterInsertWhen(record);
+        private void handle(TriggerHandler.TriggerRecord record) {
+            if (!this.handler.qualifiesForAfterInsertWhen(record)) {
+                return;
+            }
+
+            this.processedRecords.add(record);
+            this.handler.onAfterInsert(record);
         }
 
-        public override void executeOn(TriggerHandler.TriggerRecord record) {
-            ((AfterInsert.Handler) this.handler).onAfterInsert(record);
+        private void finalize() {
+            if (this.processedRecords.isEmpty() || !(this.handler instanceof AfterInsert.Finalizer)) {
+                return;
+            }
+
+            ((AfterInsert.Finalizer) this.handler).finalizeAfterInsert();
         }
 
-        public override void finalizeHandler() {
-            if (this.handler instanceof AfterInsert.Finalizer) {
-                ((AfterInsert.Finalizer) this.handler).finalizeAfterInsert();
+        private void handleException(Exception e) {
+            this.logError(e);
+
+            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.handler instanceof AfterInsert.ContinueOnError)) {
+                throw e;
             }
         }
     }
 
-    private class BeforeUpdatePopulatorHandlerAdapter extends TriggerHandlerAdapter implements NewRecordEnricher, OldRecordEnricher {
+    private class BeforeUpdatePopulatorAdapter extends TriggerHandlerAdapter implements NewRecordEnricher, OldRecordEnricher {
+        private BeforeUpdate.Populator populator;
         private Map<Id, Integer> recursionDepthByRecord;
-        private Integer maxRecursionDepth;
+        private Integer maxRecursionDepth = 3;
 
-        public BeforeUpdatePopulatorHandlerAdapter(BeforeUpdate.Populator populator, TriggerOrchestrator orchestrator) {
+        public BeforeUpdatePopulatorAdapter(BeforeUpdate.Populator populator, TriggerOrchestrator orchestrator) {
             super(populator, orchestrator);
+            this.populator = populator;
 
-            String recursionScope = this.handlerName + ':BEFORE_UPDATE';
+            TriggerOrchestrator.triggerDepth.registerScope(this.handlerName + ':BEFORE_UPDATE');
+            this.recursionDepthByRecord = TriggerOrchestrator.triggerDepth.getForRecursionScope(this.handlerName + ':BEFORE_UPDATE');
 
-            TriggerOrchestrator.triggerDepth.registerScope(recursionScope);
-
-            this.recursionDepthByRecord = TriggerOrchestrator.triggerDepth.getForRecursionScope(recursionScope);
-        }
-
-        public override void execute(List<TriggerHandler.TriggerRecord> records) {
-            Integer dmlStatementsBefore = Limits.getDmlStatements();
-            Integer immediateEventsBefore = Limits.getPublishImmediateDML();
-
-            super.execute(records);
-
-            Integer dmlStatementsAfter = Limits.getDmlStatements();
-            Integer immediateEventsAfter = Limits.getPublishImmediateDML();
-
-            if (dmlStatementsAfter > dmlStatementsBefore || immediateEventsAfter > immediateEventsBefore) {
-                throw new TriggerOrchestratorException(
-                    this.handlerName + ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
-                );
+            if (populator instanceof BeforeUpdate.RecursionGuard) {
+                this.maxRecursionDepth = ((BeforeUpdate.RecursionGuard) populator).maxRecursionDepthOnBeforeUpdate();
             }
         }
 
-        public override Boolean isBypassedByHandler() {
-            if (this.handler instanceof BeforeUpdate.Bypassable) {
-                return ((BeforeUpdate.Bypassable) this.handler).bypassOnBeforeUpdateWhen();
-            }
-
-            return false;
+        public override Boolean isBypassedByInterface() {
+            return (this.populator instanceof BeforeUpdate.Bypassable && ((BeforeUpdate.Bypassable) this.populator).bypassOnBeforeUpdateWhen());
         }
 
         public Map<SObjectField, TriggerHandler.FieldSelection> getNewFieldsToEnrich() {
-            if (this.handler instanceof BeforeUpdate.NewRecordEnrichment) {
-                return ((BeforeUpdate.NewRecordEnrichment) this.handler).newFieldsToEnrichOnBeforeUpdate();
+            if (this.populator instanceof BeforeUpdate.NewRecordEnrichment) {
+                return ((BeforeUpdate.NewRecordEnrichment) this.populator).newFieldsToEnrichOnBeforeUpdate();
             }
 
             return new Map<SObjectField, TriggerHandler.FieldSelection>();
         }
 
         public Map<SObjectField, TriggerHandler.FieldSelection> getOldFieldsToEnrich() {
-            if (this.handler instanceof BeforeUpdate.OldRecordEnrichment) {
-                return ((BeforeUpdate.OldRecordEnrichment) this.handler).oldFieldsToEnrichOnBeforeUpdate();
+            if (this.populator instanceof BeforeUpdate.OldRecordEnrichment) {
+                return ((BeforeUpdate.OldRecordEnrichment) this.populator).oldFieldsToEnrichOnBeforeUpdate();
             }
 
             return new Map<SObjectField, TriggerHandler.FieldSelection>();
         }
 
-        public override Boolean continuesOnError() {
-            return this.handler instanceof BeforeUpdate.ContinueOnError;
-        }
+        public override void execute(List<TriggerHandler.TriggerRecord> records) {
+            Integer dmlStatementsBefore = Limits.getDmlStatements();
+            Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
-        public override Boolean isRecursionDepthExceeded(TriggerHandler.TriggerRecord record) {
-            if (this.maxRecursionDepth == null && this.handler instanceof BeforeUpdate.RecursionGuard) {
-                this.maxRecursionDepth = ((BeforeUpdate.RecursionGuard) this.handler).maxRecursionDepthOnBeforeUpdate();
+            try {
+                for (TriggerHandler.TriggerRecord record : records) {
+                    this.populate(record);
+                }
+
+                this.finalize();
+            } catch (Exception e) {
+                this.handleException(e);
             }
 
-            return (this.recursionDepthByRecord.get(record.getId()) ?? 0) >= this.maxRecursionDepth;
+            Integer dmlStatementsAfter = Limits.getDmlStatements();
+            Integer immediateEventsAfter = Limits.getPublishImmediateDML();
+
+            if (dmlStatementsAfter > dmlStatementsBefore || immediateEventsAfter > immediateEventsBefore) {
+                TriggerOrchestratorException guardException = new TriggerOrchestratorException(
+                    this.handlerName + ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
+                );
+
+                this.logError(guardException);
+
+                throw guardException;
+            }
+
+            this.orchestrator.lookupEnrichment.requeryWhenParentLookupChanged(this.processedRecords);
         }
 
-        public override void registerRecord(TriggerHandler.TriggerRecord record) {
-            this.recursionDepthByRecord.put(record.getId(), (this.recursionDepthByRecord.get(record.getId()) ?? 0) + 1);
+        private void populate(TriggerHandler.TriggerRecord record) {
+            Integer recursionDepth = this.recursionDepthByRecord.get(record.getId()) ?? 0;
+
+            if (recursionDepth >= this.maxRecursionDepth || !this.populator.populateOnBeforeUpdateWhen(record)) {
+                return;
+            }
+
+            this.recursionDepthByRecord.put(record.getId(), recursionDepth + 1);
+            this.processedRecords.add(record);
+            this.populator.populateOnBeforeUpdate(record);
         }
 
-        public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
-            return ((BeforeUpdate.Populator) this.handler).populateOnBeforeUpdateWhen(record);
+        private void finalize() {
+            if (this.processedRecords.isEmpty() || !(this.populator instanceof BeforeUpdate.Finalizer)) {
+                return;
+            }
+
+            ((BeforeUpdate.Finalizer) this.populator).finalizeBeforeUpdate();
         }
 
-        public override void executeOn(TriggerHandler.TriggerRecord record) {
-            ((BeforeUpdate.Populator) this.handler).populateOnBeforeUpdate(record);
-        }
+        private void handleException(Exception e) {
+            this.logError(e);
 
-        public override void finalizeHandler() {
-            if (this.handler instanceof BeforeUpdate.Finalizer) {
-                ((BeforeUpdate.Finalizer) this.handler).finalizeBeforeUpdate();
+            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.populator instanceof BeforeUpdate.ContinueOnError)) {
+                throw e;
             }
         }
     }
 
-    private class BeforeUpdateValidatorHandlerAdapter extends TriggerHandlerAdapter implements NewRecordEnricher, OldRecordEnricher {
-        public BeforeUpdateValidatorHandlerAdapter(BeforeUpdate.Validator validator, TriggerOrchestrator orchestrator) {
+    private class BeforeUpdateValidatorAdapter extends TriggerHandlerAdapter implements NewRecordEnricher, OldRecordEnricher {
+        private BeforeUpdate.Validator validator;
+
+        public BeforeUpdateValidatorAdapter(BeforeUpdate.Validator validator, TriggerOrchestrator orchestrator) {
             super(validator, orchestrator);
+            this.validator = validator;
         }
 
-        public override void execute(List<TriggerHandler.TriggerRecord> records) {
-            Integer dmlStatementsBefore = Limits.getDmlStatements();
-            Integer immediateEventsBefore = Limits.getPublishImmediateDML();
-
-            super.execute(records);
-
-            Integer dmlStatementsAfter = Limits.getDmlStatements();
-            Integer immediateEventsAfter = Limits.getPublishImmediateDML();
-
-            if (dmlStatementsAfter > dmlStatementsBefore || immediateEventsAfter > immediateEventsBefore) {
-                throw new TriggerOrchestratorException(
-                    this.handlerName + ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
-                );
-            }
-        }
-
-        public override Boolean isBypassedByHandler() {
-            if (this.handler instanceof BeforeUpdate.Bypassable) {
-                return ((BeforeUpdate.Bypassable) this.handler).bypassOnBeforeUpdateWhen();
-            }
-
-            return false;
+        public override Boolean isBypassedByInterface() {
+            return (this.validator instanceof BeforeUpdate.Bypassable && ((BeforeUpdate.Bypassable) this.validator).bypassOnBeforeUpdateWhen());
         }
 
         public Map<SObjectField, TriggerHandler.FieldSelection> getNewFieldsToEnrich() {
-            if (this.handler instanceof BeforeUpdate.NewRecordEnrichment) {
-                return ((BeforeUpdate.NewRecordEnrichment) this.handler).newFieldsToEnrichOnBeforeUpdate();
+            if (this.validator instanceof BeforeUpdate.NewRecordEnrichment) {
+                return ((BeforeUpdate.NewRecordEnrichment) this.validator).newFieldsToEnrichOnBeforeUpdate();
             }
 
             return new Map<SObjectField, TriggerHandler.FieldSelection>();
         }
 
         public Map<SObjectField, TriggerHandler.FieldSelection> getOldFieldsToEnrich() {
-            if (this.handler instanceof BeforeUpdate.OldRecordEnrichment) {
-                return ((BeforeUpdate.OldRecordEnrichment) this.handler).oldFieldsToEnrichOnBeforeUpdate();
+            if (this.validator instanceof BeforeUpdate.OldRecordEnrichment) {
+                return ((BeforeUpdate.OldRecordEnrichment) this.validator).oldFieldsToEnrichOnBeforeUpdate();
             }
 
             return new Map<SObjectField, TriggerHandler.FieldSelection>();
         }
 
-        public override Boolean continuesOnError() {
-            return this.handler instanceof BeforeUpdate.ContinueOnError;
+        public override void execute(List<TriggerHandler.TriggerRecord> records) {
+            Integer dmlStatementsBefore = Limits.getDmlStatements();
+            Integer immediateEventsBefore = Limits.getPublishImmediateDML();
+
+            try {
+                for (TriggerHandler.TriggerRecord record : records) {
+                    this.validate(record);
+                }
+
+                this.finalize();
+            } catch (Exception e) {
+                this.handleException(e);
+            }
+
+            Integer dmlStatementsAfter = Limits.getDmlStatements();
+            Integer immediateEventsAfter = Limits.getPublishImmediateDML();
+
+            if (dmlStatementsAfter > dmlStatementsBefore || immediateEventsAfter > immediateEventsBefore) {
+                TriggerOrchestratorException guardException = new TriggerOrchestratorException(
+                    this.handlerName + ' performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.'
+                );
+
+                this.logError(guardException);
+
+                throw guardException;
+            }
         }
 
-        public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
-            return ((BeforeUpdate.Validator) this.handler).errorShouldBeAttachedOnBeforeUpdateWhen(record);
+        private void validate(TriggerHandler.TriggerRecord record) {
+            if (!this.validator.errorShouldBeAttachedOnBeforeUpdateWhen(record)) {
+                return;
+            }
+
+            this.processedRecords.add(record);
+            record.getNewSObject().addError(this.validator.beforeUpdateValidationMessage(record));
         }
 
-        public override void executeOn(TriggerHandler.TriggerRecord record) {
-            record.getNewSObject().addError(((BeforeUpdate.Validator) this.handler).beforeUpdateValidationMessage(record));
+        private void finalize() {
+            if (this.processedRecords.isEmpty() || !(this.validator instanceof BeforeUpdate.Finalizer)) {
+                return;
+            }
+
+            ((BeforeUpdate.Finalizer) this.validator).finalizeBeforeUpdate();
         }
 
-        public override void finalizeHandler() {
-            if (this.handler instanceof BeforeUpdate.Finalizer) {
-                ((BeforeUpdate.Finalizer) this.handler).finalizeBeforeUpdate();
+        private void handleException(Exception e) {
+            this.logError(e);
+
+            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.validator instanceof BeforeUpdate.ContinueOnError)) {
+                throw e;
             }
         }
     }
 
     private class AfterUpdateHandlerAdapter extends TriggerHandlerAdapter implements NewRecordEnricher, OldRecordEnricher {
+        private AfterUpdate.Handler handler;
         private Map<Id, Integer> recursionDepthByRecord;
-        private Integer maxRecursionDepth;
+        private Integer maxRecursionDepth = 3;
 
         public AfterUpdateHandlerAdapter(AfterUpdate.Handler handler, TriggerOrchestrator orchestrator) {
             super(handler, orchestrator);
-            String recursionScope = this.handlerName + ':AFTER_UPDATE';
+            this.handler = handler;
 
-            TriggerOrchestrator.triggerDepth.registerScope(recursionScope);
+            TriggerOrchestrator.triggerDepth.registerScope(this.handlerName + ':AFTER_UPDATE');
+            this.recursionDepthByRecord = TriggerOrchestrator.triggerDepth.getForRecursionScope(this.handlerName + ':AFTER_UPDATE');
 
-            this.recursionDepthByRecord = TriggerOrchestrator.triggerDepth.getForRecursionScope(recursionScope);
+            if (handler instanceof AfterUpdate.RecursionGuard) {
+                this.maxRecursionDepth = ((AfterUpdate.RecursionGuard) handler).maxRecursionDepthOnAfterUpdate();
+            }
         }
 
-        public override Boolean isBypassedByHandler() {
-            if (this.handler instanceof AfterUpdate.Bypassable) {
-                return ((AfterUpdate.Bypassable) this.handler).bypassOnAfterUpdateWhen();
-            }
-
-            return false;
+        public override Boolean isBypassedByInterface() {
+            return (this.handler instanceof AfterUpdate.Bypassable && ((AfterUpdate.Bypassable) this.handler).bypassOnAfterUpdateWhen());
         }
 
         public Map<SObjectField, TriggerHandler.FieldSelection> getNewFieldsToEnrich() {
@@ -929,48 +967,57 @@ public with sharing class TriggerOrchestrator {
             return new Map<SObjectField, TriggerHandler.FieldSelection>();
         }
 
-        public override Boolean isRecursionDepthExceeded(TriggerHandler.TriggerRecord record) {
-            if (this.maxRecursionDepth == null && this.handler instanceof AfterUpdate.RecursionGuard) {
-                this.maxRecursionDepth = ((AfterUpdate.RecursionGuard) this.handler).maxRecursionDepthOnAfterUpdate();
+        public override void execute(List<TriggerHandler.TriggerRecord> records) {
+            try {
+                for (TriggerHandler.TriggerRecord record : records) {
+                    this.handle(record);
+                }
+
+                this.finalize();
+            } catch (Exception e) {
+                this.handleException(e);
+            }
+        }
+
+        private void handle(TriggerHandler.TriggerRecord record) {
+            Integer recursionDepth = this.recursionDepthByRecord.get(record.getId()) ?? 0;
+
+            if (recursionDepth >= this.maxRecursionDepth || !this.handler.qualifiesForAfterUpdateWhen(record)) {
+                return;
             }
 
-            return (this.recursionDepthByRecord.get(record.getId()) ?? 0) >= this.maxRecursionDepth;
+            this.recursionDepthByRecord.put(record.getId(), recursionDepth + 1);
+            this.processedRecords.add(record);
+            this.handler.onAfterUpdate(record);
         }
 
-        public override void registerRecord(TriggerHandler.TriggerRecord record) {
-            this.recursionDepthByRecord.put(record.getId(), (this.recursionDepthByRecord.get(record.getId()) ?? 0) + 1);
+        private void finalize() {
+            if (this.processedRecords.isEmpty() || !(this.handler instanceof AfterUpdate.Finalizer)) {
+                return;
+            }
+
+            ((AfterUpdate.Finalizer) this.handler).finalizeAfterUpdate();
         }
 
-        public override Boolean continuesOnError() {
-            return this.handler instanceof AfterUpdate.ContinueOnError;
-        }
+        private void handleException(Exception e) {
+            this.logError(e);
 
-        public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
-            return ((AfterUpdate.Handler) this.handler).qualifiesForAfterUpdateWhen(record);
-        }
-
-        public override void executeOn(TriggerHandler.TriggerRecord record) {
-            ((AfterUpdate.Handler) this.handler).onAfterUpdate(record);
-        }
-
-        public override void finalizeHandler() {
-            if (this.handler instanceof AfterUpdate.Finalizer) {
-                ((AfterUpdate.Finalizer) this.handler).finalizeAfterUpdate();
+            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.handler instanceof AfterUpdate.ContinueOnError)) {
+                throw e;
             }
         }
     }
 
     private class BeforeDeleteHandlerAdapter extends TriggerHandlerAdapter implements OldRecordEnricher {
+        private BeforeDelete.Handler handler;
+
         public BeforeDeleteHandlerAdapter(BeforeDelete.Handler handler, TriggerOrchestrator orchestrator) {
             super(handler, orchestrator);
+            this.handler = handler;
         }
 
-        public override Boolean isBypassedByHandler() {
-            if (this.handler instanceof BeforeDelete.Bypassable) {
-                return ((BeforeDelete.Bypassable) this.handler).bypassOnBeforeDeleteWhen();
-            }
-
-            return false;
+        public override Boolean isBypassedByInterface() {
+            return (this.handler instanceof BeforeDelete.Bypassable && ((BeforeDelete.Bypassable) this.handler).bypassOnBeforeDeleteWhen());
         }
 
         public Map<SObjectField, TriggerHandler.FieldSelection> getOldFieldsToEnrich() {
@@ -981,36 +1028,54 @@ public with sharing class TriggerOrchestrator {
             return new Map<SObjectField, TriggerHandler.FieldSelection>();
         }
 
-        public override Boolean continuesOnError() {
-            return this.handler instanceof BeforeDelete.ContinueOnError;
+        public override void execute(List<TriggerHandler.TriggerRecord> records) {
+            try {
+                for (TriggerHandler.TriggerRecord record : records) {
+                    this.handle(record);
+                }
+
+                this.finalize();
+            } catch (Exception e) {
+                this.handleException(e);
+            }
         }
 
-        public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
-            return ((BeforeDelete.Handler) this.handler).qualifiesForBeforeDeleteWhen(record);
+        private void handle(TriggerHandler.TriggerRecord record) {
+            if (!this.handler.qualifiesForBeforeDeleteWhen(record)) {
+                return;
+            }
+
+            this.processedRecords.add(record);
+            this.handler.onBeforeDelete(record);
         }
 
-        public override void executeOn(TriggerHandler.TriggerRecord record) {
-            ((BeforeDelete.Handler) this.handler).onBeforeDelete(record);
+        private void finalize() {
+            if (this.processedRecords.isEmpty() || !(this.handler instanceof BeforeDelete.Finalizer)) {
+                return;
+            }
+
+            ((BeforeDelete.Finalizer) this.handler).finalizeBeforeDelete();
         }
 
-        public override void finalizeHandler() {
-            if (this.handler instanceof BeforeDelete.Finalizer) {
-                ((BeforeDelete.Finalizer) this.handler).finalizeBeforeDelete();
+        private void handleException(Exception e) {
+            this.logError(e);
+
+            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.handler instanceof BeforeDelete.ContinueOnError)) {
+                throw e;
             }
         }
     }
 
     private class AfterDeleteHandlerAdapter extends TriggerHandlerAdapter implements OldRecordEnricher {
+        private AfterDelete.Handler handler;
+
         public AfterDeleteHandlerAdapter(AfterDelete.Handler handler, TriggerOrchestrator orchestrator) {
             super(handler, orchestrator);
+            this.handler = handler;
         }
 
-        public override Boolean isBypassedByHandler() {
-            if (this.handler instanceof AfterDelete.Bypassable) {
-                return ((AfterDelete.Bypassable) this.handler).bypassOnAfterDeleteWhen();
-            }
-
-            return false;
+        public override Boolean isBypassedByInterface() {
+            return (this.handler instanceof AfterDelete.Bypassable && ((AfterDelete.Bypassable) this.handler).bypassOnAfterDeleteWhen());
         }
 
         public Map<SObjectField, TriggerHandler.FieldSelection> getOldFieldsToEnrich() {
@@ -1021,36 +1086,54 @@ public with sharing class TriggerOrchestrator {
             return new Map<SObjectField, TriggerHandler.FieldSelection>();
         }
 
-        public override Boolean continuesOnError() {
-            return this.handler instanceof AfterDelete.ContinueOnError;
+        public override void execute(List<TriggerHandler.TriggerRecord> records) {
+            try {
+                for (TriggerHandler.TriggerRecord record : records) {
+                    this.handle(record);
+                }
+
+                this.finalize();
+            } catch (Exception e) {
+                this.handleException(e);
+            }
         }
 
-        public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
-            return ((AfterDelete.Handler) this.handler).qualifiesForAfterDeleteWhen(record);
+        private void handle(TriggerHandler.TriggerRecord record) {
+            if (!this.handler.qualifiesForAfterDeleteWhen(record)) {
+                return;
+            }
+
+            this.processedRecords.add(record);
+            this.handler.onAfterDelete(record);
         }
 
-        public override void executeOn(TriggerHandler.TriggerRecord record) {
-            ((AfterDelete.Handler) this.handler).onAfterDelete(record);
+        private void finalize() {
+            if (this.processedRecords.isEmpty() || !(this.handler instanceof AfterDelete.Finalizer)) {
+                return;
+            }
+
+            ((AfterDelete.Finalizer) this.handler).finalizeAfterDelete();
         }
 
-        public override void finalizeHandler() {
-            if (this.handler instanceof AfterDelete.Finalizer) {
-                ((AfterDelete.Finalizer) this.handler).finalizeAfterDelete();
+        private void handleException(Exception e) {
+            this.logError(e);
+
+            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.handler instanceof AfterDelete.ContinueOnError)) {
+                throw e;
             }
         }
     }
 
     private class AfterUndeleteHandlerAdapter extends TriggerHandlerAdapter implements NewRecordEnricher {
+        private AfterUndelete.Handler handler;
+
         public AfterUndeleteHandlerAdapter(AfterUndelete.Handler handler, TriggerOrchestrator orchestrator) {
             super(handler, orchestrator);
+            this.handler = handler;
         }
 
-        public override Boolean isBypassedByHandler() {
-            if (this.handler instanceof AfterUndelete.Bypassable) {
-                return ((AfterUndelete.Bypassable) this.handler).bypassOnAfterUndeleteWhen();
-            }
-
-            return false;
+        public override Boolean isBypassedByInterface() {
+            return (this.handler instanceof AfterUndelete.Bypassable && ((AfterUndelete.Bypassable) this.handler).bypassOnAfterUndeleteWhen());
         }
 
         public Map<SObjectField, TriggerHandler.FieldSelection> getNewFieldsToEnrich() {
@@ -1061,21 +1144,40 @@ public with sharing class TriggerOrchestrator {
             return new Map<SObjectField, TriggerHandler.FieldSelection>();
         }
 
-        public override Boolean continuesOnError() {
-            return this.handler instanceof AfterUndelete.ContinueOnError;
+        public override void execute(List<TriggerHandler.TriggerRecord> records) {
+            try {
+                for (TriggerHandler.TriggerRecord record : records) {
+                    this.handle(record);
+                }
+
+                this.finalize();
+            } catch (Exception e) {
+                this.handleException(e);
+            }
         }
 
-        public override Boolean isQualified(TriggerHandler.TriggerRecord record) {
-            return ((AfterUndelete.Handler) this.handler).qualifiesForAfterUndeleteWhen(record);
+        private void handle(TriggerHandler.TriggerRecord record) {
+            if (!this.handler.qualifiesForAfterUndeleteWhen(record)) {
+                return;
+            }
+
+            this.processedRecords.add(record);
+            this.handler.onAfterUndelete(record);
         }
 
-        public override void executeOn(TriggerHandler.TriggerRecord record) {
-            ((AfterUndelete.Handler) this.handler).onAfterUndelete(record);
+        private void finalize() {
+            if (this.processedRecords.isEmpty() || !(this.handler instanceof AfterUndelete.Finalizer)) {
+                return;
+            }
+
+            ((AfterUndelete.Finalizer) this.handler).finalizeAfterUndelete();
         }
 
-        public override void finalizeHandler() {
-            if (this.handler instanceof AfterUndelete.Finalizer) {
-                ((AfterUndelete.Finalizer) this.handler).finalizeAfterUndelete();
+        private void handleException(Exception e) {
+            this.logError(e);
+
+            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.handler instanceof AfterUndelete.ContinueOnError)) {
+                throw e;
             }
         }
     }
@@ -1087,10 +1189,10 @@ public with sharing class TriggerOrchestrator {
         private Map<SObjectField, Set<String>> fieldsToQueryByParentLookup = new Map<SObjectField, Set<String>>();
         private Map<SObjectField, Map<Id, SObject>> cachedParentByParentLookup = new Map<SObjectField, Map<Id, SObject>>();
 
-        private List<TriggerHandler.TriggerRecord> triggerRecords;
+        private TriggerContext context;
 
-        public LookupEnrichment(List<TriggerHandler.TriggerRecord> triggerRecords) {
-            this.triggerRecords = triggerRecords;
+        public LookupEnrichment(TriggerContext context) {
+            this.context = context;
         }
 
         public void queryParentRelationships(List<TriggerHandlerAdapter> handlers) {
@@ -1113,13 +1215,13 @@ public with sharing class TriggerOrchestrator {
             for (SObjectField parentField : this.fieldsToQueryByParentLookup.keySet()) {
                 Set<Id> parentIdsToQuery = new Set<Id>();
 
-                parentIdsToQuery.addAll(this.notQueriedNewParentIds(parentField, this.triggerRecords));
-                parentIdsToQuery.addAll(this.notQueriedOldParentIds(parentField, this.triggerRecords));
+                parentIdsToQuery.addAll(this.notQueriedNewParentIds(parentField, this.context.triggerRecords));
+                parentIdsToQuery.addAll(this.notQueriedOldParentIds(parentField, this.context.triggerRecords));
 
                 this.queryParentsRelationships(parentField, parentIdsToQuery);
 
-                this.attachNewToTriggerRecords(parentField, this.triggerRecords);
-                this.attachOldToTriggerRecords(parentField, this.triggerRecords);
+                this.attachNewToTriggerRecords(parentField, this.context.triggerRecords);
+                this.attachOldToTriggerRecords(parentField, this.context.triggerRecords);
             }
         }
 

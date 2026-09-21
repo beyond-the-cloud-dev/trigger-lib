@@ -8,11 +8,11 @@ public with sharing class AccountOwnerTransferHandler implements AfterUpdate.Han
         return isDisabled || System.isBatch();
     }
 
-    public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnAfterUpdate() {
+    public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
         return new Map<SObjectField, TriggerHandler.ParentFields>{ Account.OwnerId => TriggerHandler.ParentFields.with(User.Name) };
     }
 
-    public Map<SObjectField, TriggerHandler.ParentFields> oldFieldsToEnrichOnAfterUpdate() {
+    public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnAfterUpdate() {
         return new Map<SObjectField, TriggerHandler.ParentFields>{ Account.OwnerId => TriggerHandler.ParentFields.with(User.Name) };
     }
 

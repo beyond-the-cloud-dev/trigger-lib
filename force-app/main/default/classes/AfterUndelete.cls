@@ -5,7 +5,7 @@ public class AfterUndelete {
     }
 
     public interface NewRecordEnrichment {
-        Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnAfterUndelete();
+        Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUndelete();
     }
 
     public interface Bypassable {

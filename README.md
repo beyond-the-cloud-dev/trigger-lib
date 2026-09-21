@@ -70,7 +70,7 @@ public with sharing class ContactTriggerOrchestrator implements TriggerOrchestra
 public with sharing class ContactAccountSyncHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment, AfterUpdate.Finalizer {
   private List<Account> accountsToUpdate = new List<Account>();
 
-  public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnAfterUpdate() {
+  public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
     return new Map<SObjectField, TriggerHandler.ParentFields>{
       Contact.AccountId => TriggerHandler.ParentFields.with(
         Account.Name,

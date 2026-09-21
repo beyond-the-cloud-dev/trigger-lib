@@ -5,7 +5,7 @@ public class BeforeDelete {
     }
 
     public interface OldRecordEnrichment {
-        Map<SObjectField, TriggerHandler.ParentFields> oldFieldsToEnrichOnBeforeDelete();
+        Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeDelete();
     }
 
     public interface Bypassable {

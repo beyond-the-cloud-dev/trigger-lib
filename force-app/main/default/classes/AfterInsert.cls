@@ -5,7 +5,7 @@ public class AfterInsert {
     }
 
     public interface NewRecordEnrichment {
-        Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnAfterInsert();
+        Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert();
     }
 
     public interface Bypassable {

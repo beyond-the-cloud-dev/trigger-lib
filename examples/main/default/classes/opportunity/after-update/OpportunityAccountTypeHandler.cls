@@ -1,7 +1,7 @@
 public with sharing class OpportunityAccountTypeHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment, AfterUpdate.RecursionGuard, AfterUpdate.Finalizer {
     private Map<Id, Account> accountsToPromote = new Map<Id, Account>();
 
-    public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnAfterUpdate() {
+    public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
         return new Map<SObjectField, TriggerHandler.ParentFields>{ Opportunity.AccountId => TriggerHandler.ParentFields.with(Account.Type) };
     }
 

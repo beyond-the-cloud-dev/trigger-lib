@@ -1373,7 +1373,10 @@ private class TriggerOrchestratorTest {
 
     @IsTest
     static void enrichmentUnsetLookupOnEveryRecordAttachesNothing() {
-        List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'First', Email = 'first@example.com'), new Contact(LastName = 'Second', Email = 'second@example.com') };
+        List<SObject> newRecords = new List<Contact>{
+            new Contact(LastName = 'First', Email = 'first@example.com'),
+            new Contact(LastName = 'Second', Email = 'second@example.com')
+        };
         insert newRecords;
 
         EnrichmentAfterInsertHandler handler = new EnrichmentAfterInsertHandler();
@@ -1436,11 +1439,7 @@ private class TriggerOrchestratorTest {
         Test.stopTest();
 
         // Verify
-        Assert.areEqual(
-            1,
-            queriesAfter - queriesBefore,
-            'It should be 1, because every declared field is read through the saved records in one query.'
-        );
+        Assert.areEqual(1, queriesAfter - queriesBefore, 'It should be 1, because every declared field is read through the saved records in one query.');
         Assert.areEqual(
             'Technology',
             ((Account) nameHandler.seenNewParents[0]).Industry,
@@ -1489,11 +1488,7 @@ private class TriggerOrchestratorTest {
             ((Account) handler.seenNewParents[0]).Name,
             'It should be Umbrella Corp, because each declared lookup is attached under its own relationship name.'
         );
-        Assert.areEqual(
-            UserInfo.getUserId(),
-            handler.seenNewOwners[0].Id,
-            'It should be the running user id.'
-        );
+        Assert.areEqual(UserInfo.getUserId(), handler.seenNewOwners[0].Id, 'It should be the running user id.');
     }
 
     @IsTest
@@ -8418,7 +8413,7 @@ private class TriggerOrchestratorTest {
             this.newDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnBeforeInsert() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert() {
             return this.newDeclaration;
         }
 
@@ -8448,7 +8443,7 @@ private class TriggerOrchestratorTest {
             this.newDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnAfterInsert() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert() {
             return this.newDeclaration;
         }
 
@@ -8479,11 +8474,11 @@ private class TriggerOrchestratorTest {
             this.oldDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnBeforeUpdate() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate() {
             return this.newDeclaration;
         }
 
-        public Map<SObjectField, TriggerHandler.ParentFields> oldFieldsToEnrichOnBeforeUpdate() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnBeforeUpdate() {
             return this.oldDeclaration;
         }
 
@@ -8521,11 +8516,11 @@ private class TriggerOrchestratorTest {
             this.oldDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnAfterUpdate() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
             return this.newDeclaration;
         }
 
-        public Map<SObjectField, TriggerHandler.ParentFields> oldFieldsToEnrichOnAfterUpdate() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnAfterUpdate() {
             return this.oldDeclaration;
         }
 
@@ -8937,7 +8932,7 @@ private class TriggerOrchestratorTest {
             return this.isBypassed;
         }
 
-        public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnAfterInsert() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert() {
             return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
         }
 
@@ -10810,7 +10805,7 @@ private class TriggerOrchestratorTest {
             this.newDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnBeforeInsert() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert() {
             this.newDeclarationRequestCount++;
             return this.newDeclaration;
         }
@@ -10837,7 +10832,7 @@ private class TriggerOrchestratorTest {
             this.newDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnBeforeInsert() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert() {
             this.newDeclarationRequestCount++;
             return this.newDeclaration;
         }
@@ -10871,12 +10866,12 @@ private class TriggerOrchestratorTest {
             this.oldDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnBeforeUpdate() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate() {
             this.newDeclarationRequestCount++;
             return this.newDeclaration;
         }
 
-        public Map<SObjectField, TriggerHandler.ParentFields> oldFieldsToEnrichOnBeforeUpdate() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnBeforeUpdate() {
             this.oldDeclarationRequestCount++;
             return this.oldDeclaration;
         }
@@ -10908,12 +10903,12 @@ private class TriggerOrchestratorTest {
             this.oldDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnBeforeUpdate() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate() {
             this.newDeclarationRequestCount++;
             return this.newDeclaration;
         }
 
-        public Map<SObjectField, TriggerHandler.ParentFields> oldFieldsToEnrichOnBeforeUpdate() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnBeforeUpdate() {
             this.oldDeclarationRequestCount++;
             return this.oldDeclaration;
         }
@@ -10941,7 +10936,7 @@ private class TriggerOrchestratorTest {
             this.newDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnAfterInsert() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert() {
             this.newDeclarationRequestCount++;
             return this.newDeclaration;
         }
@@ -10972,12 +10967,12 @@ private class TriggerOrchestratorTest {
             this.oldDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnAfterUpdate() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
             this.newDeclarationRequestCount++;
             return this.newDeclaration;
         }
 
-        public Map<SObjectField, TriggerHandler.ParentFields> oldFieldsToEnrichOnAfterUpdate() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnAfterUpdate() {
             this.oldDeclarationRequestCount++;
             return this.oldDeclaration;
         }
@@ -11002,7 +10997,7 @@ private class TriggerOrchestratorTest {
             this.oldDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.ParentFields> oldFieldsToEnrichOnBeforeDelete() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeDelete() {
             this.oldDeclarationRequestCount++;
             return this.oldDeclaration;
         }
@@ -11026,7 +11021,7 @@ private class TriggerOrchestratorTest {
             this.oldDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.ParentFields> oldFieldsToEnrichOnAfterDelete() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterDelete() {
             this.oldDeclarationRequestCount++;
             return this.oldDeclaration;
         }
@@ -11050,7 +11045,7 @@ private class TriggerOrchestratorTest {
             this.newDeclaration.put(parentField, fields);
         }
 
-        public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnAfterUndelete() {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUndelete() {
             this.newDeclarationRequestCount++;
             return this.newDeclaration;
         }

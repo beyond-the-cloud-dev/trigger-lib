@@ -421,20 +421,10 @@ public with sharing class TriggerHandler {
 
         private SObjectType sObjectType;
 
-        private String identifier;
-
-        public TriggerRecord(SObject record) {
-            this.newRecord = record;
-            this.sObjectType = record.getSObjectType();
-            this.identifier = record.get('Id')?.toString() ?? UUID.randomUUID().toString();
-        }
-
         public TriggerRecord(SObject newRecord, SObject oldRecord) {
             this.newRecord = newRecord;
             this.oldRecord = oldRecord;
-
             this.sObjectType = (newRecord ?? oldRecord).getSObjectType();
-            this.identifier = (newRecord ?? oldRecord).get('Id')?.toString() ?? UUID.randomUUID().toString();
         }
 
         public Boolean isRecordTypeEqual(String recordTypeDeveloperName) {
@@ -755,10 +745,6 @@ public with sharing class TriggerHandler {
 
         public void enrichOld(String relationshipName, SObject relatedRecord) {
             this.oldRelatedRecords.put(relationshipName, relatedRecord);
-        }
-
-        public String getIdentifier() {
-            return this.identifier;
         }
     }
 

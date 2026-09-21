@@ -1,5 +1,5 @@
 public with sharing class AccountParentDefaultsPopulator implements BeforeInsert.Populator, BeforeInsert.NewRecordEnrichment {
-    public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnBeforeInsert() {
+    public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert() {
         return new Map<SObjectField, TriggerHandler.ParentFields>{ Account.ParentId => TriggerHandler.ParentFields.with(Account.Industry, Account.AccountSource) };
     }
 

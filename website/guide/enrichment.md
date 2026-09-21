@@ -25,7 +25,7 @@ Implement `NewRecordEnrichment` and return a map from the lookup field on the tr
 
 ```apex
 public with sharing class ContactAccountHandler implements AfterInsert.Handler, AfterInsert.NewRecordEnrichment {
-  public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnAfterInsert() {
+  public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert() {
     return new Map<SObjectField, TriggerHandler.ParentFields>{
       Contact.AccountId => TriggerHandler.ParentFields.with(
         Account.Name,
@@ -100,13 +100,13 @@ Update and delete contexts also have an old version of the record. Implement `Ol
 
 ```apex
 public with sharing class ContactAccountMoveHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment, AfterUpdate.OldRecordEnrichment {
-  public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnAfterUpdate() {
+  public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
     return new Map<SObjectField, TriggerHandler.ParentFields>{
       Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name)
     };
   }
 
-  public Map<SObjectField, TriggerHandler.ParentFields> oldFieldsToEnrichOnAfterUpdate() {
+  public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnAfterUpdate() {
     return new Map<SObjectField, TriggerHandler.ParentFields>{
       Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name)
     };

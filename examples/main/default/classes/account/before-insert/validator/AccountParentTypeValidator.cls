@@ -1,5 +1,5 @@
 public with sharing class AccountParentTypeValidator implements BeforeInsert.Validator, BeforeInsert.NewRecordEnrichment {
-    public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnBeforeInsert() {
+    public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert() {
         return new Map<SObjectField, TriggerHandler.ParentFields>{ Account.ParentId => TriggerHandler.ParentFields.with(Account.Name, Account.Type) };
     }
 

@@ -1,7 +1,7 @@
 public with sharing class AccountWelcomeTaskHandler implements AfterInsert.Handler, AfterInsert.NewRecordEnrichment, AfterInsert.Finalizer, AfterInsert.ContinueOnError {
     private List<Task> onboardingTasks = new List<Task>();
 
-    public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnAfterInsert() {
+    public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert() {
         return new Map<SObjectField, TriggerHandler.ParentFields>{ Account.OwnerId => TriggerHandler.ParentFields.with(User.Name, User.Email) };
     }
 

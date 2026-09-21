@@ -623,7 +623,7 @@ public with sharing class TriggerOrchestrator {
 
         public Map<SObjectField, TriggerHandler.ParentFields> getNewFieldsToEnrich() {
             if (this.handler instanceof BeforeInsert.NewRecordEnrichment) {
-                return ((BeforeInsert.NewRecordEnrichment) this.handler).newFieldsToEnrichOnBeforeInsert();
+                return ((BeforeInsert.NewRecordEnrichment) this.handler).queryParentsOnBeforeInsert();
             }
 
             return new Map<SObjectField, TriggerHandler.ParentFields>();
@@ -679,7 +679,7 @@ public with sharing class TriggerOrchestrator {
 
         public Map<SObjectField, TriggerHandler.ParentFields> getNewFieldsToEnrich() {
             if (this.handler instanceof BeforeInsert.NewRecordEnrichment) {
-                return ((BeforeInsert.NewRecordEnrichment) this.handler).newFieldsToEnrichOnBeforeInsert();
+                return ((BeforeInsert.NewRecordEnrichment) this.handler).queryParentsOnBeforeInsert();
             }
 
             return new Map<SObjectField, TriggerHandler.ParentFields>();
@@ -719,7 +719,7 @@ public with sharing class TriggerOrchestrator {
 
         public Map<SObjectField, TriggerHandler.ParentFields> getNewFieldsToEnrich() {
             if (this.handler instanceof AfterInsert.NewRecordEnrichment) {
-                return ((AfterInsert.NewRecordEnrichment) this.handler).newFieldsToEnrichOnAfterInsert();
+                return ((AfterInsert.NewRecordEnrichment) this.handler).queryParentsOnAfterInsert();
             }
 
             return new Map<SObjectField, TriggerHandler.ParentFields>();
@@ -784,7 +784,7 @@ public with sharing class TriggerOrchestrator {
 
         public Map<SObjectField, TriggerHandler.ParentFields> getNewFieldsToEnrich() {
             if (this.handler instanceof BeforeUpdate.NewRecordEnrichment) {
-                return ((BeforeUpdate.NewRecordEnrichment) this.handler).newFieldsToEnrichOnBeforeUpdate();
+                return ((BeforeUpdate.NewRecordEnrichment) this.handler).queryParentsOnBeforeUpdate();
             }
 
             return new Map<SObjectField, TriggerHandler.ParentFields>();
@@ -792,7 +792,7 @@ public with sharing class TriggerOrchestrator {
 
         public Map<SObjectField, TriggerHandler.ParentFields> getOldFieldsToEnrich() {
             if (this.handler instanceof BeforeUpdate.OldRecordEnrichment) {
-                return ((BeforeUpdate.OldRecordEnrichment) this.handler).oldFieldsToEnrichOnBeforeUpdate();
+                return ((BeforeUpdate.OldRecordEnrichment) this.handler).queryPriorParentsOnBeforeUpdate();
             }
 
             return new Map<SObjectField, TriggerHandler.ParentFields>();
@@ -860,7 +860,7 @@ public with sharing class TriggerOrchestrator {
 
         public Map<SObjectField, TriggerHandler.ParentFields> getNewFieldsToEnrich() {
             if (this.handler instanceof BeforeUpdate.NewRecordEnrichment) {
-                return ((BeforeUpdate.NewRecordEnrichment) this.handler).newFieldsToEnrichOnBeforeUpdate();
+                return ((BeforeUpdate.NewRecordEnrichment) this.handler).queryParentsOnBeforeUpdate();
             }
 
             return new Map<SObjectField, TriggerHandler.ParentFields>();
@@ -868,7 +868,7 @@ public with sharing class TriggerOrchestrator {
 
         public Map<SObjectField, TriggerHandler.ParentFields> getOldFieldsToEnrich() {
             if (this.handler instanceof BeforeUpdate.OldRecordEnrichment) {
-                return ((BeforeUpdate.OldRecordEnrichment) this.handler).oldFieldsToEnrichOnBeforeUpdate();
+                return ((BeforeUpdate.OldRecordEnrichment) this.handler).queryPriorParentsOnBeforeUpdate();
             }
 
             return new Map<SObjectField, TriggerHandler.ParentFields>();
@@ -916,7 +916,7 @@ public with sharing class TriggerOrchestrator {
 
         public Map<SObjectField, TriggerHandler.ParentFields> getNewFieldsToEnrich() {
             if (this.handler instanceof AfterUpdate.NewRecordEnrichment) {
-                return ((AfterUpdate.NewRecordEnrichment) this.handler).newFieldsToEnrichOnAfterUpdate();
+                return ((AfterUpdate.NewRecordEnrichment) this.handler).queryParentsOnAfterUpdate();
             }
 
             return new Map<SObjectField, TriggerHandler.ParentFields>();
@@ -924,7 +924,7 @@ public with sharing class TriggerOrchestrator {
 
         public Map<SObjectField, TriggerHandler.ParentFields> getOldFieldsToEnrich() {
             if (this.handler instanceof AfterUpdate.OldRecordEnrichment) {
-                return ((AfterUpdate.OldRecordEnrichment) this.handler).oldFieldsToEnrichOnAfterUpdate();
+                return ((AfterUpdate.OldRecordEnrichment) this.handler).queryPriorParentsOnAfterUpdate();
             }
 
             return new Map<SObjectField, TriggerHandler.ParentFields>();
@@ -976,7 +976,7 @@ public with sharing class TriggerOrchestrator {
 
         public Map<SObjectField, TriggerHandler.ParentFields> getOldFieldsToEnrich() {
             if (this.handler instanceof BeforeDelete.OldRecordEnrichment) {
-                return ((BeforeDelete.OldRecordEnrichment) this.handler).oldFieldsToEnrichOnBeforeDelete();
+                return ((BeforeDelete.OldRecordEnrichment) this.handler).queryParentsOnBeforeDelete();
             }
 
             return new Map<SObjectField, TriggerHandler.ParentFields>();
@@ -1016,7 +1016,7 @@ public with sharing class TriggerOrchestrator {
 
         public Map<SObjectField, TriggerHandler.ParentFields> getOldFieldsToEnrich() {
             if (this.handler instanceof AfterDelete.OldRecordEnrichment) {
-                return ((AfterDelete.OldRecordEnrichment) this.handler).oldFieldsToEnrichOnAfterDelete();
+                return ((AfterDelete.OldRecordEnrichment) this.handler).queryParentsOnAfterDelete();
             }
 
             return new Map<SObjectField, TriggerHandler.ParentFields>();
@@ -1056,7 +1056,7 @@ public with sharing class TriggerOrchestrator {
 
         public Map<SObjectField, TriggerHandler.ParentFields> getNewFieldsToEnrich() {
             if (this.handler instanceof AfterUndelete.NewRecordEnrichment) {
-                return ((AfterUndelete.NewRecordEnrichment) this.handler).newFieldsToEnrichOnAfterUndelete();
+                return ((AfterUndelete.NewRecordEnrichment) this.handler).queryParentsOnAfterUndelete();
             }
 
             return new Map<SObjectField, TriggerHandler.ParentFields>();
@@ -1128,12 +1128,7 @@ public with sharing class TriggerOrchestrator {
                 }
             }
 
-            List<SObject> savedRecords = SOQL.of(this.context.sObjectType)
-                .with(fieldsToQuery)
-                .byIds(this.context.newRecords)
-                .systemMode()
-                .withoutSharing()
-                .toList();
+            List<SObject> savedRecords = SOQL.of(this.context.sObjectType).with(fieldsToQuery).byIds(this.context.newRecords).systemMode().withoutSharing().toList();
 
             for (SObjectField parentField : this.newParentLookupsToEnrich) {
                 Map<Id, SObject> cachedParentById = this.cachedParentByParentLookup.get(parentField);

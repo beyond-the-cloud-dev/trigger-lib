@@ -14,7 +14,7 @@ public class BeforeInsert {
     // additional interfaces
 
     public interface NewRecordEnrichment {
-        Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnBeforeInsert();
+        Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert();
     }
 
     public interface Bypassable {

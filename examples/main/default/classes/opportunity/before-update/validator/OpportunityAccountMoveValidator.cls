@@ -1,9 +1,9 @@
 public with sharing class OpportunityAccountMoveValidator implements BeforeUpdate.Validator, BeforeUpdate.NewRecordEnrichment, BeforeUpdate.OldRecordEnrichment {
-    public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnBeforeUpdate() {
+    public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate() {
         return new Map<SObjectField, TriggerHandler.ParentFields>{ Opportunity.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
     }
 
-    public Map<SObjectField, TriggerHandler.ParentFields> oldFieldsToEnrichOnBeforeUpdate() {
+    public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnBeforeUpdate() {
         return new Map<SObjectField, TriggerHandler.ParentFields>{ Opportunity.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
     }
 

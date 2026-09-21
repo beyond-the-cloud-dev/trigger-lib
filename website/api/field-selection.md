@@ -8,7 +8,7 @@ Describes which fields to query on a parent record during [enrichment](/guide/en
 
 ```apex
 public with sharing class ContactAccountHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment {
-  public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnAfterUpdate() {
+  public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
     return new Map<SObjectField, TriggerHandler.ParentFields>{
       Contact.AccountId => TriggerHandler.ParentFields
         .with(Account.Name, Account.Industry)

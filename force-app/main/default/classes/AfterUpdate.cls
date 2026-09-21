@@ -5,11 +5,11 @@ public class AfterUpdate {
     }
 
     public interface NewRecordEnrichment {
-        Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnAfterUpdate();
+        Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate();
     }
 
     public interface OldRecordEnrichment {
-        Map<SObjectField, TriggerHandler.ParentFields> oldFieldsToEnrichOnAfterUpdate();
+        Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnAfterUpdate();
     }
 
     public interface Bypassable {

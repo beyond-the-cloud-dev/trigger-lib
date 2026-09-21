@@ -21,7 +21,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Doe', Department = 'Sales'), new Contact(LastName = 'Roe', Department = 'Legal') };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -52,7 +53,8 @@ private class TriggerOrchestratorTest {
         };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -78,7 +80,8 @@ private class TriggerOrchestratorTest {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = firstContactId, LastName = 'Old One'), new Contact(Id = secondContactId, LastName = 'Old Two') };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -106,7 +109,8 @@ private class TriggerOrchestratorTest {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = firstContactId, LastName = 'Old One'), new Contact(Id = secondContactId, LastName = 'Old Two') };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -134,7 +138,8 @@ private class TriggerOrchestratorTest {
         };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -161,7 +166,8 @@ private class TriggerOrchestratorTest {
         };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -192,7 +198,8 @@ private class TriggerOrchestratorTest {
         };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -218,7 +225,8 @@ private class TriggerOrchestratorTest {
         };
         DispatchTwoHandlersOrchestrator orchestrator = new DispatchTwoHandlersOrchestrator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -239,7 +247,8 @@ private class TriggerOrchestratorTest {
         DispatchPartialOrchestrator orchestrator = new DispatchPartialOrchestrator();
         Exception orchestratorException = null;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -265,7 +274,8 @@ private class TriggerOrchestratorTest {
         DispatchPartialOrchestrator orchestrator = new DispatchPartialOrchestrator();
         Exception orchestratorException = null;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -289,7 +299,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
         DispatchPartialOrchestrator orchestrator = new DispatchPartialOrchestrator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -309,7 +320,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
         Exception orchestratorException = null;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -332,7 +344,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
         Exception orchestratorException = null;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -355,7 +368,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
         Exception orchestratorException = null;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -447,7 +461,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
         Exception orchestratorException = null;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -473,7 +488,8 @@ private class TriggerOrchestratorTest {
         DispatchEmptyListOrchestrator orchestrator = new DispatchEmptyListOrchestrator();
         Exception orchestratorException = null;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -500,7 +516,8 @@ private class TriggerOrchestratorTest {
         DispatchEmptyListOrchestrator orchestrator = new DispatchEmptyListOrchestrator();
         Exception orchestratorException = null;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -525,7 +542,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>();
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -574,9 +592,8 @@ private class TriggerOrchestratorTest {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old One') };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{
-            'contact' => new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt(Bypass__c = true))
-        };
+        SOQL.mock('TriggerObject__mdt').thenReturn(new TriggerObject__mdt(ObjectAPIName__c = 'Contact', Bypass__c = true));
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -597,9 +614,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{
-            'account' => new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt(Bypass__c = true))
-        };
+        SOQL.mock('TriggerObject__mdt').thenReturn(new TriggerObject__mdt(ObjectAPIName__c = 'Account', Bypass__c = true));
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -618,9 +634,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
         DispatchAllContextsOrchestrator orchestrator = new DispatchAllContextsOrchestrator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{
-            'contact' => new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt(Bypass__c = false))
-        };
+        SOQL.mock('TriggerObject__mdt').thenReturn(new TriggerObject__mdt(ObjectAPIName__c = 'Contact', Bypass__c = false));
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -642,7 +657,8 @@ private class TriggerOrchestratorTest {
 
         orchestrator.handler.logger = logger;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
@@ -1242,7 +1258,8 @@ private class TriggerOrchestratorTest {
         EnrichmentAfterInsertHandler handler = new EnrichmentAfterInsertHandler();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1270,7 +1287,8 @@ private class TriggerOrchestratorTest {
         EnrichmentAfterUpdateHandler handler = new EnrichmentAfterUpdateHandler();
         handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1295,7 +1313,8 @@ private class TriggerOrchestratorTest {
 
         EnrichmentAfterInsertHandler handler = new EnrichmentAfterInsertHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1323,7 +1342,8 @@ private class TriggerOrchestratorTest {
         EnrichmentAfterInsertHandler handler = new EnrichmentAfterInsertHandler();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1357,7 +1377,8 @@ private class TriggerOrchestratorTest {
         EnrichmentAfterInsertHandler handler = new EnrichmentAfterInsertHandler();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1395,7 +1416,8 @@ private class TriggerOrchestratorTest {
         EnrichmentAfterInsertHandler countryHandler = new EnrichmentAfterInsertHandler();
         countryHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.BillingCountry));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1442,7 +1464,8 @@ private class TriggerOrchestratorTest {
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
         handler.declareNew(Contact.OwnerId, TriggerHandler.FieldSelection.with(User.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1478,7 +1501,8 @@ private class TriggerOrchestratorTest {
         EnrichmentAfterInsertHandler handler = new EnrichmentAfterInsertHandler();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1512,7 +1536,8 @@ private class TriggerOrchestratorTest {
         EnrichmentBeforeUpdateHandler readingHandler = new EnrichmentBeforeUpdateHandler();
         readingHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1555,7 +1580,8 @@ private class TriggerOrchestratorTest {
         EnrichmentBeforeInsertHandler readingHandler = new EnrichmentBeforeInsertHandler();
         readingHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1616,7 +1642,8 @@ private class TriggerOrchestratorTest {
         EnrichmentBeforeUpdateHandler readingHandler = new EnrichmentBeforeUpdateHandler();
         readingHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1664,7 +1691,8 @@ private class TriggerOrchestratorTest {
             handlers.add(lastHandler);
         }
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1710,7 +1738,8 @@ private class TriggerOrchestratorTest {
         EnrichmentBeforeUpdateHandler readingHandler = new EnrichmentBeforeUpdateHandler();
         readingHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1755,7 +1784,8 @@ private class TriggerOrchestratorTest {
         readingHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
         readingHandler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1801,7 +1831,8 @@ private class TriggerOrchestratorTest {
         EnrichmentAfterUpdateHandler readingHandler = new EnrichmentAfterUpdateHandler();
         readingHandler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1837,7 +1868,8 @@ private class TriggerOrchestratorTest {
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
         handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1871,7 +1903,8 @@ private class TriggerOrchestratorTest {
         BypassBeforeInsertPopulator activeHandler = new BypassBeforeInsertPopulator();
         bypassedHandler.isBypassed = true;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1892,7 +1925,8 @@ private class TriggerOrchestratorTest {
         BypassBeforeInsertPopulator handler = new BypassBeforeInsertPopulator();
         handler.isBypassed = false;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1914,7 +1948,8 @@ private class TriggerOrchestratorTest {
         BypassBeforeInsertPopulator activeHandler = new BypassBeforeInsertPopulator();
         bypassedValidator.isBypassed = true;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1936,7 +1971,8 @@ private class TriggerOrchestratorTest {
         BypassBeforeInsertValidator validator = new BypassBeforeInsertValidator();
         validator.isBypassed = false;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1957,7 +1993,8 @@ private class TriggerOrchestratorTest {
         BypassAfterInsertHandler activeHandler = new BypassAfterInsertHandler();
         bypassedHandler.isBypassed = true;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -1977,7 +2014,8 @@ private class TriggerOrchestratorTest {
         BypassAfterInsertHandler handler = new BypassAfterInsertHandler();
         handler.isBypassed = false;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2000,7 +2038,8 @@ private class TriggerOrchestratorTest {
         BypassBeforeUpdatePopulator activeHandler = new BypassBeforeUpdatePopulator();
         bypassedHandler.isBypassed = true;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2024,7 +2063,8 @@ private class TriggerOrchestratorTest {
         BypassBeforeUpdatePopulator handler = new BypassBeforeUpdatePopulator();
         handler.isBypassed = false;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2049,7 +2089,8 @@ private class TriggerOrchestratorTest {
         BypassBeforeUpdatePopulator activeHandler = new BypassBeforeUpdatePopulator();
         bypassedValidator.isBypassed = true;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2074,7 +2115,8 @@ private class TriggerOrchestratorTest {
         BypassBeforeUpdateValidator validator = new BypassBeforeUpdateValidator();
         validator.isBypassed = false;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2099,7 +2141,8 @@ private class TriggerOrchestratorTest {
         BypassAfterUpdateHandler activeHandler = new BypassAfterUpdateHandler();
         bypassedHandler.isBypassed = true;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2123,7 +2166,8 @@ private class TriggerOrchestratorTest {
         BypassAfterUpdateHandler handler = new BypassAfterUpdateHandler();
         handler.isBypassed = false;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2145,7 +2189,8 @@ private class TriggerOrchestratorTest {
         BypassBeforeDeleteHandler activeHandler = new BypassBeforeDeleteHandler();
         bypassedHandler.isBypassed = true;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2166,7 +2211,8 @@ private class TriggerOrchestratorTest {
         BypassBeforeDeleteHandler handler = new BypassBeforeDeleteHandler();
         handler.isBypassed = false;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2187,7 +2233,8 @@ private class TriggerOrchestratorTest {
         BypassAfterDeleteHandler activeHandler = new BypassAfterDeleteHandler();
         bypassedHandler.isBypassed = true;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2208,7 +2255,8 @@ private class TriggerOrchestratorTest {
         BypassAfterDeleteHandler handler = new BypassAfterDeleteHandler();
         handler.isBypassed = false;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2228,7 +2276,8 @@ private class TriggerOrchestratorTest {
         BypassAfterUndeleteHandler activeHandler = new BypassAfterUndeleteHandler();
         bypassedHandler.isBypassed = true;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2248,7 +2297,8 @@ private class TriggerOrchestratorTest {
         BypassAfterUndeleteHandler handler = new BypassAfterUndeleteHandler();
         handler.isBypassed = false;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2271,7 +2321,8 @@ private class TriggerOrchestratorTest {
         };
         BypassAfterInsertHandler handler = new BypassAfterInsertHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2291,7 +2342,8 @@ private class TriggerOrchestratorTest {
         BypassAfterInsertHandler handler = new BypassAfterInsertHandler();
         handler.isBypassed = true;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2313,7 +2365,8 @@ private class TriggerOrchestratorTest {
     static void handlerWithoutBypassableInterfaceAlwaysRuns() {
         BypassPlainAfterInsertHandler handler = new BypassPlainAfterInsertHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2333,7 +2386,8 @@ private class TriggerOrchestratorTest {
         BypassRelatedReaderAfterInsertHandler readerHandler = new BypassRelatedReaderAfterInsertHandler();
         bypassedHandler.isBypassed = true;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2359,7 +2413,8 @@ private class TriggerOrchestratorTest {
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>());
         Exception orchestratorException = null;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2383,10 +2438,14 @@ private class TriggerOrchestratorTest {
         BypassMetadataHandler bypassedHandler = new BypassMetadataHandler();
         BypassAfterInsertHandler activeHandler = new BypassAfterInsertHandler();
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt(Bypass__c = false));
-        contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'bypassmetadatahandler' => new TriggerHandler__mdt(Bypass__c = true) };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        SOQL.mock('TriggerObject__mdt')
+            .thenReturn(
+                (TriggerObject__mdt) JSON.deserialize(
+                    '{"ObjectAPIName__c": "Contact", "TriggerHandlers__r": {"totalSize": 1, "done": true, "records": [{"attributes": {"type": "TriggerHandler__mdt"}, "ApexClassName__c": "bypassmetadatahandler", "Bypass__c": true}]}, "Bypass__c": false}',
+                    TriggerObject__mdt.class
+                )
+            );
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2405,10 +2464,14 @@ private class TriggerOrchestratorTest {
     static void metadataBypassedHandlerIsNeverAskedForItsCodeBypass() {
         BypassMetadataHandler handler = new BypassMetadataHandler();
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
-        contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'bypassmetadatahandler' => new TriggerHandler__mdt(Bypass__c = true) };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        SOQL.mock('TriggerObject__mdt')
+            .thenReturn(
+                (TriggerObject__mdt) JSON.deserialize(
+                    '{"ObjectAPIName__c": "Contact", "TriggerHandlers__r": {"totalSize": 1, "done": true, "records": [{"attributes": {"type": "TriggerHandler__mdt"}, "ApexClassName__c": "bypassmetadatahandler", "Bypass__c": true}]}}',
+                    TriggerObject__mdt.class
+                )
+            );
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2428,10 +2491,14 @@ private class TriggerOrchestratorTest {
         BypassMetadataPopulator bypassedHandler = new BypassMetadataPopulator();
         BypassBeforeInsertPopulator activeHandler = new BypassBeforeInsertPopulator();
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
-        contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'bypassmetadatapopulator' => new TriggerHandler__mdt(Bypass__c = true) };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        SOQL.mock('TriggerObject__mdt')
+            .thenReturn(
+                (TriggerObject__mdt) JSON.deserialize(
+                    '{"ObjectAPIName__c": "Contact", "TriggerHandlers__r": {"totalSize": 1, "done": true, "records": [{"attributes": {"type": "TriggerHandler__mdt"}, "ApexClassName__c": "bypassmetadatapopulator", "Bypass__c": true}]}}',
+                    TriggerObject__mdt.class
+                )
+            );
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2453,9 +2520,8 @@ private class TriggerOrchestratorTest {
 
         BypassAfterInsertOrchestrator orchestrator = new BypassAfterInsertOrchestrator(new List<AfterInsert.Handler>{ firstHandler, secondHandler });
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{
-            'contact' => new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt(Bypass__c = true))
-        };
+        SOQL.mock('TriggerObject__mdt').thenReturn(new TriggerObject__mdt(ObjectAPIName__c = 'Contact', Bypass__c = true));
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Exception orchestratorException = null;
 
@@ -2482,9 +2548,8 @@ private class TriggerOrchestratorTest {
     static void metadataObjectBypassAppliesOnlyToTheNamedObject() {
         BypassAfterInsertHandler handler = new BypassAfterInsertHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{
-            'account' => new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt(Bypass__c = true))
-        };
+        SOQL.mock('TriggerObject__mdt').thenReturn(new TriggerObject__mdt(ObjectAPIName__c = 'Account', Bypass__c = true));
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2502,9 +2567,8 @@ private class TriggerOrchestratorTest {
     static void metadataObjectRecordWithoutBypassLetsHandlersRun() {
         BypassAfterInsertHandler handler = new BypassAfterInsertHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{
-            'contact' => new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt(Bypass__c = false))
-        };
+        SOQL.mock('TriggerObject__mdt').thenReturn(new TriggerObject__mdt(ObjectAPIName__c = 'Contact', Bypass__c = false));
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2522,13 +2586,14 @@ private class TriggerOrchestratorTest {
     static void metadataInnerClassQualifiedNameBypassesHandler() {
         BypassMetadataHandler handler = new BypassMetadataHandler();
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
-        contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{
-            'triggerorchestratortest.bypassmetadatahandler' => new TriggerHandler__mdt(Bypass__c = true),
-            'bypassmetadatahandler' => new TriggerHandler__mdt(Bypass__c = true)
-        };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        SOQL.mock('TriggerObject__mdt')
+            .thenReturn(
+                (TriggerObject__mdt) JSON.deserialize(
+                    '{"ObjectAPIName__c": "Contact", "TriggerHandlers__r": {"totalSize": 1, "done": true, "records": [{"attributes": {"type": "TriggerHandler__mdt"}, "ApexClassName__c": "triggerorchestratortest.bypassmetadatahandler", "Bypass__c": true}]}}',
+                    TriggerObject__mdt.class
+                )
+            );
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2546,10 +2611,14 @@ private class TriggerOrchestratorTest {
     static void metadataInnerClassSimpleNameBypassesHandler() {
         BypassMetadataHandler handler = new BypassMetadataHandler();
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
-        contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'bypassmetadatahandler' => new TriggerHandler__mdt(Bypass__c = true) };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        SOQL.mock('TriggerObject__mdt')
+            .thenReturn(
+                (TriggerObject__mdt) JSON.deserialize(
+                    '{"ObjectAPIName__c": "Contact", "TriggerHandlers__r": {"totalSize": 1, "done": true, "records": [{"attributes": {"type": "TriggerHandler__mdt"}, "ApexClassName__c": "bypassmetadatahandler", "Bypass__c": true}]}}',
+                    TriggerObject__mdt.class
+                )
+            );
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2564,13 +2633,17 @@ private class TriggerOrchestratorTest {
     }
 
     @IsTest
-    static void metadataQualifiedNameAloneDoesNotBypassInnerClass() {
+    static void metadataQualifiedNameBypassesInnerClassByEitherSpelling() {
         BypassMetadataHandler handler = new BypassMetadataHandler();
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
-        contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'triggerorchestratortest.bypassmetadatahandler' => new TriggerHandler__mdt(Bypass__c = true) };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        SOQL.mock('TriggerObject__mdt')
+            .thenReturn(
+                (TriggerObject__mdt) JSON.deserialize(
+                    '{"ObjectAPIName__c": "Contact", "TriggerHandlers__r": {"totalSize": 1, "done": true, "records": [{"attributes": {"type": "TriggerHandler__mdt"}, "ApexClassName__c": "triggerorchestratortest.bypassmetadatahandler", "Bypass__c": true}]}}',
+                    TriggerObject__mdt.class
+                )
+            );
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2581,20 +2654,21 @@ private class TriggerOrchestratorTest {
         Test.stopTest();
 
         // Verify
-        Assert.areEqual(1, handler.runCount, 'It should be 1.');
+        Assert.areEqual(0, handler.runCount, 'It should be 0, because the loader stores a dotted name under both spellings.');
     }
 
     @IsTest
     static void metadataNameOfAnotherOuterClassBypassesTheSameSimpleName() {
         BypassMetadataHandler handler = new BypassMetadataHandler();
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
-        contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{
-            'someotherouterclass.bypassmetadatahandler' => new TriggerHandler__mdt(Bypass__c = true),
-            'bypassmetadatahandler' => new TriggerHandler__mdt(Bypass__c = true)
-        };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        SOQL.mock('TriggerObject__mdt')
+            .thenReturn(
+                (TriggerObject__mdt) JSON.deserialize(
+                    '{"ObjectAPIName__c": "Contact", "TriggerHandlers__r": {"totalSize": 1, "done": true, "records": [{"attributes": {"type": "TriggerHandler__mdt"}, "ApexClassName__c": "someotherouterclass.bypassmetadatahandler", "Bypass__c": true}]}}',
+                    TriggerObject__mdt.class
+                )
+            );
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2613,7 +2687,8 @@ private class TriggerOrchestratorTest {
         BypassMetadataHandler firstHandler = new BypassMetadataHandler();
         BypassAfterInsertHandler secondHandler = new BypassAfterInsertHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2629,12 +2704,11 @@ private class TriggerOrchestratorTest {
     }
 
     @IsTest
-    static void zeroMetadataRecordsLoadWithOneQueryAndBypassNothing() {
+    static void metadataSettingsAreLoadedOnceAndBypassNothingWhenNoRecordExists() {
         BypassMetadataHandler handler = new BypassMetadataHandler();
 
-        Integer queriesBeforeLoad = Limits.getQueries();
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = TriggerOrchestrator.triggerSettings.resolveMetadataSettings();
-        Integer queriesAfterLoad = Limits.getQueries();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2643,16 +2717,12 @@ private class TriggerOrchestratorTest {
         orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
         orchestratorRunner.context.newRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Bypass') };
         orchestratorRunner.run();
-
         Integer queriesAfterRun = Limits.getQueries();
         Test.stopTest();
 
         // Verify
-        Assert.areEqual(1, queriesAfterLoad - queriesBeforeLoad, 'It should be 1, because the settings load runs one query through the SOQL library.');
-        Assert.areEqual(0, queriesAfterRun - queriesBeforeRun, 'It should be 0.');
-        Assert.isNotNull(TriggerOrchestrator.triggerSettings.settingsByObjectName, 'It should be not null.');
-        Assert.isNull(TriggerOrchestrator.triggerSettings.settingsByObjectName.get('contact'), 'It should be null.');
-        Assert.areEqual(1, handler.runCount, 'It should be 1.');
+        Assert.areEqual(0, queriesAfterRun - queriesBeforeRun, 'It should be 0, because the settings are loaded once and then read from the cache.');
+        Assert.areEqual(1, handler.runCount, 'It should be 1, because no metadata record names the handler.');
     }
 
     @IsTest
@@ -2660,10 +2730,14 @@ private class TriggerOrchestratorTest {
         BypassMetadataHandler bypassedHandler = new BypassMetadataHandler();
         BypassAfterInsertHandler activeHandler = new BypassAfterInsertHandler();
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
-        contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'bypassmetadatahandler' => new TriggerHandler__mdt(Bypass__c = true) };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        SOQL.mock('TriggerObject__mdt')
+            .thenReturn(
+                (TriggerObject__mdt) JSON.deserialize(
+                    '{"ObjectAPIName__c": "Contact", "TriggerHandlers__r": {"totalSize": 1, "done": true, "records": [{"attributes": {"type": "TriggerHandler__mdt"}, "ApexClassName__c": "bypassmetadatahandler", "Bypass__c": true}]}}',
+                    TriggerObject__mdt.class
+                )
+            );
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2687,7 +2761,8 @@ private class TriggerOrchestratorTest {
         BypassAfterInsertHandler handler = new BypassAfterInsertHandler();
         handler.isQualified = true;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2706,7 +2781,8 @@ private class TriggerOrchestratorTest {
         BypassAfterInsertHandler handler = new BypassAfterInsertHandler();
         handler.isQualified = false;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2731,7 +2807,8 @@ private class TriggerOrchestratorTest {
         };
         BypassLastNameAfterInsertHandler handler = new BypassLastNameAfterInsertHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2755,7 +2832,8 @@ private class TriggerOrchestratorTest {
         };
         BypassAfterInsertHandler handler = new BypassAfterInsertHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2776,7 +2854,8 @@ private class TriggerOrchestratorTest {
         BypassBeforeInsertPopulator handler = new BypassBeforeInsertPopulator();
         handler.isQualified = true;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2797,7 +2876,8 @@ private class TriggerOrchestratorTest {
         BypassBeforeInsertPopulator handler = new BypassBeforeInsertPopulator();
         handler.isQualified = false;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2818,7 +2898,8 @@ private class TriggerOrchestratorTest {
         BypassBeforeInsertValidator validator = new BypassBeforeInsertValidator();
         validator.isQualified = true;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2839,7 +2920,8 @@ private class TriggerOrchestratorTest {
         BypassBeforeInsertValidator validator = new BypassBeforeInsertValidator();
         validator.isQualified = false;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2862,7 +2944,8 @@ private class TriggerOrchestratorTest {
         BypassBeforeUpdatePopulator handler = new BypassBeforeUpdatePopulator();
         handler.isQualified = true;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2886,7 +2969,8 @@ private class TriggerOrchestratorTest {
         BypassBeforeUpdatePopulator handler = new BypassBeforeUpdatePopulator();
         handler.isQualified = false;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2910,7 +2994,8 @@ private class TriggerOrchestratorTest {
         BypassAfterUpdateHandler handler = new BypassAfterUpdateHandler();
         handler.isQualified = true;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2933,7 +3018,8 @@ private class TriggerOrchestratorTest {
         BypassAfterUpdateHandler handler = new BypassAfterUpdateHandler();
         handler.isQualified = false;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2955,7 +3041,8 @@ private class TriggerOrchestratorTest {
         BypassBeforeDeleteHandler handler = new BypassBeforeDeleteHandler();
         handler.isQualified = true;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2975,7 +3062,8 @@ private class TriggerOrchestratorTest {
         BypassBeforeDeleteHandler handler = new BypassBeforeDeleteHandler();
         handler.isQualified = false;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -2995,7 +3083,8 @@ private class TriggerOrchestratorTest {
         BypassAfterDeleteHandler handler = new BypassAfterDeleteHandler();
         handler.isQualified = true;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -3015,7 +3104,8 @@ private class TriggerOrchestratorTest {
         BypassAfterDeleteHandler handler = new BypassAfterDeleteHandler();
         handler.isQualified = false;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -3034,7 +3124,8 @@ private class TriggerOrchestratorTest {
         BypassAfterUndeleteHandler handler = new BypassAfterUndeleteHandler();
         handler.isQualified = true;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -3053,7 +3144,8 @@ private class TriggerOrchestratorTest {
         BypassAfterUndeleteHandler handler = new BypassAfterUndeleteHandler();
         handler.isQualified = false;
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -3073,7 +3165,8 @@ private class TriggerOrchestratorTest {
         BypassTitlePopulator firstHandler = new BypassTitlePopulator();
         BypassTitleReaderPopulator secondHandler = new BypassTitleReaderPopulator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -3095,7 +3188,8 @@ private class TriggerOrchestratorTest {
         BypassTitleReaderPopulator firstHandler = new BypassTitleReaderPopulator();
         BypassTitlePopulator secondHandler = new BypassTitlePopulator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -3117,9 +3211,8 @@ private class TriggerOrchestratorTest {
         BypassNestedRunHandler handler = new BypassNestedRunHandler();
 
         TriggerOrchestrator.triggerLogger.logger = loggerStub;
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{
-            'account' => new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt(Bypass__c = true))
-        };
+        SOQL.mock('TriggerObject__mdt').thenReturn(new TriggerObject__mdt(ObjectAPIName__c = 'Account', Bypass__c = true));
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -3141,7 +3234,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionBeforeUpdateHandler handler = new RecursionBeforeUpdateHandler();
 
@@ -3166,7 +3260,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionAfterUpdateHandler handler = new RecursionAfterUpdateHandler();
 
@@ -3191,7 +3286,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionGuardedBeforeUpdateHandler handler = new RecursionGuardedBeforeUpdateHandler(2);
 
@@ -3216,7 +3312,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionGuardedAfterUpdateHandler handler = new RecursionGuardedAfterUpdateHandler(2);
 
@@ -3236,136 +3333,13 @@ private class TriggerOrchestratorTest {
     }
 
     @IsTest
-    static void orchestratorRecursionGuardAppliesToEveryBeforeUpdateHandler() {
-        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
-        List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
-        List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-
-        RecursionBeforeUpdateHandler firstHandler = new RecursionBeforeUpdateHandler();
-        RecursionSecondBeforeUpdateHandler secondHandler = new RecursionSecondBeforeUpdateHandler();
-
-        // Test
-        Test.startTest();
-        for (Integer i = 0; i < 7; i++) {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new RecursionGuardedBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ firstHandler, secondHandler }, 5)
-            );
-            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.newRecords = newRecords;
-            orchestratorRunner.context.oldRecords = oldRecords;
-            orchestratorRunner.run();
-        }
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(5, firstHandler.runCount, 'It should be 5.');
-        Assert.areEqual(5, secondHandler.runCount, 'It should be 5.');
-    }
-
-    @IsTest
-    static void orchestratorRecursionGuardAppliesToEveryAfterUpdateHandler() {
-        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
-        List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
-        List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-
-        RecursionAfterUpdateHandler firstHandler = new RecursionAfterUpdateHandler();
-        RecursionSecondAfterUpdateHandler secondHandler = new RecursionSecondAfterUpdateHandler();
-
-        // Test
-        Test.startTest();
-        for (Integer i = 0; i < 7; i++) {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new RecursionGuardedAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ firstHandler, secondHandler }, 5)
-            );
-            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.newRecords = newRecords;
-            orchestratorRunner.context.oldRecords = oldRecords;
-            orchestratorRunner.run();
-        }
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(5, firstHandler.runCount, 'It should be 5.');
-        Assert.areEqual(5, secondHandler.runCount, 'It should be 5.');
-    }
-
-    @IsTest
-    static void handlerRecursionGuardBeatsOrchestratorRecursionGuardOnBeforeUpdate() {
-        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
-        List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
-        List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-
-        RecursionGuardedBeforeUpdateHandler guardedHandler = new RecursionGuardedBeforeUpdateHandler(2);
-        RecursionBeforeUpdateHandler unguardedHandler = new RecursionBeforeUpdateHandler();
-
-        // Test
-        Test.startTest();
-        for (Integer i = 0; i < 7; i++) {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new RecursionGuardedBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ guardedHandler, unguardedHandler }, 5)
-            );
-            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            orchestratorRunner.context.newRecords = newRecords;
-            orchestratorRunner.context.oldRecords = oldRecords;
-            orchestratorRunner.run();
-        }
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            2,
-            guardedHandler.runCount,
-            'It should be 2, because BeforeUpdate.RecursionGuard on the handler is resolved last and always wins over TriggerOrchestrator.RecursionGuard.'
-        );
-        Assert.areEqual(5, unguardedHandler.runCount, 'It should be 5.');
-    }
-
-    @IsTest
-    static void handlerRecursionGuardBeatsOrchestratorRecursionGuardOnAfterUpdate() {
-        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
-        List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
-        List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
-
-        RecursionGuardedAfterUpdateHandler guardedHandler = new RecursionGuardedAfterUpdateHandler(2);
-        RecursionAfterUpdateHandler unguardedHandler = new RecursionAfterUpdateHandler();
-
-        // Test
-        Test.startTest();
-        for (Integer i = 0; i < 7; i++) {
-            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(
-                new RecursionGuardedAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ guardedHandler, unguardedHandler }, 5)
-            );
-            orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            orchestratorRunner.context.newRecords = newRecords;
-            orchestratorRunner.context.oldRecords = oldRecords;
-            orchestratorRunner.run();
-        }
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            2,
-            guardedHandler.runCount,
-            'It should be 2, because AfterUpdate.RecursionGuard on the handler is resolved last and always wins over TriggerOrchestrator.RecursionGuard.'
-        );
-        Assert.areEqual(5, unguardedHandler.runCount, 'It should be 5.');
-    }
-
-    @IsTest
     static void noRecursionGuardAnywhereFallsBackToThreePassesOnBeforeUpdate() {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionBeforeUpdateHandler firstHandler = new RecursionBeforeUpdateHandler();
         RecursionSecondBeforeUpdateHandler secondHandler = new RecursionSecondBeforeUpdateHandler();
@@ -3393,7 +3367,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionAfterUpdateHandler firstHandler = new RecursionAfterUpdateHandler();
         RecursionSecondAfterUpdateHandler secondHandler = new RecursionSecondAfterUpdateHandler();
@@ -3422,7 +3397,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = firstContactId, LastName = 'Ada'), new Contact(Id = secondContactId, LastName = 'Bob') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = firstContactId, LastName = 'Ada'), new Contact(Id = secondContactId, LastName = 'Bob') };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionGuardedBeforeUpdateHandler handler = new RecursionGuardedBeforeUpdateHandler(2);
 
@@ -3450,7 +3426,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = firstContactId, LastName = 'Ada'), new Contact(Id = secondContactId, LastName = 'Bob') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = firstContactId, LastName = 'Ada'), new Contact(Id = secondContactId, LastName = 'Bob') };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionGuardedAfterUpdateHandler handler = new RecursionGuardedAfterUpdateHandler(2);
 
@@ -3478,7 +3455,8 @@ private class TriggerOrchestratorTest {
         Contact exhaustedContact = new Contact(Id = exhaustedContactId, LastName = 'Ada');
         Contact lateContact = new Contact(Id = lateContactId, LastName = 'Bob');
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionGuardedAfterUpdateHandler handler = new RecursionGuardedAfterUpdateHandler(2);
         RecursionAfterUpdateOrchestrator orchestrator = new RecursionAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler });
@@ -3517,7 +3495,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ qualifiedContact, rejectedContact };
         List<SObject> oldRecords = new List<Contact>{ qualifiedContact.clone(true), rejectedContact.clone(true) };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionSelectiveBeforeUpdateHandler handler = new RecursionSelectiveBeforeUpdateHandler();
         RecursionBeforeUpdateOrchestrator orchestrator = new RecursionBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler });
@@ -3557,7 +3536,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ qualifiedContact, rejectedContact };
         List<SObject> oldRecords = new List<Contact>{ qualifiedContact.clone(true), rejectedContact.clone(true) };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionSelectiveAfterUpdateHandler handler = new RecursionSelectiveAfterUpdateHandler();
         RecursionAfterUpdateOrchestrator orchestrator = new RecursionAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler });
@@ -3595,7 +3575,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ qualifiedContact, rejectedContact };
         List<SObject> oldRecords = new List<Contact>{ qualifiedContact.clone(true), rejectedContact.clone(true) };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionSelectiveAfterUpdateHandler handler = new RecursionSelectiveAfterUpdateHandler();
 
@@ -3620,7 +3601,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionGuardedBeforeUpdateHandler guardedHandler = new RecursionGuardedBeforeUpdateHandler(1);
         RecursionBeforeUpdateHandler unguardedHandler = new RecursionBeforeUpdateHandler();
@@ -3649,7 +3631,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionGuardedAfterUpdateHandler guardedHandler = new RecursionGuardedAfterUpdateHandler(1);
         RecursionAfterUpdateHandler unguardedHandler = new RecursionAfterUpdateHandler();
@@ -3678,7 +3661,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionBothUpdatesHandler handler = new RecursionBothUpdatesHandler();
         RecursionBothUpdatesOrchestrator orchestrator = new RecursionBothUpdatesOrchestrator(handler);
@@ -3713,7 +3697,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionLogger logger = new RecursionLogger();
 
@@ -3750,7 +3735,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionLogger logger = new RecursionLogger();
 
@@ -3787,7 +3773,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionFinalizingAfterUpdateHandler handler = new RecursionFinalizingAfterUpdateHandler(1);
 
@@ -3813,7 +3800,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionAfterUpdateHandler firstInstance = new RecursionAfterUpdateHandler();
         RecursionAfterUpdateHandler secondInstance = new RecursionAfterUpdateHandler();
@@ -3847,7 +3835,8 @@ private class TriggerOrchestratorTest {
             oldRecords.add(new Contact(Id = contactId, LastName = 'Ada'));
         }
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionBeforeUpdateHandler handler = new RecursionBeforeUpdateHandler();
 
@@ -3879,7 +3868,8 @@ private class TriggerOrchestratorTest {
             oldRecords.add(new Contact(Id = contactId, LastName = 'Ada'));
         }
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionAfterUpdateHandler handler = new RecursionAfterUpdateHandler();
 
@@ -3903,7 +3893,8 @@ private class TriggerOrchestratorTest {
     static void recursionGuardDoesNotApplyToAfterInsert() {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Ada') };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionAfterInsertHandler handler = new RecursionAfterInsertHandler();
 
@@ -3927,7 +3918,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionBeforeUpdateValidator handler = new RecursionBeforeUpdateValidator();
 
@@ -3952,7 +3944,8 @@ private class TriggerOrchestratorTest {
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Ada') };
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         RecursionGuardedBeforeUpdateValidator handler = new RecursionGuardedBeforeUpdateValidator(2);
 
@@ -3977,7 +3970,8 @@ private class TriggerOrchestratorTest {
         ErrorsLoggingMutedFailingHandler failingHandler = new ErrorsLoggingMutedFailingHandler();
         ErrorsLoggingCountingHandler laterHandler = new ErrorsLoggingCountingHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         Exception orchestratorException = null;
@@ -4009,7 +4003,8 @@ private class TriggerOrchestratorTest {
         ErrorsLoggingMutedFailingHandler failingHandler = new ErrorsLoggingMutedFailingHandler();
         ErrorsLoggingCountingHandler laterHandler = new ErrorsLoggingCountingHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
@@ -4030,7 +4025,8 @@ private class TriggerOrchestratorTest {
     static void continueOnErrorLogsEveryFailingHandler() {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
@@ -4055,7 +4051,8 @@ private class TriggerOrchestratorTest {
         ErrorsLoggingFailingHandler failingHandler = new ErrorsLoggingFailingHandler();
         ErrorsLoggingCountingHandler laterHandler = new ErrorsLoggingCountingHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         Exception orchestratorException = null;
@@ -4085,7 +4082,8 @@ private class TriggerOrchestratorTest {
     static void handlerWithoutContinueOnErrorPropagatesItsOwnExceptionType() {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         Exception orchestratorException = null;
@@ -4112,7 +4110,8 @@ private class TriggerOrchestratorTest {
     static void loggerReceivesContinueOnErrorFailureWithHandlerNameAndOperation() {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
@@ -4136,7 +4135,8 @@ private class TriggerOrchestratorTest {
     static void loggerReceivesUncaughtErrorBeforeItPropagates() {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         Exception orchestratorException = null;
@@ -4169,7 +4169,8 @@ private class TriggerOrchestratorTest {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
@@ -4198,7 +4199,8 @@ private class TriggerOrchestratorTest {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Deleted') };
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
@@ -4222,7 +4224,8 @@ private class TriggerOrchestratorTest {
     static void loggerErrorCarriesNoRecordIdsInBeforeInsert() {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         Exception orchestratorException = null;
@@ -4252,7 +4255,8 @@ private class TriggerOrchestratorTest {
     static void loggerReceivesErrorFromQualificationPredicate() {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         Exception orchestratorException = null;
@@ -4282,7 +4286,8 @@ private class TriggerOrchestratorTest {
     static void loggerReceivesErrorFromFinalizer() {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         Exception orchestratorException = null;
@@ -4317,7 +4322,8 @@ private class TriggerOrchestratorTest {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
         ErrorsLoggingCountingHandler handler = new ErrorsLoggingCountingHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
@@ -4338,7 +4344,8 @@ private class TriggerOrchestratorTest {
     static void loggerFinalizeRunsOnceOnAFailedInvocation() {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         Exception orchestratorException = null;
@@ -4367,7 +4374,8 @@ private class TriggerOrchestratorTest {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Chunk') };
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
@@ -4399,7 +4407,8 @@ private class TriggerOrchestratorTest {
             logger
         );
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
@@ -4421,7 +4430,8 @@ private class TriggerOrchestratorTest {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
         ErrorsLoggingNestedRunHandler outerHandler = new ErrorsLoggingNestedRunHandler(new ErrorsLoggingNoInterfaceOrchestrator(), logger);
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
@@ -4442,7 +4452,8 @@ private class TriggerOrchestratorTest {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
         ErrorsLoggingCountingPopulator laterHandler = new ErrorsLoggingCountingPopulator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         Exception orchestratorException = null;
@@ -4475,7 +4486,8 @@ private class TriggerOrchestratorTest {
     static void loggerReceivesFrameworkGuardViolationBeforeItPropagates() {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         Exception orchestratorException = null;
@@ -4515,7 +4527,8 @@ private class TriggerOrchestratorTest {
             new ErrorsLoggingBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ new ErrorsLoggingMutedRecordApiPopulator() })
         );
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         Exception orchestratorException = null;
@@ -4552,7 +4565,8 @@ private class TriggerOrchestratorTest {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
         ErrorsLoggingCountingHandler laterHandler = new ErrorsLoggingCountingHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         TriggerHandler.TriggerHandlerException recordApiException = null;
@@ -4581,7 +4595,8 @@ private class TriggerOrchestratorTest {
     static void loggerReceivesTriggerHandlerExceptionBeforeItPropagates() {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         Exception orchestratorException = null;
@@ -4611,7 +4626,8 @@ private class TriggerOrchestratorTest {
     static void platformBadCastPropagatesUnchanged() {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         Exception orchestratorException = null;
@@ -4640,7 +4656,8 @@ private class TriggerOrchestratorTest {
     static void platformNullDereferencePropagatesUnchanged() {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         Exception orchestratorException = null;
@@ -4670,7 +4687,8 @@ private class TriggerOrchestratorTest {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
         ErrorsLoggingCountingHandler laterHandler = new ErrorsLoggingCountingHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         // Test
@@ -4693,7 +4711,8 @@ private class TriggerOrchestratorTest {
     static void emptyHandlerListRunsNothing() {
         ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = logger;
 
         Exception orchestratorException = null;
@@ -4718,7 +4737,8 @@ private class TriggerOrchestratorTest {
 
     @IsTest
     static void withoutALoggerAFailureStillPropagates() {
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = null;
 
         Exception orchestratorException = null;
@@ -4747,7 +4767,8 @@ private class TriggerOrchestratorTest {
         ErrorsLoggingMutedFailingHandler failingHandler = new ErrorsLoggingMutedFailingHandler();
         ErrorsLoggingCountingHandler laterHandler = new ErrorsLoggingCountingHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         TriggerOrchestrator.triggerLogger.logger = null;
 
         // Test
@@ -4765,7 +4786,8 @@ private class TriggerOrchestratorTest {
 
     @IsTest
     static void beforeInsertPopulatorPerformingDmlThrows() {
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         Exception orchestratorException = null;
 
         // Test
@@ -4792,7 +4814,8 @@ private class TriggerOrchestratorTest {
 
     @IsTest
     static void beforeInsertValidatorPerformingDmlThrows() {
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         Exception orchestratorException = null;
 
         // Test
@@ -4818,7 +4841,8 @@ private class TriggerOrchestratorTest {
 
     @IsTest
     static void beforeInsertFinalizerPerformingDmlThrows() {
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         DmlGuardInsertFinalizer handler = new DmlGuardInsertFinalizer();
         Exception orchestratorException = null;
 
@@ -4846,7 +4870,8 @@ private class TriggerOrchestratorTest {
 
     @IsTest
     static void beforeInsertQualificationPerformingDmlThrows() {
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         DmlGuardInsertQualifier handler = new DmlGuardInsertQualifier();
         Exception orchestratorException = null;
 
@@ -4874,7 +4899,8 @@ private class TriggerOrchestratorTest {
 
     @IsTest
     static void beforeInsertDmlBelowTheHandlerThrows() {
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         Exception orchestratorException = null;
 
         // Test
@@ -4901,7 +4927,8 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void beforeInsertWithoutDmlDoesNotThrow() {
         List<SObject> records = new List<Contact>{ new Contact(LastName = 'Guard') };
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         DmlGuardInsertSilentPopulator handler = new DmlGuardInsertSilentPopulator();
         Exception orchestratorException = null;
 
@@ -4925,7 +4952,8 @@ private class TriggerOrchestratorTest {
 
     @IsTest
     static void beforeInsertGuardNamesTheHandlerThatPerformedDml() {
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         DmlGuardInsertSilentPopulator cleanHandler = new DmlGuardInsertSilentPopulator();
         Exception orchestratorException = null;
 
@@ -4955,7 +4983,8 @@ private class TriggerOrchestratorTest {
 
     @IsTest
     static void beforeInsertContinueOnErrorDoesNotSuppressGuard() {
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         DmlGuardInsertSilentPopulator laterHandler = new DmlGuardInsertSilentPopulator();
         Exception orchestratorException = null;
 
@@ -4985,7 +5014,8 @@ private class TriggerOrchestratorTest {
 
     @IsTest
     static void beforeInsertGuardSurvivesHandlerException() {
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         Exception orchestratorException = null;
 
         // Test
@@ -5011,7 +5041,8 @@ private class TriggerOrchestratorTest {
 
     @IsTest
     static void beforeInsertHandlerExceptionWithoutDmlStaysSilent() {
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         DmlGuardInsertContinueFailingPopulator handler = new DmlGuardInsertContinueFailingPopulator();
         Exception orchestratorException = null;
 
@@ -5037,7 +5068,8 @@ private class TriggerOrchestratorTest {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         Exception orchestratorException = null;
 
         // Test
@@ -5067,7 +5099,8 @@ private class TriggerOrchestratorTest {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         Exception orchestratorException = null;
 
         // Test
@@ -5097,7 +5130,8 @@ private class TriggerOrchestratorTest {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         DmlGuardUpdateFinalizer handler = new DmlGuardUpdateFinalizer();
         Exception orchestratorException = null;
 
@@ -5129,7 +5163,8 @@ private class TriggerOrchestratorTest {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         DmlGuardUpdateQualifier handler = new DmlGuardUpdateQualifier();
         Exception orchestratorException = null;
 
@@ -5163,7 +5198,8 @@ private class TriggerOrchestratorTest {
         insert existingAccount;
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         Exception orchestratorException = null;
 
         // Test
@@ -5193,7 +5229,8 @@ private class TriggerOrchestratorTest {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         DmlGuardUpdateSilentPopulator handler = new DmlGuardUpdateSilentPopulator();
         Exception orchestratorException = null;
 
@@ -5221,7 +5258,8 @@ private class TriggerOrchestratorTest {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         DmlGuardUpdateSilentPopulator laterHandler = new DmlGuardUpdateSilentPopulator();
         Exception orchestratorException = null;
 
@@ -5255,7 +5293,8 @@ private class TriggerOrchestratorTest {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         Exception orchestratorException = null;
 
         // Test
@@ -5285,7 +5324,8 @@ private class TriggerOrchestratorTest {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         DmlGuardUpdateContinueFailingPopulator handler = new DmlGuardUpdateContinueFailingPopulator();
         Exception orchestratorException = null;
 
@@ -5309,7 +5349,8 @@ private class TriggerOrchestratorTest {
 
     @IsTest
     static void afterInsertHandlerPerformingDmlIsAllowed() {
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         Exception orchestratorException = null;
 
         // Test
@@ -5331,7 +5372,8 @@ private class TriggerOrchestratorTest {
 
     @IsTest
     static void afterInsertFinalizerPerformingDmlIsAllowed() {
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         DmlGuardAfterInsertFinalizer handler = new DmlGuardAfterInsertFinalizer();
         Exception orchestratorException = null;
 
@@ -5359,7 +5401,8 @@ private class TriggerOrchestratorTest {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         Exception orchestratorException = null;
 
         // Test
@@ -5383,7 +5426,8 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void afterDeleteHandlerPerformingDmlIsAllowed() {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Deleted') };
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         Exception orchestratorException = null;
 
         // Test
@@ -5405,7 +5449,8 @@ private class TriggerOrchestratorTest {
 
     @IsTest
     static void afterUndeleteHandlerPerformingDmlIsAllowed() {
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         Exception orchestratorException = null;
 
         // Test
@@ -5428,7 +5473,8 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void beforeDeleteHandlerPerformingDmlIsAllowed() {
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Deleted') };
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
         Exception orchestratorException = null;
 
         // Test
@@ -6386,10 +6432,14 @@ private class TriggerOrchestratorTest {
         GapMetadataBypassMutedInsertPopulator mutedPopulator = new GapMetadataBypassMutedInsertPopulator();
         GapMetadataBypassLiveInsertPopulator livePopulator = new GapMetadataBypassLiveInsertPopulator();
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
-        contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'gapmetadatabypassmutedinsertpopulator' => new TriggerHandler__mdt(Bypass__c = true) };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        SOQL.mock('TriggerObject__mdt')
+            .thenReturn(
+                (TriggerObject__mdt) JSON.deserialize(
+                    '{"ObjectAPIName__c": "Contact", "TriggerHandlers__r": {"totalSize": 1, "done": true, "records": [{"attributes": {"type": "TriggerHandler__mdt"}, "ApexClassName__c": "gapmetadatabypassmutedinsertpopulator", "Bypass__c": true}]}}',
+                    TriggerObject__mdt.class
+                )
+            );
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -6413,10 +6463,14 @@ private class TriggerOrchestratorTest {
         GapMetadataBypassMutedInsertValidator mutedValidator = new GapMetadataBypassMutedInsertValidator();
         GapMetadataBypassLiveInsertValidator liveValidator = new GapMetadataBypassLiveInsertValidator();
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
-        contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'gapmetadatabypassmutedinsertvalidator' => new TriggerHandler__mdt(Bypass__c = true) };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        SOQL.mock('TriggerObject__mdt')
+            .thenReturn(
+                (TriggerObject__mdt) JSON.deserialize(
+                    '{"ObjectAPIName__c": "Contact", "TriggerHandlers__r": {"totalSize": 1, "done": true, "records": [{"attributes": {"type": "TriggerHandler__mdt"}, "ApexClassName__c": "gapmetadatabypassmutedinsertvalidator", "Bypass__c": true}]}}',
+                    TriggerObject__mdt.class
+                )
+            );
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -6441,10 +6495,14 @@ private class TriggerOrchestratorTest {
         GapMetadataBypassMutedAfterInsertHandler mutedHandler = new GapMetadataBypassMutedAfterInsertHandler();
         GapMetadataBypassLiveAfterInsertHandler liveHandler = new GapMetadataBypassLiveAfterInsertHandler();
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
-        contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'gapmetadatabypassmutedafterinserthandler' => new TriggerHandler__mdt(Bypass__c = true) };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        SOQL.mock('TriggerObject__mdt')
+            .thenReturn(
+                (TriggerObject__mdt) JSON.deserialize(
+                    '{"ObjectAPIName__c": "Contact", "TriggerHandlers__r": {"totalSize": 1, "done": true, "records": [{"attributes": {"type": "TriggerHandler__mdt"}, "ApexClassName__c": "gapmetadatabypassmutedafterinserthandler", "Bypass__c": true}]}}',
+                    TriggerObject__mdt.class
+                )
+            );
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -6468,10 +6526,14 @@ private class TriggerOrchestratorTest {
         GapMetadataBypassMutedUpdatePopulator mutedPopulator = new GapMetadataBypassMutedUpdatePopulator();
         GapMetadataBypassLiveUpdatePopulator livePopulator = new GapMetadataBypassLiveUpdatePopulator();
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
-        contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'gapmetadatabypassmutedupdatepopulator' => new TriggerHandler__mdt(Bypass__c = true) };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        SOQL.mock('TriggerObject__mdt')
+            .thenReturn(
+                (TriggerObject__mdt) JSON.deserialize(
+                    '{"ObjectAPIName__c": "Contact", "TriggerHandlers__r": {"totalSize": 1, "done": true, "records": [{"attributes": {"type": "TriggerHandler__mdt"}, "ApexClassName__c": "gapmetadatabypassmutedupdatepopulator", "Bypass__c": true}]}}',
+                    TriggerObject__mdt.class
+                )
+            );
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -6498,10 +6560,14 @@ private class TriggerOrchestratorTest {
         GapMetadataBypassMutedUpdateValidator mutedValidator = new GapMetadataBypassMutedUpdateValidator();
         GapMetadataBypassLiveUpdateValidator liveValidator = new GapMetadataBypassLiveUpdateValidator();
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
-        contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'gapmetadatabypassmutedupdatevalidator' => new TriggerHandler__mdt(Bypass__c = true) };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        SOQL.mock('TriggerObject__mdt')
+            .thenReturn(
+                (TriggerObject__mdt) JSON.deserialize(
+                    '{"ObjectAPIName__c": "Contact", "TriggerHandlers__r": {"totalSize": 1, "done": true, "records": [{"attributes": {"type": "TriggerHandler__mdt"}, "ApexClassName__c": "gapmetadatabypassmutedupdatevalidator", "Bypass__c": true}]}}',
+                    TriggerObject__mdt.class
+                )
+            );
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -6530,10 +6596,14 @@ private class TriggerOrchestratorTest {
         GapMetadataBypassMutedAfterUpdateHandler mutedHandler = new GapMetadataBypassMutedAfterUpdateHandler();
         GapMetadataBypassLiveAfterUpdateHandler liveHandler = new GapMetadataBypassLiveAfterUpdateHandler();
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
-        contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'gapmetadatabypassmutedafterupdatehandler' => new TriggerHandler__mdt(Bypass__c = true) };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        SOQL.mock('TriggerObject__mdt')
+            .thenReturn(
+                (TriggerObject__mdt) JSON.deserialize(
+                    '{"ObjectAPIName__c": "Contact", "TriggerHandlers__r": {"totalSize": 1, "done": true, "records": [{"attributes": {"type": "TriggerHandler__mdt"}, "ApexClassName__c": "gapmetadatabypassmutedafterupdatehandler", "Bypass__c": true}]}}',
+                    TriggerObject__mdt.class
+                )
+            );
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -6556,10 +6626,14 @@ private class TriggerOrchestratorTest {
         GapMetadataBypassMutedBeforeDeleteHandler mutedHandler = new GapMetadataBypassMutedBeforeDeleteHandler();
         GapMetadataBypassLiveBeforeDeleteHandler liveHandler = new GapMetadataBypassLiveBeforeDeleteHandler();
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
-        contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'gapmetadatabypassmutedbeforedeletehandler' => new TriggerHandler__mdt(Bypass__c = true) };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        SOQL.mock('TriggerObject__mdt')
+            .thenReturn(
+                (TriggerObject__mdt) JSON.deserialize(
+                    '{"ObjectAPIName__c": "Contact", "TriggerHandlers__r": {"totalSize": 1, "done": true, "records": [{"attributes": {"type": "TriggerHandler__mdt"}, "ApexClassName__c": "gapmetadatabypassmutedbeforedeletehandler", "Bypass__c": true}]}}',
+                    TriggerObject__mdt.class
+                )
+            );
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -6583,10 +6657,14 @@ private class TriggerOrchestratorTest {
         GapMetadataBypassMutedAfterDeleteHandler mutedHandler = new GapMetadataBypassMutedAfterDeleteHandler();
         GapMetadataBypassLiveAfterDeleteHandler liveHandler = new GapMetadataBypassLiveAfterDeleteHandler();
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
-        contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'gapmetadatabypassmutedafterdeletehandler' => new TriggerHandler__mdt(Bypass__c = true) };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        SOQL.mock('TriggerObject__mdt')
+            .thenReturn(
+                (TriggerObject__mdt) JSON.deserialize(
+                    '{"ObjectAPIName__c": "Contact", "TriggerHandlers__r": {"totalSize": 1, "done": true, "records": [{"attributes": {"type": "TriggerHandler__mdt"}, "ApexClassName__c": "gapmetadatabypassmutedafterdeletehandler", "Bypass__c": true}]}}',
+                    TriggerObject__mdt.class
+                )
+            );
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -6607,10 +6685,14 @@ private class TriggerOrchestratorTest {
         GapMetadataBypassMutedAfterUndeleteHandler mutedHandler = new GapMetadataBypassMutedAfterUndeleteHandler();
         GapMetadataBypassLiveAfterUndeleteHandler liveHandler = new GapMetadataBypassLiveAfterUndeleteHandler();
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
-        contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{ 'gapmetadatabypassmutedafterundeletehandler' => new TriggerHandler__mdt(Bypass__c = true) };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        SOQL.mock('TriggerObject__mdt')
+            .thenReturn(
+                (TriggerObject__mdt) JSON.deserialize(
+                    '{"ObjectAPIName__c": "Contact", "TriggerHandlers__r": {"totalSize": 1, "done": true, "records": [{"attributes": {"type": "TriggerHandler__mdt"}, "ApexClassName__c": "gapmetadatabypassmutedafterundeletehandler", "Bypass__c": true}]}}',
+                    TriggerObject__mdt.class
+                )
+            );
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -6636,13 +6718,14 @@ private class TriggerOrchestratorTest {
         GapMetadataBypassDottedNameValidator dottedValidator = new GapMetadataBypassDottedNameValidator();
         GapMetadataBypassLiveUpdateValidator liveValidator = new GapMetadataBypassLiveUpdateValidator();
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
-        contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{
-            'triggerorchestratortest.gapmetadatabypassdottednamevalidator' => new TriggerHandler__mdt(Bypass__c = true),
-            'gapmetadatabypassdottednamevalidator' => new TriggerHandler__mdt(Bypass__c = true)
-        };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        SOQL.mock('TriggerObject__mdt')
+            .thenReturn(
+                (TriggerObject__mdt) JSON.deserialize(
+                    '{"ObjectAPIName__c": "Contact", "TriggerHandlers__r": {"totalSize": 1, "done": true, "records": [{"attributes": {"type": "TriggerHandler__mdt"}, "ApexClassName__c": "triggerorchestratortest.gapmetadatabypassdottednamevalidator", "Bypass__c": true}]}}',
+                    TriggerObject__mdt.class
+                )
+            );
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -6661,18 +6744,20 @@ private class TriggerOrchestratorTest {
     }
 
     @IsTest
-    static void gapMetadataBypassDottedEntryWithoutTailRunsBeforeUpdateValidator() {
+    static void gapMetadataBypassDottedEntryStopsBeforeUpdateValidator() {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
         List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
         GapMetadataBypassDottedNameValidator dottedValidator = new GapMetadataBypassDottedNameValidator();
 
-        TriggerOrchestrator.MetadataSettings contactSettings = new TriggerOrchestrator.MetadataSettings(new TriggerObject__mdt());
-        contactSettings.settingByHandlerName = new Map<String, TriggerHandler__mdt>{
-            'triggerorchestratortest.gapmetadatabypassdottednamevalidator' => new TriggerHandler__mdt(Bypass__c = true)
-        };
-
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>{ 'contact' => contactSettings };
+        SOQL.mock('TriggerObject__mdt')
+            .thenReturn(
+                (TriggerObject__mdt) JSON.deserialize(
+                    '{"ObjectAPIName__c": "Contact", "TriggerHandlers__r": {"totalSize": 1, "done": true, "records": [{"attributes": {"type": "TriggerHandler__mdt"}, "ApexClassName__c": "triggerorchestratortest.gapmetadatabypassdottednamevalidator", "Bypass__c": true}]}}',
+                    TriggerObject__mdt.class
+                )
+            );
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -6684,7 +6769,7 @@ private class TriggerOrchestratorTest {
         Test.stopTest();
 
         // Verify
-        Assert.areEqual(1, dottedValidator.messageCount, 'It should be 1.');
+        Assert.areEqual(0, dottedValidator.messageCount, 'It should be 0, because the loader stores a dotted name under both spellings.');
     }
 
     @IsTest
@@ -6697,7 +6782,8 @@ private class TriggerOrchestratorTest {
         GapEnrichmentBeforeInsertPopulator handler = new GapEnrichmentBeforeInsertPopulator();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -6722,7 +6808,8 @@ private class TriggerOrchestratorTest {
         GapEnrichmentBeforeInsertValidator handler = new GapEnrichmentBeforeInsertValidator();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -6754,7 +6841,8 @@ private class TriggerOrchestratorTest {
         GapEnrichmentBeforeInsertValidator validator = new GapEnrichmentBeforeInsertValidator();
         validator.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -6797,7 +6885,8 @@ private class TriggerOrchestratorTest {
         GapEnrichmentBeforeUpdatePopulator handler = new GapEnrichmentBeforeUpdatePopulator();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -6825,7 +6914,8 @@ private class TriggerOrchestratorTest {
         GapEnrichmentBeforeUpdatePopulator handler = new GapEnrichmentBeforeUpdatePopulator();
         handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -6854,7 +6944,8 @@ private class TriggerOrchestratorTest {
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
         handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -6894,7 +6985,8 @@ private class TriggerOrchestratorTest {
         GapEnrichmentBeforeUpdateValidator handler = new GapEnrichmentBeforeUpdateValidator();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -6922,7 +7014,8 @@ private class TriggerOrchestratorTest {
         GapEnrichmentBeforeUpdateValidator handler = new GapEnrichmentBeforeUpdateValidator();
         handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -6948,7 +7041,8 @@ private class TriggerOrchestratorTest {
         GapEnrichmentAfterInsertHandler handler = new GapEnrichmentAfterInsertHandler();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -6975,7 +7069,8 @@ private class TriggerOrchestratorTest {
         GapEnrichmentAfterUpdateHandler handler = new GapEnrichmentAfterUpdateHandler();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -7003,7 +7098,8 @@ private class TriggerOrchestratorTest {
         GapEnrichmentAfterUpdateHandler handler = new GapEnrichmentAfterUpdateHandler();
         handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -7029,7 +7125,8 @@ private class TriggerOrchestratorTest {
         GapEnrichmentBeforeDeleteHandler handler = new GapEnrichmentBeforeDeleteHandler();
         handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -7054,7 +7151,8 @@ private class TriggerOrchestratorTest {
         GapEnrichmentAfterDeleteHandler handler = new GapEnrichmentAfterDeleteHandler();
         handler.declareOld(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -7079,7 +7177,8 @@ private class TriggerOrchestratorTest {
         GapEnrichmentAfterUndeleteHandler handler = new GapEnrichmentAfterUndeleteHandler();
         handler.declareNew(Contact.AccountId, TriggerHandler.FieldSelection.with(Account.Name));
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -7099,7 +7198,8 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorMutedBeforeInsertPopulator failingPopulator = new GapContinueOnErrorMutedBeforeInsertPopulator();
         GapContinueOnErrorCountingBeforeInsertPopulator laterPopulator = new GapContinueOnErrorCountingBeforeInsertPopulator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Exception orchestratorException = null;
 
@@ -7128,7 +7228,8 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorFailingBeforeInsertPopulator failingPopulator = new GapContinueOnErrorFailingBeforeInsertPopulator();
         GapContinueOnErrorCountingBeforeInsertPopulator laterPopulator = new GapContinueOnErrorCountingBeforeInsertPopulator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Exception orchestratorException = null;
 
@@ -7159,7 +7260,8 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorMutedBeforeInsertValidator failingValidator = new GapContinueOnErrorMutedBeforeInsertValidator();
         GapContinueOnErrorCountingBeforeInsertValidator laterValidator = new GapContinueOnErrorCountingBeforeInsertValidator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Exception orchestratorException = null;
 
@@ -7190,7 +7292,8 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorFailingBeforeInsertValidator failingValidator = new GapContinueOnErrorFailingBeforeInsertValidator();
         GapContinueOnErrorCountingBeforeInsertValidator laterValidator = new GapContinueOnErrorCountingBeforeInsertValidator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Exception orchestratorException = null;
 
@@ -7221,7 +7324,8 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorMutedAfterInsertHandler failingHandler = new GapContinueOnErrorMutedAfterInsertHandler();
         GapContinueOnErrorCountingAfterInsertHandler laterHandler = new GapContinueOnErrorCountingAfterInsertHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Exception orchestratorException = null;
 
@@ -7250,7 +7354,8 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorFailingAfterInsertHandler failingHandler = new GapContinueOnErrorFailingAfterInsertHandler();
         GapContinueOnErrorCountingAfterInsertHandler laterHandler = new GapContinueOnErrorCountingAfterInsertHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Exception orchestratorException = null;
 
@@ -7283,7 +7388,8 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorMutedBeforeUpdatePopulator failingPopulator = new GapContinueOnErrorMutedBeforeUpdatePopulator();
         GapContinueOnErrorCountingBeforeUpdatePopulator laterPopulator = new GapContinueOnErrorCountingBeforeUpdatePopulator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Exception orchestratorException = null;
 
@@ -7316,7 +7422,8 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorFailingBeforeUpdatePopulator failingPopulator = new GapContinueOnErrorFailingBeforeUpdatePopulator();
         GapContinueOnErrorCountingBeforeUpdatePopulator laterPopulator = new GapContinueOnErrorCountingBeforeUpdatePopulator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Exception orchestratorException = null;
 
@@ -7350,7 +7457,8 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorMutedBeforeUpdateValidator failingValidator = new GapContinueOnErrorMutedBeforeUpdateValidator();
         GapContinueOnErrorCountingBeforeUpdateValidator laterValidator = new GapContinueOnErrorCountingBeforeUpdateValidator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Exception orchestratorException = null;
 
@@ -7384,7 +7492,8 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorFailingBeforeUpdateValidator failingValidator = new GapContinueOnErrorFailingBeforeUpdateValidator();
         GapContinueOnErrorCountingBeforeUpdateValidator laterValidator = new GapContinueOnErrorCountingBeforeUpdateValidator();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Exception orchestratorException = null;
 
@@ -7419,7 +7528,8 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorMutedAfterUpdateHandler failingHandler = new GapContinueOnErrorMutedAfterUpdateHandler();
         GapContinueOnErrorCountingAfterUpdateHandler laterHandler = new GapContinueOnErrorCountingAfterUpdateHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Exception orchestratorException = null;
 
@@ -7452,7 +7562,8 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorFailingAfterUpdateHandler failingHandler = new GapContinueOnErrorFailingAfterUpdateHandler();
         GapContinueOnErrorCountingAfterUpdateHandler laterHandler = new GapContinueOnErrorCountingAfterUpdateHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Exception orchestratorException = null;
 
@@ -7484,7 +7595,8 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorMutedBeforeDeleteHandler failingHandler = new GapContinueOnErrorMutedBeforeDeleteHandler();
         GapContinueOnErrorCountingBeforeDeleteHandler laterHandler = new GapContinueOnErrorCountingBeforeDeleteHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Exception orchestratorException = null;
 
@@ -7514,7 +7626,8 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorFailingBeforeDeleteHandler failingHandler = new GapContinueOnErrorFailingBeforeDeleteHandler();
         GapContinueOnErrorCountingBeforeDeleteHandler laterHandler = new GapContinueOnErrorCountingBeforeDeleteHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Exception orchestratorException = null;
 
@@ -7545,7 +7658,8 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorMutedAfterDeleteHandler failingHandler = new GapContinueOnErrorMutedAfterDeleteHandler();
         GapContinueOnErrorCountingAfterDeleteHandler laterHandler = new GapContinueOnErrorCountingAfterDeleteHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Exception orchestratorException = null;
 
@@ -7575,7 +7689,8 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorFailingAfterDeleteHandler failingHandler = new GapContinueOnErrorFailingAfterDeleteHandler();
         GapContinueOnErrorCountingAfterDeleteHandler laterHandler = new GapContinueOnErrorCountingAfterDeleteHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Exception orchestratorException = null;
 
@@ -7605,7 +7720,8 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorMutedAfterUndeleteHandler failingHandler = new GapContinueOnErrorMutedAfterUndeleteHandler();
         GapContinueOnErrorCountingAfterUndeleteHandler laterHandler = new GapContinueOnErrorCountingAfterUndeleteHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Exception orchestratorException = null;
 
@@ -7634,7 +7750,8 @@ private class TriggerOrchestratorTest {
         GapContinueOnErrorFailingAfterUndeleteHandler failingHandler = new GapContinueOnErrorFailingAfterUndeleteHandler();
         GapContinueOnErrorCountingAfterUndeleteHandler laterHandler = new GapContinueOnErrorCountingAfterUndeleteHandler();
 
-        TriggerOrchestrator.triggerSettings.settingsByObjectName = new Map<String, TriggerOrchestrator.MetadataSettings>();
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Exception orchestratorException = null;
 
@@ -8849,47 +8966,11 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class RecursionGuardedBeforeUpdateOrchestrator implements TriggerOrchestrator.BeforeUpdate, TriggerOrchestrator.RecursionGuard {
-        private List<BeforeUpdate.Handler> handlers;
-        private Integer maxRecursionDepth;
-
-        public RecursionGuardedBeforeUpdateOrchestrator(List<BeforeUpdate.Handler> handlers, Integer maxRecursionDepth) {
-            this.handlers = handlers;
-            this.maxRecursionDepth = maxRecursionDepth;
-        }
-
-        public Integer maxRecursionDepth() {
-            return this.maxRecursionDepth;
-        }
-
-        public List<BeforeUpdate.Handler> beforeUpdateHandlers() {
-            return this.handlers;
-        }
-    }
-
     private class RecursionAfterUpdateOrchestrator implements TriggerOrchestrator.AfterUpdate {
         private List<AfterUpdate.Handler> handlers;
 
         public RecursionAfterUpdateOrchestrator(List<AfterUpdate.Handler> handlers) {
             this.handlers = handlers;
-        }
-
-        public List<AfterUpdate.Handler> afterUpdateHandlers() {
-            return this.handlers;
-        }
-    }
-
-    private class RecursionGuardedAfterUpdateOrchestrator implements TriggerOrchestrator.AfterUpdate, TriggerOrchestrator.RecursionGuard {
-        private List<AfterUpdate.Handler> handlers;
-        private Integer maxRecursionDepth;
-
-        public RecursionGuardedAfterUpdateOrchestrator(List<AfterUpdate.Handler> handlers, Integer maxRecursionDepth) {
-            this.handlers = handlers;
-            this.maxRecursionDepth = maxRecursionDepth;
-        }
-
-        public Integer maxRecursionDepth() {
-            return this.maxRecursionDepth;
         }
 
         public List<AfterUpdate.Handler> afterUpdateHandlers() {

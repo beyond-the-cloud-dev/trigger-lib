@@ -4,11 +4,11 @@ public class AfterUpdate {
         void onAfterUpdate(TriggerHandler.UpdateRecord record);
     }
 
-    public interface NewRecordEnrichment {
+    public interface ParentQuery {
         Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate();
     }
 
-    public interface OldRecordEnrichment {
+    public interface PriorParentQuery {
         Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnAfterUpdate();
     }
 

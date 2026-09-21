@@ -1,4 +1,4 @@
-public with sharing class ContactAccountTransferPopulator implements BeforeUpdate.Populator, BeforeUpdate.NewRecordEnrichment, BeforeUpdate.OldRecordEnrichment, BeforeUpdate.RecursionGuard {
+public with sharing class ContactAccountTransferPopulator implements BeforeUpdate.Populator, BeforeUpdate.ParentQuery, BeforeUpdate.PriorParentQuery, BeforeUpdate.RecursionGuard {
     public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate() {
         return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
     }

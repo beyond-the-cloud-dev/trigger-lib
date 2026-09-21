@@ -17,8 +17,8 @@ Before insert and before update are the two contexts with **roles**: a handler t
 | `Populator`           |      ✅       |               |      ✅       |               |               |               |                |
 | `Validator`           |      ✅       |               |      ✅       |               |               |               |                |
 | `Handler`             |    marker     |      ✅       |    marker     |      ✅       |      ✅       |      ✅       |       ✅       |
-| `NewRecordEnrichment` |      ✅       |      ✅       |      ✅       |      ✅       |               |               |       ✅       |
-| `OldRecordEnrichment` |               |               |      ✅       |      ✅       |      ✅       |      ✅       |                |
+| `ParentQuery` |      ✅       |      ✅       |      ✅       |      ✅       |               |               |       ✅       |
+| `PriorParentQuery` |               |               |      ✅       |      ✅       |      ✅       |      ✅       |                |
 | `Bypassable`          |      ✅       |      ✅       |      ✅       |      ✅       |      ✅       |      ✅       |       ✅       |
 | `RecursionGuard`      |               |               |      ✅       |      ✅       |               |               |                |
 | `Finalizer`           |      ✅       |      ✅       |      ✅       |      ✅       |      ✅       |      ✅       |       ✅       |
@@ -119,12 +119,12 @@ public interface Handler {}
 
 See [Handlers](/guide/handlers) and [Record Qualification](/guide/qualification).
 
-## NewRecordEnrichment
+## ParentQuery
 
 Declares parent fields to query for the new version of each record. Read them with `record.getNewRelated(relationshipName)`.
 
 ```apex
-public interface NewRecordEnrichment {
+public interface ParentQuery {
   Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert();
 }
 ```
@@ -139,12 +139,12 @@ public interface NewRecordEnrichment {
 
 See [Parent Enrichment](/guide/enrichment) and [TriggerHandler.ParentFields](/api/field-selection).
 
-## OldRecordEnrichment
+## PriorParentQuery
 
 Declares parent fields to query for the old version of each record. Read them with `record.getOldRelated(relationshipName)`.
 
 ```apex
-public interface OldRecordEnrichment {
+public interface PriorParentQuery {
   Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnBeforeUpdate();
 }
 ```

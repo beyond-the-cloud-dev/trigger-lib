@@ -13,11 +13,11 @@ public class BeforeUpdate {
 
     // additional interfaces - use as needed
 
-    public interface NewRecordEnrichment {
+    public interface ParentQuery {
         Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate();
     }
 
-    public interface OldRecordEnrichment {
+    public interface PriorParentQuery {
         Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnBeforeUpdate();
     }
 

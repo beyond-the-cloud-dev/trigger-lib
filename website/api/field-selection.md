@@ -7,7 +7,7 @@ outline: deep
 Describes which fields to query on a parent record during [enrichment](/guide/enrichment). A new selection starts from the `TriggerHandler.ParentFields` static property and every `with` call returns the same selection, so calls chain.
 
 ```apex
-public with sharing class ContactAccountHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment {
+public with sharing class ContactAccountHandler implements AfterUpdate.Handler, AfterUpdate.ParentQuery {
   public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
     return new Map<SObjectField, TriggerHandler.ParentFields>{
       Contact.AccountId => TriggerHandler.ParentFields
@@ -42,7 +42,7 @@ The key also decides the name the parent is read back under. The framework uses 
 | `Contact.OwnerId`    | `User`                | `getNewRelated('Owner')`    |
 | `Contact.CreatedById`| `User`                | `getNewRelated('CreatedBy')`|
 
-`OldRecordEnrichment` uses the same keys and the same names, read with `getOldRelated`. Declaring a lookup on one side does not declare it on the other.
+`PriorParentQuery` uses the same keys and the same names, read with `getOldRelated`. Declaring a lookup on one side does not declare it on the other.
 
 ## Methods
 

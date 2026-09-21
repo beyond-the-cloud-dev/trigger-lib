@@ -8403,7 +8403,7 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class EnrichmentBeforeInsertHandler implements BeforeInsert.Populator, BeforeInsert.NewRecordEnrichment {
+    private class EnrichmentBeforeInsertHandler implements BeforeInsert.Populator, BeforeInsert.ParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public List<Id> accountIdsToSet = new List<Id>();
 
@@ -8434,7 +8434,7 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class EnrichmentAfterInsertHandler implements AfterInsert.Handler, AfterInsert.NewRecordEnrichment {
+    private class EnrichmentAfterInsertHandler implements AfterInsert.Handler, AfterInsert.ParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public List<SObject> seenNewOwners = new List<SObject>();
 
@@ -8458,7 +8458,7 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class EnrichmentBeforeUpdateHandler implements BeforeUpdate.Populator, BeforeUpdate.NewRecordEnrichment, BeforeUpdate.OldRecordEnrichment {
+    private class EnrichmentBeforeUpdateHandler implements BeforeUpdate.Populator, BeforeUpdate.ParentQuery, BeforeUpdate.PriorParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public List<SObject> seenOldParents = new List<SObject>();
         public List<Id> accountIdsToSet = new List<Id>();
@@ -8500,7 +8500,7 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class EnrichmentAfterUpdateHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment, AfterUpdate.OldRecordEnrichment {
+    private class EnrichmentAfterUpdateHandler implements AfterUpdate.Handler, AfterUpdate.ParentQuery, AfterUpdate.PriorParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public List<SObject> seenOldParents = new List<SObject>();
         public List<Id> accountIdsToSet = new List<Id>();
@@ -8925,7 +8925,7 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class BypassEnrichmentAfterInsertHandler implements AfterInsert.Handler, AfterInsert.Bypassable, AfterInsert.NewRecordEnrichment {
+    private class BypassEnrichmentAfterInsertHandler implements AfterInsert.Handler, AfterInsert.Bypassable, AfterInsert.ParentQuery {
         public Boolean isBypassed = false;
         public Integer runCount = 0;
 
@@ -10796,7 +10796,7 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class GapEnrichmentBeforeInsertPopulator implements BeforeInsert.Populator, BeforeInsert.NewRecordEnrichment {
+    private class GapEnrichmentBeforeInsertPopulator implements BeforeInsert.Populator, BeforeInsert.ParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public Integer newDeclarationRequestCount = 0;
 
@@ -10823,7 +10823,7 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class GapEnrichmentBeforeInsertValidator implements BeforeInsert.Validator, BeforeInsert.NewRecordEnrichment {
+    private class GapEnrichmentBeforeInsertValidator implements BeforeInsert.Validator, BeforeInsert.ParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public Integer newDeclarationRequestCount = 0;
 
@@ -10850,7 +10850,7 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class GapEnrichmentBeforeUpdatePopulator implements BeforeUpdate.Populator, BeforeUpdate.NewRecordEnrichment, BeforeUpdate.OldRecordEnrichment {
+    private class GapEnrichmentBeforeUpdatePopulator implements BeforeUpdate.Populator, BeforeUpdate.ParentQuery, BeforeUpdate.PriorParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public List<SObject> seenOldParents = new List<SObject>();
         public Integer newDeclarationRequestCount = 0;
@@ -10887,7 +10887,7 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class GapEnrichmentBeforeUpdateValidator implements BeforeUpdate.Validator, BeforeUpdate.NewRecordEnrichment, BeforeUpdate.OldRecordEnrichment {
+    private class GapEnrichmentBeforeUpdateValidator implements BeforeUpdate.Validator, BeforeUpdate.ParentQuery, BeforeUpdate.PriorParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public List<SObject> seenOldParents = new List<SObject>();
         public Integer newDeclarationRequestCount = 0;
@@ -10927,7 +10927,7 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class GapEnrichmentAfterInsertHandler implements AfterInsert.Handler, AfterInsert.NewRecordEnrichment {
+    private class GapEnrichmentAfterInsertHandler implements AfterInsert.Handler, AfterInsert.ParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public Integer newDeclarationRequestCount = 0;
 
@@ -10951,7 +10951,7 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class GapEnrichmentAfterUpdateHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment, AfterUpdate.OldRecordEnrichment {
+    private class GapEnrichmentAfterUpdateHandler implements AfterUpdate.Handler, AfterUpdate.ParentQuery, AfterUpdate.PriorParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public List<SObject> seenOldParents = new List<SObject>();
         public Integer newDeclarationRequestCount = 0;
@@ -10988,7 +10988,7 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class GapEnrichmentBeforeDeleteHandler implements BeforeDelete.Handler, BeforeDelete.OldRecordEnrichment {
+    private class GapEnrichmentBeforeDeleteHandler implements BeforeDelete.Handler, BeforeDelete.PriorParentQuery {
         public List<SObject> seenOldParents = new List<SObject>();
         public Integer oldDeclarationRequestCount = 0;
 
@@ -11012,7 +11012,7 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class GapEnrichmentAfterDeleteHandler implements AfterDelete.Handler, AfterDelete.OldRecordEnrichment {
+    private class GapEnrichmentAfterDeleteHandler implements AfterDelete.Handler, AfterDelete.PriorParentQuery {
         public List<SObject> seenOldParents = new List<SObject>();
         public Integer oldDeclarationRequestCount = 0;
 
@@ -11036,7 +11036,7 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class GapEnrichmentAfterUndeleteHandler implements AfterUndelete.Handler, AfterUndelete.NewRecordEnrichment {
+    private class GapEnrichmentAfterUndeleteHandler implements AfterUndelete.Handler, AfterUndelete.ParentQuery {
         public List<SObject> seenNewParents = new List<SObject>();
         public Integer newDeclarationRequestCount = 0;
 

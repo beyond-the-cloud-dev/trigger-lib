@@ -1,4 +1,4 @@
-public with sharing class OpportunityTypeFromAccountPopulator implements BeforeInsert.Populator, BeforeInsert.NewRecordEnrichment, BeforeInsert.Bypassable {
+public with sharing class OpportunityTypeFromAccountPopulator implements BeforeInsert.Populator, BeforeInsert.ParentQuery, BeforeInsert.Bypassable {
     public static Boolean isBypassed = false;
 
     public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert() {

@@ -1,4 +1,4 @@
-public with sharing class ContactFollowUpTaskHandler implements AfterInsert.Handler, AfterInsert.NewRecordEnrichment, AfterInsert.Finalizer, AfterInsert.ContinueOnError {
+public with sharing class ContactFollowUpTaskHandler implements AfterInsert.Handler, AfterInsert.ParentQuery, AfterInsert.Finalizer, AfterInsert.ContinueOnError {
     private List<Task> followUps = new List<Task>();
 
     public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert() {

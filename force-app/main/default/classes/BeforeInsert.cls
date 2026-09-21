@@ -13,7 +13,7 @@ public class BeforeInsert {
 
     // additional interfaces
 
-    public interface NewRecordEnrichment {
+    public interface ParentQuery {
         Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert();
     }
 

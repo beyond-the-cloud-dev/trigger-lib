@@ -1,4 +1,4 @@
-public with sharing class AccountParentMoveValidator implements BeforeUpdate.Validator, BeforeUpdate.NewRecordEnrichment, BeforeUpdate.OldRecordEnrichment {
+public with sharing class AccountParentMoveValidator implements BeforeUpdate.Validator, BeforeUpdate.ParentQuery, BeforeUpdate.PriorParentQuery {
     public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate() {
         return new Map<SObjectField, TriggerHandler.ParentFields>{ Account.ParentId => TriggerHandler.ParentFields.with(Account.Name, Account.BillingCountry) };
     }

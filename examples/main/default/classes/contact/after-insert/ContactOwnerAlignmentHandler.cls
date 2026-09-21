@@ -1,4 +1,4 @@
-public with sharing class ContactOwnerAlignmentHandler implements AfterInsert.Handler, AfterInsert.NewRecordEnrichment, AfterInsert.Bypassable, AfterInsert.Finalizer {
+public with sharing class ContactOwnerAlignmentHandler implements AfterInsert.Handler, AfterInsert.ParentQuery, AfterInsert.Bypassable, AfterInsert.Finalizer {
     public static Boolean isDisabled = false;
 
     private List<Contact> contactsToReassign = new List<Contact>();

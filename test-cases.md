@@ -25,8 +25,8 @@ Behaviour the library is expected to guarantee. Every row is a scenario that sho
 | Two main interfaces, same context | Class implements both `Populator` and `Validator` for the same context | Rejected with a `TriggerOrchestratorException` naming the class and both interfaces |
 | Two main interfaces, different contexts | Class implements `BeforeInsert.Populator` and `BeforeUpdate.Populator` | Allowed, each context runs its own method and each lifecycle callback fires once |
 | **Enrichment** | | |
-| Parent enrichment, new side | Handler declares `NewRecordEnrichment` for a lookup field | `getNewRelated` returns the parent with the declared fields |
-| Parent enrichment, old side | Handler declares `OldRecordEnrichment` for a lookup field | `getOldRelated` returns the prior parent |
+| Parent enrichment, new side | Handler declares `ParentQuery` for a lookup field | `getNewRelated` returns the parent with the declared fields |
+| Parent enrichment, old side | Handler declares `PriorParentQuery` for a lookup field | `getOldRelated` returns the prior parent |
 | Enrichment not declared | Handler reads a relationship it never declared | `getNewRelated` returns null, no query is issued |
 | Lookup field unset | Trigger record has no value in the declared lookup | No parent is fetched for that record, no error |
 | Enrichment query count | Several handlers declare the same parent field | One query per parent field per invocation |

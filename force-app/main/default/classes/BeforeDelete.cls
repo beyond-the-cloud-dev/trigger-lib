@@ -4,7 +4,7 @@ public class BeforeDelete {
         void onBeforeDelete(TriggerHandler.DeleteRecord record);
     }
 
-    public interface OldRecordEnrichment {
+    public interface PriorParentQuery {
         Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeDelete();
     }
 

@@ -566,6 +566,7 @@ private class TriggerOrchestratorTest {
         Exception orchestratorException = null;
 
         SOQL.mock('TriggerObject__mdt').thenReturn(new TriggerObject__mdt(ObjectAPIName__c = 'Contact', Bypass__c = true));
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         // Test
         Test.startTest();
@@ -4657,7 +4658,7 @@ private class TriggerOrchestratorTest {
         // Verify
         Assert.isNotNull(orchestratorException, 'It should be thrown.');
         Assert.areEqual(1, logger.errors.size(), 'It should be 1.');
-        Assert.areEqual('TriggerHandler.TriggerHandlerException', logger.errors[0].getException().getTypeName(), 'It should be TriggerHandler.TriggerHandlerException.');
+        Assert.isInstanceOfType(logger.errors[0].getException(), TriggerHandler.TriggerHandlerException.class, 'It should be TriggerHandler.TriggerHandlerException.');
         Assert.areEqual(0, logger.finalizeCountWhenLogged[0], 'It should be 0.');
     }
 

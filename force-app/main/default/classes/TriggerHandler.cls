@@ -17,7 +17,7 @@
     'PMD.ExcessivePublicCount,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ExcessiveParameterList,PMD.PropertyNamingConventions,PMD.FieldNamingConventions,PMD.FieldDeclarationsShouldBeAtStart'
 )
 public with sharing class TriggerHandler {
-    public static FieldSelection FieldSelection {
+    public static ParentFields ParentFields {
         get {
             return new FieldSelector();
         }
@@ -283,20 +283,20 @@ public with sharing class TriggerHandler {
         SObject getNewRelated(String relationshipName);
     }
 
-    public interface FieldSelection {
-        FieldSelection with(SObjectField field);
-        FieldSelection with(SObjectField field1, SObjectField field2);
-        FieldSelection with(SObjectField field1, SObjectField field2, SObjectField field3);
-        FieldSelection with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
-        FieldSelection with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
-        FieldSelection with(Iterable<SObjectField> fields);
+    public interface ParentFields {
+        ParentFields with(SObjectField field);
+        ParentFields with(SObjectField field1, SObjectField field2);
+        ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3);
+        ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
+        ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
+        ParentFields with(Iterable<SObjectField> fields);
         // Relationship fields
-        FieldSelection with(String relationshipName, SObjectField field);
-        FieldSelection with(String relationshipName, SObjectField field1, SObjectField field2);
-        FieldSelection with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3);
-        FieldSelection with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
-        FieldSelection with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
-        FieldSelection with(String relationshipName, Iterable<SObjectField> fields);
+        ParentFields with(String relationshipName, SObjectField field);
+        ParentFields with(String relationshipName, SObjectField field1, SObjectField field2);
+        ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3);
+        ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
+        ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
+        ParentFields with(String relationshipName, Iterable<SObjectField> fields);
 
         // for private use only
         List<String> getFields();
@@ -320,28 +320,28 @@ public with sharing class TriggerHandler {
         return triggerRecords;
     }
 
-    public class FieldSelector implements FieldSelection {
+    public class FieldSelector implements ParentFields {
         private List<String> fields = new List<String>();
 
-        public FieldSelection with(SObjectField field) {
+        public ParentFields with(SObjectField field) {
             this.fields.add(field.toString());
             return this;
         }
 
-        public FieldSelection with(SObjectField field1, SObjectField field2) {
+        public ParentFields with(SObjectField field1, SObjectField field2) {
             this.fields.add(field1.toString());
             this.fields.add(field2.toString());
             return this;
         }
 
-        public FieldSelection with(SObjectField field1, SObjectField field2, SObjectField field3) {
+        public ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3) {
             this.fields.add(field1.toString());
             this.fields.add(field2.toString());
             this.fields.add(field3.toString());
             return this;
         }
 
-        public FieldSelection with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4) {
+        public ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4) {
             this.fields.add(field1.toString());
             this.fields.add(field2.toString());
             this.fields.add(field3.toString());
@@ -349,7 +349,7 @@ public with sharing class TriggerHandler {
             return this;
         }
 
-        public FieldSelection with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5) {
+        public ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5) {
             this.fields.add(field1.toString());
             this.fields.add(field2.toString());
             this.fields.add(field3.toString());
@@ -358,32 +358,32 @@ public with sharing class TriggerHandler {
             return this;
         }
 
-        public FieldSelection with(Iterable<SObjectField> fields) {
+        public ParentFields with(Iterable<SObjectField> fields) {
             for (SObjectField field : fields) {
                 this.fields.add(field.toString());
             }
             return this;
         }
 
-        public FieldSelection with(String relationshipName, SObjectField field) {
+        public ParentFields with(String relationshipName, SObjectField field) {
             this.fields.add(relationshipName + '.' + field.toString());
             return this;
         }
 
-        public FieldSelection with(String relationshipName, SObjectField field1, SObjectField field2) {
+        public ParentFields with(String relationshipName, SObjectField field1, SObjectField field2) {
             this.fields.add(relationshipName + '.' + field1.toString());
             this.fields.add(relationshipName + '.' + field2.toString());
             return this;
         }
 
-        public FieldSelection with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3) {
+        public ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3) {
             this.fields.add(relationshipName + '.' + field1.toString());
             this.fields.add(relationshipName + '.' + field2.toString());
             this.fields.add(relationshipName + '.' + field3.toString());
             return this;
         }
 
-        public FieldSelection with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4) {
+        public ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4) {
             this.fields.add(relationshipName + '.' + field1.toString());
             this.fields.add(relationshipName + '.' + field2.toString());
             this.fields.add(relationshipName + '.' + field3.toString());
@@ -391,7 +391,7 @@ public with sharing class TriggerHandler {
             return this;
         }
 
-        public FieldSelection with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5) {
+        public ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5) {
             this.fields.add(relationshipName + '.' + field1.toString());
             this.fields.add(relationshipName + '.' + field2.toString());
             this.fields.add(relationshipName + '.' + field3.toString());
@@ -400,7 +400,7 @@ public with sharing class TriggerHandler {
             return this;
         }
 
-        public FieldSelection with(String relationshipName, Iterable<SObjectField> fields) {
+        public ParentFields with(String relationshipName, Iterable<SObjectField> fields) {
             for (SObjectField field : fields) {
                 this.fields.add(relationshipName + '.' + field.toString());
             }
@@ -703,7 +703,6 @@ public with sharing class TriggerHandler {
 
         private Decimal getNewFieldValueAsDecimal(SObjectField field) {
             Object value = this.getNewFieldValue(field);
-
             return value == null ? null : Decimal.valueOf(value.toString());
         }
 

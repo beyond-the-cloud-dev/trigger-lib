@@ -1,6 +1,6 @@
 public with sharing class AccountParentTypeValidator implements BeforeInsert.Validator, BeforeInsert.NewRecordEnrichment {
-    public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnBeforeInsert() {
-        return new Map<SObjectField, TriggerHandler.FieldSelection>{ Account.ParentId => TriggerHandler.FieldSelection.with(Account.Name, Account.Type) };
+    public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnBeforeInsert() {
+        return new Map<SObjectField, TriggerHandler.ParentFields>{ Account.ParentId => TriggerHandler.ParentFields.with(Account.Name, Account.Type) };
     }
 
     public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {

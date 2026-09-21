@@ -1,7 +1,7 @@
 public with sharing class ContactMailingAddressPopulator implements BeforeInsert.Populator, BeforeInsert.NewRecordEnrichment {
-    public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnBeforeInsert() {
-        return new Map<SObjectField, TriggerHandler.FieldSelection>{
-            Contact.AccountId => TriggerHandler.FieldSelection
+    public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnBeforeInsert() {
+        return new Map<SObjectField, TriggerHandler.ParentFields>{
+            Contact.AccountId => TriggerHandler.ParentFields
                 .with(Account.BillingStreet, Account.BillingCity, Account.BillingState, Account.BillingPostalCode)
                 .with(Account.BillingCountry)
         };

@@ -33,7 +33,7 @@ sf project deploy start -d examples -o your-org-alias
 **Framework**
 
 - `TriggerOrchestrator` - entry point and execution engine
-- `TriggerHandler` - the `InsertRecord`, `UpdateRecord`, `DeleteRecord` and `UndeleteRecord` APIs, the `FieldSelection` API, and `TriggerHandlerException`
+- `TriggerHandler` - the `InsertRecord`, `UpdateRecord`, `DeleteRecord` and `UndeleteRecord` APIs, the `ParentFields` API, and `TriggerHandlerException`
 - `BeforeInsert`, `AfterInsert`, `BeforeUpdate`, `AfterUpdate`, `BeforeDelete`, `AfterDelete`, `AfterUndelete` - per-context handler interfaces
 
 **Custom metadata types**

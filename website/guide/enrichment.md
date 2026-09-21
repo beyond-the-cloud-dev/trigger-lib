@@ -21,18 +21,18 @@ The old side is never refreshed in any context. `Trigger.old` is immutable, so `
 
 ## Declaring Fields
 
-Implement `NewRecordEnrichment` and return a map from the lookup field on the triggering object to a [`TriggerHandler.FieldSelection`](/api/field-selection) listing the parent fields.
+Implement `NewRecordEnrichment` and return a map from the lookup field on the triggering object to a [`TriggerHandler.ParentFields`](/api/field-selection) listing the parent fields.
 
 ```apex
 public with sharing class ContactAccountHandler implements AfterInsert.Handler, AfterInsert.NewRecordEnrichment {
-  public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterInsert() {
-    return new Map<SObjectField, TriggerHandler.FieldSelection>{
-      Contact.AccountId => TriggerHandler.FieldSelection.with(
+  public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnAfterInsert() {
+    return new Map<SObjectField, TriggerHandler.ParentFields>{
+      Contact.AccountId => TriggerHandler.ParentFields.with(
         Account.Name,
         Account.Industry,
         Account.BillingCountry
       ),
-      Contact.CreatedById => TriggerHandler.FieldSelection.with(
+      Contact.CreatedById => TriggerHandler.ParentFields.with(
         User.Name,
         User.Email
       )
@@ -79,10 +79,10 @@ String industry = account?.Industry;
 
 ## Nested Relationships
 
-`FieldSelection.with(relationshipName, fields...)` adds fields through a further relationship on the parent.
+`ParentFields.with(relationshipName, fields...)` adds fields through a further relationship on the parent.
 
 ```apex
-Contact.AccountId => TriggerHandler.FieldSelection
+Contact.AccountId => TriggerHandler.ParentFields
     .with(Account.Name, Account.Industry)
     .with('Owner', User.Name, User.Email)
     .with('Parent', Account.Name)
@@ -100,15 +100,15 @@ Update and delete contexts also have an old version of the record. Implement `Ol
 
 ```apex
 public with sharing class ContactAccountMoveHandler implements AfterUpdate.Handler, AfterUpdate.NewRecordEnrichment, AfterUpdate.OldRecordEnrichment {
-  public Map<SObjectField, TriggerHandler.FieldSelection> newFieldsToEnrichOnAfterUpdate() {
-    return new Map<SObjectField, TriggerHandler.FieldSelection>{
-      Contact.AccountId => TriggerHandler.FieldSelection.with(Account.Name)
+  public Map<SObjectField, TriggerHandler.ParentFields> newFieldsToEnrichOnAfterUpdate() {
+    return new Map<SObjectField, TriggerHandler.ParentFields>{
+      Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name)
     };
   }
 
-  public Map<SObjectField, TriggerHandler.FieldSelection> oldFieldsToEnrichOnAfterUpdate() {
-    return new Map<SObjectField, TriggerHandler.FieldSelection>{
-      Contact.AccountId => TriggerHandler.FieldSelection.with(Account.Name)
+  public Map<SObjectField, TriggerHandler.ParentFields> oldFieldsToEnrichOnAfterUpdate() {
+    return new Map<SObjectField, TriggerHandler.ParentFields>{
+      Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name)
     };
   }
 

@@ -41,7 +41,9 @@ public List<BeforeInsert.Handler> beforeInsertHandlers() {
 
 ```apex
 public with sharing class AccountRatingPopulator implements BeforeInsert.Populator {
-  public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+  public Boolean populateOnBeforeInsertWhen(
+    TriggerHandler.InsertRecord record
+  ) {
     return record.greaterThan(Account.AnnualRevenue, 1000000);
   }
 
@@ -53,7 +55,9 @@ public with sharing class AccountRatingPopulator implements BeforeInsert.Populat
 
 ```apex
 public with sharing class AccountPriorityPopulator implements BeforeInsert.Populator {
-  public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+  public Boolean populateOnBeforeInsertWhen(
+    TriggerHandler.InsertRecord record
+  ) {
     return record.equals(Account.Rating, 'Hot');
   }
 
@@ -76,7 +80,7 @@ The same applies to change detection in before update. `isChanged` compares the 
 Two things are settled for the whole invocation before any predicate runs, and one is checked per record at the handler's own turn.
 
 - **Bypasses**, up front. A [bypassed handler](/guide/bypasses) is dropped from the invocation. Its predicate is never called at all.
-- **Parent enrichment**, up front. Parents are [queried once](/guide/enrichment) for every handler that survived the bypass step. This is the one part of the pipeline that is not per handler, and it is why predicates can read `getNewRelated` and `getOldRelated` freely.
+- **Parent enrichment**, up front. Parents are [queried once](/guide/enrichment) for every handler that survived the bypass step. This is the one part of the pipeline that is not per handler, and it is why predicates can read `getNewParent` and `getOldParent` freely.
 - **Recursion depth**, at the handler's turn. In update contexts, a record that has already been through this handler the allowed number of times is skipped before the predicate is evaluated. The skip is silent: no exception, nothing reaches the logger, and the DML succeeds. See [Recursion Control](/guide/recursion-control).
 
 ## Predicate API
@@ -177,13 +181,13 @@ public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert(
 }
 
 public Boolean qualifiesForAfterInsertWhen(TriggerHandler.InsertRecord record) {
-    Account account = (Account) record.getNewRelated('Account');
+    Account account = (Account) record.getNewParent('Account');
 
     return account?.Type == 'Customer';
 }
 ```
 
-`getNewRelated` returns `null` for a relationship the handler never declared, and for records whose lookup is empty. No query is issued in either case, so the null check belongs in the predicate.
+`getNewParent` returns `null` for a relationship the handler never declared, and for records whose lookup is empty. No query is issued in either case, so the null check belongs in the predicate.
 
 ## Qualifying Everything
 
@@ -197,7 +201,7 @@ public Boolean qualifiesForAfterDeleteWhen(TriggerHandler.DeleteRecord record) {
 
 ## Delete Contexts
 
-In before delete and after delete there is no new record. `TriggerHandler.DeleteRecord` exposes `getOldSObject` and `getOldRelated` only, and predicates such as `equals` or `isBlank` read the deleted row.
+In before delete and after delete there is no new record. `TriggerHandler.DeleteRecord` exposes `getOldSObject` and `getOldParent` only, and predicates such as `equals` or `isBlank` read the deleted row.
 
 ```apex
 public Boolean qualifiesForBeforeDeleteWhen(TriggerHandler.DeleteRecord record) {

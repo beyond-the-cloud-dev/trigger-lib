@@ -11,7 +11,7 @@ public with sharing class OpportunityWinTaskHandler implements AfterUpdate.Handl
 
     public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
         Opportunity newOpportunity = (Opportunity) record.getNewSObject();
-        Account parentAccount = (Account) record.getNewRelated('Account');
+        Account parentAccount = (Account) record.getNewParent('Account');
 
         this.onboardingTasks.add(
             new Task(

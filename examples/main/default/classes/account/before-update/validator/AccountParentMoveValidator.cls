@@ -12,15 +12,15 @@ public with sharing class AccountParentMoveValidator implements BeforeUpdate.Val
             return false;
         }
 
-        Account previousParent = (Account) record.getOldRelated('Parent');
-        Account newParent = (Account) record.getNewRelated('Parent');
+        Account previousParent = (Account) record.getOldParent('Parent');
+        Account newParent = (Account) record.getNewParent('Parent');
 
         return previousParent != null && newParent != null && previousParent.BillingCountry != newParent.BillingCountry;
     }
 
     public String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record) {
-        Account previousParent = (Account) record.getOldRelated('Parent');
-        Account newParent = (Account) record.getNewRelated('Parent');
+        Account previousParent = (Account) record.getOldParent('Parent');
+        Account newParent = (Account) record.getNewParent('Parent');
 
         return 'Moving this customer from "' +
             previousParent.Name +

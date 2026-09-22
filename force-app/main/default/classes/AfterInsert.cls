@@ -8,6 +8,15 @@ public class AfterInsert {
         Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert();
     }
 
+    public interface RelatedQuery {
+        Map<String, AfterInsert.RecordsProvider> queryRelatedOnAfterInsert();
+    }
+
+    public interface RecordsProvider {
+        List<SObject> query(TriggerHandler.InsertRecords records);
+        String keyOf(SObject record);
+    }
+
     public interface Bypassable {
         Boolean bypassOnAfterInsertWhen();
     }

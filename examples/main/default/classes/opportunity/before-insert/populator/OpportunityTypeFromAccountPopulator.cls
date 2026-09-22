@@ -14,7 +14,7 @@ public with sharing class OpportunityTypeFromAccountPopulator implements BeforeI
     }
 
     public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
-        Account parentAccount = (Account) record.getNewRelated('Account');
+        Account parentAccount = (Account) record.getNewParent('Account');
         Boolean isCustomerAccount = parentAccount?.Type?.startsWith('Customer') == true;
 
         record.put(Opportunity.Type, isCustomerAccount ? 'Existing Customer - Upgrade' : 'New Customer');

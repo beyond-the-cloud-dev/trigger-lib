@@ -17,6 +17,15 @@ public class BeforeInsert {
         Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert();
     }
 
+    public interface RelatedQuery {
+        Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert();
+    }
+
+    public interface RecordsProvider {
+        List<SObject> query(TriggerHandler.InsertRecords records);
+        String keyOf(SObject record);
+    }
+
     public interface Bypassable {
         Boolean bypassOnBeforeInsertWhen();
     }

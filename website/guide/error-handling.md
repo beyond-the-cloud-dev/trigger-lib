@@ -70,12 +70,12 @@ When an exception propagates out of the trigger, the whole transaction is rolled
 
 `TriggerOrchestrator.Error` describes a failure:
 
-| Method             | Returns                                                                 |
-| ------------------ | ----------------------------------------------------------------------- |
-| `getException()`   | The thrown exception                                                    |
-| `getHandlerName()` | Class name of the handler being processed, `null` when none was running |
-| `getOperation()`   | `System.TriggerOperation` of the invocation                             |
-| `getSObjectType()` | The triggering object                                                   |
+| Method             | Returns                                                                                                                            |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `getException()`   | The thrown exception                                                                                                               |
+| `getHandlerName()` | Class name of the handler being processed, `null` when none was running                                                            |
+| `getOperation()`   | `System.TriggerOperation` of the invocation                                                                                        |
+| `getSObjectType()` | The triggering object                                                                                                              |
 | `getRecordIds()`   | Ids of all records in the trigger chunk, not only the qualified ones, and `null` in before insert where the records have no Id yet |
 
 ## Continue On Error
@@ -86,7 +86,9 @@ A handler that implements the `ContinueOnError` marker of its context does not s
 
 ```apex
 public with sharing class AccountNotificationHandler implements AfterInsert.Handler, AfterInsert.ContinueOnError {
-  public Boolean qualifiesForAfterInsertWhen(TriggerHandler.InsertRecord record) {
+  public Boolean qualifiesForAfterInsertWhen(
+    TriggerHandler.InsertRecord record
+  ) {
     return record.isNotBlank(Account.Website);
   }
 

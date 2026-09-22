@@ -8,6 +8,15 @@ public class AfterDelete {
         Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterDelete();
     }
 
+    public interface RelatedQuery {
+        Map<String, AfterDelete.RecordsProvider> queryRelatedOnAfterDelete();
+    }
+
+    public interface RecordsProvider {
+        List<SObject> query(TriggerHandler.DeleteRecords records);
+        String keyOf(SObject record);
+    }
+
     public interface Bypassable {
         Boolean bypassOnAfterDeleteWhen();
     }

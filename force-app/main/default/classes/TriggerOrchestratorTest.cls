@@ -1891,12 +1891,12 @@ private class TriggerOrchestratorTest {
         Assert.areEqual(
             'Previous Parent',
             ((Account) handler.seenOldParents[0]).Name,
-            'It should be Previous Parent, because getOldRelated returns the parent the record pointed at before the change.'
+            'It should be Previous Parent, because getOldParent returns the parent the record pointed at before the change.'
         );
         Assert.areEqual(
             'Current Parent',
             ((Account) handler.seenNewParents[0]).Name,
-            'It should be Current Parent, because getNewRelated returns the parent the record points at now.'
+            'It should be Current Parent, because getNewParent returns the parent the record points at now.'
         );
         Assert.areEqual(2, queriesAfter - queriesBefore, 'It should be 2, because the saved record carries the current parent and the previous one is fetched by id.');
     }
@@ -7003,12 +7003,12 @@ private class TriggerOrchestratorTest {
         Assert.areEqual(
             'Current Parent',
             ((Account) handler.seenNewParents[0]).Name,
-            'It should be Current Parent, because a handler declaring both sides still reads the new side through getNewRelated.'
+            'It should be Current Parent, because a handler declaring both sides still reads the new side through getNewParent.'
         );
         Assert.areEqual(
             'Previous Parent',
             ((Account) handler.seenOldParents[0]).Name,
-            'It should be Previous Parent, because a handler declaring both sides reads the old side through getOldRelated.'
+            'It should be Previous Parent, because a handler declaring both sides reads the old side through getOldParent.'
         );
         Assert.areEqual(1, queriesAfter - queriesBefore, 'It should be 1, because both sides of the same lookup field are gathered into a single query for the invocation.');
     }
@@ -7820,6 +7820,575 @@ private class TriggerOrchestratorTest {
         Assert.areEqual(0, laterHandler.executionCount, 'It should be 0.');
     }
 
+    @IsTest
+    static void relatedQueryRunsOnceAndLoadsBeforeTheFirstPredicateOnBeforeInsert() {
+        RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>{ new Contact(LastName = 'Doe') });
+        RelatedBeforeInsertPopulator handler = new RelatedBeforeInsertPopulator(provider);
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        // Test
+        Test.startTest();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ handler }));
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe'), new Contact(LastName = 'Roe') };
+        orchestratorRunner.run();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook runs once per handler per invocation.');
+        Assert.areEqual(2, provider.lastRecordCount, 'It should be 2, because the collection the provider is queried with covers every trigger record.');
+        Assert.areEqual(1, provider.loadCount, 'It should be 1, because the framework loads each provider once.');
+        Assert.areEqual(1, handler.loadCountAtFirstPredicate, 'It should be 1, because the provider is loaded before the first predicate runs.');
+        Assert.areEqual(2, handler.predicateReads, 'It should be 2, because the provider is readable in every predicate call.');
+        Assert.areEqual(2, handler.actionReads, 'It should be 2, because the provider is readable in every action call.');
+        Assert.areEqual(1, handler.finalizerReads, 'It should be 1, because the provider stays attached through the finalizer.');
+    }
+
+    @IsTest
+    static void relatedQueryNotCalledForABypassedHandler() {
+        RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>());
+        RelatedBeforeInsertPopulator handler = new RelatedBeforeInsertPopulator(provider);
+        handler.bypass = true;
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        // Test
+        Test.startTest();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ handler }));
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+        orchestratorRunner.run();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(0, handler.hookCount, 'It should be 0, because a bypassed handler never has its hook called.');
+        Assert.areEqual(0, provider.loadCount, 'It should be 0, because nothing is loaded for a bypassed handler.');
+    }
+
+    @IsTest
+    static void relatedQueryRunsWhenNoRecordQualifies() {
+        RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>());
+        RelatedBeforeInsertPopulator handler = new RelatedBeforeInsertPopulator(provider);
+        handler.qualify = false;
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        // Test
+        Test.startTest();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ handler }));
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+        orchestratorRunner.run();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook runs before qualification and does not depend on it.');
+        Assert.areEqual(1, provider.loadCount, 'It should be 1, because loading happens before the first predicate.');
+        Assert.areEqual(0, handler.finalizerReads, 'It should be 0, because the finalizer does not run when nothing qualified.');
+    }
+
+    @IsTest
+    static void handlerWithoutRelatedQueryCannotReadAProvider() {
+        RelatedReaderBeforeInsertPopulator handler = new RelatedReaderBeforeInsertPopulator();
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        Exception orchestratorException = null;
+
+        // Test
+        Test.startTest();
+        try {
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ handler }));
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+            orchestratorRunner.run();
+        } catch (Exception e) {
+            orchestratorException = e;
+        }
+        Test.stopTest();
+
+        // Verify
+        Assert.isNotNull(orchestratorException, 'It should be thrown, because no provider is registered for a handler without the hook.');
+        Assert.isTrue(orchestratorException.getTypeName().endsWith('TriggerHandlerException'), 'It should be a TriggerHandlerException.');
+        Assert.areEqual(
+            'No related records provider is registered under related. Return it from the RelatedQuery method of the context first.',
+            orchestratorException.getMessage(),
+            'It should name the missing provider.'
+        );
+    }
+
+    @IsTest
+    static void nextHandlerSeesAnEmptyProviderMapAtPredicateTimeAndInsideItsHook() {
+        RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>());
+        RelatedBeforeInsertPopulator first = new RelatedBeforeInsertPopulator(provider);
+        RelatedPeekingBeforeInsertPopulator second = new RelatedPeekingBeforeInsertPopulator();
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        // Test
+        Test.startTest();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ first, second }));
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+        orchestratorRunner.run();
+        Test.stopTest();
+
+        // Verify
+        Assert.isFalse(second.previousProviderReachableInQuery, 'It should be unreachable while the provider queries, because an empty map is attached before the hook runs.');
+        Assert.isFalse(second.previousProviderReachableInPredicate, 'It should be unreachable in the predicate, because each handler gets its own map.');
+        Assert.isTrue(second.ownProviderReachableInPredicate, 'It should be reachable, because the second handler registered its own provider.');
+    }
+
+    @IsTest
+    static void relatedQueryExceptionIsLoggedWithTheHandlerNameAndRethrown() {
+        ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
+        RelatedBeforeInsertPopulator handler = new RelatedBeforeInsertPopulator(new RelatedCountingProvider(new List<Contact>()));
+        handler.throwInHook = true;
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        TriggerOrchestrator.triggerLogger.logger = logger;
+        Exception orchestratorException = null;
+
+        // Test
+        Test.startTest();
+        try {
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ handler }));
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+            orchestratorRunner.run();
+        } catch (Exception e) {
+            orchestratorException = e;
+        }
+        Test.stopTest();
+
+        // Verify
+        Assert.isNotNull(orchestratorException, 'It should be thrown, because the handler does not implement ContinueOnError.');
+        Assert.areEqual('Hook failed on purpose.', orchestratorException.getMessage(), 'It should be the hook exception.');
+        Assert.areEqual(1, logger.errors.size(), 'It should be 1, because the hook runs inside the handler turn.');
+        Assert.areEqual('RelatedBeforeInsertPopulator', logger.errors[0].getHandlerName(), 'It should name the handler whose hook failed.');
+        Assert.areEqual(0, handler.predicateReads, 'It should be 0, because the loop never started.');
+    }
+
+    @IsTest
+    static void providerLoadExceptionIsSwallowedWithContinueOnError() {
+        ErrorsLoggingLogger logger = new ErrorsLoggingLogger();
+        RelatedMutedBeforeInsertPopulator failing = new RelatedMutedBeforeInsertPopulator(new RelatedFailingProvider());
+        RelatedBeforeInsertPopulator later = new RelatedBeforeInsertPopulator(new RelatedCountingProvider(new List<Contact>()));
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        TriggerOrchestrator.triggerLogger.logger = logger;
+        Exception orchestratorException = null;
+
+        // Test
+        Test.startTest();
+        try {
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ failing, later }));
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+            orchestratorRunner.run();
+        } catch (Exception e) {
+            orchestratorException = e;
+        }
+        Test.stopTest();
+
+        // Verify
+        Assert.isNull(orchestratorException, 'It should be null, because ContinueOnError swallows the provider failure.');
+        Assert.areEqual(1, logger.errors.size(), 'It should be 1, because the failure is still logged.');
+        Assert.areEqual('RelatedMutedBeforeInsertPopulator', logger.errors[0].getHandlerName(), 'It should name the handler whose provider failed.');
+        Assert.areEqual('Provider failed on purpose.', logger.errors[0].getException().getMessage(), 'It should be the provider exception.');
+        Assert.areEqual(0, failing.predicateReads, 'It should be 0, because the failing handler never reached its loop.');
+        Assert.areEqual(1, later.predicateReads, 'It should be 1, because the next handler still runs.');
+    }
+
+    @IsTest
+    static void providerPerformingDmlInABeforeContextTripsTheGuard() {
+        RelatedBeforeInsertPopulator handler = new RelatedBeforeInsertPopulator(new RelatedDmlProvider());
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        Exception orchestratorException = null;
+
+        // Test
+        Test.startTest();
+        try {
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ handler }));
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+            orchestratorRunner.run();
+        } catch (Exception e) {
+            orchestratorException = e;
+        }
+        Test.stopTest();
+
+        // Verify
+        Assert.isNotNull(orchestratorException, 'It should be thrown, because a provider query sits inside the DML guard.');
+        Assert.areEqual(
+            'RelatedBeforeInsertPopulator performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
+            orchestratorException.getMessage(),
+            'It should be the guard message naming the handler.'
+        );
+    }
+
+    @IsTest
+    static void nullHookResultIsTreatedAsAnEmptyMap() {
+        RelatedBeforeInsertPopulator handler = new RelatedBeforeInsertPopulator(null);
+        handler.returnNull = true;
+        handler.readProviders = false;
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        Exception orchestratorException = null;
+
+        // Test
+        Test.startTest();
+        try {
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ handler }));
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+            orchestratorRunner.run();
+        } catch (Exception e) {
+            orchestratorException = e;
+        }
+        Test.stopTest();
+
+        // Verify
+        Assert.isNull(orchestratorException, 'It should be null, because a null hook result counts as no providers.');
+        Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook still ran.');
+    }
+
+    @IsTest
+    static void relatedQueryRunsAfterParentEnrichmentOnBeforeInsert() {
+        Account parentAccount = new Account(Name = 'Enriched First');
+        insert parentAccount;
+        RelatedEnrichedBeforeInsertPopulator handler = new RelatedEnrichedBeforeInsertPopulator();
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        // Test
+        Test.startTest();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ handler }));
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe', AccountId = parentAccount.Id) };
+        orchestratorRunner.run();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(
+            new Set<String>{ 'Enriched First' },
+            handler.parentNamesSeenInQuery,
+            'It should hold the parent name, because enrichment runs before the providers and the collection reads the enriched parent.'
+        );
+    }
+
+    @IsTest
+    static void relatedQueryReceivesRecursionSkippedRecordsOnBeforeUpdate() {
+        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
+        RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>());
+        RelatedGuardedBeforeUpdatePopulator handler = new RelatedGuardedBeforeUpdatePopulator(provider);
+        List<SObject> newRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'New') };
+        List<SObject> oldRecords = new List<Contact>{ new Contact(Id = contactId, LastName = 'Old') };
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        // Test
+        Test.startTest();
+        for (Integer pass = 0; pass < 2; pass++) {
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler }));
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.newRecords = newRecords;
+            orchestratorRunner.context.oldRecords = oldRecords;
+            orchestratorRunner.run();
+        }
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(2, handler.hookCount, 'It should be 2, because the hook runs on every invocation.');
+        Assert.areEqual(
+            new List<Integer>{ 1, 1 },
+            provider.recordCounts,
+            'It should be 1 on both passes, because the provider is queried with a collection that includes the record even when the recursion guard skips it.'
+        );
+        Assert.areEqual(1, handler.actionCount, 'It should be 1, because the recursion guard with depth 1 skipped the second pass.');
+    }
+
+    @IsTest
+    static void twoHopProviderLoadsBothQueriesInOneLoad() {
+        Account parentAccount = new Account(Name = 'Hop Source');
+        insert parentAccount;
+        insert new Contact(LastName = 'Hop Target', Email = 'hop.target@example.com', AccountId = parentAccount.Id);
+        RelatedTwoHopProvider provider = new RelatedTwoHopProvider(new Set<Id>{ parentAccount.Id });
+
+        // Test
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
+        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, new TriggerHandler.InsertTriggerRecords(new List<TriggerHandler.TriggerRecord>()));
+        Integer queriesAfter = Limits.getQueries();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(2, queriesAfter - queriesBefore, 'It should be 2, because both hops run inside one query() call.');
+        Assert.areEqual(1, related.getAllWhereKeyEquals(parentAccount.Id).size(), 'It should be 1, because the second hop is keyed by the first hop result.');
+    }
+
+    @IsTest
+    static void relatedQueryRunsOnceAndLoadsBeforeTheFirstPredicateOnBeforeInsertValidator() {
+        RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>{ new Contact(LastName = 'Doe') });
+        RelatedBeforeInsertValidator handler = new RelatedBeforeInsertValidator(provider);
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        Exception orchestratorException = null;
+
+        // Test
+        Test.startTest();
+        try {
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ handler }));
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+            orchestratorRunner.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe'), new Contact(LastName = 'Roe') };
+            orchestratorRunner.run();
+        } catch (Exception e) {
+            orchestratorException = e;
+        }
+        Test.stopTest();
+
+        // Verify
+        Assert.isNull(orchestratorException, 'It should be null, because addError on a record outside a real trigger set raises nothing.');
+        Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook runs once per handler per invocation.');
+        Assert.areEqual(2, provider.lastRecordCount, 'It should be 2, because the collection the provider is queried with covers every trigger record.');
+        Assert.areEqual(1, provider.loadCount, 'It should be 1, because the framework loads each provider once.');
+        Assert.areEqual(1, handler.loadCountAtFirstPredicate, 'It should be 1, because the provider is loaded before the first predicate runs.');
+        Assert.areEqual(2, handler.predicateReads, 'It should be 2, because the provider is readable in every predicate call.');
+        Assert.areEqual(2, handler.actionReads, 'It should be 2, because the provider is readable in every action call.');
+        Assert.areEqual(1, handler.finalizerReads, 'It should be 1, because the provider stays attached through the finalizer.');
+    }
+
+    @IsTest
+    static void relatedQueryRunsOnceAndLoadsBeforeTheFirstPredicateOnAfterInsert() {
+        RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>{ new Contact(LastName = 'Doe') });
+        RelatedAfterInsertHandler handler = new RelatedAfterInsertHandler(provider);
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        // Test
+        Test.startTest();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler }));
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.newRecords = new List<Contact>{
+            new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe'),
+            new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe')
+        };
+        orchestratorRunner.run();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook runs once per handler per invocation.');
+        Assert.areEqual(2, provider.lastRecordCount, 'It should be 2, because the collection the provider is queried with covers every trigger record.');
+        Assert.areEqual(1, provider.loadCount, 'It should be 1, because the framework loads each provider once.');
+        Assert.areEqual(1, handler.loadCountAtFirstPredicate, 'It should be 1, because the provider is loaded before the first predicate runs.');
+        Assert.areEqual(2, handler.predicateReads, 'It should be 2, because the provider is readable in every predicate call.');
+        Assert.areEqual(2, handler.actionReads, 'It should be 2, because the provider is readable in every action call.');
+        Assert.areEqual(1, handler.finalizerReads, 'It should be 1, because the provider stays attached through the finalizer.');
+    }
+
+    @IsTest
+    static void relatedQueryRunsOnceAndLoadsBeforeTheFirstPredicateOnBeforeUpdatePopulator() {
+        Id firstContactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
+        Id secondContactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
+        RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>{ new Contact(LastName = 'Doe') });
+        RelatedBeforeUpdatePopulator handler = new RelatedBeforeUpdatePopulator(provider);
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        // Test
+        Test.startTest();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler }));
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.newRecords = new List<Contact>{ new Contact(Id = firstContactId, LastName = 'Doe'), new Contact(Id = secondContactId, LastName = 'Roe') };
+        orchestratorRunner.context.oldRecords = new List<Contact>{
+            new Contact(Id = firstContactId, LastName = 'Old Doe'),
+            new Contact(Id = secondContactId, LastName = 'Old Roe')
+        };
+        orchestratorRunner.run();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook runs once per handler per invocation.');
+        Assert.areEqual(2, provider.lastRecordCount, 'It should be 2, because the collection the provider is queried with covers every trigger record.');
+        Assert.areEqual(1, provider.loadCount, 'It should be 1, because the framework loads each provider once.');
+        Assert.areEqual(1, handler.loadCountAtFirstPredicate, 'It should be 1, because the provider is loaded before the first predicate runs.');
+        Assert.areEqual(2, handler.predicateReads, 'It should be 2, because the provider is readable in every predicate call.');
+        Assert.areEqual(2, handler.actionReads, 'It should be 2, because the provider is readable in every action call.');
+        Assert.areEqual(1, handler.finalizerReads, 'It should be 1, because the provider stays attached through the finalizer.');
+    }
+
+    @IsTest
+    static void relatedQueryRunsOnceAndLoadsBeforeTheFirstPredicateOnBeforeUpdateValidator() {
+        Id firstContactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
+        Id secondContactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
+        RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>{ new Contact(LastName = 'Doe') });
+        RelatedBeforeUpdateValidator handler = new RelatedBeforeUpdateValidator(provider);
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        Exception orchestratorException = null;
+
+        // Test
+        Test.startTest();
+        try {
+            TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler }));
+            orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            orchestratorRunner.context.newRecords = new List<Contact>{ new Contact(Id = firstContactId, LastName = 'Doe'), new Contact(Id = secondContactId, LastName = 'Roe') };
+            orchestratorRunner.context.oldRecords = new List<Contact>{
+                new Contact(Id = firstContactId, LastName = 'Old Doe'),
+                new Contact(Id = secondContactId, LastName = 'Old Roe')
+            };
+            orchestratorRunner.run();
+        } catch (Exception e) {
+            orchestratorException = e;
+        }
+        Test.stopTest();
+
+        // Verify
+        Assert.isNull(orchestratorException, 'It should be null, because addError on a record outside a real trigger set raises nothing.');
+        Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook runs once per handler per invocation.');
+        Assert.areEqual(2, provider.lastRecordCount, 'It should be 2, because the collection the provider is queried with covers every trigger record.');
+        Assert.areEqual(1, provider.loadCount, 'It should be 1, because the framework loads each provider once.');
+        Assert.areEqual(1, handler.loadCountAtFirstPredicate, 'It should be 1, because the provider is loaded before the first predicate runs.');
+        Assert.areEqual(2, handler.predicateReads, 'It should be 2, because the provider is readable in every predicate call.');
+        Assert.areEqual(2, handler.actionReads, 'It should be 2, because the provider is readable in every action call.');
+        Assert.areEqual(1, handler.finalizerReads, 'It should be 1, because the provider stays attached through the finalizer.');
+    }
+
+    @IsTest
+    static void relatedQueryRunsOnceAndLoadsBeforeTheFirstPredicateOnAfterUpdate() {
+        Id firstContactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
+        Id secondContactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
+        RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>{ new Contact(LastName = 'Doe') });
+        RelatedAfterUpdateHandler handler = new RelatedAfterUpdateHandler(provider);
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        // Test
+        Test.startTest();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedAfterUpdateOrchestrator(new List<AfterUpdate.Handler>{ handler }));
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestratorRunner.context.newRecords = new List<Contact>{ new Contact(Id = firstContactId, LastName = 'Doe'), new Contact(Id = secondContactId, LastName = 'Roe') };
+        orchestratorRunner.context.oldRecords = new List<Contact>{
+            new Contact(Id = firstContactId, LastName = 'Old Doe'),
+            new Contact(Id = secondContactId, LastName = 'Old Roe')
+        };
+        orchestratorRunner.run();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook runs once per handler per invocation.');
+        Assert.areEqual(2, provider.lastRecordCount, 'It should be 2, because the collection the provider is queried with covers every trigger record.');
+        Assert.areEqual(1, provider.loadCount, 'It should be 1, because the framework loads each provider once.');
+        Assert.areEqual(1, handler.loadCountAtFirstPredicate, 'It should be 1, because the provider is loaded before the first predicate runs.');
+        Assert.areEqual(2, handler.predicateReads, 'It should be 2, because the provider is readable in every predicate call.');
+        Assert.areEqual(2, handler.actionReads, 'It should be 2, because the provider is readable in every action call.');
+        Assert.areEqual(1, handler.finalizerReads, 'It should be 1, because the provider stays attached through the finalizer.');
+    }
+
+    @IsTest
+    static void relatedQueryRunsOnceAndLoadsBeforeTheFirstPredicateOnBeforeDelete() {
+        RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>{ new Contact(LastName = 'Doe') });
+        RelatedBeforeDeleteHandler handler = new RelatedBeforeDeleteHandler(provider);
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        // Test
+        Test.startTest();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedBeforeDeleteOrchestrator(new List<BeforeDelete.Handler>{ handler }));
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestratorRunner.context.oldRecords = new List<Contact>{
+            new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe'),
+            new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe')
+        };
+        orchestratorRunner.run();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook runs once per handler per invocation.');
+        Assert.areEqual(2, provider.lastRecordCount, 'It should be 2, because the collection the provider is queried with covers every trigger record.');
+        Assert.areEqual(1, provider.loadCount, 'It should be 1, because the framework loads each provider once.');
+        Assert.areEqual(1, handler.loadCountAtFirstPredicate, 'It should be 1, because the provider is loaded before the first predicate runs.');
+        Assert.areEqual(2, handler.predicateReads, 'It should be 2, because the provider is readable in every predicate call.');
+        Assert.areEqual(2, handler.actionReads, 'It should be 2, because the provider is readable in every action call.');
+        Assert.areEqual(1, handler.finalizerReads, 'It should be 1, because the provider stays attached through the finalizer.');
+    }
+
+    @IsTest
+    static void relatedQueryRunsOnceAndLoadsBeforeTheFirstPredicateOnAfterDelete() {
+        RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>{ new Contact(LastName = 'Doe') });
+        RelatedAfterDeleteHandler handler = new RelatedAfterDeleteHandler(provider);
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        // Test
+        Test.startTest();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedAfterDeleteOrchestrator(new List<AfterDelete.Handler>{ handler }));
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestratorRunner.context.oldRecords = new List<Contact>{
+            new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe'),
+            new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe')
+        };
+        orchestratorRunner.run();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook runs once per handler per invocation.');
+        Assert.areEqual(2, provider.lastRecordCount, 'It should be 2, because the collection the provider is queried with covers every trigger record.');
+        Assert.areEqual(1, provider.loadCount, 'It should be 1, because the framework loads each provider once.');
+        Assert.areEqual(1, handler.loadCountAtFirstPredicate, 'It should be 1, because the provider is loaded before the first predicate runs.');
+        Assert.areEqual(2, handler.predicateReads, 'It should be 2, because the provider is readable in every predicate call.');
+        Assert.areEqual(2, handler.actionReads, 'It should be 2, because the provider is readable in every action call.');
+        Assert.areEqual(1, handler.finalizerReads, 'It should be 1, because the provider stays attached through the finalizer.');
+    }
+
+    @IsTest
+    static void relatedQueryRunsOnceAndLoadsBeforeTheFirstPredicateOnAfterUndelete() {
+        RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>{ new Contact(LastName = 'Doe') });
+        RelatedAfterUndeleteHandler handler = new RelatedAfterUndeleteHandler(provider);
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        // Test
+        Test.startTest();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedAfterUndeleteOrchestrator(new List<AfterUndelete.Handler>{ handler }));
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestratorRunner.context.newRecords = new List<Contact>{
+            new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe'),
+            new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe')
+        };
+        orchestratorRunner.run();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook runs once per handler per invocation.');
+        Assert.areEqual(2, provider.lastRecordCount, 'It should be 2, because the collection the provider is queried with covers every trigger record.');
+        Assert.areEqual(1, provider.loadCount, 'It should be 1, because the framework loads each provider once.');
+        Assert.areEqual(1, handler.loadCountAtFirstPredicate, 'It should be 1, because the provider is loaded before the first predicate runs.');
+        Assert.areEqual(2, handler.predicateReads, 'It should be 2, because the provider is readable in every predicate call.');
+        Assert.areEqual(2, handler.actionReads, 'It should be 2, because the provider is readable in every action call.');
+        Assert.areEqual(1, handler.finalizerReads, 'It should be 1, because the provider stays attached through the finalizer.');
+    }
+
     private class DispatchBeforeInsertPopulator implements BeforeInsert.Populator {
         public Integer qualifyCount = 0;
         public Integer runCount = 0;
@@ -8423,7 +8992,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
-            this.seenNewParents.add(record.getNewRelated('Account'));
+            this.seenNewParents.add(record.getNewParent('Account'));
 
             if (this.accountIdsToSet.isEmpty()) {
                 return;
@@ -8453,8 +9022,8 @@ private class TriggerOrchestratorTest {
         }
 
         public void onAfterInsert(TriggerHandler.InsertRecord record) {
-            this.seenNewParents.add(record.getNewRelated('Account'));
-            this.seenNewOwners.add(record.getNewRelated('Owner'));
+            this.seenNewParents.add(record.getNewParent('Account'));
+            this.seenNewOwners.add(record.getNewParent('Owner'));
         }
     }
 
@@ -8488,8 +9057,8 @@ private class TriggerOrchestratorTest {
         }
 
         public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
-            this.seenNewParents.add(record.getNewRelated('Account'));
-            this.seenOldParents.add(record.getOldRelated('Account'));
+            this.seenNewParents.add(record.getNewParent('Account'));
+            this.seenOldParents.add(record.getOldParent('Account'));
 
             if (this.accountIdsToSet.isEmpty()) {
                 return;
@@ -8530,8 +9099,8 @@ private class TriggerOrchestratorTest {
         }
 
         public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
-            this.seenNewParents.add(record.getNewRelated('Account'));
-            this.seenOldParents.add(record.getOldRelated('Account'));
+            this.seenNewParents.add(record.getNewParent('Account'));
+            this.seenOldParents.add(record.getOldParent('Account'));
 
             if (this.accountIdsToSet.isEmpty()) {
                 return;
@@ -8956,7 +9525,7 @@ private class TriggerOrchestratorTest {
 
         public void onAfterInsert(TriggerHandler.InsertRecord record) {
             this.runCount++;
-            this.relatedAccount = record.getNewRelated('Account');
+            this.relatedAccount = record.getNewParent('Account');
         }
     }
 
@@ -10816,7 +11385,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
-            Account parent = (Account) record.getNewRelated('Account');
+            Account parent = (Account) record.getNewParent('Account');
 
             this.seenNewParents.add(parent);
             record.put(Contact.Department, parent?.Name);
@@ -10839,12 +11408,12 @@ private class TriggerOrchestratorTest {
         }
 
         public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
-            this.seenNewParents.add(record.getNewRelated('Account'));
+            this.seenNewParents.add(record.getNewParent('Account'));
             return true;
         }
 
         public String beforeInsertValidationMessage(TriggerHandler.InsertRecord record) {
-            Account parent = (Account) record.getNewRelated('Account');
+            Account parent = (Account) record.getNewParent('Account');
 
             return 'Account ' + parent?.Name + ' does not accept new contacts.';
         }
@@ -10882,8 +11451,8 @@ private class TriggerOrchestratorTest {
         }
 
         public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
-            this.seenNewParents.add(record.getNewRelated('Account'));
-            this.seenOldParents.add(record.getOldRelated('Account'));
+            this.seenNewParents.add(record.getNewParent('Account'));
+            this.seenOldParents.add(record.getOldParent('Account'));
         }
     }
 
@@ -10915,13 +11484,13 @@ private class TriggerOrchestratorTest {
         }
 
         public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
-            this.seenNewParents.add(record.getNewRelated('Account'));
-            this.seenOldParents.add(record.getOldRelated('Account'));
+            this.seenNewParents.add(record.getNewParent('Account'));
+            this.seenOldParents.add(record.getOldParent('Account'));
             return true;
         }
 
         public String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record) {
-            Account parent = (Account) record.getNewRelated('Account');
+            Account parent = (Account) record.getNewParent('Account');
 
             return 'Account ' + parent?.Name + ' is locked.';
         }
@@ -10947,7 +11516,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void onAfterInsert(TriggerHandler.InsertRecord record) {
-            this.seenNewParents.add(record.getNewRelated('Account'));
+            this.seenNewParents.add(record.getNewParent('Account'));
         }
     }
 
@@ -10983,8 +11552,8 @@ private class TriggerOrchestratorTest {
         }
 
         public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
-            this.seenNewParents.add(record.getNewRelated('Account'));
-            this.seenOldParents.add(record.getOldRelated('Account'));
+            this.seenNewParents.add(record.getNewParent('Account'));
+            this.seenOldParents.add(record.getOldParent('Account'));
         }
     }
 
@@ -11008,7 +11577,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void onBeforeDelete(TriggerHandler.DeleteRecord record) {
-            this.seenOldParents.add(record.getOldRelated('Account'));
+            this.seenOldParents.add(record.getOldParent('Account'));
         }
     }
 
@@ -11032,7 +11601,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void onAfterDelete(TriggerHandler.DeleteRecord record) {
-            this.seenOldParents.add(record.getOldRelated('Account'));
+            this.seenOldParents.add(record.getOldParent('Account'));
         }
     }
 
@@ -11056,7 +11625,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void onAfterUndelete(TriggerHandler.UndeleteRecord record) {
-            this.seenNewParents.add(record.getNewRelated('Account'));
+            this.seenNewParents.add(record.getNewParent('Account'));
         }
     }
 
@@ -11492,5 +12061,699 @@ private class TriggerOrchestratorTest {
     }
 
     private class DispatchNonOrchestrator {
+    }
+
+    private class RelatedException extends Exception {
+    }
+
+    private class RelatedBeforeInsertOrchestrator implements TriggerOrchestrator.BeforeInsert {
+        private List<BeforeInsert.Handler> handlers;
+
+        public RelatedBeforeInsertOrchestrator(List<BeforeInsert.Handler> handlers) {
+            this.handlers = handlers;
+        }
+
+        public List<BeforeInsert.Handler> beforeInsertHandlers() {
+            return this.handlers;
+        }
+    }
+
+    private class RelatedAfterInsertOrchestrator implements TriggerOrchestrator.AfterInsert {
+        private List<AfterInsert.Handler> handlers;
+
+        public RelatedAfterInsertOrchestrator(List<AfterInsert.Handler> handlers) {
+            this.handlers = handlers;
+        }
+
+        public List<AfterInsert.Handler> afterInsertHandlers() {
+            return this.handlers;
+        }
+    }
+
+    private class RelatedBeforeUpdateOrchestrator implements TriggerOrchestrator.BeforeUpdate {
+        private List<BeforeUpdate.Handler> handlers;
+
+        public RelatedBeforeUpdateOrchestrator(List<BeforeUpdate.Handler> handlers) {
+            this.handlers = handlers;
+        }
+
+        public List<BeforeUpdate.Handler> beforeUpdateHandlers() {
+            return this.handlers;
+        }
+    }
+
+    private class RelatedAfterUpdateOrchestrator implements TriggerOrchestrator.AfterUpdate {
+        private List<AfterUpdate.Handler> handlers;
+
+        public RelatedAfterUpdateOrchestrator(List<AfterUpdate.Handler> handlers) {
+            this.handlers = handlers;
+        }
+
+        public List<AfterUpdate.Handler> afterUpdateHandlers() {
+            return this.handlers;
+        }
+    }
+
+    private class RelatedBeforeDeleteOrchestrator implements TriggerOrchestrator.BeforeDelete {
+        private List<BeforeDelete.Handler> handlers;
+
+        public RelatedBeforeDeleteOrchestrator(List<BeforeDelete.Handler> handlers) {
+            this.handlers = handlers;
+        }
+
+        public List<BeforeDelete.Handler> beforeDeleteHandlers() {
+            return this.handlers;
+        }
+    }
+
+    private class RelatedAfterDeleteOrchestrator implements TriggerOrchestrator.AfterDelete {
+        private List<AfterDelete.Handler> handlers;
+
+        public RelatedAfterDeleteOrchestrator(List<AfterDelete.Handler> handlers) {
+            this.handlers = handlers;
+        }
+
+        public List<AfterDelete.Handler> afterDeleteHandlers() {
+            return this.handlers;
+        }
+    }
+
+    private class RelatedAfterUndeleteOrchestrator implements TriggerOrchestrator.AfterUndelete {
+        private List<AfterUndelete.Handler> handlers;
+
+        public RelatedAfterUndeleteOrchestrator(List<AfterUndelete.Handler> handlers) {
+            this.handlers = handlers;
+        }
+
+        public List<AfterUndelete.Handler> afterUndeleteHandlers() {
+            return this.handlers;
+        }
+    }
+
+    private class RelatedCountingProvider implements BeforeInsert.RecordsProvider, AfterInsert.RecordsProvider, BeforeUpdate.RecordsProvider, AfterUpdate.RecordsProvider, BeforeDelete.RecordsProvider, AfterDelete.RecordsProvider, AfterUndelete.RecordsProvider {
+        public Integer loadCount = 0;
+        public Integer lastRecordCount = 0;
+        public List<Integer> recordCounts = new List<Integer>();
+        private List<SObject> recordsToReturn;
+
+        public RelatedCountingProvider(List<SObject> recordsToReturn) {
+            this.recordsToReturn = recordsToReturn;
+        }
+
+        public List<SObject> query(TriggerHandler.InsertRecords records) {
+            return this.queried(records.size());
+        }
+
+        public List<SObject> query(TriggerHandler.UpdateRecords records) {
+            return this.queried(records.size());
+        }
+
+        public List<SObject> query(TriggerHandler.DeleteRecords records) {
+            return this.queried(records.size());
+        }
+
+        public List<SObject> query(TriggerHandler.UndeleteRecords records) {
+            return this.queried(records.size());
+        }
+
+        public String keyOf(SObject record) {
+            return (String) record.get('LastName');
+        }
+
+        private List<SObject> queried(Integer recordCount) {
+            this.loadCount++;
+            this.lastRecordCount = recordCount;
+            this.recordCounts.add(recordCount);
+            return this.recordsToReturn;
+        }
+    }
+
+    private class RelatedFailingProvider implements BeforeInsert.RecordsProvider {
+        public List<SObject> query(TriggerHandler.InsertRecords records) {
+            throw new RelatedException('Provider failed on purpose.');
+        }
+
+        public String keyOf(SObject record) {
+            return record.Id;
+        }
+    }
+
+    private class RelatedDmlProvider implements BeforeInsert.RecordsProvider {
+        public List<SObject> query(TriggerHandler.InsertRecords records) {
+            insert new Account(Name = 'Guard');
+            return new List<SObject>();
+        }
+
+        public String keyOf(SObject record) {
+            return record.Id;
+        }
+    }
+
+    private class RelatedTwoHopProvider implements BeforeInsert.RecordsProvider {
+        private Set<Id> accountIds;
+
+        public RelatedTwoHopProvider(Set<Id> accountIds) {
+            this.accountIds = accountIds;
+        }
+
+        public List<SObject> query(TriggerHandler.InsertRecords records) {
+            Set<Id> foundAccountIds = new Map<Id, Account>([SELECT Id FROM Account WHERE Id IN :this.accountIds]).keySet();
+            return [SELECT Id, AccountId FROM Contact WHERE AccountId IN :foundAccountIds];
+        }
+
+        public String keyOf(SObject record) {
+            return ((Contact) record).AccountId;
+        }
+    }
+
+    private class RelatedPeekingProvider implements BeforeInsert.RecordsProvider {
+        private RelatedPeekingBeforeInsertPopulator owner;
+
+        public RelatedPeekingProvider(RelatedPeekingBeforeInsertPopulator owner) {
+            this.owner = owner;
+        }
+
+        public List<SObject> query(TriggerHandler.InsertRecords records) {
+            try {
+                records.getRecords()[0].getRelated('related');
+            } catch (TriggerHandler.TriggerHandlerException e) {
+                this.owner.previousProviderReachableInQuery = false;
+            }
+
+            return new List<SObject>();
+        }
+
+        public String keyOf(SObject record) {
+            return record.Id;
+        }
+    }
+
+    private class RelatedEnrichedProvider implements BeforeInsert.RecordsProvider {
+        private RelatedEnrichedBeforeInsertPopulator owner;
+
+        public RelatedEnrichedProvider(RelatedEnrichedBeforeInsertPopulator owner) {
+            this.owner = owner;
+        }
+
+        public List<SObject> query(TriggerHandler.InsertRecords records) {
+            this.owner.parentNamesSeenInQuery = records.getValuesOf('Account', Account.Name);
+            return new List<SObject>();
+        }
+
+        public String keyOf(SObject record) {
+            return record.Id;
+        }
+    }
+
+    private class RelatedBeforeInsertPopulator implements BeforeInsert.Populator, BeforeInsert.RelatedQuery, BeforeInsert.Finalizer, BeforeInsert.Bypassable {
+        public Integer hookCount = 0;
+        public Integer loadCountAtFirstPredicate;
+        public Integer predicateReads = 0;
+        public Integer actionReads = 0;
+        public Integer finalizerReads = 0;
+        public Boolean bypass = false;
+        public Boolean qualify = true;
+        public Boolean returnNull = false;
+        public Boolean throwInHook = false;
+        public Boolean readProviders = true;
+        private RelatedCountingProvider countingProvider;
+        private BeforeInsert.RecordsProvider provider;
+        private TriggerHandler.InsertRecord lastRecord;
+
+        public RelatedBeforeInsertPopulator(BeforeInsert.RecordsProvider provider) {
+            this.provider = provider;
+            if (provider instanceof RelatedCountingProvider) {
+                this.countingProvider = (RelatedCountingProvider) provider;
+            }
+        }
+
+        public Boolean bypassOnBeforeInsertWhen() {
+            return this.bypass;
+        }
+
+        public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
+            this.hookCount++;
+
+            if (this.throwInHook) {
+                throw new RelatedException('Hook failed on purpose.');
+            }
+
+            if (this.returnNull) {
+                return null;
+            }
+
+            return new Map<String, BeforeInsert.RecordsProvider>{ 'related' => this.provider };
+        }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            if (this.loadCountAtFirstPredicate == null && this.countingProvider != null) {
+                this.loadCountAtFirstPredicate = this.countingProvider.loadCount;
+            }
+
+            if (this.readProviders) {
+                record.getRelated('related').getRecords();
+                this.predicateReads++;
+            }
+
+            this.lastRecord = record;
+            return this.qualify;
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            if (this.readProviders) {
+                record.getRelated('related').getRecords();
+                this.actionReads++;
+            }
+        }
+
+        public void finalizeBeforeInsert() {
+            if (this.readProviders) {
+                this.lastRecord.getRelated('related').getRecords();
+                this.finalizerReads++;
+            }
+        }
+    }
+
+    private class RelatedMutedBeforeInsertPopulator implements BeforeInsert.Populator, BeforeInsert.RelatedQuery, BeforeInsert.ContinueOnError {
+        public Integer predicateReads = 0;
+        private BeforeInsert.RecordsProvider provider;
+
+        public RelatedMutedBeforeInsertPopulator(BeforeInsert.RecordsProvider provider) {
+            this.provider = provider;
+        }
+
+        public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
+            return new Map<String, BeforeInsert.RecordsProvider>{ 'related' => this.provider };
+        }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            this.predicateReads++;
+            return false;
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+        }
+    }
+
+    private class RelatedReaderBeforeInsertPopulator implements BeforeInsert.Populator {
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            record.getRelated('related');
+            return false;
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+        }
+    }
+
+    private class RelatedPeekingBeforeInsertPopulator implements BeforeInsert.Populator, BeforeInsert.RelatedQuery {
+        public Boolean previousProviderReachableInQuery = true;
+        public Boolean previousProviderReachableInPredicate = true;
+        public Boolean ownProviderReachableInPredicate = false;
+
+        public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
+            return new Map<String, BeforeInsert.RecordsProvider>{ 'own' => new RelatedPeekingProvider(this) };
+        }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            try {
+                record.getRelated('related');
+            } catch (TriggerHandler.TriggerHandlerException e) {
+                this.previousProviderReachableInPredicate = false;
+            }
+
+            this.ownProviderReachableInPredicate = record.getRelated('own') != null;
+            return false;
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+        }
+    }
+
+    private class RelatedEnrichedBeforeInsertPopulator implements BeforeInsert.Populator, BeforeInsert.ParentQuery, BeforeInsert.RelatedQuery {
+        public Set<String> parentNamesSeenInQuery = new Set<String>();
+
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert() {
+            return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
+        }
+
+        public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
+            return new Map<String, BeforeInsert.RecordsProvider>{ 'parents' => new RelatedEnrichedProvider(this) };
+        }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return false;
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+        }
+    }
+
+    private class RelatedGuardedBeforeUpdatePopulator implements BeforeUpdate.Populator, BeforeUpdate.RelatedQuery, BeforeUpdate.RecursionGuard {
+        public Integer hookCount = 0;
+        public Integer actionCount = 0;
+        private BeforeUpdate.RecordsProvider provider;
+
+        public RelatedGuardedBeforeUpdatePopulator(BeforeUpdate.RecordsProvider provider) {
+            this.provider = provider;
+        }
+
+        public Integer maxRecursionDepthOnBeforeUpdate() {
+            return 1;
+        }
+
+        public Map<String, BeforeUpdate.RecordsProvider> queryRelatedOnBeforeUpdate() {
+            this.hookCount++;
+            return new Map<String, BeforeUpdate.RecordsProvider>{ 'related' => this.provider };
+        }
+
+        public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return true;
+        }
+
+        public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
+            this.actionCount++;
+        }
+    }
+
+    private class RelatedBeforeInsertValidator implements BeforeInsert.Validator, BeforeInsert.RelatedQuery, BeforeInsert.Finalizer {
+        public Integer hookCount = 0;
+        public Integer loadCountAtFirstPredicate;
+        public Integer predicateReads = 0;
+        public Integer actionReads = 0;
+        public Integer finalizerReads = 0;
+        private RelatedCountingProvider provider;
+        private TriggerHandler.InsertRecord lastRecord;
+
+        public RelatedBeforeInsertValidator(RelatedCountingProvider provider) {
+            this.provider = provider;
+        }
+
+        public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
+            this.hookCount++;
+            return new Map<String, BeforeInsert.RecordsProvider>{ 'related' => this.provider };
+        }
+
+        public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            if (this.loadCountAtFirstPredicate == null) {
+                this.loadCountAtFirstPredicate = this.provider.loadCount;
+            }
+
+            record.getRelated('related').getRecords();
+            this.predicateReads++;
+            this.lastRecord = record;
+            return true;
+        }
+
+        public String beforeInsertValidationMessage(TriggerHandler.InsertRecord record) {
+            record.getRelated('related').getRecords();
+            this.actionReads++;
+            return 'blocked';
+        }
+
+        public void finalizeBeforeInsert() {
+            this.lastRecord.getRelated('related').getRecords();
+            this.finalizerReads++;
+        }
+    }
+
+    private class RelatedAfterInsertHandler implements AfterInsert.Handler, AfterInsert.RelatedQuery, AfterInsert.Finalizer {
+        public Integer hookCount = 0;
+        public Integer loadCountAtFirstPredicate;
+        public Integer predicateReads = 0;
+        public Integer actionReads = 0;
+        public Integer finalizerReads = 0;
+        private RelatedCountingProvider provider;
+        private TriggerHandler.InsertRecord lastRecord;
+
+        public RelatedAfterInsertHandler(RelatedCountingProvider provider) {
+            this.provider = provider;
+        }
+
+        public Map<String, AfterInsert.RecordsProvider> queryRelatedOnAfterInsert() {
+            this.hookCount++;
+            return new Map<String, AfterInsert.RecordsProvider>{ 'related' => this.provider };
+        }
+
+        public Boolean qualifiesForAfterInsertWhen(TriggerHandler.InsertRecord record) {
+            if (this.loadCountAtFirstPredicate == null) {
+                this.loadCountAtFirstPredicate = this.provider.loadCount;
+            }
+
+            record.getRelated('related').getRecords();
+            this.predicateReads++;
+            this.lastRecord = record;
+            return true;
+        }
+
+        public void onAfterInsert(TriggerHandler.InsertRecord record) {
+            record.getRelated('related').getRecords();
+            this.actionReads++;
+        }
+
+        public void finalizeAfterInsert() {
+            this.lastRecord.getRelated('related').getRecords();
+            this.finalizerReads++;
+        }
+    }
+
+    private class RelatedBeforeUpdatePopulator implements BeforeUpdate.Populator, BeforeUpdate.RelatedQuery, BeforeUpdate.Finalizer {
+        public Integer hookCount = 0;
+        public Integer loadCountAtFirstPredicate;
+        public Integer predicateReads = 0;
+        public Integer actionReads = 0;
+        public Integer finalizerReads = 0;
+        private RelatedCountingProvider provider;
+        private TriggerHandler.UpdateRecord lastRecord;
+
+        public RelatedBeforeUpdatePopulator(RelatedCountingProvider provider) {
+            this.provider = provider;
+        }
+
+        public Map<String, BeforeUpdate.RecordsProvider> queryRelatedOnBeforeUpdate() {
+            this.hookCount++;
+            return new Map<String, BeforeUpdate.RecordsProvider>{ 'related' => this.provider };
+        }
+
+        public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            if (this.loadCountAtFirstPredicate == null) {
+                this.loadCountAtFirstPredicate = this.provider.loadCount;
+            }
+
+            record.getRelated('related').getRecords();
+            this.predicateReads++;
+            this.lastRecord = record;
+            return true;
+        }
+
+        public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
+            record.getRelated('related').getRecords();
+            this.actionReads++;
+        }
+
+        public void finalizeBeforeUpdate() {
+            this.lastRecord.getRelated('related').getRecords();
+            this.finalizerReads++;
+        }
+    }
+
+    private class RelatedBeforeUpdateValidator implements BeforeUpdate.Validator, BeforeUpdate.RelatedQuery, BeforeUpdate.Finalizer {
+        public Integer hookCount = 0;
+        public Integer loadCountAtFirstPredicate;
+        public Integer predicateReads = 0;
+        public Integer actionReads = 0;
+        public Integer finalizerReads = 0;
+        private RelatedCountingProvider provider;
+        private TriggerHandler.UpdateRecord lastRecord;
+
+        public RelatedBeforeUpdateValidator(RelatedCountingProvider provider) {
+            this.provider = provider;
+        }
+
+        public Map<String, BeforeUpdate.RecordsProvider> queryRelatedOnBeforeUpdate() {
+            this.hookCount++;
+            return new Map<String, BeforeUpdate.RecordsProvider>{ 'related' => this.provider };
+        }
+
+        public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            if (this.loadCountAtFirstPredicate == null) {
+                this.loadCountAtFirstPredicate = this.provider.loadCount;
+            }
+
+            record.getRelated('related').getRecords();
+            this.predicateReads++;
+            this.lastRecord = record;
+            return true;
+        }
+
+        public String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record) {
+            record.getRelated('related').getRecords();
+            this.actionReads++;
+            return 'blocked';
+        }
+
+        public void finalizeBeforeUpdate() {
+            this.lastRecord.getRelated('related').getRecords();
+            this.finalizerReads++;
+        }
+    }
+
+    private class RelatedAfterUpdateHandler implements AfterUpdate.Handler, AfterUpdate.RelatedQuery, AfterUpdate.Finalizer {
+        public Integer hookCount = 0;
+        public Integer loadCountAtFirstPredicate;
+        public Integer predicateReads = 0;
+        public Integer actionReads = 0;
+        public Integer finalizerReads = 0;
+        private RelatedCountingProvider provider;
+        private TriggerHandler.UpdateRecord lastRecord;
+
+        public RelatedAfterUpdateHandler(RelatedCountingProvider provider) {
+            this.provider = provider;
+        }
+
+        public Map<String, AfterUpdate.RecordsProvider> queryRelatedOnAfterUpdate() {
+            this.hookCount++;
+            return new Map<String, AfterUpdate.RecordsProvider>{ 'related' => this.provider };
+        }
+
+        public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+            if (this.loadCountAtFirstPredicate == null) {
+                this.loadCountAtFirstPredicate = this.provider.loadCount;
+            }
+
+            record.getRelated('related').getRecords();
+            this.predicateReads++;
+            this.lastRecord = record;
+            return true;
+        }
+
+        public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
+            record.getRelated('related').getRecords();
+            this.actionReads++;
+        }
+
+        public void finalizeAfterUpdate() {
+            this.lastRecord.getRelated('related').getRecords();
+            this.finalizerReads++;
+        }
+    }
+
+    private class RelatedBeforeDeleteHandler implements BeforeDelete.Handler, BeforeDelete.RelatedQuery, BeforeDelete.Finalizer {
+        public Integer hookCount = 0;
+        public Integer loadCountAtFirstPredicate;
+        public Integer predicateReads = 0;
+        public Integer actionReads = 0;
+        public Integer finalizerReads = 0;
+        private RelatedCountingProvider provider;
+        private TriggerHandler.DeleteRecord lastRecord;
+
+        public RelatedBeforeDeleteHandler(RelatedCountingProvider provider) {
+            this.provider = provider;
+        }
+
+        public Map<String, BeforeDelete.RecordsProvider> queryRelatedOnBeforeDelete() {
+            this.hookCount++;
+            return new Map<String, BeforeDelete.RecordsProvider>{ 'related' => this.provider };
+        }
+
+        public Boolean qualifiesForBeforeDeleteWhen(TriggerHandler.DeleteRecord record) {
+            if (this.loadCountAtFirstPredicate == null) {
+                this.loadCountAtFirstPredicate = this.provider.loadCount;
+            }
+
+            record.getRelated('related').getRecords();
+            this.predicateReads++;
+            this.lastRecord = record;
+            return true;
+        }
+
+        public void onBeforeDelete(TriggerHandler.DeleteRecord record) {
+            record.getRelated('related').getRecords();
+            this.actionReads++;
+        }
+
+        public void finalizeBeforeDelete() {
+            this.lastRecord.getRelated('related').getRecords();
+            this.finalizerReads++;
+        }
+    }
+
+    private class RelatedAfterDeleteHandler implements AfterDelete.Handler, AfterDelete.RelatedQuery, AfterDelete.Finalizer {
+        public Integer hookCount = 0;
+        public Integer loadCountAtFirstPredicate;
+        public Integer predicateReads = 0;
+        public Integer actionReads = 0;
+        public Integer finalizerReads = 0;
+        private RelatedCountingProvider provider;
+        private TriggerHandler.DeleteRecord lastRecord;
+
+        public RelatedAfterDeleteHandler(RelatedCountingProvider provider) {
+            this.provider = provider;
+        }
+
+        public Map<String, AfterDelete.RecordsProvider> queryRelatedOnAfterDelete() {
+            this.hookCount++;
+            return new Map<String, AfterDelete.RecordsProvider>{ 'related' => this.provider };
+        }
+
+        public Boolean qualifiesForAfterDeleteWhen(TriggerHandler.DeleteRecord record) {
+            if (this.loadCountAtFirstPredicate == null) {
+                this.loadCountAtFirstPredicate = this.provider.loadCount;
+            }
+
+            record.getRelated('related').getRecords();
+            this.predicateReads++;
+            this.lastRecord = record;
+            return true;
+        }
+
+        public void onAfterDelete(TriggerHandler.DeleteRecord record) {
+            record.getRelated('related').getRecords();
+            this.actionReads++;
+        }
+
+        public void finalizeAfterDelete() {
+            this.lastRecord.getRelated('related').getRecords();
+            this.finalizerReads++;
+        }
+    }
+
+    private class RelatedAfterUndeleteHandler implements AfterUndelete.Handler, AfterUndelete.RelatedQuery, AfterUndelete.Finalizer {
+        public Integer hookCount = 0;
+        public Integer loadCountAtFirstPredicate;
+        public Integer predicateReads = 0;
+        public Integer actionReads = 0;
+        public Integer finalizerReads = 0;
+        private RelatedCountingProvider provider;
+        private TriggerHandler.UndeleteRecord lastRecord;
+
+        public RelatedAfterUndeleteHandler(RelatedCountingProvider provider) {
+            this.provider = provider;
+        }
+
+        public Map<String, AfterUndelete.RecordsProvider> queryRelatedOnAfterUndelete() {
+            this.hookCount++;
+            return new Map<String, AfterUndelete.RecordsProvider>{ 'related' => this.provider };
+        }
+
+        public Boolean qualifiesForAfterUndeleteWhen(TriggerHandler.UndeleteRecord record) {
+            if (this.loadCountAtFirstPredicate == null) {
+                this.loadCountAtFirstPredicate = this.provider.loadCount;
+            }
+
+            record.getRelated('related').getRecords();
+            this.predicateReads++;
+            this.lastRecord = record;
+            return true;
+        }
+
+        public void onAfterUndelete(TriggerHandler.UndeleteRecord record) {
+            record.getRelated('related').getRecords();
+            this.actionReads++;
+        }
+
+        public void finalizeAfterUndelete() {
+            this.lastRecord.getRelated('related').getRecords();
+            this.finalizerReads++;
+        }
     }
 }

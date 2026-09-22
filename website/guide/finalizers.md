@@ -14,7 +14,9 @@ Implement the `Finalizer` interface of the context. `finalize...` runs once, aft
 public with sharing class OpportunityWonHandler implements AfterUpdate.Handler, AfterUpdate.Finalizer {
   private List<Task> followUps = new List<Task>();
 
-  public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+  public Boolean qualifiesForAfterUpdateWhen(
+    TriggerHandler.UpdateRecord record
+  ) {
     return record.isChangedTo(Opportunity.StageName, 'Closed Won');
   }
 
@@ -49,7 +51,9 @@ In `before insert` and `before update` the DML guard covers the finalizer exactl
 public with sharing class AccountDefaultsHandler implements BeforeInsert.Populator, BeforeInsert.Finalizer {
   private List<Task> tasks = new List<Task>();
 
-  public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+  public Boolean populateOnBeforeInsertWhen(
+    TriggerHandler.InsertRecord record
+  ) {
     return record.isBlank(Account.Rating);
   }
 
@@ -81,15 +85,15 @@ Move the DML to the matching after context. The before context is for populating
 
 ## Method Names
 
-| Context        | Interface                  | Finalizer method        |
-| -------------- | -------------------------- | ----------------------- |
-| Before Insert  | `BeforeInsert.Finalizer`   | `finalizeBeforeInsert`  |
-| After Insert   | `AfterInsert.Finalizer`    | `finalizeAfterInsert`   |
-| Before Update  | `BeforeUpdate.Finalizer`   | `finalizeBeforeUpdate`  |
-| After Update   | `AfterUpdate.Finalizer`    | `finalizeAfterUpdate`   |
-| Before Delete  | `BeforeDelete.Finalizer`   | `finalizeBeforeDelete`  |
-| After Delete   | `AfterDelete.Finalizer`    | `finalizeAfterDelete`   |
-| After Undelete | `AfterUndelete.Finalizer`  | `finalizeAfterUndelete` |
+| Context        | Interface                 | Finalizer method        |
+| -------------- | ------------------------- | ----------------------- |
+| Before Insert  | `BeforeInsert.Finalizer`  | `finalizeBeforeInsert`  |
+| After Insert   | `AfterInsert.Finalizer`   | `finalizeAfterInsert`   |
+| Before Update  | `BeforeUpdate.Finalizer`  | `finalizeBeforeUpdate`  |
+| After Update   | `AfterUpdate.Finalizer`   | `finalizeAfterUpdate`   |
+| Before Delete  | `BeforeDelete.Finalizer`  | `finalizeBeforeDelete`  |
+| After Delete   | `AfterDelete.Finalizer`   | `finalizeAfterDelete`   |
+| After Undelete | `AfterUndelete.Finalizer` | `finalizeAfterUndelete` |
 
 In `before insert` and `before update` the handler implements `Populator` or `Validator` rather than a plain `Handler`, but the `Finalizer` interface is the same and fires after the last qualified record either way.
 

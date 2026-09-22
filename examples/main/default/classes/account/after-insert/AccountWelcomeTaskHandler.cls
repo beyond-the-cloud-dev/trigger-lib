@@ -11,7 +11,7 @@ public with sharing class AccountWelcomeTaskHandler implements AfterInsert.Handl
 
     public void onAfterInsert(TriggerHandler.InsertRecord record) {
         Account accountRecord = (Account) record.getNewSObject();
-        User owner = (User) record.getNewRelated('Owner');
+        User owner = (User) record.getNewParent('Owner');
 
         this.onboardingTasks.add(
             new Task(

@@ -8,14 +8,14 @@ Every handler method receives one trigger record, wrapped so the handler never t
 
 There is no single `Record` type. Each context passes the interface that matches what that context actually has:
 
-| Context        | Interface                      |
-| -------------- | ------------------------------ |
-| Before Insert  | `TriggerHandler.InsertRecord`  |
-| After Insert   | `TriggerHandler.InsertRecord`  |
-| Before Update  | `TriggerHandler.UpdateRecord`  |
-| After Update   | `TriggerHandler.UpdateRecord`  |
-| Before Delete  | `TriggerHandler.DeleteRecord`  |
-| After Delete   | `TriggerHandler.DeleteRecord`  |
+| Context        | Interface                       |
+| -------------- | ------------------------------- |
+| Before Insert  | `TriggerHandler.InsertRecord`   |
+| After Insert   | `TriggerHandler.InsertRecord`   |
+| Before Update  | `TriggerHandler.UpdateRecord`   |
+| After Update   | `TriggerHandler.UpdateRecord`   |
+| Before Delete  | `TriggerHandler.DeleteRecord`   |
+| After Delete   | `TriggerHandler.DeleteRecord`   |
 | After Undelete | `TriggerHandler.UndeleteRecord` |
 
 A handler method must declare the interface of its own context. `populateOnBeforeInsert` takes an `InsertRecord`, `onAfterUpdate` takes an `UpdateRecord`, and so on. Using the wrong one does not compile.
@@ -24,17 +24,18 @@ The same object is behind all four interfaces at runtime. The interface is what 
 
 ## Method Availability
 
-| Method                                                                           | `InsertRecord` | `UpdateRecord` | `DeleteRecord` | `UndeleteRecord` |
-| -------------------------------------------------------------------------------- | :------------: | :------------: | :------------: | :--------------: |
-| `getId`                                                                           |       ✅       |       ✅       |       ✅       |        ✅        |
-| `getNewSObject`                                                                   |       ✅       |       ✅       |                |        ✅        |
-| `getOldSObject`                                                                   |                |       ✅       |       ✅       |                  |
-| `getNewRelated`                                                                   |       ✅       |       ✅       |                |        ✅        |
-| `getOldRelated`                                                                   |                |       ✅       |       ✅       |                  |
-| `put`                                                                             |       ✅       |       ✅       |                |                  |
-| Record type: `isRecordTypeEqual`, `isRecordTypeNotEqual`                          |       ✅       |       ✅       |       ✅       |        ✅        |
-| Value predicates: `equals` … `isFalse`                                            |       ✅       |       ✅       |       ✅       |        ✅        |
-| Comparison predicates: `greaterThan` … `lessThanOrEqualTo`                        |       ✅       |       ✅       |       ✅       |        ✅        |
+| Method                                                                                                             | `InsertRecord` | `UpdateRecord` | `DeleteRecord` | `UndeleteRecord` |
+| ------------------------------------------------------------------------------------------------------------------ | :------------: | :------------: | :------------: | :--------------: |
+| `getId`                                                                                                            |       ✅       |       ✅       |       ✅       |        ✅        |
+| `getNewSObject`                                                                                                    |       ✅       |       ✅       |                |        ✅        |
+| `getOldSObject`                                                                                                    |                |       ✅       |       ✅       |                  |
+| `getNewParent`                                                                                                     |       ✅       |       ✅       |                |        ✅        |
+| `getOldParent`                                                                                                     |                |       ✅       |       ✅       |                  |
+| `getRelated`                                                                                                       |       ✅       |       ✅       |       ✅       |        ✅        |
+| `put`                                                                                                              |       ✅       |       ✅       |                |                  |
+| Record type: `isRecordTypeEqual`, `isRecordTypeNotEqual`                                                           |       ✅       |       ✅       |       ✅       |        ✅        |
+| Value predicates: `equals` … `isFalse`                                                                             |       ✅       |       ✅       |       ✅       |        ✅        |
+| Comparison predicates: `greaterThan` … `lessThanOrEqualTo`                                                         |       ✅       |       ✅       |       ✅       |        ✅        |
 | Change predicates: `isChanged`, `isAnyChanged`, `areAllChanged`, `isChangedTo`, `isChangedFrom`, `isChangedFromTo` |                |       ✅       |                |                  |
 
 Change detection exists only on `UpdateRecord`, because update is the only context with both sides of the record.
@@ -53,7 +54,7 @@ public Boolean qualifiesForAfterDeleteWhen(TriggerHandler.DeleteRecord record) {
 
 ## Evaluation Order
 
-Parent enrichment runs once, up front, before any handler executes, so `getNewRelated` and `getOldRelated` are populated inside qualification predicates as well as inside actions.
+Parent enrichment runs once, up front, before any handler executes, so `getNewParent` and `getOldParent` are populated inside qualification predicates as well as inside actions.
 
 Qualification is not a global pass. Each handler qualifies its records at its own turn, immediately before it runs. A predicate therefore observes field writes made by handlers registered earlier in the orchestrator's list, and the order of that list is part of the behaviour, not a formatting choice.
 
@@ -95,10 +96,10 @@ The `Trigger.old` record, always read-only.
 Contact oldContact = (Contact) record.getOldSObject();
 ```
 
-### getNewRelated
+### getNewParent
 
 ```apex
-SObject getNewRelated(String relationshipName)
+SObject getNewParent(String relationshipName)
 ```
 
 Available on `InsertRecord`, `UpdateRecord` and `UndeleteRecord`.
@@ -106,15 +107,15 @@ Available on `InsertRecord`, `UpdateRecord` and `UndeleteRecord`.
 The parent record fetched for the new version of the record. Requires the context's `ParentQuery` interface. `relationshipName` is the relationship name of the lookup, so `Contact.AccountId` is read back as `'Account'` and a custom lookup `My_Lookup__c` as `'My_Lookup__r'`.
 
 ```apex
-Account account = (Account) record.getNewRelated('Account');
+Account account = (Account) record.getNewParent('Account');
 ```
 
 Returns `null` when the lookup is empty on that record, and `null` when the handler never declared that lookup. Nothing is queried for an undeclared relationship.
 
-### getOldRelated
+### getOldParent
 
 ```apex
-SObject getOldRelated(String relationshipName)
+SObject getOldParent(String relationshipName)
 ```
 
 Available on `UpdateRecord` and `DeleteRecord`.
@@ -122,8 +123,24 @@ Available on `UpdateRecord` and `DeleteRecord`.
 The parent record fetched for the old version of the record. Requires the context's `PriorParentQuery` interface. A handler that wants both sides of the same lookup has to declare it on both sides.
 
 ```apex
-Account priorAccount = (Account) record.getOldRelated('Account');
+Account priorAccount = (Account) record.getOldParent('Account');
 ```
+
+### getRelated
+
+```apex
+TriggerHandler.RelatedRecords getRelated(String providerName)
+```
+
+Available on all four interfaces.
+
+The records a provider returned, ready to look up. The argument is the name the handler gave the provider in its `RelatedQuery` map, not a relationship name.
+
+```apex
+List<SObject> openOpportunities = record.getRelated('openOpportunities').getAllWhereKeyEquals(record.getId());
+```
+
+Throws `TriggerHandler.TriggerHandlerException` when the handler never declared a provider under that name. See [Related Records](/guide/related-records).
 
 ### put
 
@@ -137,7 +154,9 @@ Sets a field on the new record. It returns nothing, so calls do not chain. Write
 
 ```apex
 public with sharing class ContactDefaultsPopulator implements BeforeInsert.Populator {
-  public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+  public Boolean populateOnBeforeInsertWhen(
+    TriggerHandler.InsertRecord record
+  ) {
     return record.isBlank(Contact.Description);
   }
 
@@ -401,7 +420,9 @@ Old value equals `fromValue` and new value equals `toValue`.
 
 ```apex
 public with sharing class CaseClosureHandler implements AfterUpdate.Handler {
-  public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+  public Boolean qualifiesForAfterUpdateWhen(
+    TriggerHandler.UpdateRecord record
+  ) {
     return record.isChangedFromTo(Case.Status, 'New', 'Closed');
   }
 

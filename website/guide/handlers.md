@@ -23,7 +23,9 @@ public interface Populator extends Handler {
 
 ```apex
 public with sharing class AccountDefaultsPopulator implements BeforeInsert.Populator {
-  public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+  public Boolean populateOnBeforeInsertWhen(
+    TriggerHandler.InsertRecord record
+  ) {
     return record.isBlank(Account.Rating);
   }
 
@@ -39,18 +41,24 @@ A validator has no action method. It supplies the message and the framework atta
 
 ```apex
 public interface Validator extends Handler {
-  Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record);
+  Boolean errorShouldBeAttachedOnBeforeInsertWhen(
+    TriggerHandler.InsertRecord record
+  );
   String beforeInsertValidationMessage(TriggerHandler.InsertRecord record);
 }
 ```
 
 ```apex
 public with sharing class AccountIndustryValidator implements BeforeInsert.Validator {
-  public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+  public Boolean errorShouldBeAttachedOnBeforeInsertWhen(
+    TriggerHandler.InsertRecord record
+  ) {
     return record.isBlank(Account.Industry);
   }
 
-  public String beforeInsertValidationMessage(TriggerHandler.InsertRecord record) {
+  public String beforeInsertValidationMessage(
+    TriggerHandler.InsertRecord record
+  ) {
     return 'Industry is required on new accounts.';
   }
 }
@@ -60,12 +68,12 @@ The string returned by `beforeInsertValidationMessage` is the DML error message,
 
 The before update names follow the same pattern:
 
-| Context       | Role        | Predicate                                  | Second method                    |
-| ------------- | ----------- | ------------------------------------------ | -------------------------------- |
-| Before Insert | `Populator` | `populateOnBeforeInsertWhen`               | `populateOnBeforeInsert`         |
-| Before Insert | `Validator` | `errorShouldBeAttachedOnBeforeInsertWhen`  | `beforeInsertValidationMessage`  |
-| Before Update | `Populator` | `populateOnBeforeUpdateWhen`               | `populateOnBeforeUpdate`         |
-| Before Update | `Validator` | `errorShouldBeAttachedOnBeforeUpdateWhen`  | `beforeUpdateValidationMessage`  |
+| Context       | Role        | Predicate                                 | Second method                   |
+| ------------- | ----------- | ----------------------------------------- | ------------------------------- |
+| Before Insert | `Populator` | `populateOnBeforeInsertWhen`              | `populateOnBeforeInsert`        |
+| Before Insert | `Validator` | `errorShouldBeAttachedOnBeforeInsertWhen` | `beforeInsertValidationMessage` |
+| Before Update | `Populator` | `populateOnBeforeUpdateWhen`              | `populateOnBeforeUpdate`        |
+| Before Update | `Validator` | `errorShouldBeAttachedOnBeforeUpdateWhen` | `beforeUpdateValidationMessage` |
 
 ### Exactly One Role Per Context
 
@@ -93,7 +101,9 @@ The rule is per context, not per class. A class may hold a role in before insert
 
 ```apex
 public with sharing class AccountNameFormatPopulator implements BeforeInsert.Populator, BeforeUpdate.Populator {
-  public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+  public Boolean populateOnBeforeInsertWhen(
+    TriggerHandler.InsertRecord record
+  ) {
     return record.isNotBlank(Account.Name);
   }
 
@@ -101,7 +111,9 @@ public with sharing class AccountNameFormatPopulator implements BeforeInsert.Pop
     record.put(Account.Name, ((Account) record.getNewSObject()).Name.trim());
   }
 
-  public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+  public Boolean populateOnBeforeUpdateWhen(
+    TriggerHandler.UpdateRecord record
+  ) {
     return record.isChanged(Account.Name);
   }
 
@@ -117,7 +129,9 @@ The other five contexts have no roles. Their `Handler` interface has two methods
 
 ```apex
 public with sharing class CaseOwnerNotificationHandler implements AfterUpdate.Handler {
-  public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+  public Boolean qualifiesForAfterUpdateWhen(
+    TriggerHandler.UpdateRecord record
+  ) {
     return record.isChanged(Case.OwnerId);
   }
 
@@ -141,14 +155,15 @@ The method names follow the context:
 
 Capabilities are opt-in interfaces from the same context class. Implement the ones a handler needs. They work the same for a `Populator`, a `Validator` and a plain `Handler`. See [Context Interfaces](/api/context-interfaces) for the full matrix.
 
-| Capability            | Purpose                                             | Available in                       | Guide                                         |
-| --------------------- | --------------------------------------------------- | ---------------------------------- | --------------------------------------------- |
-| `ParentQuery` | Declare parent fields to query for the new record   | every context except the two deletes | [Parent Enrichment](/guide/enrichment)      |
-| `PriorParentQuery` | Declare parent fields to query for the old record   | update and delete contexts         | [Parent Enrichment](/guide/enrichment)        |
-| `Bypassable`          | Skip the handler for the whole invocation           | all contexts                       | [Bypasses](/guide/bypasses)                   |
-| `RecursionGuard`      | Override the per-record pass limit                  | before update and after update     | [Recursion Control](/guide/recursion-control) |
-| `Finalizer`           | Run once after all qualified records were processed | all contexts                       | [Finalizers](/guide/finalizers)               |
-| `ContinueOnError`     | Log the exception and continue with the next handler | all contexts                      | [Error Handling](/guide/error-handling)       |
+| Capability         | Purpose                                                   | Available in                         | Guide                                         |
+| ------------------ | --------------------------------------------------------- | ------------------------------------ | --------------------------------------------- |
+| `ParentQuery`      | Declare parent fields to query for the new record         | every context except the two deletes | [Parent Enrichment](/guide/enrichment)        |
+| `PriorParentQuery` | Declare parent fields to query for the old record         | update and delete contexts           | [Parent Enrichment](/guide/enrichment)        |
+| `RelatedQuery`     | Query children, siblings, value matches and configuration | all contexts                         | [Related Records](/guide/related-records)     |
+| `Bypassable`       | Skip the handler for the whole invocation                 | all contexts                         | [Bypasses](/guide/bypasses)                   |
+| `RecursionGuard`   | Override the per-record pass limit                        | before update and after update       | [Recursion Control](/guide/recursion-control) |
+| `Finalizer`        | Run once after all qualified records were processed       | all contexts                         | [Finalizers](/guide/finalizers)               |
+| `ContinueOnError`  | Log the exception and continue with the next handler      | all contexts                         | [Error Handling](/guide/error-handling)       |
 
 ## One Record at a Time
 
@@ -158,7 +173,9 @@ The action method is called once per qualified record. The handler never sees `T
 public with sharing class CaseEscalationHandler implements AfterUpdate.Handler, AfterUpdate.Finalizer {
   private List<Task> tasksToInsert = new List<Task>();
 
-  public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+  public Boolean qualifiesForAfterUpdateWhen(
+    TriggerHandler.UpdateRecord record
+  ) {
     return record.isChangedTo(Case.Priority, 'High');
   }
 
@@ -175,6 +192,8 @@ public with sharing class CaseEscalationHandler implements AfterUpdate.Handler, 
 ```
 
 When the predicate qualifies no records, neither the action nor the finalizer runs.
+
+Data the handler needs from other records is not queried here either. It is declared as a [provider](/guide/related-records) and read from memory, one record at a time.
 
 ## Handler Instances
 
@@ -205,15 +224,15 @@ Before delete has no such guard. Cascading cleanup of other objects is a valid u
 
 Every method receives one record wrapper. Which interface you get is fixed by the context:
 
-| Context        | Record interface                | Accessors it exposes                                                          |
-| -------------- | ------------------------------- | ----------------------------------------------------------------------------- |
-| Before Insert  | `TriggerHandler.InsertRecord`   | `getId`, `getNewSObject`, `getNewRelated`, `put`                                |
-| After Insert   | `TriggerHandler.InsertRecord`   | the same, but `put` throws, see below                                           |
-| Before Update  | `TriggerHandler.UpdateRecord`   | `getId`, `getNewSObject`, `getOldSObject`, `getNewRelated`, `getOldRelated`, `put` |
-| After Update   | `TriggerHandler.UpdateRecord`   | the same, but `put` throws, see below                                           |
-| Before Delete  | `TriggerHandler.DeleteRecord`   | `getId`, `getOldSObject`, `getOldRelated`                                       |
-| After Delete   | `TriggerHandler.DeleteRecord`   | `getId`, `getOldSObject`, `getOldRelated`                                       |
-| After Undelete | `TriggerHandler.UndeleteRecord` | `getId`, `getNewSObject`, `getNewRelated`                                       |
+| Context        | Record interface                | Accessors it exposes                                                                           |
+| -------------- | ------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Before Insert  | `TriggerHandler.InsertRecord`   | `getId`, `getNewSObject`, `getNewParent`, `getRelated`, `put`                                  |
+| After Insert   | `TriggerHandler.InsertRecord`   | the same, but `put` throws, see below                                                          |
+| Before Update  | `TriggerHandler.UpdateRecord`   | `getId`, `getNewSObject`, `getOldSObject`, `getNewParent`, `getOldParent`, `getRelated`, `put` |
+| After Update   | `TriggerHandler.UpdateRecord`   | the same, but `put` throws, see below                                                          |
+| Before Delete  | `TriggerHandler.DeleteRecord`   | `getId`, `getOldSObject`, `getOldParent`, `getRelated`                                         |
+| After Delete   | `TriggerHandler.DeleteRecord`   | `getId`, `getOldSObject`, `getOldParent`, `getRelated`                                         |
+| After Undelete | `TriggerHandler.UndeleteRecord` | `getId`, `getNewSObject`, `getNewParent`, `getRelated`                                         |
 
 There is no new record in delete contexts and no old record in insert and undelete contexts, and the interfaces reflect that: `DeleteRecord` has no `getNewSObject`, `InsertRecord` and `UndeleteRecord` have no `getOldSObject`. A change predicate such as `isChanged` lives only on `UpdateRecord`, so reaching for the old side where there is none is a compile error rather than a runtime surprise.
 

@@ -10,7 +10,7 @@ public with sharing class OpportunityAccountTypeHandler implements AfterUpdate.H
     }
 
     public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
-        Account parentAccount = (Account) record.getNewRelated('Account');
+        Account parentAccount = (Account) record.getNewParent('Account');
 
         return record.isChangedTo(Opportunity.StageName, 'Closed Won') && parentAccount != null && parentAccount.Type != 'Customer - Direct';
     }

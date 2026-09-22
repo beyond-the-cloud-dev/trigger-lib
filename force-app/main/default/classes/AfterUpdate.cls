@@ -12,6 +12,15 @@ public class AfterUpdate {
         Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnAfterUpdate();
     }
 
+    public interface RelatedQuery {
+        Map<String, AfterUpdate.RecordsProvider> queryRelatedOnAfterUpdate();
+    }
+
+    public interface RecordsProvider {
+        List<SObject> query(TriggerHandler.UpdateRecords records);
+        String keyOf(SObject record);
+    }
+
     public interface Bypassable {
         Boolean bypassOnAfterUpdateWhen();
     }

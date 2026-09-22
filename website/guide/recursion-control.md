@@ -40,7 +40,10 @@ public with sharing class OpportunityTriggerOrchestrator implements TriggerOrche
   }
 
   public List<AfterUpdate.Handler> afterUpdateHandlers() {
-    return new List<AfterUpdate.Handler>{ new OpportunityRollupHandler(), new OpportunityStampHandler() };
+    return new List<AfterUpdate.Handler>{
+      new OpportunityRollupHandler(),
+      new OpportunityStampHandler()
+    };
   }
 }
 ```
@@ -57,7 +60,9 @@ public with sharing class OpportunityRollupHandler implements AfterUpdate.Handle
     return 1;
   }
 
-  public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+  public Boolean qualifiesForAfterUpdateWhen(
+    TriggerHandler.UpdateRecord record
+  ) {
     return record.isChanged(Opportunity.Amount);
   }
 

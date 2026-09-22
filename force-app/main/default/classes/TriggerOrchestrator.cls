@@ -529,6 +529,7 @@ public with sharing class TriggerOrchestrator {
 
         public abstract void execute(List<TriggerHandler.TriggerRecord> records);
         public abstract Boolean isBypassedByInterface();
+        public abstract Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records);
 
         public Boolean isBypassed() {
             return this.isBypassedBySettings() || this.isBypassedByInterface();
@@ -541,6 +542,16 @@ public with sharing class TriggerOrchestrator {
 
         protected void logError(Exception e) {
             TriggerOrchestrator.triggerLogger.log(new TriggerError().withException(e).withHandlerName(this.handlerName).withContext(this.orchestrator.context));
+        }
+
+        protected void loadRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+
+            for (TriggerHandler.TriggerRecord record : records) {
+                record.setProvidedRecords(relatedRecords);
+            }
+
+            relatedRecords.putAll(this.queryRelated(records));
         }
     }
 
@@ -569,6 +580,8 @@ public with sharing class TriggerOrchestrator {
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
             try {
+                this.loadRelated(records);
+
                 for (TriggerHandler.TriggerRecord record : records) {
                     this.populate(record);
                 }
@@ -611,6 +624,24 @@ public with sharing class TriggerOrchestrator {
             ((BeforeInsert.Finalizer) this.populator).finalizeBeforeInsert();
         }
 
+        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+
+            if (!(this.populator instanceof BeforeInsert.RelatedQuery)) {
+                return relatedRecords;
+            }
+
+            Map<String, BeforeInsert.RecordsProvider> providers = ((BeforeInsert.RelatedQuery) this.populator).queryRelatedOnBeforeInsert() ??
+                new Map<String, BeforeInsert.RecordsProvider>();
+            TriggerHandler.InsertRecords providedTo = new TriggerHandler.InsertTriggerRecords(records);
+
+            for (String providerName : providers.keySet()) {
+                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+            }
+
+            return relatedRecords;
+        }
+
         private void handleException(Exception e) {
             this.logError(e);
 
@@ -645,6 +676,8 @@ public with sharing class TriggerOrchestrator {
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
             try {
+                this.loadRelated(records);
+
                 for (TriggerHandler.TriggerRecord record : records) {
                     this.validate(record);
                 }
@@ -685,6 +718,24 @@ public with sharing class TriggerOrchestrator {
             ((BeforeInsert.Finalizer) this.validator).finalizeBeforeInsert();
         }
 
+        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+
+            if (!(this.validator instanceof BeforeInsert.RelatedQuery)) {
+                return relatedRecords;
+            }
+
+            Map<String, BeforeInsert.RecordsProvider> providers = ((BeforeInsert.RelatedQuery) this.validator).queryRelatedOnBeforeInsert() ??
+                new Map<String, BeforeInsert.RecordsProvider>();
+            TriggerHandler.InsertRecords providedTo = new TriggerHandler.InsertTriggerRecords(records);
+
+            for (String providerName : providers.keySet()) {
+                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+            }
+
+            return relatedRecords;
+        }
+
         private void handleException(Exception e) {
             this.logError(e);
 
@@ -716,6 +767,8 @@ public with sharing class TriggerOrchestrator {
 
         public override void execute(List<TriggerHandler.TriggerRecord> records) {
             try {
+                this.loadRelated(records);
+
                 for (TriggerHandler.TriggerRecord record : records) {
                     this.handle(record);
                 }
@@ -741,6 +794,24 @@ public with sharing class TriggerOrchestrator {
             }
 
             ((AfterInsert.Finalizer) this.handler).finalizeAfterInsert();
+        }
+
+        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+
+            if (!(this.handler instanceof AfterInsert.RelatedQuery)) {
+                return relatedRecords;
+            }
+
+            Map<String, AfterInsert.RecordsProvider> providers = ((AfterInsert.RelatedQuery) this.handler).queryRelatedOnAfterInsert() ??
+                new Map<String, AfterInsert.RecordsProvider>();
+            TriggerHandler.InsertRecords providedTo = new TriggerHandler.InsertTriggerRecords(records);
+
+            for (String providerName : providers.keySet()) {
+                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+            }
+
+            return relatedRecords;
         }
 
         private void handleException(Exception e) {
@@ -794,6 +865,8 @@ public with sharing class TriggerOrchestrator {
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
             try {
+                this.loadRelated(records);
+
                 for (TriggerHandler.TriggerRecord record : records) {
                     this.populate(record);
                 }
@@ -839,6 +912,24 @@ public with sharing class TriggerOrchestrator {
             ((BeforeUpdate.Finalizer) this.populator).finalizeBeforeUpdate();
         }
 
+        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+
+            if (!(this.populator instanceof BeforeUpdate.RelatedQuery)) {
+                return relatedRecords;
+            }
+
+            Map<String, BeforeUpdate.RecordsProvider> providers = ((BeforeUpdate.RelatedQuery) this.populator).queryRelatedOnBeforeUpdate() ??
+                new Map<String, BeforeUpdate.RecordsProvider>();
+            TriggerHandler.UpdateRecords providedTo = new TriggerHandler.UpdateTriggerRecords(records);
+
+            for (String providerName : providers.keySet()) {
+                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+            }
+
+            return relatedRecords;
+        }
+
         private void handleException(Exception e) {
             this.logError(e);
 
@@ -881,6 +972,8 @@ public with sharing class TriggerOrchestrator {
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
             try {
+                this.loadRelated(records);
+
                 for (TriggerHandler.TriggerRecord record : records) {
                     this.validate(record);
                 }
@@ -919,6 +1012,24 @@ public with sharing class TriggerOrchestrator {
             }
 
             ((BeforeUpdate.Finalizer) this.validator).finalizeBeforeUpdate();
+        }
+
+        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+
+            if (!(this.validator instanceof BeforeUpdate.RelatedQuery)) {
+                return relatedRecords;
+            }
+
+            Map<String, BeforeUpdate.RecordsProvider> providers = ((BeforeUpdate.RelatedQuery) this.validator).queryRelatedOnBeforeUpdate() ??
+                new Map<String, BeforeUpdate.RecordsProvider>();
+            TriggerHandler.UpdateRecords providedTo = new TriggerHandler.UpdateTriggerRecords(records);
+
+            for (String providerName : providers.keySet()) {
+                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+            }
+
+            return relatedRecords;
         }
 
         private void handleException(Exception e) {
@@ -969,6 +1080,8 @@ public with sharing class TriggerOrchestrator {
 
         public override void execute(List<TriggerHandler.TriggerRecord> records) {
             try {
+                this.loadRelated(records);
+
                 for (TriggerHandler.TriggerRecord record : records) {
                     this.handle(record);
                 }
@@ -997,6 +1110,24 @@ public with sharing class TriggerOrchestrator {
             }
 
             ((AfterUpdate.Finalizer) this.handler).finalizeAfterUpdate();
+        }
+
+        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+
+            if (!(this.handler instanceof AfterUpdate.RelatedQuery)) {
+                return relatedRecords;
+            }
+
+            Map<String, AfterUpdate.RecordsProvider> providers = ((AfterUpdate.RelatedQuery) this.handler).queryRelatedOnAfterUpdate() ??
+                new Map<String, AfterUpdate.RecordsProvider>();
+            TriggerHandler.UpdateRecords providedTo = new TriggerHandler.UpdateTriggerRecords(records);
+
+            for (String providerName : providers.keySet()) {
+                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+            }
+
+            return relatedRecords;
         }
 
         private void handleException(Exception e) {
@@ -1030,6 +1161,8 @@ public with sharing class TriggerOrchestrator {
 
         public override void execute(List<TriggerHandler.TriggerRecord> records) {
             try {
+                this.loadRelated(records);
+
                 for (TriggerHandler.TriggerRecord record : records) {
                     this.handle(record);
                 }
@@ -1055,6 +1188,24 @@ public with sharing class TriggerOrchestrator {
             }
 
             ((BeforeDelete.Finalizer) this.handler).finalizeBeforeDelete();
+        }
+
+        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+
+            if (!(this.handler instanceof BeforeDelete.RelatedQuery)) {
+                return relatedRecords;
+            }
+
+            Map<String, BeforeDelete.RecordsProvider> providers = ((BeforeDelete.RelatedQuery) this.handler).queryRelatedOnBeforeDelete() ??
+                new Map<String, BeforeDelete.RecordsProvider>();
+            TriggerHandler.DeleteRecords providedTo = new TriggerHandler.DeleteTriggerRecords(records);
+
+            for (String providerName : providers.keySet()) {
+                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+            }
+
+            return relatedRecords;
         }
 
         private void handleException(Exception e) {
@@ -1088,6 +1239,8 @@ public with sharing class TriggerOrchestrator {
 
         public override void execute(List<TriggerHandler.TriggerRecord> records) {
             try {
+                this.loadRelated(records);
+
                 for (TriggerHandler.TriggerRecord record : records) {
                     this.handle(record);
                 }
@@ -1113,6 +1266,24 @@ public with sharing class TriggerOrchestrator {
             }
 
             ((AfterDelete.Finalizer) this.handler).finalizeAfterDelete();
+        }
+
+        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+
+            if (!(this.handler instanceof AfterDelete.RelatedQuery)) {
+                return relatedRecords;
+            }
+
+            Map<String, AfterDelete.RecordsProvider> providers = ((AfterDelete.RelatedQuery) this.handler).queryRelatedOnAfterDelete() ??
+                new Map<String, AfterDelete.RecordsProvider>();
+            TriggerHandler.DeleteRecords providedTo = new TriggerHandler.DeleteTriggerRecords(records);
+
+            for (String providerName : providers.keySet()) {
+                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+            }
+
+            return relatedRecords;
         }
 
         private void handleException(Exception e) {
@@ -1146,6 +1317,8 @@ public with sharing class TriggerOrchestrator {
 
         public override void execute(List<TriggerHandler.TriggerRecord> records) {
             try {
+                this.loadRelated(records);
+
                 for (TriggerHandler.TriggerRecord record : records) {
                     this.handle(record);
                 }
@@ -1171,6 +1344,24 @@ public with sharing class TriggerOrchestrator {
             }
 
             ((AfterUndelete.Finalizer) this.handler).finalizeAfterUndelete();
+        }
+
+        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+
+            if (!(this.handler instanceof AfterUndelete.RelatedQuery)) {
+                return relatedRecords;
+            }
+
+            Map<String, AfterUndelete.RecordsProvider> providers = ((AfterUndelete.RelatedQuery) this.handler).queryRelatedOnAfterUndelete() ??
+                new Map<String, AfterUndelete.RecordsProvider>();
+            TriggerHandler.UndeleteRecords providedTo = new TriggerHandler.UndeleteTriggerRecords(records);
+
+            for (String providerName : providers.keySet()) {
+                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+            }
+
+            return relatedRecords;
         }
 
         private void handleException(Exception e) {

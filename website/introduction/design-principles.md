@@ -32,11 +32,13 @@ The framework iterates over trigger records. A handler gets one context record a
 
 Each interface exposes only what its context can answer. A delete handler cannot reach a new record, an insert handler cannot ask what changed. The compiler enforces most of the context rules that a single generic record type would leave to a runtime null.
 
-## No SOQL in handlers
+## No SOQL per record
 
 Parent data is declared, not queried. A handler lists the lookup fields and parent fields it needs and the framework pulls them in a single query per lookup, shared by all handlers of the same context. This keeps the query count predictable regardless of how many handlers an object has.
 
-Enrichment runs once per invocation, before any handler does, so qualification predicates can read `getNewRelated` and `getOldRelated` as freely as the action methods can. A relationship a handler never declared is not queried, and `getNewRelated` returns `null` for it.
+Everything else is a provider: one class with one query, run once per handler before the first record is processed and read from memory after that. Enrichment and providers both finish before the first predicate, so qualification can read `getNewParent` and `getRelated` as freely as the action methods can.
+
+What a handler never does is query inside a predicate or an action. A relationship a handler never declared is not queried, and `getNewParent` returns `null` for it.
 
 ## Before context populates, after context acts
 

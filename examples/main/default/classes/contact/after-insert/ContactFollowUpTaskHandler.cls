@@ -11,7 +11,7 @@ public with sharing class ContactFollowUpTaskHandler implements AfterInsert.Hand
 
     public void onAfterInsert(TriggerHandler.InsertRecord record) {
         Contact contactRecord = (Contact) record.getNewSObject();
-        Account accountRecord = (Account) record.getNewRelated('Account');
+        Account accountRecord = (Account) record.getNewParent('Account');
 
         this.followUps.add(
             new Task(

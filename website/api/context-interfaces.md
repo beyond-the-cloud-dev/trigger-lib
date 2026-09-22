@@ -12,17 +12,18 @@ Before insert and before update are the two contexts with **roles**: a handler t
 
 ## Availability Matrix
 
-| Interface             | Before Insert | After Insert  | Before Update | After Update  | Before Delete | After Delete  | After Undelete |
-| --------------------- | :-----------: | :-----------: | :-----------: | :-----------: | :-----------: | :-----------: | :------------: |
-| `Populator`           |      ✅       |               |      ✅       |               |               |               |                |
-| `Validator`           |      ✅       |               |      ✅       |               |               |               |                |
-| `Handler`             |    marker     |      ✅       |    marker     |      ✅       |      ✅       |      ✅       |       ✅       |
-| `ParentQuery` |      ✅       |      ✅       |      ✅       |      ✅       |               |               |       ✅       |
-| `PriorParentQuery` |               |               |      ✅       |      ✅       |      ✅       |      ✅       |                |
-| `Bypassable`          |      ✅       |      ✅       |      ✅       |      ✅       |      ✅       |      ✅       |       ✅       |
-| `RecursionGuard`      |               |               |      ✅       |      ✅       |               |               |                |
-| `Finalizer`           |      ✅       |      ✅       |      ✅       |      ✅       |      ✅       |      ✅       |       ✅       |
-| `ContinueOnError`     |      ✅       |      ✅       |      ✅       |      ✅       |      ✅       |      ✅       |       ✅       |
+| Interface          | Before Insert | After Insert | Before Update | After Update | Before Delete | After Delete | After Undelete |
+| ------------------ | :-----------: | :----------: | :-----------: | :----------: | :-----------: | :----------: | :------------: |
+| `Populator`        |      ✅       |              |      ✅       |              |               |              |                |
+| `Validator`        |      ✅       |              |      ✅       |              |               |              |                |
+| `Handler`          |    marker     |      ✅      |    marker     |      ✅      |      ✅       |      ✅      |       ✅       |
+| `ParentQuery`      |      ✅       |      ✅      |      ✅       |      ✅      |               |              |       ✅       |
+| `PriorParentQuery` |               |              |      ✅       |      ✅      |      ✅       |      ✅      |                |
+| `RelatedQuery`     |      ✅       |      ✅      |      ✅       |      ✅      |      ✅       |      ✅      |       ✅       |
+| `Bypassable`       |      ✅       |      ✅      |      ✅       |      ✅      |      ✅       |      ✅      |       ✅       |
+| `RecursionGuard`   |               |              |      ✅       |      ✅      |               |              |                |
+| `Finalizer`        |      ✅       |      ✅      |      ✅       |      ✅      |      ✅       |      ✅      |       ✅       |
+| `ContinueOnError`  |      ✅       |      ✅      |      ✅       |      ✅      |      ✅       |      ✅      |       ✅       |
 
 "marker" means `Handler` exists in that context only as an empty interface that `Populator` and `Validator` extend, so the orchestrator list has a type. You never implement it directly.
 
@@ -39,14 +40,16 @@ public interface Populator extends Handler {
 }
 ```
 
-| Context       | Methods                                                     | Record                        |
-| ------------- | ----------------------------------------------------------- | ----------------------------- |
-| Before Insert | `populateOnBeforeInsertWhen`, `populateOnBeforeInsert`      | `TriggerHandler.InsertRecord` |
-| Before Update | `populateOnBeforeUpdateWhen`, `populateOnBeforeUpdate`      | `TriggerHandler.UpdateRecord` |
+| Context       | Methods                                                | Record                        |
+| ------------- | ------------------------------------------------------ | ----------------------------- |
+| Before Insert | `populateOnBeforeInsertWhen`, `populateOnBeforeInsert` | `TriggerHandler.InsertRecord` |
+| Before Update | `populateOnBeforeUpdateWhen`, `populateOnBeforeUpdate` | `TriggerHandler.UpdateRecord` |
 
 ```apex
 public with sharing class AccountDefaultsPopulator implements BeforeInsert.Populator {
-  public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+  public Boolean populateOnBeforeInsertWhen(
+    TriggerHandler.InsertRecord record
+  ) {
     return record.isBlank(Account.Rating);
   }
 
@@ -62,23 +65,29 @@ Available in before insert and before update. Returns the message for records th
 
 ```apex
 public interface Validator extends Handler {
-  Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record);
+  Boolean errorShouldBeAttachedOnBeforeInsertWhen(
+    TriggerHandler.InsertRecord record
+  );
   String beforeInsertValidationMessage(TriggerHandler.InsertRecord record);
 }
 ```
 
-| Context       | Methods                                                                        | Record                        |
-| ------------- | ------------------------------------------------------------------------------ | ----------------------------- |
-| Before Insert | `errorShouldBeAttachedOnBeforeInsertWhen`, `beforeInsertValidationMessage`      | `TriggerHandler.InsertRecord` |
-| Before Update | `errorShouldBeAttachedOnBeforeUpdateWhen`, `beforeUpdateValidationMessage`      | `TriggerHandler.UpdateRecord` |
+| Context       | Methods                                                                    | Record                        |
+| ------------- | -------------------------------------------------------------------------- | ----------------------------- |
+| Before Insert | `errorShouldBeAttachedOnBeforeInsertWhen`, `beforeInsertValidationMessage` | `TriggerHandler.InsertRecord` |
+| Before Update | `errorShouldBeAttachedOnBeforeUpdateWhen`, `beforeUpdateValidationMessage` | `TriggerHandler.UpdateRecord` |
 
 ```apex
 public with sharing class AccountIndustryValidator implements BeforeInsert.Validator {
-  public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+  public Boolean errorShouldBeAttachedOnBeforeInsertWhen(
+    TriggerHandler.InsertRecord record
+  ) {
     return record.isBlank(Account.Industry);
   }
 
-  public String beforeInsertValidationMessage(TriggerHandler.InsertRecord record) {
+  public String beforeInsertValidationMessage(
+    TriggerHandler.InsertRecord record
+  ) {
     return 'Industry is required on new accounts.';
   }
 }
@@ -112,7 +121,8 @@ public interface Handler {
 In before insert and before update the same name is an empty interface:
 
 ```apex
-public interface Handler {}
+public interface Handler {
+}
 ```
 
 `BeforeInsert.Handler` and `BeforeUpdate.Handler` are the element types of `beforeInsertHandlers()` and `beforeUpdateHandlers()` and nothing more.
@@ -121,7 +131,7 @@ See [Handlers](/guide/handlers) and [Record Qualification](/guide/qualification)
 
 ## ParentQuery
 
-Declares parent fields to query for the new version of each record. Read them with `record.getNewRelated(relationshipName)`.
+Declares parent fields to query for the new version of each record. Read them with `record.getNewParent(relationshipName)`.
 
 ```apex
 public interface ParentQuery {
@@ -129,8 +139,8 @@ public interface ParentQuery {
 }
 ```
 
-| Context        | Method                             |
-| -------------- | ---------------------------------- |
+| Context        | Method                        |
+| -------------- | ----------------------------- |
 | Before Insert  | `queryParentsOnBeforeInsert`  |
 | After Insert   | `queryParentsOnAfterInsert`   |
 | Before Update  | `queryParentsOnBeforeUpdate`  |
@@ -141,7 +151,7 @@ See [Parent Enrichment](/guide/enrichment) and [TriggerHandler.ParentFields](/ap
 
 ## PriorParentQuery
 
-Declares parent fields to query for the old version of each record. Read them with `record.getOldRelated(relationshipName)`.
+Declares parent fields to query for the old version of each record. Read them with `record.getOldParent(relationshipName)`.
 
 ```apex
 public interface PriorParentQuery {
@@ -153,10 +163,43 @@ public interface PriorParentQuery {
 | ------------- | --------------------------------- |
 | Before Update | `queryPriorParentsOnBeforeUpdate` |
 | After Update  | `queryPriorParentsOnAfterUpdate`  |
-| Before Delete | `queryParentsOnBeforeDelete` |
-| After Delete  | `queryParentsOnAfterDelete`  |
+| Before Delete | `queryParentsOnBeforeDelete`      |
+| After Delete  | `queryParentsOnAfterDelete`       |
 
 The two sides are declared independently. Declaring a lookup on the new side does not attach a parent to the old record.
+
+## RelatedQuery
+
+Names the providers a handler reads. The framework runs each one once, before the first record, and the handler reads the result with `record.getRelated(providerName)`.
+
+```apex
+public interface RelatedQuery {
+  Map<String, BeforeUpdate.RecordsProvider> queryRelatedOnBeforeUpdate();
+}
+```
+
+| Context        | Method                        |
+| -------------- | ----------------------------- |
+| Before Insert  | `queryRelatedOnBeforeInsert`  |
+| After Insert   | `queryRelatedOnAfterInsert`   |
+| Before Update  | `queryRelatedOnBeforeUpdate`  |
+| After Update   | `queryRelatedOnAfterUpdate`   |
+| Before Delete  | `queryRelatedOnBeforeDelete`  |
+| After Delete   | `queryRelatedOnAfterDelete`   |
+| After Undelete | `queryRelatedOnAfterUndelete` |
+
+## RecordsProvider
+
+One query and one key. Declared per context, so `query` receives that context's collection.
+
+```apex
+public interface RecordsProvider {
+  List<SObject> query(TriggerHandler.UpdateRecords records);
+  String keyOf(SObject record);
+}
+```
+
+See [Related Records](/guide/related-records) and [the API](/api/related-records).
 
 ## Bypassable
 
@@ -226,7 +269,8 @@ In before insert and before update the DML guard covers the finalizer as well, s
 Marker interface. An exception raised by the handler's own code is passed to the logger and the orchestrator continues with the next handler, so the DML succeeds.
 
 ```apex
-public interface ContinueOnError {}
+public interface ContinueOnError {
+}
 ```
 
 It covers a handler's own exceptions only. A `TriggerOrchestratorException` and a `TriggerHandler.TriggerHandlerException` are logged and then rethrown even for a handler that implements it, and the DML is aborted. See [Error Handling](/guide/error-handling).

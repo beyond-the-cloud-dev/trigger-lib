@@ -22,8 +22,8 @@ public with sharing class AccountOwnerTransferHandler implements AfterUpdate.Han
 
     public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
         Account accountRecord = (Account) record.getNewSObject();
-        User previousOwner = (User) record.getOldRelated('Owner');
-        User newOwner = (User) record.getNewRelated('Owner');
+        User previousOwner = (User) record.getOldParent('Owner');
+        User newOwner = (User) record.getNewParent('Owner');
 
         this.newOwnerIdByAccountId.put(record.getId(), accountRecord.OwnerId);
         this.handoverNoteByAccountId.put(record.getId(), Date.today().format() + ' - accountRecord handed over from ' + previousOwner?.Name + ' to ' + newOwner?.Name);

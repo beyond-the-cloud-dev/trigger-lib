@@ -57,7 +57,7 @@ The predicate is evaluated at the handler's own turn, immediately before that ha
 
 A handler declares the parent lookups and fields it needs. The framework runs one query per lookup field, merges the field lists of all active handlers and attaches the parent record to each trigger record. Handlers never write SOQL.
 
-Enrichment happens once, up front, for every handler in the context, before the first predicate is evaluated. `getNewRelated` and `getOldRelated` are therefore safe to call from a qualification predicate.
+Enrichment happens once, up front, for every handler in the context, before the first predicate is evaluated. `getNewParent` and `getOldParent` are therefore safe to call from a qualification predicate.
 
 ### Guard rails are built in
 
@@ -155,7 +155,7 @@ public with sharing class ContactAccountSyncHandler implements AfterUpdate.Handl
   }
 
   public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
-    Account account = (Account) record.getNewRelated('Account');
+    Account account = (Account) record.getNewParent('Account');
 
     this.accountsToUpdate.add(
       new Account(

@@ -21,6 +21,15 @@ public class BeforeUpdate {
         Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnBeforeUpdate();
     }
 
+    public interface RelatedQuery {
+        Map<String, BeforeUpdate.RecordsProvider> queryRelatedOnBeforeUpdate();
+    }
+
+    public interface RecordsProvider {
+        List<SObject> query(TriggerHandler.UpdateRecords records);
+        String keyOf(SObject record);
+    }
+
     public interface Bypassable {
         Boolean bypassOnBeforeUpdateWhen();
     }

@@ -12,8 +12,8 @@ public with sharing class OpportunityAccountMoveValidator implements BeforeUpdat
     }
 
     public String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record) {
-        Account previousAccount = (Account) record.getOldRelated('Account');
-        Account currentAccount = (Account) record.getNewRelated('Account');
+        Account previousAccount = (Account) record.getOldParent('Account');
+        Account currentAccount = (Account) record.getNewParent('Account');
 
         return 'This Opportunity is Closed Won and stays with ' +
             (previousAccount?.Name ?? 'its original Account') +

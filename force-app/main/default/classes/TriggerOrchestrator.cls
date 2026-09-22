@@ -88,6 +88,7 @@ public with sharing class TriggerOrchestrator {
     private TriggerContext context;
     private Object orchestrator;
     private LookupEnrichment lookupEnrichment;
+    private Map<String, TriggerHandler.ProvidedRecords> relatedRecordsPool = new Map<String, TriggerHandler.ProvidedRecords>();
 
     @TestVisible
     private TriggerOrchestrator(Object orchestrator) {
@@ -342,7 +343,7 @@ public with sharing class TriggerOrchestrator {
         public void execute(TriggerOrchestrator orchestrator) {
             List<TriggerHandlerAdapter> activeAdapters = this.getActiveAdapters(orchestrator);
 
-            orchestrator.lookupEnrichment.queryParentRelationships(activeAdapters);
+            orchestrator.lookupEnrichment.declareParentRelationships(activeAdapters);
 
             for (TriggerHandlerAdapter adapter : activeAdapters) {
                 adapter.execute(orchestrator.context.triggerRecords);
@@ -529,7 +530,7 @@ public with sharing class TriggerOrchestrator {
 
         public abstract void execute(List<TriggerHandler.TriggerRecord> records);
         public abstract Boolean isBypassedByInterface();
-        public abstract Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records);
+        public abstract Map<String, TriggerHandler.ProvidedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records);
 
         public Boolean isBypassed() {
             return this.isBypassedBySettings() || this.isBypassedByInterface();
@@ -544,8 +545,18 @@ public with sharing class TriggerOrchestrator {
             TriggerOrchestrator.triggerLogger.log(new TriggerError().withException(e).withHandlerName(this.handlerName).withContext(this.orchestrator.context));
         }
 
+        protected TriggerHandler.ProvidedRecords pooled(Object provider, TriggerHandler.ProvidedRecords providedRecords) {
+            String providerKey = String.valueOf(provider);
+
+            if (!this.orchestrator.relatedRecordsPool.containsKey(providerKey)) {
+                this.orchestrator.relatedRecordsPool.put(providerKey, providedRecords);
+            }
+
+            return this.orchestrator.relatedRecordsPool.get(providerKey);
+        }
+
         protected void loadRelated(List<TriggerHandler.TriggerRecord> records) {
-            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+            Map<String, TriggerHandler.ProvidedRecords> relatedRecords = new Map<String, TriggerHandler.ProvidedRecords>();
 
             for (TriggerHandler.TriggerRecord record : records) {
                 record.setProvidedRecords(relatedRecords);
@@ -624,8 +635,8 @@ public with sharing class TriggerOrchestrator {
             ((BeforeInsert.Finalizer) this.populator).finalizeBeforeInsert();
         }
 
-        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
-            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+        public override Map<String, TriggerHandler.ProvidedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.ProvidedRecords> relatedRecords = new Map<String, TriggerHandler.ProvidedRecords>();
 
             if (!(this.populator instanceof BeforeInsert.RelatedQuery)) {
                 return relatedRecords;
@@ -636,7 +647,7 @@ public with sharing class TriggerOrchestrator {
             TriggerHandler.InsertRecords providedTo = new TriggerHandler.InsertTriggerRecords(records);
 
             for (String providerName : providers.keySet()) {
-                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+                relatedRecords.put(providerName, this.pooled(providers.get(providerName), new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo)));
             }
 
             return relatedRecords;
@@ -718,8 +729,8 @@ public with sharing class TriggerOrchestrator {
             ((BeforeInsert.Finalizer) this.validator).finalizeBeforeInsert();
         }
 
-        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
-            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+        public override Map<String, TriggerHandler.ProvidedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.ProvidedRecords> relatedRecords = new Map<String, TriggerHandler.ProvidedRecords>();
 
             if (!(this.validator instanceof BeforeInsert.RelatedQuery)) {
                 return relatedRecords;
@@ -730,7 +741,7 @@ public with sharing class TriggerOrchestrator {
             TriggerHandler.InsertRecords providedTo = new TriggerHandler.InsertTriggerRecords(records);
 
             for (String providerName : providers.keySet()) {
-                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+                relatedRecords.put(providerName, this.pooled(providers.get(providerName), new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo)));
             }
 
             return relatedRecords;
@@ -796,8 +807,8 @@ public with sharing class TriggerOrchestrator {
             ((AfterInsert.Finalizer) this.handler).finalizeAfterInsert();
         }
 
-        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
-            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+        public override Map<String, TriggerHandler.ProvidedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.ProvidedRecords> relatedRecords = new Map<String, TriggerHandler.ProvidedRecords>();
 
             if (!(this.handler instanceof AfterInsert.RelatedQuery)) {
                 return relatedRecords;
@@ -808,7 +819,7 @@ public with sharing class TriggerOrchestrator {
             TriggerHandler.InsertRecords providedTo = new TriggerHandler.InsertTriggerRecords(records);
 
             for (String providerName : providers.keySet()) {
-                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+                relatedRecords.put(providerName, this.pooled(providers.get(providerName), new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo)));
             }
 
             return relatedRecords;
@@ -912,8 +923,8 @@ public with sharing class TriggerOrchestrator {
             ((BeforeUpdate.Finalizer) this.populator).finalizeBeforeUpdate();
         }
 
-        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
-            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+        public override Map<String, TriggerHandler.ProvidedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.ProvidedRecords> relatedRecords = new Map<String, TriggerHandler.ProvidedRecords>();
 
             if (!(this.populator instanceof BeforeUpdate.RelatedQuery)) {
                 return relatedRecords;
@@ -924,7 +935,7 @@ public with sharing class TriggerOrchestrator {
             TriggerHandler.UpdateRecords providedTo = new TriggerHandler.UpdateTriggerRecords(records);
 
             for (String providerName : providers.keySet()) {
-                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+                relatedRecords.put(providerName, this.pooled(providers.get(providerName), new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo)));
             }
 
             return relatedRecords;
@@ -1014,8 +1025,8 @@ public with sharing class TriggerOrchestrator {
             ((BeforeUpdate.Finalizer) this.validator).finalizeBeforeUpdate();
         }
 
-        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
-            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+        public override Map<String, TriggerHandler.ProvidedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.ProvidedRecords> relatedRecords = new Map<String, TriggerHandler.ProvidedRecords>();
 
             if (!(this.validator instanceof BeforeUpdate.RelatedQuery)) {
                 return relatedRecords;
@@ -1026,7 +1037,7 @@ public with sharing class TriggerOrchestrator {
             TriggerHandler.UpdateRecords providedTo = new TriggerHandler.UpdateTriggerRecords(records);
 
             for (String providerName : providers.keySet()) {
-                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+                relatedRecords.put(providerName, this.pooled(providers.get(providerName), new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo)));
             }
 
             return relatedRecords;
@@ -1112,8 +1123,8 @@ public with sharing class TriggerOrchestrator {
             ((AfterUpdate.Finalizer) this.handler).finalizeAfterUpdate();
         }
 
-        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
-            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+        public override Map<String, TriggerHandler.ProvidedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.ProvidedRecords> relatedRecords = new Map<String, TriggerHandler.ProvidedRecords>();
 
             if (!(this.handler instanceof AfterUpdate.RelatedQuery)) {
                 return relatedRecords;
@@ -1124,7 +1135,7 @@ public with sharing class TriggerOrchestrator {
             TriggerHandler.UpdateRecords providedTo = new TriggerHandler.UpdateTriggerRecords(records);
 
             for (String providerName : providers.keySet()) {
-                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+                relatedRecords.put(providerName, this.pooled(providers.get(providerName), new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo)));
             }
 
             return relatedRecords;
@@ -1190,8 +1201,8 @@ public with sharing class TriggerOrchestrator {
             ((BeforeDelete.Finalizer) this.handler).finalizeBeforeDelete();
         }
 
-        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
-            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+        public override Map<String, TriggerHandler.ProvidedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.ProvidedRecords> relatedRecords = new Map<String, TriggerHandler.ProvidedRecords>();
 
             if (!(this.handler instanceof BeforeDelete.RelatedQuery)) {
                 return relatedRecords;
@@ -1202,7 +1213,7 @@ public with sharing class TriggerOrchestrator {
             TriggerHandler.DeleteRecords providedTo = new TriggerHandler.DeleteTriggerRecords(records);
 
             for (String providerName : providers.keySet()) {
-                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+                relatedRecords.put(providerName, this.pooled(providers.get(providerName), new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo)));
             }
 
             return relatedRecords;
@@ -1268,8 +1279,8 @@ public with sharing class TriggerOrchestrator {
             ((AfterDelete.Finalizer) this.handler).finalizeAfterDelete();
         }
 
-        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
-            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+        public override Map<String, TriggerHandler.ProvidedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.ProvidedRecords> relatedRecords = new Map<String, TriggerHandler.ProvidedRecords>();
 
             if (!(this.handler instanceof AfterDelete.RelatedQuery)) {
                 return relatedRecords;
@@ -1280,7 +1291,7 @@ public with sharing class TriggerOrchestrator {
             TriggerHandler.DeleteRecords providedTo = new TriggerHandler.DeleteTriggerRecords(records);
 
             for (String providerName : providers.keySet()) {
-                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+                relatedRecords.put(providerName, this.pooled(providers.get(providerName), new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo)));
             }
 
             return relatedRecords;
@@ -1346,8 +1357,8 @@ public with sharing class TriggerOrchestrator {
             ((AfterUndelete.Finalizer) this.handler).finalizeAfterUndelete();
         }
 
-        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
-            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+        public override Map<String, TriggerHandler.ProvidedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.ProvidedRecords> relatedRecords = new Map<String, TriggerHandler.ProvidedRecords>();
 
             if (!(this.handler instanceof AfterUndelete.RelatedQuery)) {
                 return relatedRecords;
@@ -1358,7 +1369,7 @@ public with sharing class TriggerOrchestrator {
             TriggerHandler.UndeleteRecords providedTo = new TriggerHandler.UndeleteTriggerRecords(records);
 
             for (String providerName : providers.keySet()) {
-                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+                relatedRecords.put(providerName, this.pooled(providers.get(providerName), new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo)));
             }
 
             return relatedRecords;
@@ -1373,7 +1384,7 @@ public with sharing class TriggerOrchestrator {
         }
     }
 
-    private class LookupEnrichment {
+    private class LookupEnrichment implements TriggerHandler.ParentResolver {
         private Set<SObjectField> newParentLookupsToEnrich = new Set<SObjectField>();
         private Set<SObjectField> oldParentLookupsToEnrich = new Set<SObjectField>();
 
@@ -1381,15 +1392,37 @@ public with sharing class TriggerOrchestrator {
         private Map<SObjectField, Map<Id, SObject>> cachedParentByParentLookup = new Map<SObjectField, Map<Id, SObject>>();
 
         private TriggerContext context;
+        private Boolean savedRecordsRead = false;
+        private Set<SObjectField> pendingParentLookups = new Set<SObjectField>();
+        private Map<String, SObjectField> parentLookupByRelationshipName = new Map<String, SObjectField>();
 
         public LookupEnrichment(TriggerContext context) {
             this.context = context;
         }
 
-        public void queryParentRelationships(List<TriggerHandlerAdapter> handlers) {
+        public void declareParentRelationships(List<TriggerHandlerAdapter> handlers) {
             this.extractFieldsToEnrichList(handlers);
-            this.cacheNewParentsFromSavedRecords();
-            this.enrichRecordsLookups();
+
+            for (TriggerHandler.TriggerRecord record : this.context.triggerRecords) {
+                record.setParentResolver(this);
+            }
+        }
+
+        public void resolveParent(String relationshipName) {
+            SObjectField parentField = this.parentLookupByRelationshipName.get(relationshipName);
+
+            if (parentField == null || !this.pendingParentLookups.contains(parentField)) {
+                return;
+            }
+
+            this.pendingParentLookups.remove(parentField);
+
+            if (!this.savedRecordsRead) {
+                this.savedRecordsRead = true;
+                this.cacheNewParentsFromSavedRecords();
+            }
+
+            this.enrichRecordsLookup(parentField);
         }
 
         private void extractFieldsToEnrichList(List<TriggerHandlerAdapter> handlers) {
@@ -1442,18 +1475,16 @@ public with sharing class TriggerOrchestrator {
                 this.context.triggerOperation == System.TriggerOperation.AFTER_UNDELETE;
         }
 
-        private void enrichRecordsLookups() {
-            for (SObjectField parentField : this.fieldsToQueryByParentLookup.keySet()) {
-                Set<Id> parentIdsToQuery = new Set<Id>();
+        private void enrichRecordsLookup(SObjectField parentField) {
+            Set<Id> parentIdsToQuery = new Set<Id>();
 
-                parentIdsToQuery.addAll(this.notQueriedNewParentIds(parentField, this.context.triggerRecords));
-                parentIdsToQuery.addAll(this.notQueriedOldParentIds(parentField, this.context.triggerRecords));
+            parentIdsToQuery.addAll(this.notQueriedNewParentIds(parentField, this.context.triggerRecords));
+            parentIdsToQuery.addAll(this.notQueriedOldParentIds(parentField, this.context.triggerRecords));
 
-                this.queryParentsRelationships(parentField, parentIdsToQuery);
+            this.queryParentsRelationships(parentField, parentIdsToQuery);
 
-                this.attachNewToTriggerRecords(parentField, this.context.triggerRecords);
-                this.attachOldToTriggerRecords(parentField, this.context.triggerRecords);
-            }
+            this.attachNewToTriggerRecords(parentField, this.context.triggerRecords);
+            this.attachOldToTriggerRecords(parentField, this.context.triggerRecords);
         }
 
         public void requeryWhenParentLookupChanged(List<TriggerHandler.TriggerRecord> records) {
@@ -1461,11 +1492,7 @@ public with sharing class TriggerOrchestrator {
                 return;
             }
 
-            for (SObjectField parentField : this.fieldsToQueryByParentLookup.keySet()) {
-                this.queryParentsRelationships(parentField, this.notQueriedNewParentIds(parentField, records));
-
-                this.attachNewToTriggerRecords(parentField, records);
-            }
+            this.pendingParentLookups.addAll(this.fieldsToQueryByParentLookup.keySet());
         }
 
         private Set<Id> notQueriedNewParentIds(SObjectField parentField, List<TriggerHandler.TriggerRecord> records) {
@@ -1572,6 +1599,8 @@ public with sharing class TriggerOrchestrator {
                     this.cachedParentByParentLookup.put(parentField, new Map<Id, SObject>());
                 }
 
+                this.parentLookupByRelationshipName.put(parentField.getDescribe().getRelationshipName(), parentField);
+                this.pendingParentLookups.add(parentField);
                 this.fieldsToQueryByParentLookup.get(parentField).addAll(fieldsToEnrich.get(parentField).getFields());
             }
         }

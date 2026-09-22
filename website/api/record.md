@@ -134,7 +134,7 @@ TriggerHandler.RelatedRecords getRelated(String providerName)
 
 Available on all four interfaces.
 
-The records a provider returned, ready to look up. The argument is the name the handler gave the provider in its `RelatedQuery` map, not a relationship name.
+The records a provider returned, ready to look up. The argument is the name the handler gave the provider in its `RelatedQuery` map, not a relationship name. The first call runs the provider's query, the same way the first `getNewParent` for a lookup resolves that lookup.
 
 ```apex
 List<SObject> openOpportunities = record.getRelated('openOpportunities').getAllWhereKeyEquals(record.getId());

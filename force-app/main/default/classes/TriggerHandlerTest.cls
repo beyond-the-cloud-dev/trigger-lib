@@ -4658,6 +4658,7 @@ private class TriggerHandlerTest {
             new List<Opportunity>{ new Opportunity(Name = 'First', AccountId = accountId), new Opportunity(Name = 'Second', AccountId = accountId) }
         );
         TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
+        related.load();
 
         // Test
         SObject result = related.getFirstWhereKeyEquals(accountId);
@@ -4677,6 +4678,7 @@ private class TriggerHandlerTest {
             }
         );
         TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
+        related.load();
 
         // Test
         List<SObject> result = related.getAllWhereKeyEquals(accountId);
@@ -4691,6 +4693,7 @@ private class TriggerHandlerTest {
             new List<Opportunity>{ new Opportunity(Name = 'First', AccountId = TriggerHandler.IdGenerator.get(Account.SObjectType)) }
         );
         TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
+        related.load();
 
         // Test
         List<SObject> result = related.getAllWhereKeyEquals(TriggerHandler.IdGenerator.get(Account.SObjectType));
@@ -4706,6 +4709,7 @@ private class TriggerHandlerTest {
         Id accountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
         RelatedByAccountProvider provider = new RelatedByAccountProvider(new List<Opportunity>{ new Opportunity(Name = 'First', AccountId = accountId) });
         TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
+        related.load();
 
         // Test
         SObject byId = related.getFirstWhereKeyEquals(accountId);
@@ -4719,6 +4723,7 @@ private class TriggerHandlerTest {
     static void providerNullKeyLeavesTheRecordOutOfTheKeyIndexOnly() {
         RelatedByAccountProvider provider = new RelatedByAccountProvider(new List<Opportunity>{ new Opportunity(Name = 'Orphan') });
         TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
+        related.load();
 
         // Test
         List<SObject> byKey = related.getAllWhereKeyEquals(null);
@@ -4734,6 +4739,7 @@ private class TriggerHandlerTest {
     static void providerNullQueryResultCountsAsEmpty() {
         RelatedByAccountProvider provider = new RelatedByAccountProvider(null);
         TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
+        related.load();
 
         // Test
 
@@ -4753,6 +4759,7 @@ private class TriggerHandlerTest {
             }
         );
         TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
+        related.load();
 
         // Test
         SObject result = related.getFirstWhereKeyEquals(relatedByAccountAndTypeKey(accountId, 'Renewal'));
@@ -4772,6 +4779,7 @@ private class TriggerHandlerTest {
         };
         RelatedOpportunityCountsProvider provider = new RelatedOpportunityCountsProvider(new Set<Id>{ parentAccount.Id });
         TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
+        related.load();
 
         // Test
 
@@ -4845,8 +4853,9 @@ private class TriggerHandlerTest {
         Id accountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
         RelatedByAccountProvider provider = new RelatedByAccountProvider(new List<Opportunity>{ new Opportunity(Name = 'Open', AccountId = accountId) });
         TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
+        related.load();
         TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New', AccountId = accountId), null);
-        record.setProvidedRecords(new Map<String, TriggerHandler.RelatedRecords>{ 'openOpportunities' => related });
+        record.setProvidedRecords(new Map<String, TriggerHandler.ProvidedRecords>{ 'openOpportunities' => related });
 
         // Test
         TriggerHandler.RelatedRecords result = record.getRelated('openOpportunities');
@@ -4858,7 +4867,7 @@ private class TriggerHandlerTest {
     @IsTest
     static void getRelatedThrowsForAnUnknownName() {
         TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'), null);
-        record.setProvidedRecords(new Map<String, TriggerHandler.RelatedRecords>());
+        record.setProvidedRecords(new Map<String, TriggerHandler.ProvidedRecords>());
         Exception thrown = null;
 
         // Test
@@ -4898,9 +4907,10 @@ private class TriggerHandlerTest {
     static void setProvidedRecordsReplacesThePreviousMap() {
         RelatedByAccountProvider provider = new RelatedByAccountProvider(new List<Opportunity>());
         TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
+        related.load();
         TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'), null);
-        record.setProvidedRecords(new Map<String, TriggerHandler.RelatedRecords>{ 'first' => related });
-        record.setProvidedRecords(new Map<String, TriggerHandler.RelatedRecords>{ 'second' => related });
+        record.setProvidedRecords(new Map<String, TriggerHandler.ProvidedRecords>{ 'first' => related });
+        record.setProvidedRecords(new Map<String, TriggerHandler.ProvidedRecords>{ 'second' => related });
         Exception thrown = null;
 
         // Test
@@ -4920,8 +4930,9 @@ private class TriggerHandlerTest {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         RelatedByAccountProvider provider = new RelatedByAccountProvider(new List<Opportunity>());
         TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
+        related.load();
         TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(Id = contactId, LastName = 'New'), new Contact(Id = contactId, LastName = 'Old'));
-        record.setProvidedRecords(new Map<String, TriggerHandler.RelatedRecords>{ 'shared' => related });
+        record.setProvidedRecords(new Map<String, TriggerHandler.ProvidedRecords>{ 'shared' => related });
         TriggerHandler.InsertRecord insertRecord = record;
         TriggerHandler.UpdateRecord updateRecord = record;
         TriggerHandler.DeleteRecord deleteRecord = record;

@@ -16,12 +16,14 @@ public with sharing class ContactAccountHandler implements AfterUpdate.Handler, 
     };
   }
 
-  public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
-    return record.getNewRelated('Account') != null;
+  public Boolean qualifiesForAfterUpdateWhen(
+    TriggerHandler.UpdateRecord record
+  ) {
+    return record.getNewParent('Account') != null;
   }
 
   public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
-    Account account = (Account) record.getNewRelated('Account');
+    Account account = (Account) record.getNewParent('Account');
 
     System.debug(account.Name + ' owned by ' + account.Owner.Email);
   }
@@ -34,15 +36,15 @@ Reading the `TriggerHandler.ParentFields` property hands back a new, empty selec
 
 The map key is the lookup field on the triggering object. The fields in the selection belong to the parent object that lookup points to.
 
-The key also decides the name the parent is read back under. The framework uses the relationship name of the lookup, so `Contact.AccountId` is read with `getNewRelated('Account')` and a custom lookup `My_Lookup__c` with `getNewRelated('My_Lookup__r')`.
+The key also decides the name the parent is read back under. The framework uses the relationship name of the lookup, so `Contact.AccountId` is read with `getNewParent('Account')` and a custom lookup `My_Lookup__c` with `getNewParent('My_Lookup__r')`.
 
-| Declared key         | Parent object queried | Read back with              |
-| -------------------- | --------------------- | --------------------------- |
-| `Contact.AccountId`  | `Account`             | `getNewRelated('Account')`  |
-| `Contact.OwnerId`    | `User`                | `getNewRelated('Owner')`    |
-| `Contact.CreatedById`| `User`                | `getNewRelated('CreatedBy')`|
+| Declared key          | Parent object queried | Read back with              |
+| --------------------- | --------------------- | --------------------------- |
+| `Contact.AccountId`   | `Account`             | `getNewParent('Account')`   |
+| `Contact.OwnerId`     | `User`                | `getNewParent('Owner')`     |
+| `Contact.CreatedById` | `User`                | `getNewParent('CreatedBy')` |
 
-`PriorParentQuery` uses the same keys and the same names, read with `getOldRelated`. Declaring a lookup on one side does not declare it on the other.
+`PriorParentQuery` uses the same keys and the same names, read with `getOldParent`. Declaring a lookup on one side does not declare it on the other.
 
 ## Methods
 
@@ -98,7 +100,7 @@ Contact.AccountId => TriggerHandler.ParentFields
 ```
 
 ```apex
-Account account = (Account) record.getNewRelated('Account');
+Account account = (Account) record.getNewParent('Account');
 String ownerEmail = account.Owner.Email;
 String parentName = account.Parent?.Name;
 ```

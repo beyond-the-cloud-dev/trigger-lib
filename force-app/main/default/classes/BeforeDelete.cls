@@ -8,6 +8,15 @@ public class BeforeDelete {
         Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeDelete();
     }
 
+    public interface RelatedQuery {
+        Map<String, BeforeDelete.RecordsProvider> queryRelatedOnBeforeDelete();
+    }
+
+    public interface RecordsProvider {
+        List<SObject> query(TriggerHandler.DeleteRecords records);
+        String keyOf(SObject record);
+    }
+
     public interface Bypassable {
         Boolean bypassOnBeforeDeleteWhen();
     }

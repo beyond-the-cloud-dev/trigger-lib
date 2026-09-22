@@ -13,13 +13,13 @@ public with sharing class ContactOwnerAlignmentHandler implements AfterInsert.Ha
 
     public Boolean qualifiesForAfterInsertWhen(TriggerHandler.InsertRecord record) {
         Contact contactRecord = (Contact) record.getNewSObject();
-        Account accountRecord = (Account) record.getNewRelated('Account');
+        Account accountRecord = (Account) record.getNewParent('Account');
 
         return accountRecord?.Owner?.IsActive == true && accountRecord.OwnerId != contactRecord.OwnerId;
     }
 
     public void onAfterInsert(TriggerHandler.InsertRecord record) {
-        Account accountRecord = (Account) record.getNewRelated('Account');
+        Account accountRecord = (Account) record.getNewParent('Account');
 
         this.contactsToReassign.add(new Contact(Id = record.getId(), OwnerId = accountRecord.OwnerId));
     }

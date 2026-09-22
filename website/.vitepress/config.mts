@@ -136,6 +136,7 @@ export default defineConfig({
           { text: 'Handlers', link: '/guide/handlers' },
           { text: 'Record Qualification', link: '/guide/qualification' },
           { text: 'Parent Enrichment', link: '/guide/enrichment' },
+          { text: 'Related Records', link: '/guide/related-records' },
           { text: 'Bypasses', link: '/guide/bypasses' },
           { text: 'Recursion Control', link: '/guide/recursion-control' },
           { text: 'Finalizers', link: '/guide/finalizers' },
@@ -149,6 +150,7 @@ export default defineConfig({
           { text: 'TriggerOrchestrator', link: '/api/trigger-orchestrator' },
           { text: 'Context Interfaces', link: '/api/context-interfaces' },
           { text: 'Record Interfaces', link: '/api/record' },
+          { text: 'Related Records', link: '/api/related-records' },
           {
             text: 'TriggerHandler.ParentFields',
             link: '/api/field-selection'

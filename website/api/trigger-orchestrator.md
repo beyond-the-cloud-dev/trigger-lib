@@ -48,7 +48,7 @@ The `orchestrator` argument is typed as `Object` so a single class can implement
 
 **Order matters**
 
-A handler's `...When` predicate is evaluated at that handler's own turn, immediately before the handler runs, not in a single pass up front. A predicate therefore observes field writes made by handlers earlier in the list, so the order of the list is part of the behaviour, not a cosmetic choice. Parent enrichment is the exception: it happens once in step 5, so every predicate can read `getNewRelated` and `getOldRelated`.
+A handler's `...When` predicate is evaluated at that handler's own turn, immediately before the handler runs, not in a single pass up front. A predicate therefore observes field writes made by handlers earlier in the list, so the order of the list is part of the behaviour, not a cosmetic choice. Parent enrichment is the exception: it happens once in step 5, so every predicate can read `getNewParent` and `getOldParent`.
 
 ## Orchestrator Interfaces
 
@@ -138,9 +138,9 @@ public interface Logger {
 }
 ```
 
-| Method     | Called                                                                                    |
-| ---------- | ----------------------------------------------------------------------------------------- |
-| `log`      | For every exception raised while a handler runs, before that exception propagates          |
+| Method     | Called                                                                                                |
+| ---------- | ----------------------------------------------------------------------------------------------------- |
+| `log`      | For every exception raised while a handler runs, before that exception propagates                     |
 | `finalize` | Once per top-level `run`, meaning once per trigger phase per chunk. Nested invocations do not call it |
 
 Only one concrete class in the org may implement it. A second implementation raises `TriggerOrchestratorException`.
@@ -159,12 +159,12 @@ public interface Error {
 }
 ```
 
-| Method             | Returns                                                        |
-| ------------------ | -------------------------------------------------------------- |
-| `getHandlerName()` | Class name of the handler being processed, or `null`           |
-| `getSObjectType()` | SObject type of the trigger records                            |
-| `getException()`   | The exception that was thrown                                  |
-| `getOperation()`   | `Trigger.operationType` of the invocation                      |
+| Method             | Returns                                                               |
+| ------------------ | --------------------------------------------------------------------- |
+| `getHandlerName()` | Class name of the handler being processed, or `null`                  |
+| `getSObjectType()` | SObject type of the trigger records                                   |
+| `getException()`   | The exception that was thrown                                         |
+| `getOperation()`   | `Trigger.operationType` of the invocation                             |
 | `getRecordIds()`   | Keys of `Trigger.newMap` or `Trigger.oldMap`, `null` in before insert |
 
 ## Exceptions

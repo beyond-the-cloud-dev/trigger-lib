@@ -16,8 +16,7 @@ The re-check costs nothing when nothing changed. When a lookup has changed, the 
 
 Every other context resolves parents exactly once. After insert, after update, the delete contexts and after undelete cannot change a record, so there is nothing to re-check and no work is done between handlers.
 
-The old side is never refreshed in any context. `Trigger.old` is immutable, so `getOldRelated` is resolved on the first pass and never looked at again.
-
+The old side is never refreshed in any context. `Trigger.old` is immutable, so `getOldParent` is resolved on the first pass and never looked at again.
 
 ## Declaring Fields
 
@@ -39,13 +38,15 @@ public with sharing class ContactAccountHandler implements AfterInsert.Handler, 
     };
   }
 
-  public Boolean qualifiesForAfterInsertWhen(TriggerHandler.InsertRecord record) {
+  public Boolean qualifiesForAfterInsertWhen(
+    TriggerHandler.InsertRecord record
+  ) {
     return record.isNotNull(Contact.AccountId);
   }
 
   public void onAfterInsert(TriggerHandler.InsertRecord record) {
-    Account account = (Account) record.getNewRelated('Account');
-    User creator = (User) record.getNewRelated('CreatedBy');
+    Account account = (Account) record.getNewParent('Account');
+    User creator = (User) record.getNewParent('CreatedBy');
 
     // ...
   }
@@ -60,11 +61,11 @@ A polymorphic lookup resolves to the **first** type in its describe. `OwnerId` o
 
 ## Reading Parents
 
-`getNewRelated(relationshipName)` returns the parent record attached to the new version of the trigger record. The relationship name is the one from the field describe: `Account` for `AccountId`, `CreatedBy` for `CreatedById`, `Custom_Object__r` for `Custom_Object__c`.
+`getNewParent(relationshipName)` returns the parent record attached to the new version of the trigger record. The relationship name is the one from the field describe: `Account` for `AccountId`, `CreatedBy` for `CreatedById`, `Custom_Object__r` for `Custom_Object__c`.
 
 Only the declared fields are populated on the returned SObject. Reading any other field raises the platform's usual `SObjectException` for an unqueried field.
 
-`getNewRelated` returns `null` in every case where no parent was attached:
+`getNewParent` returns `null` in every case where no parent was attached:
 
 - The relationship was never declared. **No query is issued for an undeclared relationship**, so this is a silent `null`, not an error. A typo in the relationship name string behaves the same way.
 - The lookup is empty on that record. An unset lookup fetches nothing: the record contributes no Id to the query, no parent is attached to it, and no error is raised.
@@ -73,7 +74,7 @@ Only the declared fields are populated on the returned SObject. Reading any othe
 Always null-check, or use safe navigation:
 
 ```apex
-Account account = (Account) record.getNewRelated('Account');
+Account account = (Account) record.getNewParent('Account');
 String industry = account?.Industry;
 ```
 
@@ -89,14 +90,14 @@ Contact.AccountId => TriggerHandler.ParentFields
 ```
 
 ```apex
-Account account = (Account) record.getNewRelated('Account');
+Account account = (Account) record.getNewParent('Account');
 String ownerEmail = account.Owner.Email;
 String parentName = account.Parent?.Name;
 ```
 
 ## Old Record Enrichment
 
-Update and delete contexts also have an old version of the record. Implement `PriorParentQuery` when the handler needs the parent the record pointed to before the change, and read it with `getOldRelated`.
+Update and delete contexts also have an old version of the record. Implement `PriorParentQuery` when the handler needs the parent the record pointed to before the change, and read it with `getOldParent`.
 
 ```apex
 public with sharing class ContactAccountMoveHandler implements AfterUpdate.Handler, AfterUpdate.ParentQuery, AfterUpdate.PriorParentQuery {
@@ -112,34 +113,36 @@ public with sharing class ContactAccountMoveHandler implements AfterUpdate.Handl
     };
   }
 
-  public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+  public Boolean qualifiesForAfterUpdateWhen(
+    TriggerHandler.UpdateRecord record
+  ) {
     return record.isChanged(Contact.AccountId);
   }
 
   public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
-    Account previousAccount = (Account) record.getOldRelated('Account');
-    Account currentAccount = (Account) record.getNewRelated('Account');
+    Account previousAccount = (Account) record.getOldParent('Account');
+    Account currentAccount = (Account) record.getNewParent('Account');
 
     // ...
   }
 }
 ```
 
-The two sides are declared independently. Declaring `Contact.AccountId` on the new side only attaches a parent to the new record; `getOldRelated('Account')` still returns `null` until the old side declares it too.
+The two sides are declared independently. Declaring `Contact.AccountId` on the new side only attaches a parent to the new record; `getOldParent('Account')` still returns `null` until the old side declares it too.
 
 Which side is available depends on the context, and so does the record interface the handler methods receive:
 
-| Context        | Record interface                 | `ParentQuery` | `PriorParentQuery` |
-| -------------- | -------------------------------- | :-------------------: | :-------------------: |
-| Before Insert  | `TriggerHandler.InsertRecord`    |          ✅           |                       |
-| After Insert   | `TriggerHandler.InsertRecord`    |          ✅           |                       |
-| Before Update  | `TriggerHandler.UpdateRecord`    |          ✅           |          ✅           |
-| After Update   | `TriggerHandler.UpdateRecord`    |          ✅           |          ✅           |
-| Before Delete  | `TriggerHandler.DeleteRecord`    |                       |          ✅           |
-| After Delete   | `TriggerHandler.DeleteRecord`    |                       |          ✅           |
-| After Undelete | `TriggerHandler.UndeleteRecord`  |          ✅           |                       |
+| Context        | Record interface                | `ParentQuery` | `PriorParentQuery` |
+| -------------- | ------------------------------- | :-----------: | :----------------: |
+| Before Insert  | `TriggerHandler.InsertRecord`   |      ✅       |                    |
+| After Insert   | `TriggerHandler.InsertRecord`   |      ✅       |                    |
+| Before Update  | `TriggerHandler.UpdateRecord`   |      ✅       |         ✅         |
+| After Update   | `TriggerHandler.UpdateRecord`   |      ✅       |         ✅         |
+| Before Delete  | `TriggerHandler.DeleteRecord`   |               |         ✅         |
+| After Delete   | `TriggerHandler.DeleteRecord`   |               |         ✅         |
+| After Undelete | `TriggerHandler.UndeleteRecord` |      ✅       |                    |
 
-The record interfaces only expose the side that exists in their context. `InsertRecord` and `UndeleteRecord` have `getNewRelated` and no `getOldRelated`; `DeleteRecord` has `getOldRelated` and no `getNewRelated`; `UpdateRecord` has both. Calling the missing one is a compile error, not a `null`.
+The record interfaces only expose the side that exists in their context. `InsertRecord` and `UndeleteRecord` have `getNewParent` and no `getOldParent`; `DeleteRecord` has `getOldParent` and no `getNewParent`; `UpdateRecord` has both. Calling the missing one is a compile error, not a `null`.
 
 ## One Query Per Lookup
 
@@ -160,11 +163,11 @@ The merged declarations are applied to the shared trigger records, so any active
 // AccountNameHandler declares Contact.AccountId => Account.Name
 // ContactOwnerHandler declares nothing, but still gets the parent:
 public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
-    Account account = (Account) record.getNewRelated('Account');
+    Account account = (Account) record.getNewParent('Account');
 }
 ```
 
-This is convenient, and it is fragile. The parent is only there while the handler that declared it is active. Bypass that handler, remove it from the orchestrator list, or move it to another context, and `getNewRelated` starts returning `null` in a handler that was never touched. Declare what you read.
+This is convenient, and it is fragile. The parent is only there while the handler that declared it is active. Bypass that handler, remove it from the orchestrator list, or move it to another context, and `getNewParent` starts returning `null` in a handler that was never touched. Declare what you read.
 
 ## Enrichment and Qualification
 
@@ -172,11 +175,13 @@ Enrichment happens once up front, for every trigger record in the invocation, no
 
 ```apex
 public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
-    Account account = (Account) record.getNewRelated('Account');
+    Account account = (Account) record.getNewParent('Account');
 
     return account?.Industry == 'Technology';
 }
 ```
+
+Enrichment covers parents only. Children, siblings, records matched by a value and configuration come from [providers](/guide/related-records), which run after enrichment and can bind their queries to the parents it attached.
 
 ::: tip
 Enrichment uses the bundled [SOQL Lib](https://soql.beyondthecloud.dev) `SOQL` class to build and execute the queries.

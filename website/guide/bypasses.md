@@ -23,7 +23,9 @@ public with sharing class AccountScoringHandler implements AfterUpdate.Handler, 
     return isDisabled || System.isBatch();
   }
 
-  public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+  public Boolean qualifiesForAfterUpdateWhen(
+    TriggerHandler.UpdateRecord record
+  ) {
     return record.isChanged(Account.AnnualRevenue);
   }
 
@@ -35,15 +37,15 @@ public with sharing class AccountScoringHandler implements AfterUpdate.Handler, 
 
 `bypassOn...When()` takes no record. It is asked once per invocation, for the handler as a whole, not per record. Per-record decisions belong in [qualification](/guide/qualification).
 
-| Context        | Interface                   | Method                     |
-| -------------- | --------------------------- | -------------------------- |
-| Before Insert  | `BeforeInsert.Bypassable`   | `bypassOnBeforeInsertWhen` |
-| After Insert   | `AfterInsert.Bypassable`    | `bypassOnAfterInsertWhen`  |
-| Before Update  | `BeforeUpdate.Bypassable`   | `bypassOnBeforeUpdateWhen` |
-| After Update   | `AfterUpdate.Bypassable`    | `bypassOnAfterUpdateWhen`  |
-| Before Delete  | `BeforeDelete.Bypassable`   | `bypassOnBeforeDeleteWhen` |
-| After Delete   | `AfterDelete.Bypassable`    | `bypassOnAfterDeleteWhen`  |
-| After Undelete | `AfterUndelete.Bypassable`  | `bypassOnAfterUndeleteWhen`|
+| Context        | Interface                  | Method                      |
+| -------------- | -------------------------- | --------------------------- |
+| Before Insert  | `BeforeInsert.Bypassable`  | `bypassOnBeforeInsertWhen`  |
+| After Insert   | `AfterInsert.Bypassable`   | `bypassOnAfterInsertWhen`   |
+| Before Update  | `BeforeUpdate.Bypassable`  | `bypassOnBeforeUpdateWhen`  |
+| After Update   | `AfterUpdate.Bypassable`   | `bypassOnAfterUpdateWhen`   |
+| Before Delete  | `BeforeDelete.Bypassable`  | `bypassOnBeforeDeleteWhen`  |
+| After Delete   | `AfterDelete.Bypassable`   | `bypassOnAfterDeleteWhen`   |
+| After Undelete | `AfterUndelete.Bypassable` | `bypassOnAfterUndeleteWhen` |
 
 A class that runs in several contexts implements one `Bypassable` per context, and each is answered separately.
 
@@ -68,18 +70,18 @@ public Boolean bypassOnBeforeInsertWhen() {
 
 **TriggerObject\_\_mdt**
 
-| Field              | Type     | Meaning                                                   |
-| ------------------ | -------- | --------------------------------------------------------- |
-| `ObjectAPIName__c` | Text     | API name of the object, for example `Account`              |
-| `Bypass__c`        | Checkbox | When checked, no handler runs for this object             |
+| Field              | Type     | Meaning                                       |
+| ------------------ | -------- | --------------------------------------------- |
+| `ObjectAPIName__c` | Text     | API name of the object, for example `Account` |
+| `Bypass__c`        | Checkbox | When checked, no handler runs for this object |
 
 **TriggerHandler\_\_mdt**
 
-| Field              | Type                 | Meaning                                        |
-| ------------------ | -------------------- | ---------------------------------------------- |
-| `ApexClassName__c` | Text                 | Name of the handler class                      |
-| `TriggerObject__c` | Metadata Relationship| The `TriggerObject__mdt` record this belongs to |
-| `Bypass__c`        | Checkbox             | When checked, this handler is skipped          |
+| Field              | Type                  | Meaning                                         |
+| ------------------ | --------------------- | ----------------------------------------------- |
+| `ApexClassName__c` | Text                  | Name of the handler class                       |
+| `TriggerObject__c` | Metadata Relationship | The `TriggerObject__mdt` record this belongs to |
+| `Bypass__c`        | Checkbox              | When checked, this handler is skipped           |
 
 ### Bypassing One Handler
 
@@ -140,7 +142,7 @@ Outer.Inner
 Inner
 ```
 
-Matching is case-insensitive and surrounding whitespace is ignored, so `outer.inner` and ` Inner ` match too.
+Matching is case-insensitive and surrounding whitespace is ignored, so `outer.inner` and `Inner` match too.
 
 ::: warning Simple names collide
 The name the framework compares against at runtime is the handler's simple class name, which is why the bare `Inner` spelling works at all. The consequence is that **two inner classes sharing a simple name are bypassed together**, even when they live in different outer classes. `AccountRules.Scoring` and `ContactRules.Scoring` cannot be bypassed independently through metadata. Give them distinct names, or bypass one of them in code with `Bypassable`.
@@ -160,7 +162,7 @@ For each invocation:
 4. [Parent enrichment](/guide/enrichment) runs for the surviving handlers only.
 5. The surviving handlers run in list order.
 
-A bypassed handler is out before enrichment, so it contributes no parent fields to the queries and never sees a record. If another handler was relying on a relationship that only the bypassed handler declared, `getNewRelated` starts returning `null` for it.
+A bypassed handler is out before enrichment, so it contributes no parent fields to the queries and never sees a record. If another handler was relying on a relationship that only the bypassed handler declared, `getNewParent` starts returning `null` for it.
 
 ## Bypassing a Whole Context
 

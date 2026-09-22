@@ -7821,7 +7821,7 @@ private class TriggerOrchestratorTest {
     }
 
     @IsTest
-    static void relatedQueryRunsOnceAndLoadsBeforeTheFirstPredicateOnBeforeInsert() {
+    static void relatedQueryRunsOnceAndQueriesOnFirstReadOnBeforeInsert() {
         RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>{ new Contact(LastName = 'Doe') });
         RelatedBeforeInsertPopulator handler = new RelatedBeforeInsertPopulator(provider);
 
@@ -7840,10 +7840,170 @@ private class TriggerOrchestratorTest {
         Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook runs once per handler per invocation.');
         Assert.areEqual(2, provider.lastRecordCount, 'It should be 2, because the collection the provider is queried with covers every trigger record.');
         Assert.areEqual(1, provider.loadCount, 'It should be 1, because the framework loads each provider once.');
-        Assert.areEqual(1, handler.loadCountAtFirstPredicate, 'It should be 1, because the provider is loaded before the first predicate runs.');
+        Assert.areEqual(0, handler.loadCountAtFirstPredicate, 'It should be 0, because a provider is not queried until a handler reads it.');
+        Assert.areEqual(1, provider.loadCount, 'It should be 1, because the provider is queried once however many records read it.');
         Assert.areEqual(2, handler.predicateReads, 'It should be 2, because the provider is readable in every predicate call.');
         Assert.areEqual(2, handler.actionReads, 'It should be 2, because the provider is readable in every action call.');
         Assert.areEqual(1, handler.finalizerReads, 'It should be 1, because the provider stays attached through the finalizer.');
+    }
+
+    @IsTest
+    static void twoHandlersDeclaringTheSameProviderQueryOnce() {
+        TriggerOrchestratorTest.relatedPooledQueries = 0;
+        RelatedBeforeInsertPopulator first = new RelatedBeforeInsertPopulator(new RelatedPooledProvider('shared'));
+        RelatedBeforeInsertPopulator second = new RelatedBeforeInsertPopulator(new RelatedPooledProvider('shared'));
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        // Test
+        Test.startTest();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ first, second }));
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe'), new Contact(LastName = 'Roe') };
+        orchestratorRunner.run();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(1, TriggerOrchestratorTest.relatedPooledQueries, 'It should be 1, because two handlers declaring the same provider share one query.');
+        Assert.areEqual(2, first.predicateReads, 'It should be 2, because the first handler read the provider for both records.');
+        Assert.areEqual(2, second.predicateReads, 'It should be 2, because the second handler read the same loaded provider.');
+    }
+
+    @IsTest
+    static void handlersDeclaringDifferentProvidersQuerySeparately() {
+        TriggerOrchestratorTest.relatedPooledQueries = 0;
+        RelatedBeforeInsertPopulator first = new RelatedBeforeInsertPopulator(new RelatedPooledProvider('first'));
+        RelatedBeforeInsertPopulator second = new RelatedBeforeInsertPopulator(new RelatedPooledProvider('second'));
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        // Test
+        Test.startTest();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ first, second }));
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+        orchestratorRunner.run();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(2, TriggerOrchestratorTest.relatedPooledQueries, 'It should be 2, because providers that differ are not shared.');
+    }
+
+    @IsTest
+    static void declaredProviderIsNotQueriedUntilItIsRead() {
+        RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>{ new Contact(LastName = 'Doe') });
+        RelatedBeforeInsertPopulator handler = new RelatedBeforeInsertPopulator(provider);
+        handler.readProviders = false;
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        // Test
+        Test.startTest();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new RelatedBeforeInsertOrchestrator(new List<BeforeInsert.Handler>{ handler }));
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestratorRunner.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+        orchestratorRunner.run();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook still names the provider.');
+        Assert.areEqual(0, provider.loadCount, 'It should be 0, because a provider nobody reads is never queried.');
+    }
+
+    @IsTest
+    static void readingOneParentDoesNotQueryTheOtherDeclaredLookup() {
+        Account parentAccount = new Account(Name = 'Read Me');
+        insert parentAccount;
+        Contact reportsTo = new Contact(LastName = 'Manager', Email = 'manager@example.com');
+        insert reportsTo;
+
+        List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Doe', Email = 'doe@example.com', AccountId = parentAccount.Id, ReportsToId = reportsTo.Id) };
+
+        LazySilentBeforeUpdateHandler handler = new LazySilentBeforeUpdateHandler();
+        handler.relationshipToRead = 'Account';
+        handler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
+        handler.declareNew(Contact.ReportsToId, TriggerHandler.ParentFields.with(Contact.LastName));
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        // Test
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentBeforeUpdateOrchestrator(new List<BeforeUpdate.Handler>{ handler }));
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.context.oldRecords = newRecords.deepClone(false, false, false);
+        orchestratorRunner.run();
+        Integer queriesAfter = Limits.getQueries();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(1, queriesAfter - queriesBefore, 'It should be 1, because only the lookup the handler read is resolved.');
+        Assert.areEqual('Read Me', ((Account) handler.seenParent).Name, 'It should be the account name, because that is the lookup the handler read.');
+    }
+
+    @IsTest
+    static void declaredParentIsNotQueriedUntilItIsRead() {
+        Account parentAccount = new Account(Name = 'Never Read');
+        insert parentAccount;
+        List<SObject> newRecords = new List<Contact>{ new Contact(LastName = 'Doe', Email = 'doe@example.com', AccountId = parentAccount.Id) };
+        insert newRecords;
+
+        LazySilentAfterInsertHandler handler = new LazySilentAfterInsertHandler();
+        handler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        // Test
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler }));
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.run();
+        Integer queriesAfter = Limits.getQueries();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(0, queriesAfter - queriesBefore, 'It should be 0, because a declared parent nobody reads is never queried.');
+        Assert.areEqual(1, handler.runCount, 'It should be 1, because the handler still ran.');
+    }
+
+    @IsTest
+    static void declaredParentIsQueriedOnceWhenItIsRead() {
+        Account parentAccount = new Account(Name = 'Read Once');
+        insert parentAccount;
+        List<SObject> newRecords = new List<Contact>{
+            new Contact(LastName = 'Doe', Email = 'doe@example.com', AccountId = parentAccount.Id),
+            new Contact(LastName = 'Roe', Email = 'roe@example.com', AccountId = parentAccount.Id)
+        };
+        insert newRecords;
+
+        LazySilentAfterInsertHandler handler = new LazySilentAfterInsertHandler();
+        handler.readsParent = true;
+        handler.declareNew(Contact.AccountId, TriggerHandler.ParentFields.with(Account.Name));
+
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        // Test
+        Test.startTest();
+        Integer queriesBefore = Limits.getQueries();
+        TriggerOrchestrator orchestratorRunner = new TriggerOrchestrator(new EnrichmentAfterInsertOrchestrator(new List<AfterInsert.Handler>{ handler }));
+        orchestratorRunner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestratorRunner.context.newRecords = newRecords;
+        orchestratorRunner.run();
+        Integer queriesAfter = Limits.getQueries();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(1, queriesAfter - queriesBefore, 'It should be 1, because the first read resolves every declared parent for every record at once.');
+        Assert.areEqual('Read Once', ((Account) handler.seenParent).Name, 'It should be the parent name, because the read returns the resolved parent.');
     }
 
     @IsTest
@@ -7939,7 +8099,7 @@ private class TriggerOrchestratorTest {
         Test.stopTest();
 
         // Verify
-        Assert.isFalse(second.previousProviderReachableInQuery, 'It should be unreachable while the provider queries, because an empty map is attached before the hook runs.');
+        Assert.isFalse(second.previousProviderReachableInQuery, 'It should be unreachable while the provider queries, because each handler starts from an empty map.');
         Assert.isFalse(second.previousProviderReachableInPredicate, 'It should be unreachable in the predicate, because each handler gets its own map.');
         Assert.isTrue(second.ownProviderReachableInPredicate, 'It should be reachable, because the second handler registered its own provider.');
     }
@@ -8003,7 +8163,7 @@ private class TriggerOrchestratorTest {
         Assert.areEqual(1, logger.errors.size(), 'It should be 1, because the failure is still logged.');
         Assert.areEqual('RelatedMutedBeforeInsertPopulator', logger.errors[0].getHandlerName(), 'It should name the handler whose provider failed.');
         Assert.areEqual('Provider failed on purpose.', logger.errors[0].getException().getMessage(), 'It should be the provider exception.');
-        Assert.areEqual(0, failing.predicateReads, 'It should be 0, because the failing handler never reached its loop.');
+        Assert.areEqual(1, failing.predicateReads, 'It should be 1, because the failure surfaces at the first read and stops that handler.');
         Assert.areEqual(1, later.predicateReads, 'It should be 1, because the next handler still runs.');
     }
 
@@ -8113,15 +8273,15 @@ private class TriggerOrchestratorTest {
         // Verify
         Assert.areEqual(2, handler.hookCount, 'It should be 2, because the hook runs on every invocation.');
         Assert.areEqual(
-            new List<Integer>{ 1, 1 },
+            new List<Integer>{ 1 },
             provider.recordCounts,
-            'It should be 1 on both passes, because the provider is queried with a collection that includes the record even when the recursion guard skips it.'
+            'It should be 1 for the pass that ran, because a pass whose records are all skipped by the recursion guard reads nothing and so queries nothing.'
         );
         Assert.areEqual(1, handler.actionCount, 'It should be 1, because the recursion guard with depth 1 skipped the second pass.');
     }
 
     @IsTest
-    static void twoHopProviderLoadsBothQueriesInOneLoad() {
+    static void twoHopProviderRunsBothQueriesInOneLoad() {
         Account parentAccount = new Account(Name = 'Hop Source');
         insert parentAccount;
         insert new Contact(LastName = 'Hop Target', Email = 'hop.target@example.com', AccountId = parentAccount.Id);
@@ -8129,18 +8289,19 @@ private class TriggerOrchestratorTest {
 
         // Test
         Test.startTest();
-        Integer queriesBefore = Limits.getQueries();
         TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, new TriggerHandler.InsertTriggerRecords(new List<TriggerHandler.TriggerRecord>()));
-        Integer queriesAfter = Limits.getQueries();
+        Integer queriesBeforeRead = Limits.getQueries();
+        related.load();
+        Integer queriesAfterRead = Limits.getQueries();
         Test.stopTest();
 
         // Verify
-        Assert.areEqual(2, queriesAfter - queriesBefore, 'It should be 2, because both hops run inside one query() call.');
+        Assert.areEqual(2, queriesAfterRead - queriesBeforeRead, 'It should be 2, because both hops run inside one query() call, when the provider is loaded.');
         Assert.areEqual(1, related.getAllWhereKeyEquals(parentAccount.Id).size(), 'It should be 1, because the second hop is keyed by the first hop result.');
     }
 
     @IsTest
-    static void relatedQueryRunsOnceAndLoadsBeforeTheFirstPredicateOnBeforeInsertValidator() {
+    static void relatedQueryRunsOnceAndQueriesOnFirstReadOnBeforeInsertValidator() {
         RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>{ new Contact(LastName = 'Doe') });
         RelatedBeforeInsertValidator handler = new RelatedBeforeInsertValidator(provider);
 
@@ -8165,14 +8326,15 @@ private class TriggerOrchestratorTest {
         Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook runs once per handler per invocation.');
         Assert.areEqual(2, provider.lastRecordCount, 'It should be 2, because the collection the provider is queried with covers every trigger record.');
         Assert.areEqual(1, provider.loadCount, 'It should be 1, because the framework loads each provider once.');
-        Assert.areEqual(1, handler.loadCountAtFirstPredicate, 'It should be 1, because the provider is loaded before the first predicate runs.');
+        Assert.areEqual(0, handler.loadCountAtFirstPredicate, 'It should be 0, because a provider is not queried until a handler reads it.');
+        Assert.areEqual(1, provider.loadCount, 'It should be 1, because the provider is queried once however many records read it.');
         Assert.areEqual(2, handler.predicateReads, 'It should be 2, because the provider is readable in every predicate call.');
         Assert.areEqual(2, handler.actionReads, 'It should be 2, because the provider is readable in every action call.');
         Assert.areEqual(1, handler.finalizerReads, 'It should be 1, because the provider stays attached through the finalizer.');
     }
 
     @IsTest
-    static void relatedQueryRunsOnceAndLoadsBeforeTheFirstPredicateOnAfterInsert() {
+    static void relatedQueryRunsOnceAndQueriesOnFirstReadOnAfterInsert() {
         RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>{ new Contact(LastName = 'Doe') });
         RelatedAfterInsertHandler handler = new RelatedAfterInsertHandler(provider);
 
@@ -8194,14 +8356,15 @@ private class TriggerOrchestratorTest {
         Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook runs once per handler per invocation.');
         Assert.areEqual(2, provider.lastRecordCount, 'It should be 2, because the collection the provider is queried with covers every trigger record.');
         Assert.areEqual(1, provider.loadCount, 'It should be 1, because the framework loads each provider once.');
-        Assert.areEqual(1, handler.loadCountAtFirstPredicate, 'It should be 1, because the provider is loaded before the first predicate runs.');
+        Assert.areEqual(0, handler.loadCountAtFirstPredicate, 'It should be 0, because a provider is not queried until a handler reads it.');
+        Assert.areEqual(1, provider.loadCount, 'It should be 1, because the provider is queried once however many records read it.');
         Assert.areEqual(2, handler.predicateReads, 'It should be 2, because the provider is readable in every predicate call.');
         Assert.areEqual(2, handler.actionReads, 'It should be 2, because the provider is readable in every action call.');
         Assert.areEqual(1, handler.finalizerReads, 'It should be 1, because the provider stays attached through the finalizer.');
     }
 
     @IsTest
-    static void relatedQueryRunsOnceAndLoadsBeforeTheFirstPredicateOnBeforeUpdatePopulator() {
+    static void relatedQueryRunsOnceAndQueriesOnFirstReadOnBeforeUpdatePopulator() {
         Id firstContactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         Id secondContactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>{ new Contact(LastName = 'Doe') });
@@ -8226,14 +8389,15 @@ private class TriggerOrchestratorTest {
         Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook runs once per handler per invocation.');
         Assert.areEqual(2, provider.lastRecordCount, 'It should be 2, because the collection the provider is queried with covers every trigger record.');
         Assert.areEqual(1, provider.loadCount, 'It should be 1, because the framework loads each provider once.');
-        Assert.areEqual(1, handler.loadCountAtFirstPredicate, 'It should be 1, because the provider is loaded before the first predicate runs.');
+        Assert.areEqual(0, handler.loadCountAtFirstPredicate, 'It should be 0, because a provider is not queried until a handler reads it.');
+        Assert.areEqual(1, provider.loadCount, 'It should be 1, because the provider is queried once however many records read it.');
         Assert.areEqual(2, handler.predicateReads, 'It should be 2, because the provider is readable in every predicate call.');
         Assert.areEqual(2, handler.actionReads, 'It should be 2, because the provider is readable in every action call.');
         Assert.areEqual(1, handler.finalizerReads, 'It should be 1, because the provider stays attached through the finalizer.');
     }
 
     @IsTest
-    static void relatedQueryRunsOnceAndLoadsBeforeTheFirstPredicateOnBeforeUpdateValidator() {
+    static void relatedQueryRunsOnceAndQueriesOnFirstReadOnBeforeUpdateValidator() {
         Id firstContactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         Id secondContactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>{ new Contact(LastName = 'Doe') });
@@ -8264,14 +8428,15 @@ private class TriggerOrchestratorTest {
         Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook runs once per handler per invocation.');
         Assert.areEqual(2, provider.lastRecordCount, 'It should be 2, because the collection the provider is queried with covers every trigger record.');
         Assert.areEqual(1, provider.loadCount, 'It should be 1, because the framework loads each provider once.');
-        Assert.areEqual(1, handler.loadCountAtFirstPredicate, 'It should be 1, because the provider is loaded before the first predicate runs.');
+        Assert.areEqual(0, handler.loadCountAtFirstPredicate, 'It should be 0, because a provider is not queried until a handler reads it.');
+        Assert.areEqual(1, provider.loadCount, 'It should be 1, because the provider is queried once however many records read it.');
         Assert.areEqual(2, handler.predicateReads, 'It should be 2, because the provider is readable in every predicate call.');
         Assert.areEqual(2, handler.actionReads, 'It should be 2, because the provider is readable in every action call.');
         Assert.areEqual(1, handler.finalizerReads, 'It should be 1, because the provider stays attached through the finalizer.');
     }
 
     @IsTest
-    static void relatedQueryRunsOnceAndLoadsBeforeTheFirstPredicateOnAfterUpdate() {
+    static void relatedQueryRunsOnceAndQueriesOnFirstReadOnAfterUpdate() {
         Id firstContactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         Id secondContactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>{ new Contact(LastName = 'Doe') });
@@ -8296,14 +8461,15 @@ private class TriggerOrchestratorTest {
         Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook runs once per handler per invocation.');
         Assert.areEqual(2, provider.lastRecordCount, 'It should be 2, because the collection the provider is queried with covers every trigger record.');
         Assert.areEqual(1, provider.loadCount, 'It should be 1, because the framework loads each provider once.');
-        Assert.areEqual(1, handler.loadCountAtFirstPredicate, 'It should be 1, because the provider is loaded before the first predicate runs.');
+        Assert.areEqual(0, handler.loadCountAtFirstPredicate, 'It should be 0, because a provider is not queried until a handler reads it.');
+        Assert.areEqual(1, provider.loadCount, 'It should be 1, because the provider is queried once however many records read it.');
         Assert.areEqual(2, handler.predicateReads, 'It should be 2, because the provider is readable in every predicate call.');
         Assert.areEqual(2, handler.actionReads, 'It should be 2, because the provider is readable in every action call.');
         Assert.areEqual(1, handler.finalizerReads, 'It should be 1, because the provider stays attached through the finalizer.');
     }
 
     @IsTest
-    static void relatedQueryRunsOnceAndLoadsBeforeTheFirstPredicateOnBeforeDelete() {
+    static void relatedQueryRunsOnceAndQueriesOnFirstReadOnBeforeDelete() {
         RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>{ new Contact(LastName = 'Doe') });
         RelatedBeforeDeleteHandler handler = new RelatedBeforeDeleteHandler(provider);
 
@@ -8325,14 +8491,15 @@ private class TriggerOrchestratorTest {
         Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook runs once per handler per invocation.');
         Assert.areEqual(2, provider.lastRecordCount, 'It should be 2, because the collection the provider is queried with covers every trigger record.');
         Assert.areEqual(1, provider.loadCount, 'It should be 1, because the framework loads each provider once.');
-        Assert.areEqual(1, handler.loadCountAtFirstPredicate, 'It should be 1, because the provider is loaded before the first predicate runs.');
+        Assert.areEqual(0, handler.loadCountAtFirstPredicate, 'It should be 0, because a provider is not queried until a handler reads it.');
+        Assert.areEqual(1, provider.loadCount, 'It should be 1, because the provider is queried once however many records read it.');
         Assert.areEqual(2, handler.predicateReads, 'It should be 2, because the provider is readable in every predicate call.');
         Assert.areEqual(2, handler.actionReads, 'It should be 2, because the provider is readable in every action call.');
         Assert.areEqual(1, handler.finalizerReads, 'It should be 1, because the provider stays attached through the finalizer.');
     }
 
     @IsTest
-    static void relatedQueryRunsOnceAndLoadsBeforeTheFirstPredicateOnAfterDelete() {
+    static void relatedQueryRunsOnceAndQueriesOnFirstReadOnAfterDelete() {
         RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>{ new Contact(LastName = 'Doe') });
         RelatedAfterDeleteHandler handler = new RelatedAfterDeleteHandler(provider);
 
@@ -8354,14 +8521,15 @@ private class TriggerOrchestratorTest {
         Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook runs once per handler per invocation.');
         Assert.areEqual(2, provider.lastRecordCount, 'It should be 2, because the collection the provider is queried with covers every trigger record.');
         Assert.areEqual(1, provider.loadCount, 'It should be 1, because the framework loads each provider once.');
-        Assert.areEqual(1, handler.loadCountAtFirstPredicate, 'It should be 1, because the provider is loaded before the first predicate runs.');
+        Assert.areEqual(0, handler.loadCountAtFirstPredicate, 'It should be 0, because a provider is not queried until a handler reads it.');
+        Assert.areEqual(1, provider.loadCount, 'It should be 1, because the provider is queried once however many records read it.');
         Assert.areEqual(2, handler.predicateReads, 'It should be 2, because the provider is readable in every predicate call.');
         Assert.areEqual(2, handler.actionReads, 'It should be 2, because the provider is readable in every action call.');
         Assert.areEqual(1, handler.finalizerReads, 'It should be 1, because the provider stays attached through the finalizer.');
     }
 
     @IsTest
-    static void relatedQueryRunsOnceAndLoadsBeforeTheFirstPredicateOnAfterUndelete() {
+    static void relatedQueryRunsOnceAndQueriesOnFirstReadOnAfterUndelete() {
         RelatedCountingProvider provider = new RelatedCountingProvider(new List<Contact>{ new Contact(LastName = 'Doe') });
         RelatedAfterUndeleteHandler handler = new RelatedAfterUndeleteHandler(provider);
 
@@ -8383,7 +8551,8 @@ private class TriggerOrchestratorTest {
         Assert.areEqual(1, handler.hookCount, 'It should be 1, because the hook runs once per handler per invocation.');
         Assert.areEqual(2, provider.lastRecordCount, 'It should be 2, because the collection the provider is queried with covers every trigger record.');
         Assert.areEqual(1, provider.loadCount, 'It should be 1, because the framework loads each provider once.');
-        Assert.areEqual(1, handler.loadCountAtFirstPredicate, 'It should be 1, because the provider is loaded before the first predicate runs.');
+        Assert.areEqual(0, handler.loadCountAtFirstPredicate, 'It should be 0, because a provider is not queried until a handler reads it.');
+        Assert.areEqual(1, provider.loadCount, 'It should be 1, because the provider is queried once however many records read it.');
         Assert.areEqual(2, handler.predicateReads, 'It should be 2, because the provider is readable in every predicate call.');
         Assert.areEqual(2, handler.actionReads, 'It should be 2, because the provider is readable in every action call.');
         Assert.areEqual(1, handler.finalizerReads, 'It should be 1, because the provider stays attached through the finalizer.');
@@ -12063,6 +12232,76 @@ private class TriggerOrchestratorTest {
     private class DispatchNonOrchestrator {
     }
 
+    private class LazySilentAfterInsertHandler implements AfterInsert.Handler, AfterInsert.ParentQuery {
+        public Integer runCount = 0;
+        public Boolean readsParent = false;
+        public SObject seenParent;
+
+        private Map<SObjectField, TriggerHandler.ParentFields> newDeclaration = new Map<SObjectField, TriggerHandler.ParentFields>();
+
+        public void declareNew(SObjectField parentField, TriggerHandler.ParentFields fields) {
+            this.newDeclaration.put(parentField, fields);
+        }
+
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert() {
+            return this.newDeclaration;
+        }
+
+        public Boolean qualifiesForAfterInsertWhen(TriggerHandler.InsertRecord record) {
+            return true;
+        }
+
+        public void onAfterInsert(TriggerHandler.InsertRecord record) {
+            this.runCount++;
+
+            if (this.readsParent) {
+                this.seenParent = record.getNewParent('Account');
+            }
+        }
+    }
+
+    private class LazySilentBeforeUpdateHandler implements BeforeUpdate.Populator, BeforeUpdate.ParentQuery {
+        public String relationshipToRead;
+        public SObject seenParent;
+
+        private Map<SObjectField, TriggerHandler.ParentFields> newDeclaration = new Map<SObjectField, TriggerHandler.ParentFields>();
+
+        public void declareNew(SObjectField parentField, TriggerHandler.ParentFields fields) {
+            this.newDeclaration.put(parentField, fields);
+        }
+
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate() {
+            return this.newDeclaration;
+        }
+
+        public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            this.seenParent = record.getNewParent(this.relationshipToRead);
+            return false;
+        }
+
+        public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
+        }
+    }
+
+    private static Integer relatedPooledQueries = 0;
+
+    private class RelatedPooledProvider implements BeforeInsert.RecordsProvider {
+        private String label;
+
+        public RelatedPooledProvider(String label) {
+            this.label = label;
+        }
+
+        public List<SObject> query(TriggerHandler.InsertRecords records) {
+            TriggerOrchestratorTest.relatedPooledQueries++;
+            return new List<SObject>{ new Contact(LastName = this.label) };
+        }
+
+        public String keyOf(SObject record) {
+            return (String) record.get('LastName');
+        }
+    }
+
     private class RelatedException extends Exception {
     }
 
@@ -12348,6 +12587,7 @@ private class TriggerOrchestratorTest {
 
         public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
             this.predicateReads++;
+            record.getRelated('related').getRecords();
             return false;
         }
 
@@ -12381,7 +12621,7 @@ private class TriggerOrchestratorTest {
                 this.previousProviderReachableInPredicate = false;
             }
 
-            this.ownProviderReachableInPredicate = record.getRelated('own') != null;
+            this.ownProviderReachableInPredicate = record.getRelated('own').getRecords() != null;
             return false;
         }
 
@@ -12401,6 +12641,7 @@ private class TriggerOrchestratorTest {
         }
 
         public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            record.getRelated('parents').getRecords();
             return false;
         }
 
@@ -12427,6 +12668,7 @@ private class TriggerOrchestratorTest {
         }
 
         public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            record.getRelated('related').getRecords();
             return true;
         }
 

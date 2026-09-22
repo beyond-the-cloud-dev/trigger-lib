@@ -6,7 +6,7 @@ outline: deep
 
 Parents come from [enrichment](/guide/enrichment). Everything else a handler needs from the database comes from a **provider**: a small class with one query and one key.
 
-The handler names the providers it wants. The framework runs each one once, before the first record is processed, and every predicate and action reads the result from memory.
+The handler names the providers it wants. Each one runs at most once, the first time a handler calls `getRelated` for it, and every call after that comes from memory. A provider nobody asks for never queries.
 
 ## A Provider
 
@@ -243,17 +243,19 @@ Use `with sharing` only when the result is meant to depend on who is saving.
 For each handler, in order:
 
 1. Bypassed handlers are skipped entirely, and never asked for providers.
-2. Parents are enriched for the whole context.
-3. `queryRelatedOn<Context>` is called once and returns the provider names.
-4. Each provider's `query` runs, with a collection over **every** trigger record, including records a recursion guard will skip.
-5. Predicates and actions run, reading providers from memory.
-6. The finalizer runs, with the providers still readable.
+2. `queryRelatedOn<Context>` is called once and returns the provider names. Nothing is queried yet.
+3. The first `getRelated` call for a provider, from a predicate, an action or a finalizer, runs that provider's `query` with a collection over **every** trigger record of the invocation.
+4. Every later `getRelated` for the same provider comes from memory.
+
+A provider that is declared and never asked for costs nothing. Neither does a pass where the [recursion guard](/guide/recursion-control) skips every record, because no predicate runs to read anything.
 
 Providers belong to the handler that declared them. The next handler starts with none, and asking for a name it did not declare throws a `TriggerHandlerException`.
 
-The hook and the queries run inside the handler's own error handling, so a failed query is logged with the handler's name and follows its [`ContinueOnError`](/guide/error-handling) choice. In before insert and before update they also sit inside the [DML guard](/guide/handlers#no-dml-in-before-contexts).
+Two handlers that declare the same provider share one query. The framework pools providers for the invocation by their class and their field values, so a stateless provider declared in three handlers still queries once, and the second handler reads what the first loaded. Names stay private to each handler; only the loaded records are shared, the same way parents are.
 
-A DML of more than 200 records reaches the trigger in chunks of 200, and each chunk queries once.
+The query runs inside the handler that asked for it, so a failure is logged with that handler's name and follows its [`ContinueOnError`](/guide/error-handling) choice. In before insert and before update it also sits inside the [DML guard](/guide/handlers#no-dml-in-before-contexts).
+
+A DML of more than 200 records reaches the trigger in chunks of 200, and each chunk queries at most once per provider.
 
 ## Providers Or The Finalizer
 

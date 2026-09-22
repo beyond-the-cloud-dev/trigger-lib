@@ -36,7 +36,7 @@ Each interface exposes only what its context can answer. A delete handler cannot
 
 Parent data is declared, not queried. A handler lists the lookup fields and parent fields it needs and the framework pulls them in a single query per lookup, shared by all handlers of the same context. This keeps the query count predictable regardless of how many handlers an object has.
 
-Everything else is a provider: one class with one query, run once per handler before the first record is processed and read from memory after that. Enrichment and providers both finish before the first predicate, so qualification can read `getNewParent` and `getRelated` as freely as the action methods can.
+Everything else is a provider: one class with one query, run at most once per handler and read from memory after that. Both parents and providers are declared up front and queried on first read, so a handler that never reaches its data never pays for it, and qualification can read `getNewParent` and `getRelated` as freely as the action methods can.
 
 What a handler never does is query inside a predicate or an action. A relationship a handler never declared is not queried, and `getNewParent` returns `null` for it.
 

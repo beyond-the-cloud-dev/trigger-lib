@@ -31,7 +31,7 @@ public interface RecordsProvider {
 
 ### query
 
-Runs once per handler, per trigger invocation, before the first predicate. Any SOQL is allowed: plain, SOQL Lib, a selector, more than one statement. Returning `null` counts as no records.
+Runs at most once per trigger invocation, on the first `getRelated` call for that provider. Providers with the same class and the same field values are pooled, so declaring one in several handlers still costs one query. Any SOQL is allowed: plain, SOQL Lib, a selector, more than one statement. Returning `null` counts as no records.
 
 ### keyOf
 
@@ -117,4 +117,4 @@ On every record interface.
 TriggerHandler.RelatedRecords getRelated(String providerName)
 ```
 
-The argument is the name the handler used in its `RelatedQuery` map, not a relationship name. Asking for a name the handler did not declare throws a `TriggerHandler.TriggerHandlerException`.
+The argument is the name the handler used in its `RelatedQuery` map, not a relationship name. The first call runs the provider's query; later calls return the loaded records. Asking for a name the handler did not declare throws a `TriggerHandler.TriggerHandlerException`.

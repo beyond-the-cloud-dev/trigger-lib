@@ -8,7 +8,7 @@ Handlers often need data from a parent record: the account of a contact, the own
 
 ## Freshness
 
-Parents are resolved before the first handler runs. In **before insert** and **before update** they are also re-checked at every handler boundary, because those are the only contexts in which a handler can change a record.
+Each lookup is resolved the first time a handler reads it, in one query covering every trigger record. Reading `getNewParent('Account')` resolves the `AccountId` lookup and nothing else, so a declared lookup no handler reads is never queried. In **before insert** and **before update** parents are re-checked at every handler boundary, because those are the only contexts in which a handler can change a record.
 
 If a handler there changes a declared lookup field, the next handler sees the parent the record now points at. A lookup moved from one parent to another resolves to the new one; a lookup filled in from empty resolves instead of staying null.
 
@@ -146,14 +146,14 @@ The record interfaces only expose the side that exists in their context. `Insert
 
 ## One Query Per Lookup
 
-Enrichment runs once, before any handler in the context executes.
+Each declared lookup resolves once, the first time any handler reads it.
 
-1. The field selections of every **active** handler in the context are merged per lookup field. Handlers filtered out by a [bypass](/guide/bypasses) are already gone at this point and contribute nothing.
-2. One query is executed per lookup field, with the parent Ids gathered from the new and old records of the whole invocation.
-3. A lookup with no populated value on any record in the invocation is not queried at all.
+1. The field selections of every **active** handler in the context are merged per lookup field, before the first handler runs. Handlers filtered out by a [bypass](/guide/bypasses) are already gone at this point and contribute nothing.
+2. One query is executed for a lookup field when it is first read, with the parent Ids gathered from the new and old records of the whole invocation.
+3. A lookup with no populated value on any record in the invocation, and a lookup no handler reads, are not queried at all.
 4. Queries run in system mode without sharing, so enrichment does not depend on the running user's access to the parent.
 
-The cost is **one query per declared lookup field per trigger invocation**, whatever the number of handlers or records. Five handlers declaring `Contact.AccountId` over 200 contacts still produce a single `Account` query, carrying the union of the fields they asked for.
+The cost is **one query per lookup field that is actually read, per trigger invocation**, whatever the number of handlers or records. Five handlers declaring `Contact.AccountId` over 200 contacts still produce a single `Account` query, carrying the union of the fields they asked for.
 
 ## Declarations Are Pooled
 
@@ -171,7 +171,7 @@ This is convenient, and it is fragile. The parent is only there while the handle
 
 ## Enrichment and Qualification
 
-Enrichment happens once up front, for every trigger record in the invocation, not only the ones a handler ends up qualifying. Qualification is evaluated later, at each handler's own turn. That ordering is what lets a `...When` predicate read parent data:
+Parents are resolved for every trigger record in the invocation, not only the ones a handler ends up qualifying, so a `...When` predicate can read parent data as freely as an action can:
 
 ```apex
 public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {

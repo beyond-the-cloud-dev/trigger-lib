@@ -310,6 +310,10 @@ public with sharing class TriggerHandler {
         List<String> getFields();
     }
 
+    public interface ParentResolver {
+        void resolveParent(String relationshipName);
+    }
+
     public interface RelatedRecords {
         SObject getFirstWhereKeyEquals(Object key);
 
@@ -490,76 +494,169 @@ public with sharing class TriggerHandler {
         }
     }
 
+    private interface DeferredQuery {
+        List<SObject> query();
+        String keyOf(SObject record);
+    }
+
+    private class BeforeInsertQuery implements DeferredQuery {
+        private BeforeInsert.RecordsProvider provider;
+        private InsertRecords records;
+
+        public BeforeInsertQuery(BeforeInsert.RecordsProvider provider, InsertRecords records) {
+            this.provider = provider;
+            this.records = records;
+        }
+
+        public List<SObject> query() {
+            return this.provider.query(this.records);
+        }
+
+        public String keyOf(SObject record) {
+            return this.provider.keyOf(record);
+        }
+    }
+
+    private class AfterInsertQuery implements DeferredQuery {
+        private AfterInsert.RecordsProvider provider;
+        private InsertRecords records;
+
+        public AfterInsertQuery(AfterInsert.RecordsProvider provider, InsertRecords records) {
+            this.provider = provider;
+            this.records = records;
+        }
+
+        public List<SObject> query() {
+            return this.provider.query(this.records);
+        }
+
+        public String keyOf(SObject record) {
+            return this.provider.keyOf(record);
+        }
+    }
+
+    private class BeforeUpdateQuery implements DeferredQuery {
+        private BeforeUpdate.RecordsProvider provider;
+        private UpdateRecords records;
+
+        public BeforeUpdateQuery(BeforeUpdate.RecordsProvider provider, UpdateRecords records) {
+            this.provider = provider;
+            this.records = records;
+        }
+
+        public List<SObject> query() {
+            return this.provider.query(this.records);
+        }
+
+        public String keyOf(SObject record) {
+            return this.provider.keyOf(record);
+        }
+    }
+
+    private class AfterUpdateQuery implements DeferredQuery {
+        private AfterUpdate.RecordsProvider provider;
+        private UpdateRecords records;
+
+        public AfterUpdateQuery(AfterUpdate.RecordsProvider provider, UpdateRecords records) {
+            this.provider = provider;
+            this.records = records;
+        }
+
+        public List<SObject> query() {
+            return this.provider.query(this.records);
+        }
+
+        public String keyOf(SObject record) {
+            return this.provider.keyOf(record);
+        }
+    }
+
+    private class BeforeDeleteQuery implements DeferredQuery {
+        private BeforeDelete.RecordsProvider provider;
+        private DeleteRecords records;
+
+        public BeforeDeleteQuery(BeforeDelete.RecordsProvider provider, DeleteRecords records) {
+            this.provider = provider;
+            this.records = records;
+        }
+
+        public List<SObject> query() {
+            return this.provider.query(this.records);
+        }
+
+        public String keyOf(SObject record) {
+            return this.provider.keyOf(record);
+        }
+    }
+
+    private class AfterDeleteQuery implements DeferredQuery {
+        private AfterDelete.RecordsProvider provider;
+        private DeleteRecords records;
+
+        public AfterDeleteQuery(AfterDelete.RecordsProvider provider, DeleteRecords records) {
+            this.provider = provider;
+            this.records = records;
+        }
+
+        public List<SObject> query() {
+            return this.provider.query(this.records);
+        }
+
+        public String keyOf(SObject record) {
+            return this.provider.keyOf(record);
+        }
+    }
+
+    private class AfterUndeleteQuery implements DeferredQuery {
+        private AfterUndelete.RecordsProvider provider;
+        private UndeleteRecords records;
+
+        public AfterUndeleteQuery(AfterUndelete.RecordsProvider provider, UndeleteRecords records) {
+            this.provider = provider;
+            this.records = records;
+        }
+
+        public List<SObject> query() {
+            return this.provider.query(this.records);
+        }
+
+        public String keyOf(SObject record) {
+            return this.provider.keyOf(record);
+        }
+    }
+
     public class ProvidedRecords implements RelatedRecords {
+        private DeferredQuery deferredQuery;
+        private Boolean queried = false;
         private List<SObject> records = new List<SObject>();
         private Map<String, List<SObject>> recordsByKey = new Map<String, List<SObject>>();
 
         public ProvidedRecords(BeforeInsert.RecordsProvider provider, InsertRecords records) {
-            this.records = provider.query(records) ?? new List<SObject>();
-
-            for (SObject record : this.records) {
-                this.index(provider.keyOf(record), record);
-            }
+            this.deferredQuery = new BeforeInsertQuery(provider, records);
         }
 
         public ProvidedRecords(AfterInsert.RecordsProvider provider, InsertRecords records) {
-            this.records = provider.query(records) ?? new List<SObject>();
-
-            for (SObject record : this.records) {
-                this.index(provider.keyOf(record), record);
-            }
+            this.deferredQuery = new AfterInsertQuery(provider, records);
         }
 
         public ProvidedRecords(BeforeUpdate.RecordsProvider provider, UpdateRecords records) {
-            this.records = provider.query(records) ?? new List<SObject>();
-
-            for (SObject record : this.records) {
-                this.index(provider.keyOf(record), record);
-            }
+            this.deferredQuery = new BeforeUpdateQuery(provider, records);
         }
 
         public ProvidedRecords(AfterUpdate.RecordsProvider provider, UpdateRecords records) {
-            this.records = provider.query(records) ?? new List<SObject>();
-
-            for (SObject record : this.records) {
-                this.index(provider.keyOf(record), record);
-            }
+            this.deferredQuery = new AfterUpdateQuery(provider, records);
         }
 
         public ProvidedRecords(BeforeDelete.RecordsProvider provider, DeleteRecords records) {
-            this.records = provider.query(records) ?? new List<SObject>();
-
-            for (SObject record : this.records) {
-                this.index(provider.keyOf(record), record);
-            }
+            this.deferredQuery = new BeforeDeleteQuery(provider, records);
         }
 
         public ProvidedRecords(AfterDelete.RecordsProvider provider, DeleteRecords records) {
-            this.records = provider.query(records) ?? new List<SObject>();
-
-            for (SObject record : this.records) {
-                this.index(provider.keyOf(record), record);
-            }
+            this.deferredQuery = new AfterDeleteQuery(provider, records);
         }
 
         public ProvidedRecords(AfterUndelete.RecordsProvider provider, UndeleteRecords records) {
-            this.records = provider.query(records) ?? new List<SObject>();
-
-            for (SObject record : this.records) {
-                this.index(provider.keyOf(record), record);
-            }
-        }
-
-        private void index(String key, SObject record) {
-            if (key == null) {
-                return;
-            }
-
-            if (!this.recordsByKey.containsKey(key)) {
-                this.recordsByKey.put(key, new List<SObject>());
-            }
-
-            this.recordsByKey.get(key).add(record);
+            this.deferredQuery = new AfterUndeleteQuery(provider, records);
         }
 
         public SObject getFirstWhereKeyEquals(Object key) {
@@ -577,6 +674,32 @@ public with sharing class TriggerHandler {
 
         public Boolean isEmpty() {
             return this.records.isEmpty();
+        }
+
+        public void load() {
+            if (this.queried) {
+                return;
+            }
+
+            this.records = this.deferredQuery.query() ?? new List<SObject>();
+
+            for (SObject record : this.records) {
+                this.index(this.deferredQuery.keyOf(record), record);
+            }
+
+            this.queried = true;
+        }
+
+        private void index(String key, SObject record) {
+            if (key == null) {
+                return;
+            }
+
+            if (!this.recordsByKey.containsKey(key)) {
+                this.recordsByKey.put(key, new List<SObject>());
+            }
+
+            this.recordsByKey.get(key).add(record);
         }
     }
 
@@ -747,7 +870,8 @@ public with sharing class TriggerHandler {
         private Map<String, SObject> newParents = new Map<String, SObject>();
         private Map<String, SObject> oldParents = new Map<String, SObject>();
 
-        private Map<String, RelatedRecords> providedRecords = new Map<String, RelatedRecords>();
+        private Map<String, ProvidedRecords> providedRecords = new Map<String, ProvidedRecords>();
+        private ParentResolver parentResolver;
 
         private SObjectType sObjectType;
 
@@ -1047,10 +1171,12 @@ public with sharing class TriggerHandler {
         }
 
         public SObject getNewParent(String relationshipName) {
+            this.parentResolver?.resolveParent(relationshipName);
             return this.newParents.get(relationshipName);
         }
 
         public SObject getOldParent(String relationshipName) {
+            this.parentResolver?.resolveParent(relationshipName);
             return this.oldParents.get(relationshipName);
         }
 
@@ -1061,7 +1187,11 @@ public with sharing class TriggerHandler {
                 );
             }
 
-            return this.providedRecords.get(providerName);
+            ProvidedRecords providedRecords = this.providedRecords.get(providerName);
+
+            providedRecords.load();
+
+            return providedRecords;
         }
 
         public void put(SObjectField field, Object value) {
@@ -1075,6 +1205,7 @@ public with sharing class TriggerHandler {
         }
 
         public SObject getParent(String relationshipName) {
+            this.parentResolver?.resolveParent(relationshipName);
             return this.newRecord == null ? this.oldParents.get(relationshipName) : this.newParents.get(relationshipName);
         }
 
@@ -1094,8 +1225,12 @@ public with sharing class TriggerHandler {
             this.oldParents.put(relationshipName, relatedRecord);
         }
 
-        public void setProvidedRecords(Map<String, RelatedRecords> providedRecords) {
+        public void setProvidedRecords(Map<String, ProvidedRecords> providedRecords) {
             this.providedRecords = providedRecords;
+        }
+
+        public void setParentResolver(ParentResolver parentResolver) {
+            this.parentResolver = parentResolver;
         }
     }
 

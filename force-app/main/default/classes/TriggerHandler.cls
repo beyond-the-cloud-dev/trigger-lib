@@ -319,6 +319,20 @@ public with sharing class TriggerHandler {
         Boolean isEmpty();
     }
 
+    public interface UnitOfWork {
+        UnitOfWork toInsert(SObject record);
+        UnitOfWork toInsert(DML.Record record);
+
+        UnitOfWork toUpdate(SObject record);
+        UnitOfWork toUpdate(DML.Record record);
+
+        UnitOfWork toUpsert(SObject record, SObjectField externalIdField);
+        
+        UnitOfWork toDelete(SObject record);
+
+        UnitOfWork toPublish(SObject event);
+    }
+
     public interface InsertRecords {
         Set<Id> getIds();
 

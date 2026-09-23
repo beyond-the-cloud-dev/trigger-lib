@@ -88,12 +88,14 @@ public with sharing class TriggerOrchestrator {
     private TriggerContext context;
     private Object orchestrator;
     private LookupEnrichment lookupEnrichment;
+    private DML.Committable sharedUnitOfWork;
 
     @TestVisible
     private TriggerOrchestrator(Object orchestrator) {
         this.orchestrator = orchestrator;
         this.context = new TriggerContext();
         this.lookupEnrichment = new LookupEnrichment(this.context);
+        this.sharedUnitOfWork = new DML().combineOnDuplicate().systemMode().withoutSharing();
     }
 
     @TestVisible

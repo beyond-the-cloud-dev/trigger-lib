@@ -45,7 +45,9 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void beforeInsertOperationRunsOnlyTheBeforeInsertHandlers() {
         mockFramework();
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, new LifecycleEveryContextOrchestrator(), newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(new LifecycleEveryContextOrchestrator());
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -59,7 +61,9 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void afterInsertOperationRunsOnlyTheAfterInsertHandlers() {
         mockFramework();
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, new LifecycleEveryContextOrchestrator(), savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(new LifecycleEveryContextOrchestrator());
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -74,7 +78,10 @@ private class TriggerOrchestratorTest {
     static void beforeUpdateOperationRunsOnlyTheBeforeUpdateHandlers() {
         mockFramework();
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, new LifecycleEveryContextOrchestrator(), contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(new LifecycleEveryContextOrchestrator());
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -89,7 +96,10 @@ private class TriggerOrchestratorTest {
     static void afterUpdateOperationRunsOnlyTheAfterUpdateHandlers() {
         mockFramework();
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, new LifecycleEveryContextOrchestrator(), contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(new LifecycleEveryContextOrchestrator());
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -103,7 +113,9 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void beforeDeleteOperationRunsOnlyTheBeforeDeleteHandlers() {
         mockFramework();
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_DELETE, new LifecycleEveryContextOrchestrator(), null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(new LifecycleEveryContextOrchestrator());
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -117,7 +129,9 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void afterDeleteOperationRunsOnlyTheAfterDeleteHandlers() {
         mockFramework();
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, new LifecycleEveryContextOrchestrator(), null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(new LifecycleEveryContextOrchestrator());
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -131,7 +145,9 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void afterUndeleteOperationRunsOnlyTheAfterUndeleteHandlers() {
         mockFramework();
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, new LifecycleEveryContextOrchestrator(), savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(new LifecycleEveryContextOrchestrator());
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -145,7 +161,9 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void operationTheOrchestratorDoesNotImplementIsSkippedWithoutError() {
         mockFramework();
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, new LifecycleBeforeInsertOnlyOrchestrator(), savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(new LifecycleBeforeInsertOnlyOrchestrator());
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -159,7 +177,9 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void nullOrchestratorIsIgnoredWithoutError() {
         mockFramework();
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, null, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(null);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -180,7 +200,9 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(validator);
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -205,7 +227,9 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(first);
         orchestrator.beforeInsert.add(second);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -227,7 +251,9 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(new BeforeInsertPopulatorSpy());
         orchestrator.beforeInsert.add(titleReader);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -245,7 +271,9 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(new LifecycleRolelessHandler());
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -262,7 +290,9 @@ private class TriggerOrchestratorTest {
         LifecycleRoleOnlyBeforeInsertPopulator populator = new LifecycleRoleOnlyBeforeInsertPopulator();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -279,7 +309,9 @@ private class TriggerOrchestratorTest {
         LifecycleRoleOnlyBeforeInsertValidator validator = new LifecycleRoleOnlyBeforeInsertValidator();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(validator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -296,7 +328,9 @@ private class TriggerOrchestratorTest {
         LifecycleRoleOnlyAfterInsertWriter writer = new LifecycleRoleOnlyAfterInsertWriter();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -313,7 +347,9 @@ private class TriggerOrchestratorTest {
         LifecycleRoleOnlyAfterInsertDispatcher dispatcher = new LifecycleRoleOnlyAfterInsertDispatcher();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -335,7 +371,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(populator);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -353,7 +392,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(validator);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -371,7 +413,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(writer);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -389,7 +434,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(dispatcher);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -410,7 +458,9 @@ private class TriggerOrchestratorTest {
         LifecycleRoleOnlyBeforeDeleteHandler handler = new LifecycleRoleOnlyBeforeDeleteHandler();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeDelete.add(handler);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -427,7 +477,9 @@ private class TriggerOrchestratorTest {
         LifecycleRoleOnlyAfterDeleteWriter writer = new LifecycleRoleOnlyAfterDeleteWriter();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -444,7 +496,9 @@ private class TriggerOrchestratorTest {
         LifecycleRoleOnlyAfterDeleteDispatcher dispatcher = new LifecycleRoleOnlyAfterDeleteDispatcher();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -465,7 +519,9 @@ private class TriggerOrchestratorTest {
         LifecycleRoleOnlyAfterUndeleteWriter writer = new LifecycleRoleOnlyAfterUndeleteWriter();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -482,7 +538,9 @@ private class TriggerOrchestratorTest {
         LifecycleRoleOnlyAfterUndeleteDispatcher dispatcher = new LifecycleRoleOnlyAfterUndeleteDispatcher();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -503,8 +561,12 @@ private class TriggerOrchestratorTest {
         BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator firstRun = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
-        TriggerOrchestrator secondRun = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Roe'), null);
+        TriggerOrchestrator firstRun = new TriggerOrchestrator(orchestrator);
+        firstRun.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        firstRun.context.newRecords = newContacts('Doe');
+        TriggerOrchestrator secondRun = new TriggerOrchestrator(orchestrator);
+        secondRun.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        secondRun.context.newRecords = newContacts('Roe');
 
         // Test
         Test.startTest();
@@ -522,7 +584,9 @@ private class TriggerOrchestratorTest {
         LoggerSpy logger = spyOnLogger();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(new BeforeInsertPopulatorSpy());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -541,7 +605,9 @@ private class TriggerOrchestratorTest {
         populator.failAt('action', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -558,12 +624,16 @@ private class TriggerOrchestratorTest {
         LoggerSpy logger = spyOnLogger();
         TestOrchestrator nestedOrchestrator = new TestOrchestrator();
         nestedOrchestrator.beforeInsert.add(new BeforeInsertPopulatorSpy());
-        TriggerOrchestrator nestedRunner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, nestedOrchestrator, newContacts('Nested'), null);
+        TriggerOrchestrator nestedRunner = new TriggerOrchestrator(nestedOrchestrator);
+        nestedRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        nestedRunner.context.newRecords = newContacts('Nested');
         BeforeInsertPopulatorSpy outerPopulator = new BeforeInsertPopulatorSpy();
         outerPopulator.runNestedAt('action:Doe', nestedRunner);
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(outerPopulator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -581,7 +651,9 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.bypass().all();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(new BeforeInsertPopulatorSpy());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -646,8 +718,12 @@ private class TriggerOrchestratorTest {
         mockFramework();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(new BeforeInsertPopulatorSpy());
-        TriggerOrchestrator firstRun = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
-        TriggerOrchestrator secondRun = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Roe'), null);
+        TriggerOrchestrator firstRun = new TriggerOrchestrator(orchestrator);
+        firstRun.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        firstRun.context.newRecords = newContacts('Doe');
+        TriggerOrchestrator secondRun = new TriggerOrchestrator(orchestrator);
+        secondRun.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        secondRun.context.newRecords = newContacts('Roe');
 
         // Test
         Test.startTest();
@@ -667,7 +743,9 @@ private class TriggerOrchestratorTest {
         populator.failAt('action', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -686,7 +764,9 @@ private class TriggerOrchestratorTest {
         populator.failAt('action', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -703,7 +783,9 @@ private class TriggerOrchestratorTest {
         LoggerSpy logger = spyOnLogger();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(new BeforeInsertPopulatorSpy());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -723,7 +805,9 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(new BeforeInsertValidatorSpy());
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -746,7 +830,9 @@ private class TriggerOrchestratorTest {
         populator.failAt('action', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -766,7 +852,9 @@ private class TriggerOrchestratorTest {
         populator.failAt('action', thrown);
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -786,7 +874,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(writer);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -806,7 +897,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(writer);
         List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -829,7 +923,9 @@ private class TriggerOrchestratorTest {
         populator.failAt('action', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1026,7 +1122,9 @@ private class TriggerOrchestratorTest {
         BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1044,7 +1142,9 @@ private class TriggerOrchestratorTest {
         BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1062,7 +1162,9 @@ private class TriggerOrchestratorTest {
         BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1081,7 +1183,9 @@ private class TriggerOrchestratorTest {
         BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1099,7 +1203,9 @@ private class TriggerOrchestratorTest {
         BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1117,7 +1223,9 @@ private class TriggerOrchestratorTest {
         BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1147,7 +1255,9 @@ private class TriggerOrchestratorTest {
         BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1164,7 +1274,9 @@ private class TriggerOrchestratorTest {
         BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1181,7 +1293,9 @@ private class TriggerOrchestratorTest {
         BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1198,7 +1312,9 @@ private class TriggerOrchestratorTest {
         BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1215,7 +1331,9 @@ private class TriggerOrchestratorTest {
         BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1232,7 +1350,9 @@ private class TriggerOrchestratorTest {
         AfterDeleteWriterSpy writer = new AfterDeleteWriterSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1249,7 +1369,9 @@ private class TriggerOrchestratorTest {
         BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1268,7 +1390,9 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(validator);
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1285,7 +1409,9 @@ private class TriggerOrchestratorTest {
         BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1302,7 +1428,9 @@ private class TriggerOrchestratorTest {
         BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1319,7 +1447,9 @@ private class TriggerOrchestratorTest {
         BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1336,7 +1466,9 @@ private class TriggerOrchestratorTest {
         BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1353,7 +1485,9 @@ private class TriggerOrchestratorTest {
         BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1371,7 +1505,9 @@ private class TriggerOrchestratorTest {
         populator.bypassed = true;
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1389,7 +1525,9 @@ private class TriggerOrchestratorTest {
         validator.bypassed = true;
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(validator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1407,7 +1545,9 @@ private class TriggerOrchestratorTest {
         writer.bypassed = true;
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1425,7 +1565,9 @@ private class TriggerOrchestratorTest {
         dispatcher.bypassed = true;
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1444,7 +1586,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(populator);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -1463,7 +1608,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(validator);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -1482,7 +1630,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(writer);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -1501,7 +1652,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(dispatcher);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -1519,7 +1673,9 @@ private class TriggerOrchestratorTest {
         handler.bypassed = true;
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeDelete.add(handler);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1537,7 +1693,9 @@ private class TriggerOrchestratorTest {
         writer.bypassed = true;
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1555,7 +1713,9 @@ private class TriggerOrchestratorTest {
         dispatcher.bypassed = true;
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1573,7 +1733,9 @@ private class TriggerOrchestratorTest {
         writer.bypassed = true;
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1591,7 +1753,9 @@ private class TriggerOrchestratorTest {
         dispatcher.bypassed = true;
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1609,7 +1773,9 @@ private class TriggerOrchestratorTest {
         populator.bypassed = false;
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1626,7 +1792,9 @@ private class TriggerOrchestratorTest {
         BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -1645,7 +1813,9 @@ private class TriggerOrchestratorTest {
         populator.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1663,7 +1833,9 @@ private class TriggerOrchestratorTest {
         populator.qualifying = new Set<String>{ 'Doe' };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -1681,7 +1853,9 @@ private class TriggerOrchestratorTest {
         validator.qualifying = new Set<String>{ 'Doe' };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(validator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -1699,7 +1873,9 @@ private class TriggerOrchestratorTest {
         writer.qualifying = new Set<String>{ 'Doe' };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -1717,7 +1893,9 @@ private class TriggerOrchestratorTest {
         dispatcher.qualifying = new Set<String>{ 'Doe' };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -1736,7 +1914,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(populator);
         List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -1755,7 +1936,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(validator);
         List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -1774,7 +1958,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(writer);
         List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -1793,7 +1980,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(dispatcher);
         List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -1811,7 +2001,9 @@ private class TriggerOrchestratorTest {
         handler.qualifying = new Set<String>{ 'Doe' };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeDelete.add(handler);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_DELETE, orchestrator, null, savedContacts('Doe', 'Roe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        runner.context.oldRecords = savedContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -1829,7 +2021,9 @@ private class TriggerOrchestratorTest {
         writer.qualifying = new Set<String>{ 'Doe' };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe', 'Roe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -1847,7 +2041,9 @@ private class TriggerOrchestratorTest {
         dispatcher.qualifying = new Set<String>{ 'Doe' };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe', 'Roe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -1865,7 +2061,9 @@ private class TriggerOrchestratorTest {
         writer.qualifying = new Set<String>{ 'Doe' };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -1883,7 +2081,9 @@ private class TriggerOrchestratorTest {
         dispatcher.qualifying = new Set<String>{ 'Doe' };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -1901,7 +2101,9 @@ private class TriggerOrchestratorTest {
         dispatcher.qualifying = new Set<String>();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1920,7 +2122,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(dispatcher);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -1938,7 +2143,9 @@ private class TriggerOrchestratorTest {
         dispatcher.qualifying = new Set<String>();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1956,7 +2163,9 @@ private class TriggerOrchestratorTest {
         dispatcher.qualifying = new Set<String>();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -1972,7 +2181,9 @@ private class TriggerOrchestratorTest {
         mockFramework();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(new AfterInsertDispatcherSpy());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -1989,7 +2200,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(new AfterUpdateDispatcherSpy());
         List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -2005,7 +2219,9 @@ private class TriggerOrchestratorTest {
         mockFramework();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(new AfterDeleteDispatcherSpy());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe', 'Roe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -2021,7 +2237,9 @@ private class TriggerOrchestratorTest {
         mockFramework();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(new AfterUndeleteDispatcherSpy());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -2037,7 +2255,9 @@ private class TriggerOrchestratorTest {
         mockFramework();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(new AfterInsertDispatcherSpy());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2059,7 +2279,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(new AfterUpdateDispatcherSpy());
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -2080,7 +2303,9 @@ private class TriggerOrchestratorTest {
         mockFramework();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(new AfterDeleteDispatcherSpy());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2101,7 +2326,9 @@ private class TriggerOrchestratorTest {
         mockFramework();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(new AfterUndeleteDispatcherSpy());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2125,7 +2352,9 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(validator);
         List<Contact> contacts = newContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, contacts, null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = contacts;
 
         // Test
         Test.startTest();
@@ -2144,7 +2373,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(validator);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -2164,7 +2396,9 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
         List<Contact> contacts = newContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, contacts, null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = contacts;
 
         // Test
         Test.startTest();
@@ -2182,7 +2416,9 @@ private class TriggerOrchestratorTest {
         populator.qualifying = new Set<String>{ 'Doe' };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -2200,7 +2436,9 @@ private class TriggerOrchestratorTest {
         validator.qualifying = new Set<String>{ 'Doe' };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(validator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -2218,7 +2456,9 @@ private class TriggerOrchestratorTest {
         writer.qualifying = new Set<String>{ 'Doe' };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -2236,7 +2476,9 @@ private class TriggerOrchestratorTest {
         dispatcher.qualifying = new Set<String>{ 'Doe' };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -2255,7 +2497,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(populator);
         List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -2274,7 +2519,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(validator);
         List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -2293,7 +2541,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(writer);
         List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -2312,7 +2563,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(dispatcher);
         List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -2330,7 +2584,9 @@ private class TriggerOrchestratorTest {
         handler.qualifying = new Set<String>{ 'Doe' };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeDelete.add(handler);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_DELETE, orchestrator, null, savedContacts('Doe', 'Roe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        runner.context.oldRecords = savedContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -2348,7 +2604,9 @@ private class TriggerOrchestratorTest {
         writer.qualifying = new Set<String>{ 'Doe' };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe', 'Roe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -2366,7 +2624,9 @@ private class TriggerOrchestratorTest {
         dispatcher.qualifying = new Set<String>{ 'Doe' };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe', 'Roe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -2384,7 +2644,9 @@ private class TriggerOrchestratorTest {
         writer.qualifying = new Set<String>{ 'Doe' };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -2402,7 +2664,9 @@ private class TriggerOrchestratorTest {
         dispatcher.qualifying = new Set<String>{ 'Doe' };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -2420,7 +2684,9 @@ private class TriggerOrchestratorTest {
         populator.qualifying = new Set<String>();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2438,7 +2704,9 @@ private class TriggerOrchestratorTest {
         validator.qualifying = new Set<String>();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(validator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2456,7 +2724,9 @@ private class TriggerOrchestratorTest {
         writer.qualifying = new Set<String>();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2474,7 +2744,9 @@ private class TriggerOrchestratorTest {
         dispatcher.qualifying = new Set<String>();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2493,7 +2765,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(populator);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -2512,7 +2787,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(validator);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -2531,7 +2809,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(writer);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -2550,7 +2831,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(dispatcher);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -2568,7 +2852,9 @@ private class TriggerOrchestratorTest {
         handler.qualifying = new Set<String>();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeDelete.add(handler);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2586,7 +2872,9 @@ private class TriggerOrchestratorTest {
         writer.qualifying = new Set<String>();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2604,7 +2892,9 @@ private class TriggerOrchestratorTest {
         dispatcher.qualifying = new Set<String>();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2622,7 +2912,9 @@ private class TriggerOrchestratorTest {
         writer.qualifying = new Set<String>();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2640,7 +2932,9 @@ private class TriggerOrchestratorTest {
         dispatcher.qualifying = new Set<String>();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2657,7 +2951,9 @@ private class TriggerOrchestratorTest {
         BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -2681,7 +2977,9 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(first);
         orchestrator.beforeInsert.add(second);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2703,7 +3001,9 @@ private class TriggerOrchestratorTest {
         populator.failAt('action', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2721,7 +3021,9 @@ private class TriggerOrchestratorTest {
         validator.failAt('action', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(validator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2739,7 +3041,9 @@ private class TriggerOrchestratorTest {
         writer.failAt('action', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2757,7 +3061,9 @@ private class TriggerOrchestratorTest {
         dispatcher.failAt('dispatch', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2776,7 +3082,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(populator);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -2795,7 +3104,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(validator);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -2814,7 +3126,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(writer);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -2833,7 +3148,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(dispatcher);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -2851,7 +3169,9 @@ private class TriggerOrchestratorTest {
         handler.failAt('action', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeDelete.add(handler);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2869,7 +3189,9 @@ private class TriggerOrchestratorTest {
         writer.failAt('action', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2887,7 +3209,9 @@ private class TriggerOrchestratorTest {
         dispatcher.failAt('dispatch', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2905,7 +3229,9 @@ private class TriggerOrchestratorTest {
         writer.failAt('action', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2923,7 +3249,9 @@ private class TriggerOrchestratorTest {
         dispatcher.failAt('dispatch', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2941,7 +3269,9 @@ private class TriggerOrchestratorTest {
         populator.failAt('action', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2959,7 +3289,9 @@ private class TriggerOrchestratorTest {
         validator.failAt('action', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(validator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2977,7 +3309,9 @@ private class TriggerOrchestratorTest {
         writer.failAt('action', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -2995,7 +3329,9 @@ private class TriggerOrchestratorTest {
         dispatcher.failAt('dispatch', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3014,7 +3350,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(populator);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3033,7 +3372,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(validator);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3052,7 +3394,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(writer);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3071,7 +3416,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(dispatcher);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3089,7 +3437,9 @@ private class TriggerOrchestratorTest {
         handler.failAt('action', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeDelete.add(handler);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3107,7 +3457,9 @@ private class TriggerOrchestratorTest {
         writer.failAt('action', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3125,7 +3477,9 @@ private class TriggerOrchestratorTest {
         dispatcher.failAt('dispatch', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3143,7 +3497,9 @@ private class TriggerOrchestratorTest {
         writer.failAt('action', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3161,7 +3517,9 @@ private class TriggerOrchestratorTest {
         dispatcher.failAt('dispatch', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3179,7 +3537,9 @@ private class TriggerOrchestratorTest {
         populator.failAt('action:Doe', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -3197,7 +3557,9 @@ private class TriggerOrchestratorTest {
         populator.failAt('action:Doe', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3219,7 +3581,9 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(first);
         orchestrator.beforeInsert.add(second);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3237,7 +3601,9 @@ private class TriggerOrchestratorTest {
         populator.failAt('when', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3255,7 +3621,9 @@ private class TriggerOrchestratorTest {
         populator.failAt('finalize', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3273,7 +3641,9 @@ private class TriggerOrchestratorTest {
         populator.failAt('relatedQuery', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3291,7 +3661,9 @@ private class TriggerOrchestratorTest {
         populator.readsProvider = 'unknown';
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3310,10 +3682,13 @@ private class TriggerOrchestratorTest {
     static void frameworkExceptionPropagatesDespiteContinueOnError() {
         mockFramework();
         ContinuingBeforeInsertPopulatorSpy populator = new ContinuingBeforeInsertPopulatorSpy();
-        populator.runNestedAt('action:Doe', orchestratorFor(null, new TestOrchestrator(), null, null));
+        TriggerOrchestrator nestedRunner = new TriggerOrchestrator(new TestOrchestrator());
+        populator.runNestedAt('action:Doe', nestedRunner);
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3335,7 +3710,9 @@ private class TriggerOrchestratorTest {
         populator.performDmlAt('action');
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3357,7 +3734,9 @@ private class TriggerOrchestratorTest {
         validator.performDmlAt('action');
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(validator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3380,7 +3759,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(populator);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3403,7 +3785,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(validator);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3426,7 +3811,9 @@ private class TriggerOrchestratorTest {
         populator.performDmlAt('action');
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3449,7 +3836,9 @@ private class TriggerOrchestratorTest {
         validator.performDmlAt('action');
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(validator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3473,7 +3862,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(populator);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3497,7 +3889,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(validator);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3520,7 +3915,9 @@ private class TriggerOrchestratorTest {
         populator.failAt('action:Doe', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3543,7 +3940,9 @@ private class TriggerOrchestratorTest {
         validator.failAt('action:Doe', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(validator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3567,7 +3966,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(populator);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3591,7 +3993,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(validator);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3613,7 +4018,9 @@ private class TriggerOrchestratorTest {
         populator.performDmlAt('when');
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3635,7 +4042,9 @@ private class TriggerOrchestratorTest {
         populator.performDmlAt('finalize');
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3657,7 +4066,9 @@ private class TriggerOrchestratorTest {
         populator.performDmlAt('relatedQuery');
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3680,7 +4091,9 @@ private class TriggerOrchestratorTest {
         populator.failAt('action', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3696,7 +4109,9 @@ private class TriggerOrchestratorTest {
         mockFramework();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(new BeforeInsertPopulatorSpy());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3715,7 +4130,9 @@ private class TriggerOrchestratorTest {
         handler.performDmlAt('action');
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeDelete.add(handler);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3733,7 +4150,9 @@ private class TriggerOrchestratorTest {
         writer.performDmlAt('action');
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -3752,9 +4171,16 @@ private class TriggerOrchestratorTest {
         orchestrator.beforeUpdate.add(populator);
         List<Contact> contacts = savedContacts('Doe');
         for (Integer run = 0; run < 3; run++) {
-            orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts)).run();
+            TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
+            earlierRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            earlierRun.context.newRecords = contacts;
+            earlierRun.context.oldRecords = priorVersionsOf(contacts);
+            earlierRun.run();
         }
-        TriggerOrchestrator fourthRun = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator fourthRun = new TriggerOrchestrator(orchestrator);
+        fourthRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        fourthRun.context.newRecords = contacts;
+        fourthRun.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3773,9 +4199,16 @@ private class TriggerOrchestratorTest {
         orchestrator.afterUpdate.add(writer);
         List<Contact> contacts = savedContacts('Doe');
         for (Integer run = 0; run < 3; run++) {
-            orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts)).run();
+            TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
+            earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            earlierRun.context.newRecords = contacts;
+            earlierRun.context.oldRecords = priorVersionsOf(contacts);
+            earlierRun.run();
         }
-        TriggerOrchestrator fourthRun = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator fourthRun = new TriggerOrchestrator(orchestrator);
+        fourthRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        fourthRun.context.newRecords = contacts;
+        fourthRun.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3794,9 +4227,16 @@ private class TriggerOrchestratorTest {
         orchestrator.afterUpdate.add(dispatcher);
         List<Contact> contacts = savedContacts('Doe');
         for (Integer run = 0; run < 3; run++) {
-            orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts)).run();
+            TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
+            earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            earlierRun.context.newRecords = contacts;
+            earlierRun.context.oldRecords = priorVersionsOf(contacts);
+            earlierRun.run();
         }
-        TriggerOrchestrator fourthRun = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator fourthRun = new TriggerOrchestrator(orchestrator);
+        fourthRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        fourthRun.context.newRecords = contacts;
+        fourthRun.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3815,8 +4255,15 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(populator);
         List<Contact> contacts = savedContacts('Doe');
-        orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts)).run();
-        TriggerOrchestrator secondRun = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
+        earlierRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        earlierRun.context.newRecords = contacts;
+        earlierRun.context.oldRecords = priorVersionsOf(contacts);
+        earlierRun.run();
+        TriggerOrchestrator secondRun = new TriggerOrchestrator(orchestrator);
+        secondRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        secondRun.context.newRecords = contacts;
+        secondRun.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3835,8 +4282,15 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(writer);
         List<Contact> contacts = savedContacts('Doe');
-        orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts)).run();
-        TriggerOrchestrator secondRun = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
+        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        earlierRun.context.newRecords = contacts;
+        earlierRun.context.oldRecords = priorVersionsOf(contacts);
+        earlierRun.run();
+        TriggerOrchestrator secondRun = new TriggerOrchestrator(orchestrator);
+        secondRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        secondRun.context.newRecords = contacts;
+        secondRun.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3855,8 +4309,15 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(dispatcher);
         List<Contact> contacts = savedContacts('Doe');
-        orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts)).run();
-        TriggerOrchestrator secondRun = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
+        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        earlierRun.context.newRecords = contacts;
+        earlierRun.context.oldRecords = priorVersionsOf(contacts);
+        earlierRun.run();
+        TriggerOrchestrator secondRun = new TriggerOrchestrator(orchestrator);
+        secondRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        secondRun.context.newRecords = contacts;
+        secondRun.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3875,8 +4336,15 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(populator);
         List<Contact> contacts = savedContacts('Doe');
-        orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts)).run();
-        TriggerOrchestrator secondRun = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
+        earlierRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        earlierRun.context.newRecords = contacts;
+        earlierRun.context.oldRecords = priorVersionsOf(contacts);
+        earlierRun.run();
+        TriggerOrchestrator secondRun = new TriggerOrchestrator(orchestrator);
+        secondRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        secondRun.context.newRecords = contacts;
+        secondRun.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3895,8 +4363,15 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(writer);
         List<Contact> contacts = savedContacts('Doe');
-        orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts)).run();
-        TriggerOrchestrator secondRun = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
+        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        earlierRun.context.newRecords = contacts;
+        earlierRun.context.oldRecords = priorVersionsOf(contacts);
+        earlierRun.run();
+        TriggerOrchestrator secondRun = new TriggerOrchestrator(orchestrator);
+        secondRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        secondRun.context.newRecords = contacts;
+        secondRun.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3915,8 +4390,15 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(dispatcher);
         List<Contact> contacts = savedContacts('Doe');
-        orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts)).run();
-        TriggerOrchestrator secondRun = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
+        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        earlierRun.context.newRecords = contacts;
+        earlierRun.context.oldRecords = priorVersionsOf(contacts);
+        earlierRun.run();
+        TriggerOrchestrator secondRun = new TriggerOrchestrator(orchestrator);
+        secondRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        secondRun.context.newRecords = contacts;
+        secondRun.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3936,9 +4418,16 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(populator);
         List<Contact> contacts = savedContacts('Doe');
-        orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts)).run();
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
+        earlierRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        earlierRun.context.newRecords = contacts;
+        earlierRun.context.oldRecords = priorVersionsOf(contacts);
+        earlierRun.run();
         populator.qualifying = null;
-        TriggerOrchestrator qualifiedRun = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator qualifiedRun = new TriggerOrchestrator(orchestrator);
+        qualifiedRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        qualifiedRun.context.newRecords = contacts;
+        qualifiedRun.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3958,9 +4447,16 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(writer);
         List<Contact> contacts = savedContacts('Doe');
-        orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts)).run();
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
+        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        earlierRun.context.newRecords = contacts;
+        earlierRun.context.oldRecords = priorVersionsOf(contacts);
+        earlierRun.run();
         writer.qualifying = null;
-        TriggerOrchestrator qualifiedRun = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator qualifiedRun = new TriggerOrchestrator(orchestrator);
+        qualifiedRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        qualifiedRun.context.newRecords = contacts;
+        qualifiedRun.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -3980,9 +4476,16 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(dispatcher);
         List<Contact> contacts = savedContacts('Doe');
-        orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts)).run();
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
+        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        earlierRun.context.newRecords = contacts;
+        earlierRun.context.oldRecords = priorVersionsOf(contacts);
+        earlierRun.run();
         dispatcher.qualifying = null;
-        TriggerOrchestrator qualifiedRun = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator qualifiedRun = new TriggerOrchestrator(orchestrator);
+        qualifiedRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        qualifiedRun.context.newRecords = contacts;
+        qualifiedRun.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -4001,10 +4504,17 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(writer);
         List<Contact> doe = savedContacts('Doe');
-        orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, doe, priorVersionsOf(doe)).run();
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
+        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        earlierRun.context.newRecords = doe;
+        earlierRun.context.oldRecords = priorVersionsOf(doe);
+        earlierRun.run();
         List<Contact> doeAndRoe = savedContacts('Doe', 'Roe');
         doeAndRoe[0].Id = doe[0].Id;
-        TriggerOrchestrator secondRun = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, doeAndRoe, priorVersionsOf(doeAndRoe));
+        TriggerOrchestrator secondRun = new TriggerOrchestrator(orchestrator);
+        secondRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        secondRun.context.newRecords = doeAndRoe;
+        secondRun.context.oldRecords = priorVersionsOf(doeAndRoe);
 
         // Test
         Test.startTest();
@@ -4027,8 +4537,15 @@ private class TriggerOrchestratorTest {
         TestOrchestrator dispatcherOrchestrator = new TestOrchestrator();
         dispatcherOrchestrator.afterUpdate.add(dispatcher);
         List<Contact> contacts = savedContacts('Doe');
-        orchestratorFor(System.TriggerOperation.AFTER_UPDATE, writerOrchestrator, contacts, priorVersionsOf(contacts)).run();
-        TriggerOrchestrator dispatcherRun = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, dispatcherOrchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(writerOrchestrator);
+        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        earlierRun.context.newRecords = contacts;
+        earlierRun.context.oldRecords = priorVersionsOf(contacts);
+        earlierRun.run();
+        TriggerOrchestrator dispatcherRun = new TriggerOrchestrator(dispatcherOrchestrator);
+        dispatcherRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        dispatcherRun.context.newRecords = contacts;
+        dispatcherRun.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -4052,7 +4569,10 @@ private class TriggerOrchestratorTest {
         orchestrator.afterUpdate.add(first);
         orchestrator.afterUpdate.add(second);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -4072,8 +4592,15 @@ private class TriggerOrchestratorTest {
         orchestrator.beforeUpdate.add(handler);
         orchestrator.afterUpdate.add(handler);
         List<Contact> contacts = savedContacts('Doe');
-        orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts)).run();
-        TriggerOrchestrator afterUpdateRun = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
+        earlierRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        earlierRun.context.newRecords = contacts;
+        earlierRun.context.oldRecords = priorVersionsOf(contacts);
+        earlierRun.run();
+        TriggerOrchestrator afterUpdateRun = new TriggerOrchestrator(orchestrator);
+        afterUpdateRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        afterUpdateRun.context.newRecords = contacts;
+        afterUpdateRun.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -4092,8 +4619,15 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(writer);
         List<Contact> contacts = savedContacts('Doe');
-        orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts)).run();
-        TriggerOrchestrator secondRun = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
+        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        earlierRun.context.newRecords = contacts;
+        earlierRun.context.oldRecords = priorVersionsOf(contacts);
+        earlierRun.run();
+        TriggerOrchestrator secondRun = new TriggerOrchestrator(orchestrator);
+        secondRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        secondRun.context.newRecords = contacts;
+        secondRun.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -4112,9 +4646,16 @@ private class TriggerOrchestratorTest {
         orchestrator.beforeUpdate.add(validator);
         List<Contact> contacts = savedContacts('Doe');
         for (Integer run = 0; run < 3; run++) {
-            orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts)).run();
+            TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
+            earlierRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            earlierRun.context.newRecords = contacts;
+            earlierRun.context.oldRecords = priorVersionsOf(contacts);
+            earlierRun.run();
         }
-        TriggerOrchestrator fourthRun = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator fourthRun = new TriggerOrchestrator(orchestrator);
+        fourthRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        fourthRun.context.newRecords = contacts;
+        fourthRun.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -4150,7 +4691,9 @@ private class TriggerOrchestratorTest {
         orchestrator.beforeInsert.add(populator);
         List<Contact> contacts = newContacts('Doe');
         contacts[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, contacts, null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = contacts;
 
         // Test
         Test.startTest();
@@ -4175,7 +4718,9 @@ private class TriggerOrchestratorTest {
         writer.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, contacts, null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = contacts;
 
         // Test
         Test.startTest();
@@ -4198,7 +4743,10 @@ private class TriggerOrchestratorTest {
         List<Contact> contacts = savedContacts('Doe');
         List<Contact> priorVersions = priorVersionsOf(contacts);
         contacts[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersions);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersions;
 
         // Test
         Test.startTest();
@@ -4221,7 +4769,10 @@ private class TriggerOrchestratorTest {
         List<Contact> contacts = savedContacts('Doe');
         List<Contact> priorVersions = priorVersionsOf(contacts);
         priorVersions[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersions);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersions;
 
         // Test
         Test.startTest();
@@ -4247,7 +4798,10 @@ private class TriggerOrchestratorTest {
         writer.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersions);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersions;
 
         // Test
         Test.startTest();
@@ -4270,7 +4824,10 @@ private class TriggerOrchestratorTest {
         List<Contact> contacts = savedContacts('Doe');
         List<Contact> priorVersions = priorVersionsOf(contacts);
         priorVersions[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersions);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersions;
 
         // Test
         Test.startTest();
@@ -4292,7 +4849,9 @@ private class TriggerOrchestratorTest {
         orchestrator.beforeDelete.add(handler);
         List<Contact> contacts = savedContacts('Doe');
         contacts[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_DELETE, orchestrator, null, contacts);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        runner.context.oldRecords = contacts;
 
         // Test
         Test.startTest();
@@ -4314,7 +4873,9 @@ private class TriggerOrchestratorTest {
         orchestrator.afterDelete.add(writer);
         List<Contact> contacts = savedContacts('Doe');
         contacts[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, contacts);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = contacts;
 
         // Test
         Test.startTest();
@@ -4339,7 +4900,9 @@ private class TriggerOrchestratorTest {
         writer.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, contacts, null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = contacts;
 
         // Test
         Test.startTest();
@@ -4364,7 +4927,9 @@ private class TriggerOrchestratorTest {
         orchestrator.beforeInsert.add(second);
         List<Contact> contacts = newContacts('Doe');
         contacts[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, contacts, null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = contacts;
 
         // Test
         Test.startTest();
@@ -4390,7 +4955,9 @@ private class TriggerOrchestratorTest {
         orchestrator.beforeInsert.add(second);
         List<Contact> contacts = newContacts('Doe');
         contacts[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, contacts, null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = contacts;
 
         // Test
         Test.startTest();
@@ -4418,7 +4985,9 @@ private class TriggerOrchestratorTest {
         orchestrator.beforeInsert.add(second);
         List<Contact> contacts = newContacts('Doe');
         contacts[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, contacts, null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = contacts;
 
         // Test
         Test.startTest();
@@ -4437,7 +5006,9 @@ private class TriggerOrchestratorTest {
         populator.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -4460,7 +5031,9 @@ private class TriggerOrchestratorTest {
         List<Contact> contacts = newContacts('Doe', 'Roe');
         contacts[0].AccountId = acme.Id;
         contacts[1].AccountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, contacts, null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = contacts;
 
         // Test
         Test.startTest();
@@ -4486,7 +5059,10 @@ private class TriggerOrchestratorTest {
         orchestrator.beforeUpdate.add(populator);
         List<Contact> contacts = savedContacts('Doe');
         contacts[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -4513,7 +5089,10 @@ private class TriggerOrchestratorTest {
         List<Contact> priorVersions = priorVersionsOf(contacts);
         contacts[0].AccountId = acme.Id;
         priorVersions[0].AccountId = globex.Id;
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersions);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersions;
 
         // Test
         Test.startTest();
@@ -4544,7 +5123,10 @@ private class TriggerOrchestratorTest {
         writer.priorParentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersions);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersions;
 
         // Test
         Test.startTest();
@@ -4572,7 +5154,9 @@ private class TriggerOrchestratorTest {
         orchestrator.beforeInsert.add(second);
         List<Contact> contacts = newContacts('Doe');
         contacts[0].AccountId = acme.Id;
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, contacts, null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = contacts;
 
         // Test
         Test.startTest();
@@ -4600,7 +5184,10 @@ private class TriggerOrchestratorTest {
         orchestrator.beforeUpdate.add(second);
         List<Contact> contacts = savedContacts('Doe');
         contacts[0].AccountId = acme.Id;
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -4627,7 +5214,9 @@ private class TriggerOrchestratorTest {
         List<Contact> contacts = newContacts('Doe', 'Roe');
         contacts[0].AccountId = acme.Id;
         contacts[1].AccountId = globex.Id;
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, contacts, null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = contacts;
 
         // Test
         Test.startTest();
@@ -4653,7 +5242,9 @@ private class TriggerOrchestratorTest {
         orchestrator.beforeInsert.add(second);
         List<Contact> contacts = newContacts('Doe');
         contacts[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, contacts, null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = contacts;
 
         // Test
         Test.startTest();
@@ -4682,7 +5273,10 @@ private class TriggerOrchestratorTest {
         orchestrator.beforeUpdate.add(second);
         List<Contact> contacts = savedContacts('Doe');
         contacts[0].AccountId = acme.Id;
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -4702,7 +5296,9 @@ private class TriggerOrchestratorTest {
         populator.readsProvider = 'accounts';
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -4722,7 +5318,9 @@ private class TriggerOrchestratorTest {
         writer.readsProvider = 'accounts';
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -4743,7 +5341,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeUpdate.add(populator);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -4764,7 +5365,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(writer);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -4784,7 +5388,9 @@ private class TriggerOrchestratorTest {
         handler.readsProvider = 'accounts';
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeDelete.add(handler);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -4804,7 +5410,9 @@ private class TriggerOrchestratorTest {
         writer.readsProvider = 'accounts';
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -4824,7 +5432,9 @@ private class TriggerOrchestratorTest {
         writer.readsProvider = 'accounts';
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -4844,7 +5454,9 @@ private class TriggerOrchestratorTest {
         populator.providers.put('accounts', provider);
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -4860,7 +5472,9 @@ private class TriggerOrchestratorTest {
         mockFramework();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(new BeforeInsertPopulatorSpy());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -4876,7 +5490,9 @@ private class TriggerOrchestratorTest {
         mockFramework();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(new BeforeInsertPopulatorSpy());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -4898,7 +5514,9 @@ private class TriggerOrchestratorTest {
         populator.providers = null;
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -4919,7 +5537,9 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.beforeInsert.add(first);
         orchestrator.beforeInsert.add(second);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, newContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = newContacts('Doe');
 
         // Test
         Test.startTest();
@@ -4945,7 +5565,9 @@ private class TriggerOrchestratorTest {
         orchestrator.beforeInsert.add(populator);
         List<Contact> contacts = newContacts('Doe');
         contacts[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.BEFORE_INSERT, orchestrator, contacts, null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        runner.context.newRecords = contacts;
 
         // Test
         Test.startTest();
@@ -4997,7 +5619,9 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(new AfterInsertWriterSpy());
         orchestrator.afterInsert.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5021,7 +5645,10 @@ private class TriggerOrchestratorTest {
         orchestrator.afterUpdate.add(new AfterUpdateWriterSpy());
         orchestrator.afterUpdate.add(dispatcher);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -5044,7 +5671,9 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(new AfterDeleteWriterSpy());
         orchestrator.afterDelete.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5067,7 +5696,9 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(new AfterUndeleteWriterSpy());
         orchestrator.afterUndelete.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5088,7 +5719,9 @@ private class TriggerOrchestratorTest {
         mockFramework();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(new OwnUnitAfterInsertWriterSpy());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5109,7 +5742,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(new OwnUnitAfterUpdateWriterSpy());
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -5129,7 +5765,9 @@ private class TriggerOrchestratorTest {
         mockFramework();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(new OwnUnitAfterDeleteWriterSpy());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5149,7 +5787,9 @@ private class TriggerOrchestratorTest {
         mockFramework();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(new OwnUnitAfterUndeleteWriterSpy());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5171,7 +5811,9 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(new ContinuingAfterInsertWriterSpy());
         orchestrator.afterInsert.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5190,7 +5832,10 @@ private class TriggerOrchestratorTest {
         orchestrator.afterUpdate.add(new ContinuingAfterUpdateWriterSpy());
         orchestrator.afterUpdate.add(dispatcher);
         List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -5208,7 +5853,9 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(new ContinuingAfterDeleteWriterSpy());
         orchestrator.afterDelete.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5226,7 +5873,9 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(new ContinuingAfterUndeleteWriterSpy());
         orchestrator.afterUndelete.add(dispatcher);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5244,7 +5893,9 @@ private class TriggerOrchestratorTest {
         writer.failAt('action:Roe', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -5267,7 +5918,10 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUpdate.add(writer);
         List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UPDATE, orchestrator, contacts, priorVersionsOf(contacts));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        runner.context.newRecords = contacts;
+        runner.context.oldRecords = priorVersionsOf(contacts);
 
         // Test
         Test.startTest();
@@ -5289,7 +5943,9 @@ private class TriggerOrchestratorTest {
         writer.failAt('action:Roe', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterDelete.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_DELETE, orchestrator, null, savedContacts('Doe', 'Roe'));
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        runner.context.oldRecords = savedContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -5311,7 +5967,9 @@ private class TriggerOrchestratorTest {
         writer.failAt('action:Roe', new SpyException('Boom'));
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterUndelete.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_UNDELETE, orchestrator, savedContacts('Doe', 'Roe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        runner.context.newRecords = savedContacts('Doe', 'Roe');
 
         // Test
         Test.startTest();
@@ -5332,7 +5990,9 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(new AfterInsertWriterSpy());
         orchestrator.afterInsert.add(new AfterInsertWriterSpy());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5354,7 +6014,9 @@ private class TriggerOrchestratorTest {
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(first);
         orchestrator.afterInsert.add(second);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5378,7 +6040,9 @@ private class TriggerOrchestratorTest {
         writer.qualifying = new Set<String>();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5398,7 +6062,9 @@ private class TriggerOrchestratorTest {
         mockFramework();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(new UowOwnContinuingWriter());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5419,7 +6085,9 @@ private class TriggerOrchestratorTest {
         DML.mock(TriggerOrchestratorTest.TRIGGER_UOW).exceptionOnInserts();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(new AfterInsertWriterSpy());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5437,7 +6105,9 @@ private class TriggerOrchestratorTest {
         LoggerSpy logger = spyOnLogger();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(new ContinuingAfterInsertWriterSpy());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5457,7 +6127,9 @@ private class TriggerOrchestratorTest {
         mockFramework();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(new UowInsertRecordWriter());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5477,7 +6149,9 @@ private class TriggerOrchestratorTest {
         mockFramework();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(new UowUpdateWriter());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5497,7 +6171,9 @@ private class TriggerOrchestratorTest {
         mockFramework();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(new UowUpdateRecordWriter());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5517,7 +6193,9 @@ private class TriggerOrchestratorTest {
         mockFramework();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(new UowUpsertWriter());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5537,7 +6215,9 @@ private class TriggerOrchestratorTest {
         mockFramework();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(new UowDeleteWriter());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5557,7 +6237,9 @@ private class TriggerOrchestratorTest {
         mockFramework();
         TestOrchestrator orchestrator = new TestOrchestrator();
         orchestrator.afterInsert.add(new UowPublishWriter());
-        TriggerOrchestrator runner = orchestratorFor(System.TriggerOperation.AFTER_INSERT, orchestrator, savedContacts('Doe'), null);
+        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
+        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        runner.context.newRecords = savedContacts('Doe');
 
         // Test
         Test.startTest();
@@ -5719,14 +6401,6 @@ private class TriggerOrchestratorTest {
 
     private static Account savedAccount(String name) {
         return new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = name);
-    }
-
-    private static TriggerOrchestrator orchestratorFor(System.TriggerOperation operation, Object orchestrator, List<SObject> newRecords, List<SObject> oldRecords) {
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = operation;
-        runner.context.newRecords = newRecords;
-        runner.context.oldRecords = oldRecords;
-        return runner;
     }
 
     private static Exception runCatching(TriggerOrchestrator runner) {

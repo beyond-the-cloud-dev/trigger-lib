@@ -1,58 +1,43 @@
 ---
-outline: deep
+description: 'TriggerOrchestrator reference: run() from the trigger, the seven registration interfaces, the bypass() builder that switches off objects, orchestrators and handlers from Apex, the Logger and Error interfaces, and TriggerOrchestratorException.'
 ---
 
 # TriggerOrchestrator
 
-Entry point of the framework. A trigger calls `TriggerOrchestrator.run` with an orchestrator instance, and the class runs the handlers for the current trigger context.
+The class your trigger calls. `TriggerOrchestrator.run(…)` runs the handlers of the current trigger context, your orchestrator implements one registration interface per context, `TriggerOrchestrator.bypass()` switches off (skips, disables) objects, orchestrators and handlers from Apex, and the `Logger` and `Error` interfaces receive the errors of handlers.
 
-## Methods
-
-### run
-
-Executes the handlers for `Trigger.operationType`.
-
-**Signature**
+## run {#run}
 
 ```apex
 public static void run(Object orchestrator)
 ```
 
-**Example**
+The trigger body is one line. List every event the object needs; the library runs only the contexts your orchestrator registers.
 
-```apex
-trigger AccountTrigger on Account(
-  before insert,
-  after insert,
-  before update,
-  after update,
-  before delete,
-  after delete,
-  after undelete
-) {
-  TriggerOrchestrator.run(new AccountTriggerOrchestrator());
-}
-```
+<<< @/../examples/main/default/triggers/ContactTrigger.trigger
 
-The `orchestrator` argument is typed as `Object` so a single class can implement any combination of the context interfaces below. When the orchestrator does not implement the interface for the current context, the call is a no-op and the DML proceeds. An orchestrator that returns an empty handler list behaves the same way.
+One call does this, in order:
 
-**What one invocation does**
+1. Throws `TriggerOrchestratorException` when no trigger is running, for example from anonymous Apex.
+2. Returns at once when `TriggerOrchestrator.bypass()` has switched off everything, this object or this orchestrator.
+3. Returns at once when a `TriggerObject__mdt` record switches off this object.
+4. Returns at once when the orchestrator does not implement the registration interface for `Trigger.operationType`. Nothing is reported.
+5. Calls the orchestrator's handler method, such as `beforeInsertHandlers()`, and drops the handlers that are switched off: by `TriggerOrchestrator.bypass().handler(…)`, by a `TriggerHandler__mdt` record, or by their own Bypassable add-on.
+6. Loads the parent records that the remaining handlers declare, with one set of queries for all of them. Before insert and before update load them again for records whose lookup a Populator changed.
+7. Runs each handler in list order, one handler at a time over every record of the chunk.
+8. In an after context, commits the shared unit of work.
+9. When this is the outermost run, calls `Logger.finalize()`, also when the run failed.
 
-1. Throws `TriggerOrchestratorException` when there is no trigger context.
-2. Reads the [bypass metadata](/guide/bypasses). When the object is bypassed, nothing runs and the DML succeeds.
-3. Selects the context to run from `Trigger.operationType` and the interfaces the orchestrator implements.
-4. Adapts the handler list. Before insert and before update reject an entry that implements neither or both of `Populator` and `Validator`, before any handler runs.
-5. Drops bypassed handlers, then [enriches](/guide/enrichment) every parent lookup declared by the surviving handlers, once for all of them.
-6. Runs the handlers in list order. Each handler takes its full turn before the next one starts: records over the recursion budget are skipped, the remaining ones are qualified, the action runs for each qualified record, then the handler's finalizer fires. A handler with no qualified records does not run at all.
-7. Calls `Logger.finalize()` if this invocation is the outermost one, which is once per trigger phase per chunk of 200 records.
+- **`Object`, not an interface.** One orchestrator class implements any combination of the registration interfaces below, so `run` takes it as `Object`.
+- **One run per trigger invocation.** Every context and every 200-record chunk is a separate run that calls the handler method again. See [Instances per Chunk](/guide/orchestrator#instances-per-chunk).
+- **An empty list runs nothing.** Return an empty list, never `null`: iterating a null list throws a `NullPointerException` before any handler starts, and the save fails.
+- **Nested runs.** DML inside a handler that fires another trigger starts a nested run. It finishes before the outer handler continues.
 
-**Order matters**
+Each phase step by step, and what each step costs in SOQL: [Execution Order & Cost](/guide/execution-order).
 
-A handler's `...When` predicate is evaluated at that handler's own turn, immediately before the handler runs, not in a single pass up front. A predicate therefore observes field writes made by handlers earlier in the list, so the order of the list is part of the behaviour, not a cosmetic choice. Parent enrichment is the exception: it happens once in step 5, so every predicate can read `getNewParent` and `getOldParent`.
+## Registration Interfaces {#registration}
 
-## Orchestrator Interfaces
-
-Each interface returns the ordered handler list of one context.
+Your orchestrator implements one interface per context it handles. Each returns the handlers of that context in run order.
 
 ```apex
 public interface BeforeInsert {
@@ -84,96 +69,131 @@ public interface AfterUndelete {
 }
 ```
 
-In `BeforeInsert` and `BeforeUpdate`, `Handler` is an empty marker that `Populator` and `Validator` extend. It is the list type only. Every entry must implement exactly one of the two roles, and no class implements `Handler` directly. In the other five contexts `Handler` is the working interface, with a `qualifiesFor...When` predicate and an `on...` method. See [Context Interfaces](/api/context-interfaces).
+<<< @/../examples/main/default/classes/contact/ContactTriggerOrchestrator.cls
 
-**Example**
+- **One role per entry.** The list type is the context's `Handler` interface. Each entry implements one role of that context: Populator or Validator in before insert and before update, Writer or Dispatcher in the after contexts, and `BeforeDelete.Handler` in before delete.
+- **Two roles in one class.** Only the first runs: Populator over Validator, Writer over Dispatcher. Nothing throws.
+- **Only the marker.** Outside before delete, `Handler` is an empty marker. A class that implements only the marker compiles, fits in the list and never runs.
+- **No BeforeUndelete.** Salesforce has no `before undelete` trigger event. See [There Is No BeforeUndelete](/before-undelete).
+
+Every context's roles and method names: [Contexts at a Glance](/contexts#method-names).
+
+## bypass {#bypass}
 
 ```apex
-public with sharing class AccountTriggerOrchestrator implements TriggerOrchestrator.BeforeInsert, TriggerOrchestrator.AfterUpdate {
-  public List<BeforeInsert.Handler> beforeInsertHandlers() {
-    return new List<BeforeInsert.Handler>{
-      new AccountDefaultsPopulator(),
-      new AccountNameValidator()
-    };
-  }
+public static TriggerOrchestrator.Bypassable bypass()
 
-  public List<AfterUpdate.Handler> afterUpdateHandlers() {
-    return new List<AfterUpdate.Handler>{ new AccountOwnerChangeHandler() };
-  }
+public interface Bypassable {
+    Bypassable sObject(SObjectType sObjectType);
+    Bypassable orchestrator(System.Type orchestrator);
+    Bypassable handler(System.Type handler);
+    void all();
+    void clear();
 }
 ```
 
-## RecursionGuard
+`TriggerOrchestrator.bypass()` returns the transaction's one switch board. It is a builder, not the handler add-on of the same name.
 
-Optional. Sets the recursion depth for every handler this orchestrator returns, in both update contexts.
+| Method | Switches off |
+|---|---|
+| `sObject(Account.SObjectType)` | every run on that object |
+| `orchestrator(X.class)` | every run of that orchestrator class; top-level classes only |
+| `handler(X.class)` | that handler class in every context; top-level classes only |
+| `all()` | every run |
+| `clear()` | removes every switch, `all()` included |
 
 ```apex
-public interface RecursionGuard {
-  Integer maxRecursionDepth();
+TriggerOrchestrator.bypass().sObject(Account.SObjectType).handler(ContactFollowUpTaskWriter.class);
+try {
+    insert contacts;
+} finally {
+    TriggerOrchestrator.bypass().clear();
 }
 ```
 
-```apex
-public with sharing class OpportunityTriggerOrchestrator implements TriggerOrchestrator.AfterUpdate, TriggerOrchestrator.RecursionGuard {
-  public Integer maxRecursionDepth() {
-    return 5;
-  }
+- **Chaining.** `sObject`, `orchestrator` and `handler` return the builder. `all()` and `clear()` return nothing.
+- **Lasts for the transaction.** A switch stays on until `clear()` or the end of the transaction, nested saves included. There is no method that removes a single switch, so call `clear()` in a `finally` block.
+- **When it is checked.** `all()`, `sObject(…)` and `orchestrator(…)` are checked at the start of every run, before the `TriggerObject__mdt` record. `handler(…)` is checked for each handler before its `TriggerHandler__mdt` record and its Bypassable method.
+- **By class: top-level classes only.** `handler(X.class)` and `orchestrator(X.class)` store the name that `X.class` reports, which for an inner class is `Outer.Inner`, but compare it with the running class's simple name, `Inner`. An inner class therefore never matches. For an inner handler class, use its [`TriggerHandler__mdt` record](/api/custom-metadata#trigger-handler) or its Bypassable add-on; for an inner orchestrator class, use `sObject(…)`. In a namespaced installation this matching has not been verified.
+- **Only Trigger Lib handlers.** Flows, validation rules, duplicate rules and triggers not built on Trigger Lib still run.
 
-  public List<AfterUpdate.Handler> afterUpdateHandlers() {
-    return new List<AfterUpdate.Handler>{ new OpportunityRollupHandler() };
-  }
-}
-```
+Every way to switch handlers off, in the order the library checks them: [Bypassing](/guide/bypasses).
 
-The depth is resolved in three steps, each overriding the one before it: the framework default of `3`, then `TriggerOrchestrator.RecursionGuard`, then the context `RecursionGuard` on the handler itself, which always wins. A record over the budget is skipped silently for that handler. See [Recursion Control](/guide/recursion-control).
-
-## Logger
-
-Optional. Implement once per org to receive handler and framework errors. See [Error Handling](/guide/error-handling).
+## Logger {#logger}
 
 ```apex
 public interface Logger {
-  void log(Error error);
-  void finalize();
+    void log(TriggerOrchestrator.Error error);
+    void finalize();
 }
 ```
 
-| Method     | Called                                                                                                |
-| ---------- | ----------------------------------------------------------------------------------------------------- |
-| `log`      | For every exception raised while a handler runs, before that exception propagates                     |
-| `finalize` | Once per top-level `run`, meaning once per trigger phase per chunk. Nested invocations do not call it |
+Implement it in one class to receive handler errors. The library finds the class itself, so nothing is registered.
 
-Only one concrete class in the org may implement it. A second implementation raises `TriggerOrchestratorException`.
+| Method | Called |
+|---|---|
+| `log(error)` | for every exception thrown inside a handler's turn (providers, predicates, actions, dispatch, Finalizer, the commit of an own or private unit of work), before it is rethrown or swallowed by ContinueOnError; also for the before-context DML guard and for a Validator that attached no error |
+| `finalize()` | once when the outermost run ends, also when it failed; nested runs do not call it. Not called when the run was skipped or the orchestrator does not handle the context. |
 
-## Error
+- **Discovery.** The first call to `run` or `bypass()` in a transaction queries `ApexTypeImplementor` once for concrete classes that implement `TriggerOrchestrator.Logger`, and creates the class with its no-argument constructor.
+- **One implementation.** With two or more, that first call throws `TriggerOrchestratorException`, so every trigger that uses the library fails until one is removed.
+- **None is fine.** Without an implementation, errors are only thrown, never logged.
 
-Passed to `Logger.log`.
+A complete Logger and its lifecycle: [Errors & Logging](/guide/error-handling#logger).
+
+### What Is Never Logged {#never-logged}
+
+<!--@include: @/_parts/notes/never-logged.md-->
+
+## Error {#error}
+
+`Logger.log` receives one `Error` per exception.
 
 ```apex
 public interface Error {
-  String getHandlerName();
-  SObjectType getSObjectType();
-  System.Exception getException();
-  System.TriggerOperation getOperation();
-  Set<Id> getRecordIds();
+    String getHandlerName();
+    SObjectType getSObjectType();
+    System.Exception getException();
+    System.TriggerOperation getOperation();
+    Set<Id> getRecordIds();
 }
 ```
 
-| Method             | Returns                                                               |
-| ------------------ | --------------------------------------------------------------------- |
-| `getHandlerName()` | Class name of the handler being processed, or `null`                  |
-| `getSObjectType()` | SObject type of the trigger records                                   |
-| `getException()`   | The exception that was thrown                                         |
-| `getOperation()`   | `Trigger.operationType` of the invocation                             |
-| `getRecordIds()`   | Keys of `Trigger.newMap` or `Trigger.oldMap`, `null` in before insert |
+| Method | Returns |
+|---|---|
+| `getHandlerName()` | the handler's simple class name, without the outer class; never null |
+| `getSObjectType()` | the object of the trigger |
+| `getException()` | the exception |
+| `getOperation()` | the trigger operation, such as `AFTER_UPDATE` |
+| `getRecordIds()` | the Ids of every record in the chunk, not only the qualified ones; an empty set in before insert |
 
-## Exceptions
+## Exceptions {#exceptions}
 
-`TriggerOrchestratorException` is thrown for:
+The library throws two exception types of its own. Both are rethrown even when the handler implements ContinueOnError.
 
-- `run` called outside a trigger context,
-- a before insert or before update handler that implements neither or both of `Populator` and `Validator`,
-- DML or an immediate platform event published by a before insert or before update handler,
-- more than one `TriggerOrchestrator.Logger` implementation in the org.
+### TriggerOrchestratorException {#triggerorchestratorexception}
 
-When it is raised while a handler runs, such as the DML guard, the logger receives it before it propagates. `ContinueOnError` never suppresses it, and the DML is aborted. The type is declared inside `TriggerOrchestrator` and is not public, so it cannot be caught by type from your own code.
+The class is private to `TriggerOrchestrator`, so it cannot be named in a `catch`. Catch `Exception` and match on `getMessage()`.
+
+| Message | Thrown |
+|---|---|
+| `Called outside of a trigger context, or the trigger operation is not supported.` | by `run` when no trigger is running; never logged |
+| `Multiple implementations of TriggerOrchestrator.Logger found. Only one implementation is allowed.` | by the first call to `run` or `bypass()` in the transaction; never logged |
+| `<Handler> performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.` | after a before insert or before update handler's turn that ran DML or published an immediate event; logged, then thrown |
+| `<Handler> qualified a record in errorShouldBeAttachedOnBeforeInsertWhen but attached no error in addErrorOnBeforeInsert.` | by a Validator's turn when its predicate returned true and its error method attached no error; in before update the message names `errorShouldBeAttachedOnBeforeUpdateWhen` and `addErrorOnBeforeUpdate`; logged, then thrown |
+
+`<Handler>` is the handler's simple class name.
+
+- **Around a direct call only.** Catching works around your own call to `run` or `bypass()`. Code that fires the trigger through DML gets a `DmlException` instead, or a `Database.Error` with partial success, and its message contains the original message.
+- **The other library exception** is public and can be caught by type: [TriggerHandler.TriggerHandlerException](/api/record#triggerhandlerexception).
+
+## Names That Look Alike {#name-collisions}
+
+<!--@include: @/_parts/notes/name-collisions.md-->
+
+## See Also {#see-also}
+
+- [Trigger & Orchestrator](/guide/orchestrator): wiring, handler order, one class in several contexts
+- [Bypassing](/guide/bypasses) and [Custom Metadata](/api/custom-metadata)
+- [Errors & Logging](/guide/error-handling)
+- [Contexts at a Glance](/contexts)

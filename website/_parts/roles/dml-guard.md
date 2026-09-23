@@ -1,0 +1,8 @@
+Before insert and before update do not allow DML. Around each handler, the library compares `Limits.getDmlStatements()` and `Limits.getPublishImmediateDML()` before and after the handler's work: its RelatedQuery providers, every predicate and action, and its Finalizer. If either count went up, the library logs and throws a `TriggerOrchestratorException`:
+
+`<Handler> performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.`
+
+- **DML statements and event publishes trip it.** That includes `insert`, `update`, `upsert`, `delete`, `undelete` and `merge`, their `Database` methods, `Database.setSavepoint()`, and `EventBus.publish` whatever the event's Publish Behavior. DML in a trigger that the handler's DML fires counts too. `System.enqueueJob` and `Messaging.sendEmail` are not DML, so the guard lets them through.
+- **ContinueOnError cannot suppress it.** The check runs after the handler's `try`/`catch`, outside it. With ContinueOnError, the handler's own exception is swallowed first and the guard still throws. Without ContinueOnError, the handler's own exception propagates first, and the guard never runs.
+- **Only these two contexts have it.** BeforeDelete and the after contexts have no guard, so DML there runs at once. Set fields on the trigger record with `put` in a Populator, and write other records from an after-context Writer, which registers them on a unit of work.
+- **You cannot catch it by type.** The exception class is private, so code that needs to react to it catches `Exception` and checks the message. See [`TriggerOrchestratorException`](/api/trigger-orchestrator#triggerorchestratorexception).

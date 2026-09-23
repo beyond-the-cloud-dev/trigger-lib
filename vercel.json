@@ -1,5 +1,13 @@
 {
   "buildCommand": "npm run docs:build",
   "outputDirectory": "website/.vitepress/dist",
-  "cleanUrls": true
+  "cleanUrls": true,
+  "redirects": [
+    { "source": "/guide/handlers", "destination": "/contexts", "statusCode": 301 },
+    { "source": "/guide/qualification", "destination": "/api/record", "statusCode": 301 },
+    { "source": "/guide/enrichment", "destination": "/api/field-selection", "statusCode": 301 },
+    { "source": "/guide/recursion-control", "destination": "/after-update/add-ons/recursion-guard", "statusCode": 301 },
+    { "source": "/guide/finalizers", "destination": "/contexts#method-names", "statusCode": 301 },
+    { "source": "/api/context-interfaces", "destination": "/contexts", "statusCode": 301 }
+  ]
 }

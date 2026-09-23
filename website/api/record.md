@@ -1,317 +1,170 @@
 ---
-outline: deep
+description: 'Record API reference: InsertRecord, UpdateRecord, DeleteRecord, UndeleteRecord and the Rejectable records of Validators, with accessors, put and addError, value predicates, change detection (isChanged), record type checks, TriggerHandlerException and the helpers for unit tests.'
 ---
 
-# Record Interfaces
+# Record API
 
-Every handler method receives one trigger record, wrapped so the handler never touches `Trigger.new` or `Trigger.old` directly. The wrapper holds the new and old versions of that record together with the parent records declared through [enrichment](/guide/enrichment).
+Every handler method that takes one record receives it as a `TriggerHandler` record type. It wraps the new and old rows (`Trigger.new`, `Trigger.old`), the parent (lookup) records the handler declared, and its related records, and it offers value predicates and change detection. This page lists every record type and member; each context's Record API page shows what applies there.
 
-There is no single `Record` type. Each context passes the interface that matches what that context actually has:
+<!--@include: @/_parts/generated/chips/record-api.md-->
 
-| Context        | Interface                       |
-| -------------- | ------------------------------- |
-| Before Insert  | `TriggerHandler.InsertRecord`   |
-| After Insert   | `TriggerHandler.InsertRecord`   |
-| Before Update  | `TriggerHandler.UpdateRecord`   |
-| After Update   | `TriggerHandler.UpdateRecord`   |
-| Before Delete  | `TriggerHandler.DeleteRecord`   |
-| After Delete   | `TriggerHandler.DeleteRecord`   |
-| After Undelete | `TriggerHandler.UndeleteRecord` |
+## Record Types {#record-types}
 
-A handler method must declare the interface of its own context. `populateOnBeforeInsert` takes an `InsertRecord`, `onAfterUpdate` takes an `UpdateRecord`, and so on. Using the wrong one does not compile.
+| Context | Predicates and actions receive | A Validator's error method receives | Collections |
+|---|---|---|---|
+| BeforeInsert | `InsertRecord` | `RejectableInsertRecord` | `InsertRecords` |
+| AfterInsert | `InsertRecord` | — | `InsertRecords` |
+| BeforeUpdate | `UpdateRecord` | `RejectableUpdateRecord` | `UpdateRecords` |
+| AfterUpdate | `UpdateRecord` | — | `UpdateRecords` |
+| BeforeDelete | `DeleteRecord` | — | `DeleteRecords` |
+| AfterDelete | `DeleteRecord` | — | `DeleteRecords` |
+| AfterUndelete | `UndeleteRecord` | — | `UndeleteRecords` |
 
-The same object is behind all four interfaces at runtime. The interface is what narrows it: a delete handler cannot ask for the new record because `DeleteRecord` does not declare that method, and no delete or undelete handler can write to the record because neither interface declares `put`.
+All types are nested in `TriggerHandler`, so a method declares `TriggerHandler.InsertRecord record`. The collections are on [Record Collections](/api/record-collections).
 
-## Method Availability
+- **The interface decides what compiles.** Each context's methods declare the type that matches what the context has: a delete handler cannot call `getNewSObject()`, because `DeleteRecord` does not declare it.
+- **The Rejectable types are for rejecting.** `RejectableInsertRecord` and `RejectableUpdateRecord` have everything `InsertRecord` and `UpdateRecord` have except `put`, plus `addError`. Only a Validator's error method, `addErrorOnBeforeInsert` or `addErrorOnBeforeUpdate`, receives one.
 
-| Method                                                                                                             | `InsertRecord` | `UpdateRecord` | `DeleteRecord` | `UndeleteRecord` |
-| ------------------------------------------------------------------------------------------------------------------ | :------------: | :------------: | :------------: | :--------------: |
-| `getId`                                                                                                            |       ✅       |       ✅       |       ✅       |        ✅        |
-| `getNewSObject`                                                                                                    |       ✅       |       ✅       |                |        ✅        |
-| `getOldSObject`                                                                                                    |                |       ✅       |       ✅       |                  |
-| `getNewParent`                                                                                                     |       ✅       |       ✅       |                |        ✅        |
-| `getOldParent`                                                                                                     |                |       ✅       |       ✅       |                  |
-| `getRelated`                                                                                                       |       ✅       |       ✅       |       ✅       |        ✅        |
-| `put`                                                                                                              |       ✅       |       ✅       |                |                  |
-| Record type: `isRecordTypeEqual`, `isRecordTypeNotEqual`                                                           |       ✅       |       ✅       |       ✅       |        ✅        |
-| Value predicates: `equals` … `isFalse`                                                                             |       ✅       |       ✅       |       ✅       |        ✅        |
-| Comparison predicates: `greaterThan` … `lessThanOrEqualTo`                                                         |       ✅       |       ✅       |       ✅       |        ✅        |
-| Change predicates: `isChanged`, `isAnyChanged`, `areAllChanged`, `isChangedTo`, `isChangedFrom`, `isChangedFromTo` |                |       ✅       |                |                  |
+## Method Availability {#method-availability}
 
-Change detection exists only on `UpdateRecord`, because update is the only context with both sides of the record.
+| Member | `InsertRecord` | `RejectableInsertRecord` | `UpdateRecord` | `RejectableUpdateRecord` | `DeleteRecord` | `UndeleteRecord` |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|
+| `getId()` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `getNewSObject()` | ✓ | ✓ | ✓ | ✓ | | ✓ |
+| `getOldSObject()` | | | ✓ | ✓ | ✓ | |
+| `getNewParent(relationshipName)` | ✓ | ✓ | ✓ | ✓ | | ✓ |
+| `getOldParent(relationshipName)` | | | ✓ | ✓ | ✓ | |
+| `getRelated(providerName)` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `put(field, value)` | ✓ | | ✓ | | | |
+| `addError(error)`, `addError(field, error)` | | ✓ | | ✓ | | |
+| value predicates: `equals` … `lessThanOrEqualTo` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| change detection: `isChanged` … `isChangedFromTo` | | | ✓ | ✓ | | |
+| `isRecordTypeEqual`, `isRecordTypeNotEqual` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
-## Which Side Predicates Read
+A member that a type lacks is a compile error, not a null at runtime: `isChanged` in an insert handler, or `getOldParent` in an undelete handler, does not compile.
 
-Every predicate except the change predicates reads the new record. `DeleteRecord` has no new record, so there the same predicates read the old one. The change predicates compare the new value with the old value.
+## Accessors {#accessors}
 
-```apex
-public Boolean qualifiesForAfterDeleteWhen(TriggerHandler.DeleteRecord record) {
-  return record.equals(Contact.LeadSource, 'Web');
-}
-```
-
-`Contact.LeadSource` is read from the deleted row.
-
-## Evaluation Order
-
-Parent enrichment runs once, up front, before any handler executes, so `getNewParent` and `getOldParent` are populated inside qualification predicates as well as inside actions.
-
-Qualification is not a global pass. Each handler qualifies its records at its own turn, immediately before it runs. A predicate therefore observes field writes made by handlers registered earlier in the orchestrator's list, and the order of that list is part of the behaviour, not a formatting choice.
-
-## Accessors
-
-### getId
+### getId {#getid}
 
 ```apex
 Id getId()
 ```
 
-Available on all four interfaces. Id of the record. `null` in before insert, where the record has not been assigned one yet.
+The record Id. It is null in before insert, where nothing is saved yet. In before delete and after delete it comes from the old row.
 
-### getNewSObject
+### getNewSObject {#getnewsobject}
 
 ```apex
 SObject getNewSObject()
 ```
 
-Available on `InsertRecord`, `UpdateRecord` and `UndeleteRecord`.
+The `Trigger.new` row of this record. Cast it to read fields: `Contact contactRecord = (Contact) record.getNewSObject();`
 
-The `Trigger.new` record. Writable in before contexts, read-only in after contexts.
+- **Before insert and before update:** the live row. Later handlers see what you change, and it is saved with the record, without DML.
+- **After insert, after update and after undelete:** the saved row, read-only. Writing to it throws a `FinalException` that nothing in the trigger can catch.
+- **Relationship fields are empty.** The row carries lookup Ids only: `getNewSObject().Account` is null. Read parents with `getNewParent`.
 
-```apex
-Contact contact = (Contact) record.getNewSObject();
-```
-
-### getOldSObject
+### getOldSObject {#getoldsobject}
 
 ```apex
 SObject getOldSObject()
 ```
 
-Available on `UpdateRecord` and `DeleteRecord`.
+The `Trigger.old` row, the values before this save. It is read-only: writing to it throws a `FinalException`.
 
-The `Trigger.old` record, always read-only.
+- **Update contexts:** `addError` on the old row also throws a `FinalException`. Reject the record through the new row.
+- **Delete contexts:** the old row is the only row, and `getOldSObject().addError(…)` is how a handler stops a delete. See [BeforeDelete.Handler](/before-delete/handler).
 
-```apex
-Contact oldContact = (Contact) record.getOldSObject();
-```
-
-### getNewParent
+### getNewParent {#getnewparent}
 
 ```apex
 SObject getNewParent(String relationshipName)
 ```
 
-Available on `InsertRecord`, `UpdateRecord` and `UndeleteRecord`.
-
-The parent record fetched for the new version of the record. Requires the context's `ParentQuery` interface. `relationshipName` is the relationship name of the lookup, so `Contact.AccountId` is read back as `'Account'` and a custom lookup `My_Lookup__c` as `'My_Lookup__r'`.
+The parent record the lookup points to now, loaded by the context's ParentQuery add-on. `relationshipName` is the relationship name of the lookup: `Account` for `Contact.AccountId`, `Owner` for `OwnerId`, `My_Lookup__r` for `My_Lookup__c`.
 
 ```apex
-Account account = (Account) record.getNewParent('Account');
+Account parentAccount = (Account) record.getNewParent('Account');
 ```
 
-Returns `null` when the lookup is empty on that record, and `null` when the handler never declared that lookup. Nothing is queried for an undeclared relationship.
+- **Null** when the lookup is empty, when no running handler declared that lookup, or when no record has that Id.
+- **Case-sensitive.** `'Account'` finds the parent; `'account'` returns null.
+- **Only declared fields.** Reading a parent field that no handler declared throws an `SObjectException`. See [TriggerHandler.ParentFields](/api/field-selection).
 
-### getOldParent
+ParentQuery in each context:
+
+<!--@include: @/_parts/generated/chips/parent-query.md-->
+
+### getOldParent {#getoldparent}
 
 ```apex
 SObject getOldParent(String relationshipName)
 ```
 
-Available on `UpdateRecord` and `DeleteRecord`.
+The parent record the lookup pointed to before this save, loaded by the context's PriorParentQuery add-on, by the same relationship names as `getNewParent`. It is queried when the trigger runs, so its fields show their current values. When the lookup did not change and both sides are declared, both methods return the same record.
 
-The parent record fetched for the old version of the record. Requires the context's `PriorParentQuery` interface. A handler that wants both sides of the same lookup has to declare it on both sides.
+PriorParentQuery in each context:
 
-```apex
-Account priorAccount = (Account) record.getOldParent('Account');
-```
+<!--@include: @/_parts/generated/chips/prior-parent-query.md-->
 
-### getRelated
+### getRelated {#getrelated}
 
 ```apex
 TriggerHandler.RelatedRecords getRelated(String providerName)
 ```
 
-Available on all four interfaces.
-
-The records a provider returned, ready to look up. The argument is the name the handler gave the provider in its `RelatedQuery` map, not a relationship name.
+The rows a RelatedQuery provider returned, indexed by the provider's key. `providerName` is the key of the map the handler's RelatedQuery method returns, not a relationship name.
 
 ```apex
 List<SObject> openOpportunities = record.getRelated('openOpportunities').getAllWhereKeyEquals(record.getId());
 ```
 
-Throws `TriggerHandler.TriggerHandlerException` when the handler never declared a provider under that name. See [Related Records](/guide/related-records).
+A name the handler did not return throws [`TriggerHandlerException`](#triggerhandlerexception). Each handler reads only its own providers. See [RelatedRecords & RecordsProvider](/api/related-records).
 
-### put
+### put {#put}
 
 ```apex
 void put(SObjectField field, Object value)
 ```
 
-Available on `InsertRecord` and `UpdateRecord`.
+Sets a field on the new row. It returns nothing, so write one statement per field.
 
-Sets a field on the new record. It returns nothing, so calls do not chain. Write one statement per field.
+- **Before insert and before update:** works. Every later handler sees the value, in its predicates too, and in before update change detection counts it as a change.
+- **After insert and after update:** compiles, because `InsertRecord` and `UpdateRecord` serve both phases, but throws a `FinalException` ("Record is read-only") that no catch in the trigger stops, not even ContinueOnError. The caller's DML fails with a `DmlException`. To change saved records, register a new instance with `toUpdate` in a [Writer](/api/unit-of-work).
 
-```apex
-public with sharing class ContactDefaultsPopulator implements BeforeInsert.Populator {
-  public Boolean populateOnBeforeInsertWhen(
-    TriggerHandler.InsertRecord record
-  ) {
-    return record.isBlank(Contact.Description);
-  }
-
-  public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
-    record.put(Contact.Description, 'Populated by trigger');
-    record.put(Contact.LeadSource, 'Web');
-  }
-}
-```
-
-The value is visible to every handler that runs after this one, including in their qualification predicates, and it persists with the record without any DML.
-
-::: danger put in an after context
-`put` belongs to before insert and before update. `InsertRecord` and `UpdateRecord` serve both phases of their context, so the compiler cannot stop you from calling it in after insert or after update.
-
-Calling it there raises `System.FinalException: Record is read-only`. That exception is uncatchable. The handler's own `try` and `catch` cannot stop it, `ContinueOnError` cannot swallow it, and the whole transaction is lost.
-
-In after contexts, collect the records you want to change and update them from a [finalizer](/guide/finalizers).
-:::
-
-## Record Type
-
-### isRecordTypeEqual
+### addError {#adderror}
 
 ```apex
-Boolean isRecordTypeEqual(String recordTypeDeveloperName)
+void addError(String error)
+void addError(SObjectField field, String error)
 ```
 
-### isRecordTypeNotEqual
+On `RejectableInsertRecord` and `RejectableUpdateRecord` only. `addError(error)` attaches a record-level error to the new row; `addError(field, error)` attaches it to a field. Either one blocks the save of that record.
 
-```apex
-Boolean isRecordTypeNotEqual(String recordTypeDeveloperName)
-```
+<<< @/../examples/main/default/classes/account/before-update/validator/AccountBillingCountryValidator.cls
 
-Available on all four interfaces. Both compare the record's `RecordTypeId` with the id resolved from the object describe for that developer name.
+- **Field attribution is lost on Name and address fields.** `addError(field, error)` uses the dynamic field form, which shows the error at record level, not next to the field, on `Name` and on compound address fields (proven on `Name`, `BillingStreet` and `BillingCity`; `BillingCountry`, used above, belongs to the same compound billing address). The save is still blocked and the message still shows.
+- **A qualified record must get an error.** When the Validator's predicate returned true and its error method attached none, the library throws [`TriggerOrchestratorException`](/api/trigger-orchestrator#triggerorchestratorexception).
+- **Other methods** reject a record with `getNewSObject().addError(…)`, or `getOldSObject().addError(…)` in the delete contexts.
 
-```apex
-public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
-  return record.isRecordTypeEqual('Business_Contact');
-}
-```
-
-::: warning Objects without record types
-On an SObject that has no record types beyond Master, both methods throw `TriggerHandler.TriggerHandlerException` naming the SObject, rather than letting a raw `SObjectException: Invalid field RecordTypeId` escape.
-
-Like the framework's own exceptions, it is not suppressed by `ContinueOnError`. It is logged and rethrown, and the DML is aborted.
-:::
-
-## Value Predicates
-
-Available on all four interfaces.
-
-### equals
+## Value Predicates {#value-predicates}
 
 ```apex
 Boolean equals(SObjectField field, Object value)
-```
-
-### doesNotEqual
-
-```apex
 Boolean doesNotEqual(SObjectField field, Object value)
-```
-
-### contains
-
-```apex
 Boolean contains(SObjectField field, String value)
-```
-
-`false` when the field is `null`.
-
-### doesNotContain
-
-```apex
 Boolean doesNotContain(SObjectField field, String value)
-```
-
-`true` when the field is `null`.
-
-### startsWith
-
-```apex
 Boolean startsWith(SObjectField field, String value)
-```
-
-`false` when the field is `null`.
-
-### endsWith
-
-```apex
 Boolean endsWith(SObjectField field, String value)
-```
-
-`false` when the field is `null`.
-
-### isNull
-
-```apex
 Boolean isNull(SObjectField field)
-```
-
-### isNotNull
-
-```apex
 Boolean isNotNull(SObjectField field)
-```
-
-### isEmpty
-
-```apex
 Boolean isEmpty(SObjectField field)
-```
-
-`true` when the field is `null` or its string value is empty.
-
-### isNotEmpty
-
-```apex
 Boolean isNotEmpty(SObjectField field)
-```
-
-### isBlank
-
-```apex
 Boolean isBlank(SObjectField field)
-```
-
-`true` when the field is `null`, empty or whitespace only.
-
-### isNotBlank
-
-```apex
 Boolean isNotBlank(SObjectField field)
-```
-
-### isTrue
-
-```apex
 Boolean isTrue(SObjectField field)
-```
-
-### isFalse
-
-```apex
 Boolean isFalse(SObjectField field)
-```
-
-## Comparison Predicates
-
-Available on all four interfaces, for `Integer`, `Long`, `Double`, `Decimal`, `Date` and `DateTime` values. All of them return `false` when the field is `null`. Numeric values are compared as `Decimal`, so `Long` values keep their precision.
-
-### greaterThan
-
-```apex
 Boolean greaterThan(SObjectField field, Integer value)
 Boolean greaterThan(SObjectField field, Long value)
 Boolean greaterThan(SObjectField field, Double value)
@@ -320,117 +173,101 @@ Boolean greaterThan(SObjectField field, Date value)
 Boolean greaterThan(SObjectField field, DateTime value)
 ```
 
-### greaterThanOrEqualTo
+`greaterThanOrEqualTo`, `lessThan` and `lessThanOrEqualTo` have the same six overloads as `greaterThan`.
 
-```apex
-Boolean greaterThanOrEqualTo(SObjectField field, Integer value)
-Boolean greaterThanOrEqualTo(SObjectField field, Long value)
-Boolean greaterThanOrEqualTo(SObjectField field, Double value)
-Boolean greaterThanOrEqualTo(SObjectField field, Decimal value)
-Boolean greaterThanOrEqualTo(SObjectField field, Date value)
-Boolean greaterThanOrEqualTo(SObjectField field, DateTime value)
-```
+- **Which row.** Value predicates read the new row. Before delete and after delete have no new row, so there they read the old row.
+- **The live row in before contexts.** A value an earlier handler set with `put` counts.
+- **Old values in an update.** Value predicates never read the old row; use change detection or `getOldSObject()`.
 
-### lessThan
+<!--@include: @/_parts/records/comparisons.md-->
 
-```apex
-Boolean lessThan(SObjectField field, Integer value)
-Boolean lessThan(SObjectField field, Long value)
-Boolean lessThan(SObjectField field, Double value)
-Boolean lessThan(SObjectField field, Decimal value)
-Boolean lessThan(SObjectField field, Date value)
-Boolean lessThan(SObjectField field, DateTime value)
-```
-
-### lessThanOrEqualTo
-
-```apex
-Boolean lessThanOrEqualTo(SObjectField field, Integer value)
-Boolean lessThanOrEqualTo(SObjectField field, Long value)
-Boolean lessThanOrEqualTo(SObjectField field, Double value)
-Boolean lessThanOrEqualTo(SObjectField field, Decimal value)
-Boolean lessThanOrEqualTo(SObjectField field, Date value)
-Boolean lessThanOrEqualTo(SObjectField field, DateTime value)
-```
-
-```apex
-record.greaterThan(Opportunity.Amount, 10000)
-record.lessThan(Opportunity.CloseDate, Date.today())
-```
-
-## Change Predicates
-
-Available on `UpdateRecord` only, in before update and after update.
-
-They compare the current new value with the old value, so a `put` performed by an earlier before update handler counts as a change for every handler that runs after it.
-
-### isChanged
+## Change Detection {#change-detection}
 
 ```apex
 Boolean isChanged(SObjectField field)
-```
-
-### isAnyChanged
-
-```apex
 Boolean isAnyChanged(SObjectField field1, SObjectField field2)
-Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3)
-Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4)
-Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5)
 Boolean isAnyChanged(Iterable<SObjectField> fields)
-```
-
-`true` when at least one of the fields changed.
-
-### areAllChanged
-
-```apex
 Boolean areAllChanged(SObjectField field1, SObjectField field2)
-Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3)
-Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4)
-Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5)
 Boolean areAllChanged(Iterable<SObjectField> fields)
-```
-
-`true` only when every one of the fields changed.
-
-### isChangedTo
-
-```apex
 Boolean isChangedTo(SObjectField field, Object expectedValue)
-```
-
-New value equals `expectedValue` and old value did not.
-
-### isChangedFrom
-
-```apex
 Boolean isChangedFrom(SObjectField field, Object priorValue)
-```
-
-Old value equals `priorValue` and new value does not.
-
-### isChangedFromTo
-
-```apex
 Boolean isChangedFromTo(SObjectField field, Object fromValue, Object toValue)
 ```
 
-Old value equals `fromValue` and new value equals `toValue`.
+`isAnyChanged` and `areAllChanged` also take 3, 4 or 5 fields. On `UpdateRecord` and `RejectableUpdateRecord` only, so in before update and after update.
+
+<!--@include: @/_parts/records/change-detection.md-->
+
+An after update Writer that acts when an opportunity is won, reading its parent account in the predicate:
+
+<<< @/../examples/main/default/classes/opportunity/after-update/writer/OpportunityAccountTypeWriter.cls
+
+## Record Type {#record-type}
 
 ```apex
-public with sharing class CaseClosureHandler implements AfterUpdate.Handler {
-  public Boolean qualifiesForAfterUpdateWhen(
-    TriggerHandler.UpdateRecord record
-  ) {
-    return record.isChangedFromTo(Case.Status, 'New', 'Closed');
-  }
+Boolean isRecordTypeEqual(String recordTypeDeveloperName)
+Boolean isRecordTypeNotEqual(String recordTypeDeveloperName)
+```
 
-  public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
-    Case closedCase = (Case) record.getNewSObject();
-    Case priorCase = (Case) record.getOldSObject();
+<!--@include: @/_parts/records/record-type.md-->
 
-    System.debug(closedCase.CaseNumber + ' moved from ' + priorCase.Status);
-  }
+## Exceptions {#exceptions}
+
+### TriggerHandlerException {#triggerhandlerexception}
+
+`TriggerHandler.TriggerHandlerException` is public, so it can be caught by type.
+
+| Message | Thrown by |
+|---|---|
+| `<Object> has no record types, so isRecordTypeEqual cannot be used on it.` (or `isRecordTypeNotEqual`) | `isRecordTypeEqual` and `isRecordTypeNotEqual` on an object that has only the master record type |
+| `No related records provider is registered under <name>. Return it from the RelatedQuery method of the context first.` | `getRelated` with a name the handler's RelatedQuery method did not return |
+
+- **Rethrown even with ContinueOnError.** When it escapes a handler, the library logs it and rethrows it, and the save fails.
+- **Catch it inside the handler** if the handler should go on; the library then never sees it.
+- **Callers of the DML** get a `DmlException`, or a `Database.Error` with partial success, whose message contains the original one.
+
+The library's other exception: [TriggerOrchestratorException](/api/trigger-orchestrator#triggerorchestratorexception).
+
+## Test API {#test-api}
+
+These public members build records, collections and provider results in memory, so a unit test can call a handler's methods directly, with no DML and no trigger.
+
+| Member | Use |
+|---|---|
+| `new TriggerHandler.TriggerRecord(SObject newRow, SObject oldRow)` | one record for any context; pass `null` for the side the context does not have: `oldRow` on insert and undelete, `newRow` on delete. It implements every record type above. |
+| `new TriggerHandler.InsertTriggerRecords(List<TriggerHandler.TriggerRecord>)`, `UpdateTriggerRecords`, `DeleteTriggerRecords`, `UndeleteTriggerRecords` | the collection that a dispatch method, a Finalizer or a provider's `query` receives |
+| `new TriggerHandler.ProvidedRecords(List<SObject>)` and `groupUnderKey(String key, SObject row)` | the `RelatedRecords` a provider would produce: the list is what `getRecords()` returns, and each `groupUnderKey` call indexes one row under its key |
+| `new TriggerHandler.RandomIdGenerator().get(SObjectType)`, `get(String keyPrefix)` | a fake Id with the object's key prefix; nothing is saved |
+
+**Public, but marked internal.** `TriggerRecord.enrichNew(relationshipName, parent)`, `enrichOld(relationshipName, parent)` and `setProvidedRecords(Map<String, TriggerHandler.RelatedRecords>)` attach parents and provider results to a record, so `getNewParent`, `getOldParent` and `getRelated` return them. Tests need them, but `TriggerHandler` lists them under an `// Internal use only` comment, so they may change in a later version. See [Testing](/guide/testing).
+
+```apex
+@IsTest
+static void writeOnAfterUpdateWhenClosedWon() {
+    // Setup
+    Id opportunityId = new TriggerHandler.RandomIdGenerator().get(Opportunity.SObjectType);
+    TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Id = opportunityId, StageName = 'Closed Won'), new Opportunity(Id = opportunityId, StageName = 'Prospecting'));
+    record.enrichNew('Account', new Account(Type = 'Prospect'));
+
+    // Test
+    Boolean qualifies = new OpportunityAccountTypeWriter().writeOnAfterUpdateWhen(record);
+
+    // Verify
+    Assert.isTrue(qualifies, 'The record should qualify.');
 }
 ```
+
+## Internal Members {#internals}
+
+These are public because the library calls them across its own classes. They are not meant for handler or test code and may change without notice:
+
+- `TriggerHandler.getTriggerRecordsFrom(newRows, oldRows)`;
+- `TriggerHandler.LookupSelector`, the class behind `TriggerHandler.ParentFields`; start selections from the `TriggerHandler.ParentFields` property;
+- `ParentFields.getFields()`;
+- `TriggerRecord.getSObject()`, `getParent(relationshipName)`, `getNewParentId(field)` and `getOldParentId(field)`.
+
+## See Also {#see-also}
+
+- [Record Collections](/api/record-collections): the bulk view that providers, dispatch methods and Finalizers receive
+- [TriggerHandler.ParentFields](/api/field-selection) and [RelatedRecords & RecordsProvider](/api/related-records)
+- [Contexts at a Glance](/contexts#facts): what each context allows

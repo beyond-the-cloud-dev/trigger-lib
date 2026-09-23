@@ -1,0 +1,8 @@
+- **A count per record, handler and context.** The library counts how many times this handler has qualified each record in this transaction. The count is kept per record Id, handler class name and context (before update and after update have separate counts), in a static that is never reset during the transaction.
+- **Checked before the predicate.** A record whose count has reached the limit that `maxRecursionDepthOn<Ctx>()` returns is skipped before its predicate runs. Without RecursionGuard the limit is 3.
+- **Raised when the record qualifies.** The count goes up by 1 when the predicate returns true, before anything else happens for that record. A record that did not qualify on an earlier pass keeps its full budget.
+- **Spent even when the work is lost.** A failure that ContinueOnError swallows, or a partial-save retry that rolls the work back, still counts as a pass.
+- **Skipped silently.** A skipped record is not logged and is left out of everything that follows for that handler, the Finalizer included. Providers still receive it, because they run before any predicate.
+- **Read on every run.** `maxRecursionDepthOn<Ctx>()` is called when the handler list is built, on every run, even for a handler that a bypass then skips. An exception there is not logged, and the save fails.
+- **Chunks are not passes.** A statement of 201 records runs in two chunks, but each record is counted under its own Id, so the second chunk starts with a full budget for its records.
+- **Shared by class name.** The count uses the simple class name, so every instance of a class shares one budget, and so do inner classes with the same name in different outer classes.

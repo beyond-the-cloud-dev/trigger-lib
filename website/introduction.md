@@ -1,207 +1,89 @@
 ---
-outline: deep
+description: What Trigger Lib is, which roles it gives each Salesforce trigger context, and why it is built the way it is.
 ---
 
 # Introduction
 
-Apex trigger framework for Salesforce with record filtering, automatic parent enrichment, bypasses, and recursion control.
+Trigger Lib is an Apex trigger framework for Salesforce. You write one small class per concern, give it a role in a trigger context such as before insert or after update, and the library runs it only for the records that qualify, with parent fields already loaded, DML collected in a unit of work, and bypass and recursion switches built in.
 
 Trigger Lib is part of [Apex Fluently](https://apexfluently.beyondthecloud.dev/), a suite of production-ready Salesforce libraries by [Beyond the Cloud](https://beyondthecloud.dev).
 
-A trigger calls the orchestrator. The orchestrator lists its handlers per context. The framework pulls parent data, guards recursion, qualifies records and runs each handler record by record.
+## How It Fits Together {#how-it-fits}
 
-## Features
+<<< @/../examples/main/default/triggers/AccountTrigger.trigger
 
-- **Orchestrator & Handlers** - One orchestrator per SObject, one handler per concern, wired in Apex
-- **Record Filtering** - Handlers run only against records that qualify, so logic never guards itself
-- **Parent Enrichment** - Related data is pulled up front, so handlers make no SOQL queries of their own
-- **Bypasses** - Skip a single handler from code, or a handler or a whole object from metadata
-- **Recursion Control** - Depth limiting built in, defaulting to three passes per record
-- **No Required Metadata** - Works with zero custom metadata records; metadata only overrides defaults
+1. **The trigger** lists the events and passes an orchestrator to `TriggerOrchestrator.run(…)`. Nothing else goes in it.
+2. **The orchestrator** implements `TriggerOrchestrator.<Ctx>` for each context it handles, and returns that context's handlers in run order.
+3. **Each handler** implements one role of the context, such as `BeforeInsert.Populator`, plus any add-ons it needs, such as `BeforeInsert.ParentQuery`.
+4. **The library** loads the parents the handlers declared, then runs the handlers in list order. Each handler acts only on the records its predicate accepts.
 
-## Why Trigger Lib?
+[Trigger & Orchestrator](/guide/orchestrator) covers the wiring, and [Your First Handler](/guide/first-handler) builds it step by step.
 
-### Handlers work on a single record
+## Roles per Context {#roles}
 
-The framework iterates over `Trigger.new` and `Trigger.old` for you. A handler receives one record at a time and has no bulk loop of its own. Bulkification happens in the orchestrator, not in every handler.
+| Context | Roles | Typical job |
+|---|---|---|
+| [BeforeInsert](/before-insert/) | [Populator](/before-insert/populator), [Validator](/before-insert/validator) | Set defaults and derived fields, reject bad input |
+| [AfterInsert](/after-insert/) | [Writer](/after-insert/writer), [Dispatcher](/after-insert/dispatcher) | Create related records, publish events, start async work |
+| [BeforeUpdate](/before-update/) | [Populator](/before-update/populator), [Validator](/before-update/validator) | Recalculate fields on change, block invalid changes |
+| [AfterUpdate](/after-update/) | [Writer](/after-update/writer), [Dispatcher](/after-update/dispatcher) | Cascade changes to related records, sync to other systems |
+| [BeforeDelete](/before-delete/) | [Handler](/before-delete/handler) | Block a delete, clean up while the rows still exist |
+| [AfterDelete](/after-delete/) | [Writer](/after-delete/writer), [Dispatcher](/after-delete/dispatcher) | Update parents and related records, notify |
+| [AfterUndelete](/after-undelete/) | [Writer](/after-undelete/writer), [Dispatcher](/after-undelete/dispatcher) | Restore related data, notify |
 
-The record is not an `SObject`. It is one of four context-specific interfaces, and each handler method takes the one that matches its context:
+Salesforce has no before undelete event, so there is no BeforeUndelete context: see [There Is No BeforeUndelete](/before-undelete).
 
-| Context | Record interface | Sides available |
-| --- | --- | --- |
-| Before insert, after insert | `TriggerHandler.InsertRecord` | new only |
-| Before update, after update | `TriggerHandler.UpdateRecord` | new and old |
-| Before delete, after delete | `TriggerHandler.DeleteRecord` | old only |
-| After undelete | `TriggerHandler.UndeleteRecord` | new only |
+- **Populator** changes the record being saved with `put`. **Validator** attaches an error to it. Neither may run DML.
+- **Writer** registers inserts, updates, upserts, deletes and platform events on a unit of work that the library commits for it, by default once after the last handler.
+- **Dispatcher** receives all the qualified records at once, to enqueue a job, publish an event or send an email.
+- **Handler** exists only in before delete. It acts per record, and can reject the delete with `addError` on the old row.
 
-The interface carries only what its context can answer. `DeleteRecord` has no `getNewSObject`, `InsertRecord` has no `isChanged`, and neither `DeleteRecord` nor `UndeleteRecord` has `put`.
+Next to its role, a handler can implement **add-ons**: ParentQuery, PriorParentQuery, RelatedQuery, OwnUnitOfWork, Bypassable, RecursionGuard, Finalizer and ContinueOnError. Each context declares only the add-ons that make sense there. Every method name, context by context, is on [Contexts at a Glance](/contexts#method-names).
 
-### Before contexts have roles
+## Features {#features}
 
-`BeforeInsert` and `BeforeUpdate` do not have a plain handler interface. A class picks a role:
+- **Orchestrator and handlers.** One orchestrator per object lists the handlers of each context in run order, in plain Apex. [Trigger & Orchestrator](/guide/orchestrator)
+- **Record filtering.** Every role has a predicate that decides which records the handler acts on. The record API is fluent and null-safe: `isChangedTo`, `isRecordTypeEqual`, `isBlank`, `greaterThan` and more. [Record API](/api/record)
+- **Parent queries.** ParentQuery and PriorParentQuery declare lookups and parent fields. The library queries them in system mode without sharing and attaches them to each record, read with `getNewParent('Account')` or `getOldParent('Account')`. [TriggerHandler.ParentFields](/api/field-selection)
+- **Related records.** A RelatedQuery provider loads children, siblings or configuration records for its handler, which reads them by key: `record.getRelated('contacts').getAllWhereKeyEquals(record.getId())`. [RelatedQuery Recipes](/guide/related-records)
+- **Unit of work.** Writers register DML on a DML Lib unit of work that commits once, after the last handler. OwnUnitOfWork gives one Writer its own unit, for user mode or partial success. [Unit of Work](/guide/unit-of-work)
+- **Bypasses.** `TriggerOrchestrator.bypass()` switches objects, orchestrators or handlers off for one transaction, custom metadata switches an object or a handler off org-wide without a deploy, and Bypassable switches one handler off on a condition. [Bypassing](/guide/bypasses)
+- **Recursion guard.** In before update and after update, a Populator, Writer or Dispatcher acts on the same record at most three times per transaction by default, and each handler can set its own limit. [AfterUpdate.RecursionGuard](/after-update/add-ons/recursion-guard)
+- **Errors and logging.** An exception thrown while a handler runs is passed to the org's `TriggerOrchestrator.Logger` implementation, then rethrown unless the handler implements ContinueOnError. [Errors & Logging](/guide/error-handling)
+- **No required metadata.** Everything works with zero custom metadata records. [Custom Metadata](/api/custom-metadata)
 
-- `Populator` - sets values on the triggering record.
-- `Validator` - decides that a record is invalid and supplies the message the framework attaches with `addError`.
+## Why Trigger Lib? {#why}
 
-Exactly one role per context, per class. A class that implements both, or neither, is rejected with a `TriggerOrchestratorException` that names the class and both interfaces. `BeforeInsert.Handler` and `BeforeUpdate.Handler` are empty markers that `Populator` and `Validator` extend so the orchestrator can hold them in one list; you never implement them directly.
+### Handlers Work on One Record {#one-record}
 
-The other five contexts - after insert, after update, before delete, after delete, after undelete - use a plain `Handler` interface with a `qualifiesFor...When` predicate and an `on...` action.
+The library loops over the trigger rows for you. A predicate and a per-record action receive one record at a time, typed for the context: `TriggerHandler.InsertRecord`, `UpdateRecord`, `DeleteRecord` or `UndeleteRecord`. Each type offers only what its context can answer: a delete record has no new row, an insert record cannot report a change, and only the insert and update types have `put`. The types are shared by the before and after phase, so `put` still compiles in after insert and after update, where it throws: see [Record API in AfterInsert](/after-insert/record-api#accessors).
 
-### Records are qualified before handlers run
+A Dispatcher, a Finalizer and a RelatedQuery provider receive the records as one collection instead, for work that has to be bulk.
 
-Every handler declares a predicate: `qualifiesFor...When` for a plain handler, `populateOn...When` for a populator, `errorShouldBeAttachedOn...When` for a validator. Only records that pass it reach the action method. The predicate API is fluent and null-safe: `isChangedTo`, `isRecordTypeEqual`, `isBlank`, `greaterThan` and more.
+### Method Names Carry the Context {#method-names}
 
-The predicate is evaluated at the handler's own turn, immediately before that handler runs, not in one pass up front. A handler therefore sees the field values that handlers earlier in the list already wrote. Registration order in the orchestrator is part of the behaviour, not a cosmetic choice.
+`populateOnBeforeInsert`, `writeOnAfterUpdate`, `finalizeAfterDelete`: every method name says where it runs. One class can therefore implement several contexts without a clash, and a search for a method name lands on the page of its context. See [One Class in Several Contexts](/guide/orchestrator#one-class-several-contexts).
 
-### Parents are enriched, not queried
+### Queries Are Declared, Not Written {#declared-queries}
 
-A handler declares the parent lookups and fields it needs. The framework runs one query per lookup field, merges the field lists of all active handlers and attaches the parent record to each trigger record. Handlers never write SOQL.
+A handler declares the parent fields it reads (ParentQuery, PriorParentQuery) and the other records it needs (RelatedQuery). The parents that all active handlers declared are loaded together before the first handler runs, and a provider runs once for its handler, before that handler's first predicate. Predicates and actions then read from memory, so no query runs per record. What each path costs is on [Execution Order & Cost](/guide/execution-order#query-cost).
 
-Enrichment happens once, up front, for every handler in the context, before the first predicate is evaluated. `getNewParent` and `getOldParent` are therefore safe to call from a qualification predicate.
+### Writes Go Through a Unit of Work {#unit-of-work}
 
-### Guard rails are built in
+In the after contexts, a Writer's action receives a `TriggerHandler.UnitOfWork`. It registers records with `toInsert`, `toUpdate`, `toUpsert`, `toDelete` and `toPublish`. The unit shared by the Writers of the run commits them once, after the last handler, grouped by operation and object type, and it merges a second update of the same record into the first. See [Unit of Work](/guide/unit-of-work).
 
-- DML inside a before insert or before update handler throws and rolls the DML back.
-- Update handlers run at most three times per record.
-- Errors are reported to a pluggable logger before they propagate.
+### Guard Rails Are Built In {#guard-rails}
 
-## Quick Example
+- **DML guard.** In before insert and before update, a Populator or Validator that runs DML or publishes an immediate platform event fails the save with a `TriggerOrchestratorException` that names the handler.
+- **Validators must attach an error.** A Validator whose predicate accepts a record but whose error method attaches no error fails the save.
+- **Recursion limits.** A record past a handler's recursion budget is skipped for that handler, silently.
+- **Library errors always surface.** ContinueOnError lets a handler fail without failing the save, but `TriggerOrchestratorException` and `TriggerHandler.TriggerHandlerException` are always rethrown. See [Errors & Logging](/guide/error-handling).
 
-### Trigger
-
-```apex
-trigger ContactTrigger on Contact(
-  before insert,
-  after insert,
-  before update,
-  after update,
-  before delete,
-  after delete,
-  after undelete
-) {
-  TriggerOrchestrator.run(new ContactTriggerOrchestrator());
-}
-```
-
-A context the orchestrator does not implement is a silent no-op, so listing all seven events costs nothing.
-
-### Orchestrator
-
-```apex
-public with sharing class ContactTriggerOrchestrator implements TriggerOrchestrator.BeforeInsert, TriggerOrchestrator.AfterUpdate {
-  public List<BeforeInsert.Handler> beforeInsertHandlers() {
-    return new List<BeforeInsert.Handler>{
-      new ContactDescriptionPopulator(),
-      new ContactEmailValidator()
-    };
-  }
-
-  public List<AfterUpdate.Handler> afterUpdateHandlers() {
-    return new List<AfterUpdate.Handler>{ new ContactAccountSyncHandler() };
-  }
-}
-```
-
-### Before Insert Populator
-
-```apex
-public with sharing class ContactDescriptionPopulator implements BeforeInsert.Populator {
-  public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
-    return record.isBlank(Contact.Description);
-  }
-
-  public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
-    record.put(Contact.Description, 'Created by ContactDescriptionPopulator');
-  }
-}
-```
-
-`put` returns nothing, so there is no chaining. One call per field.
-
-### Before Insert Validator
-
-```apex
-public with sharing class ContactEmailValidator implements BeforeInsert.Validator {
-  public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
-    return record.isBlank(Contact.Email);
-  }
-
-  public String beforeInsertValidationMessage(TriggerHandler.InsertRecord record) {
-    return 'Email is required on a new contact.';
-  }
-}
-```
-
-The validator never calls `addError` itself. It returns the message and the framework attaches it, so the record is blocked and carries exactly that string as its DML error.
-
-### After Update Handler With Parent Enrichment
-
-```apex
-public with sharing class ContactAccountSyncHandler implements AfterUpdate.Handler, AfterUpdate.ParentQuery, AfterUpdate.Finalizer {
-  private List<Account> accountsToUpdate = new List<Account>();
-
-  public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
-    return new Map<SObjectField, TriggerHandler.ParentFields>{
-      Contact.AccountId => TriggerHandler.ParentFields.with(
-        Account.Name,
-        Account.Industry
-      )
-    };
-  }
-
-  public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
-    return record.isChanged(Contact.Email) &&
-      record.isNotNull(Contact.AccountId);
-  }
-
-  public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
-    Account account = (Account) record.getNewParent('Account');
-
-    this.accountsToUpdate.add(
-      new Account(
-        Id = account.Id,
-        Description = 'Contact email changed: ' + account.Name
-      )
-    );
-  }
-
-  public void finalizeAfterUpdate() {
-    update this.accountsToUpdate;
-  }
-}
-```
-
-The handler collects work per record and performs a single DML in the finalizer, which runs once after all qualified records were processed. A handler that qualifies no records does not run its finalizer at all.
-
-## Execution Flow
-
-`TriggerOrchestrator.run` does the following for the current `Trigger.operationType`:
-
-1. Throws a `TriggerOrchestratorException` if it was not called from a trigger.
-2. Reads the bypass metadata and returns immediately if the object is bypassed.
-3. Picks the handlers returned by the matching orchestrator method, for example `afterUpdateHandlers()`. A context the orchestrator does not implement does nothing.
-4. Checks the before insert and before update roles, and throws if a class implements both or neither.
-5. Drops handlers bypassed in metadata or by their own `bypassOn...When()`.
-6. Collects parent fields declared by the remaining handlers and queries them, one query per lookup field.
-7. Runs the handlers in list order. For each handler: records past its recursion budget are skipped, the qualification predicate is evaluated, the action runs for each qualified record, then the handler's finalizer runs once.
-8. Calls `finalize()` on the logger when the outermost invocation finishes.
-
-## Sharp Edges
-
-These are the places where the framework will bite. They are documented rather than hidden.
-
-- **DML in a before context aborts the DML.** A populator, validator or before-context finalizer that performs DML, or publishes an immediate platform event, causes a `TriggerOrchestratorException` naming the handler. Nothing is committed. Throwing after the DML does not get past the check.
-- **`ContinueOnError` never suppresses a framework error.** It covers a handler's own exceptions. Any `TriggerOrchestratorException` is logged and rethrown, and the DML is aborted.
-- **`put` in an after context loses the transaction.** After insert and after update records are read-only in Apex, and `put` raises `System.FinalException: Record is read-only`, which cannot be caught. The type system does not stop you, because `InsertRecord` and `UpdateRecord` serve both the before and after phases.
-- **Recursion limits are silent.** A record that reaches a handler more times than its guard allows is skipped for that handler. No exception is thrown, nothing reaches the logger, and the DML succeeds.
-- **Record type helpers throw on objects without record types.** `isRecordTypeEqual` and `isRecordTypeNotEqual` raise a `TriggerHandler.TriggerHandlerException` naming the SObject when it has no record types beyond Master.
-- **Only one logger.** Two classes implementing `TriggerOrchestrator.Logger` cause a `TriggerOrchestratorException`.
-
-## Next Steps
+## Next Steps {#next-steps}
 
 - [Installation](/installation)
+- [Your First Handler](/guide/first-handler)
+- [Trigger & Orchestrator](/guide/orchestrator)
+- [Contexts at a Glance](/contexts)
+- [How do I…](/how-do-i)
 - [Design Principles](/introduction/design-principles)
-- [Orchestrator](/guide/orchestrator)
-- [Handlers](/guide/handlers)
-- [Record Qualification](/guide/qualification)
-- [Parent Enrichment](/guide/enrichment)

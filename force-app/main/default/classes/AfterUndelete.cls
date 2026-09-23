@@ -1,4 +1,6 @@
 public class AfterUndelete {
+    // Main interfaces - pick one
+
     public interface Writer extends Handler {
         Boolean writeOnAfterUndeleteWhen(TriggerHandler.UndeleteRecord record);
         void writeOnAfterUndelete(TriggerHandler.UndeleteRecord record, TriggerHandler.UnitOfWork unitOfWork);
@@ -8,6 +10,8 @@ public class AfterUndelete {
         Boolean dispatchOnAfterUndeleteWhen(TriggerHandler.UndeleteRecord record);
         void dispatchOnAfterUndelete(TriggerHandler.UndeleteRecords records);
     }
+
+    // Additional interfaces - pick as many as you need
 
     public interface ParentQuery {
         Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUndelete();
@@ -36,6 +40,8 @@ public class AfterUndelete {
 
     public interface ContinueOnError {
     }
+
+    // For internal use only
 
     public interface Handler {
     }

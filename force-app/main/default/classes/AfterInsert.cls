@@ -1,4 +1,6 @@
 public class AfterInsert {
+    // Main interfaces - pick one
+
     public interface Writer extends Handler {
         Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record);
         void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork);
@@ -8,6 +10,8 @@ public class AfterInsert {
         Boolean dispatchOnAfterInsertWhen(TriggerHandler.InsertRecord record);
         void dispatchOnAfterInsert(TriggerHandler.InsertRecords records);
     }
+
+    // Additional interfaces - pick as many as you need
 
     public interface ParentQuery {
         Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert();
@@ -36,6 +40,8 @@ public class AfterInsert {
 
     public interface ContinueOnError {
     }
+
+    // For internal use only
 
     public interface Handler {
     }

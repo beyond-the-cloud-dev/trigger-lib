@@ -1,7 +1,11 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { WEBSITE_DIR, expectedPages, getContext } from '../apex-api.mjs';
+import { WEBSITE_DIR, expectedPages } from '../apex-api.mjs';
+import {
+  GOOD_TO_KNOW_MAX_BULLETS,
+  TEST_MAX_LINES
+} from '../page-templates.mjs';
 import {
   SCAFFOLD_MARKER,
   expectedH1,
@@ -9,78 +13,32 @@ import {
   templateHeadings
 } from './check-docs.mjs';
 
+const GOOD_TO_KNOW = `at most ${GOOD_TO_KNOW_MAX_BULLETS} bullets: the facts a developer must not miss here`;
+
 const HAND_WRITTEN = {
   context: {
-    'pick-a-role':
-      'an "I want to… → role" table (with rows that point to other contexts), then the roles/one-role.md region for this phase, then one line naming the <Ctx>.Handler marker',
-    records: 'three hand-written facts, and a link to ./record-api',
-    register:
-      'a <<< import of an existing trigger, the notes/name-collisions.md partial, and a "::: details Full orchestrator" block with a <<< import',
-    'how-it-runs':
-      'the run-order partial for this phase, then page lines for the parent query path, units, recursion and method names',
-    'switching-off':
-      'the add-ons/switch-off.md partial and a link to this context’s Bypassable page',
-    gotchas: 'context-specific gotchas (platform and library)',
-    'not-available':
-      'hand-written rows for missing capabilities (put, change detection, DML)',
-    'see-also': 'the paired context, /contexts and the guides',
-    'no-before-undelete':
-      'there is no before undelete trigger event; veto a restore from an AfterUndelete Writer or Dispatcher'
+    lead: 'one or two sentences: when <Ctx> runs and what you do here',
+    roles: 'one bullet per role: a link to the role page and one line',
+    'good-to-know': GOOD_TO_KNOW
   },
   role: {
-    'when-to-use': '2 to 4 bullets, plus "use X instead when…"',
+    lead: 'one or two sentences: what this role does in <Ctx>',
     example:
-      'add <<< imports of existing example classes inside the code-group above, minimal case first, or delete this marker',
-    'how-it-runs': 'the role partials',
-    records: 'hand-written warnings for this context',
-    gotchas: 'context-specific items first, then shared partials',
-    test: 'an inline test snippet (15 lines or fewer, zero DML) and a link to /guide/testing',
-    'see-also': 'related pages',
-    'unit-of-work-methods': 'the uow/methods.md partial',
-    'which-unit': 'the uow/which-unit.md partial',
-    'when-it-commits': 'the uow/commit-timing.md partial',
-    'platform-events': 'the uow/platform-events.md partial'
+      'add at most two <<< imports of existing example classes inside the code-group above, or delete this marker',
+    'good-to-know': GOOD_TO_KNOW,
+    test: `one test in a code block of ${TEST_MAX_LINES} lines or fewer: API-shaped name, // Setup // Test // Verify, one assertion, zero DML`
   },
   'add-ons': {
-    'see-also': 'related pages'
+    lead: 'one sentence: implement as many add-ons as you need next to your role interface'
   },
   'add-on': {
-    'when-to-use': '2 to 4 bullets, plus "use X instead when…"',
+    lead: 'one or two sentences: what this add-on does in <Ctx>',
     example:
-      'add <<< imports of existing example classes inside the code-group above, or delete this marker',
-    'how-it-runs': 'the region partials for this add-on and context',
-    records:
-      'what the method receives here: no parameter, all records, or only the qualified records',
-    gotchas: 'context-specific gotchas',
-    test: 'one prose line at most naming this page’s example',
-    'see-also': 'guide and reference anchors',
-    'choosing-fields': 'the add-ons/field-selection.md partial',
-    'parent-vs-prior': 'the add-ons/parent-vs-prior.md partial',
-    'key-patterns':
-      'a "::: details" block with the add-ons/related-query-patterns.md partial',
-    configuring: 'the add-ons/configuring-unit.md partial',
-    'other-ways': 'the other ways to switch handlers off',
-    'data-migration': 'the add-ons/data-migration.md partial',
-    'edge-values': 'the add-ons/recursion-edge-values.md partial',
-    'still-throws':
-      'the notes/never-logged.md partial, then the list of what still throws in this context',
-    logging: 'how the Logger receives the swallowed exception'
+      'add at most two <<< imports of existing example classes inside the code-group above, or delete this marker',
+    'good-to-know': GOOD_TO_KNOW
   },
   'record-api': {
-    receive: 'the record and collection types this context hands out',
-    'change-detection':
-      'one line: this context has no change detection (or the change-detection partial in update contexts)',
-    parents: 'getNewParent, getOldParent and getRelated in this context',
-    'see-also': 'related pages'
-  }
-};
-
-const FIXED_LINES = {
-  'record-api': {
-    collections:
-      'Every collection method, and why `getRecords()` returns the internal list rather than a copy: [Record Collections](/api/record-collections).',
-    gotchas:
-      'Rules that hold in every context: [Comparisons](#comparisons) and [Record Type](#record-type).'
+    'good-to-know': GOOD_TO_KNOW
   }
 };
 
@@ -104,8 +62,6 @@ function sectionBody(page, sectionId, required) {
       blocks.push(includeLine(requirement));
     }
   }
-  const fixed = FIXED_LINES[page.template]?.[sectionId];
-  if (fixed) blocks.push(fixed);
   const hand = HAND_WRITTEN[page.template]?.[sectionId];
   if (hand) {
     blocks.push(placeholder(hand.replace(/<Ctx>/g, page.context)));
@@ -114,7 +70,6 @@ function sectionBody(page, sectionId, required) {
 }
 
 export function stubFor(page) {
-  const context = getContext(page.context);
   const headings = templateHeadings(
     page.template,
     page.context,
@@ -135,9 +90,6 @@ export function stubFor(page) {
       '---'
     ].join('\n'),
     `# ${expectedH1(page.template, page.context, page.interface)[0]}`,
-    placeholder(
-      `lead sentence: spell out ${context.triggerEvent} in words, with task synonyms (bypass, skip, lookup, parent fields, callout)`
-    ),
     ...sectionBody(page, 'lead', required)
   ];
 

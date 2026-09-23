@@ -151,54 +151,67 @@ export const roleCalls = {
 
 export const addOnFacts = {
   ParentQuery: {
+    summary:
+      'Load parent (lookup) fields before the first handler runs; read them with `getNewParent`.',
     purpose:
       'Load fields of the parent a lookup points to before any handler runs; read them with `record.getNewParent(relationshipName)`.',
     called:
-      'once per run, before the first handler runs; not called for a bypassed handler',
+      'once per chunk, before the first handler runs; not called for a bypassed handler',
     returns: 'lookup field → the parent fields to load'
   },
   PriorParentQuery: {
+    summary:
+      'Load the parent the old row pointed to; read it with `getOldParent`.',
     purpose:
       'Load fields of the parent the old row pointed to; read them with `record.getOldParent(relationshipName)`.',
     called:
-      'once per run, before the first handler runs; not called for a bypassed handler',
+      'once per chunk, before the first handler runs; not called for a bypassed handler',
     returns: 'lookup field → the parent fields to load'
   },
   RelatedQuery: {
+    summary:
+      'Query children, siblings or any other records once per chunk; read them with `getRelated`.',
     purpose:
       'Name providers that query children, siblings or any other records once per run; read them with `record.getRelated(providerName)`.',
-    called: 'once per run, at this handler’s turn, before its first predicate',
+    called:
+      'once per chunk, at this handler’s turn, before its first predicate',
     returns: 'provider name → `RecordsProvider`'
   },
   OwnUnitOfWork: {
+    summary: 'Give the handler its own unit of work, committed right after it.',
     purpose:
       'Give a Writer its own DML Lib unit (user mode, sharing, partial success, statement order); it commits right after this Writer.',
     called:
-      'once per run, when the handler list is built, even for a handler that is then bypassed',
+      'once per chunk, when the handler list is built, even for a handler that is then bypassed',
     returns: 'the unit this Writer registers into'
   },
   Bypassable: {
+    summary: 'Skip this handler for the whole chunk when a condition holds.',
     purpose:
       'Skip (bypass, disable) this handler for the whole run when a condition holds.',
     called:
-      'once per run, before parents load; not called when metadata or `TriggerOrchestrator.bypass()` already skips the handler',
-    returns: '`true` to skip this handler for this run'
+      'once per chunk, before parents load; not called when metadata or `TriggerOrchestrator.bypass()` already skips the handler',
+    returns: '`true` to skip this handler for this chunk'
   },
   RecursionGuard: {
+    summary: `Cap how many times this handler acts on the same record in one transaction (default ${recursionDefault}).`,
     purpose: `Cap how many times this handler acts on the same record in one transaction (default ${recursionDefault}).`,
     called:
-      'once per run, when the handler list is built, even for a handler that is then bypassed',
+      'once per chunk, when the handler list is built, even for a handler that is then bypassed',
     returns:
       'how many times one record may qualify for this handler in the transaction'
   },
   Finalizer: {
+    summary:
+      'Run once after this handler’s records, with the records that qualified.',
     purpose:
       'Run once after this handler’s records, with the records that qualified.',
     called:
-      'once per run, after this handler’s records, only if at least one record qualified',
+      'once per chunk, after this handler’s records, only if at least one record qualified',
     returns: null
   },
   ContinueOnError: {
+    summary: 'Log and swallow this handler’s exceptions, so the save goes on.',
     purpose:
       'Log and swallow this handler’s exceptions, so later handlers run and the save goes on.',
     called: null,

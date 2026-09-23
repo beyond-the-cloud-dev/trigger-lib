@@ -1,29 +1,13 @@
 ---
 template: add-ons
 context: AfterInsert
-description: The add-on interfaces an after insert Writer or Dispatcher can implement - parent and related queries, its own unit of work, bypass, finalizer and continue on error.
+description: Add-ons for after insert handlers - parent fields, related records, own unit of work, bypass, finalizer and error handling.
 ---
 
-# AfterInsert Add-ons
+# Add-ons in AfterInsert
 
-Add-ons are the extra interfaces an **after insert** Writer or Dispatcher can implement next to its role: load parent (lookup) fields or other records without SOQL in the loop, give a Writer its own unit of work, skip or bypass the handler on a condition, run once after its records, or keep going after an error.
+Add-ons are optional interfaces. Implement as many as you need next to your role interface.
 
-## Add-ons in AfterInsert {#available}
+## Available {#available}
 
-<!--@include: @/_parts/generated/after-insert/add-ons-available.md-->
-
-A handler implements as many add-ons as it needs, in any combination. An add-on that its role ignores compiles and does nothing.
-
-## Not Available Here {#not-available}
-
-<!--@include: @/_parts/generated/after-insert/add-ons-not-available.md-->
-
-## Which Roles Honour Them {#works-with}
-
-<!--@include: @/_parts/generated/after-insert/add-ons-works-with.md-->
-
-## See Also {#see-also}
-
-- [AfterInsert](/after-insert/): the context overview
-- [AfterInsert.Writer](/after-insert/writer) and [AfterInsert.Dispatcher](/after-insert/dispatcher)
-- [Contexts at a Glance](/contexts): every add-on method in every context
+<!--@include: @/_parts/generated/after-insert/add-ons-list.md-->

@@ -1,5 +1,0 @@
-- **Once per run, not per record.** The library calls `bypassOn<Ctx>When()` once per handler per run, after it builds the handler list and before it loads parents or runs providers. It takes no records.
-- **Last in the order of checks.** A run is skipped first by the `TriggerOrchestrator.bypass()` switches `all()`, `sObject(…)` and `orchestrator(…)`, then by `TriggerObject__mdt.Bypass__c`. Then each handler is checked in turn: `TriggerOrchestrator.bypass().handler(…)`, then `TriggerHandler__mdt.Bypass__c`, then this method. The method is not called when an earlier check has already switched the handler off.
-- **All handlers are checked before the first one runs.** A flag that an earlier handler sets during this run takes effect only from the next run.
-- **True skips the handler for the whole run.** A bypassed handler gets no providers, no predicates and no Finalizer, contributes no parent declarations, and spends no recursion budget.
-- **Getters still run.** Methods that the library calls while it builds the handler list run even for a handler that is then bypassed: `ownUnitOfWorkOn<Ctx>()` and `maxRecursionDepthOn<Ctx>()`, where the context and role use them.

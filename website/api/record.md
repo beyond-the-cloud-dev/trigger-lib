@@ -4,7 +4,7 @@ description: 'Record API reference: InsertRecord, UpdateRecord, DeleteRecord, Un
 
 # Record API
 
-Every handler method that takes one record gets a `TriggerHandler` record type. It wraps the new and old rows, the declared parents and the related records. Each context's Record API page lists the methods that apply there.
+Every handler method that takes one record gets a `TriggerHandler` record type. It wraps the new and old rows, the declared parents and the related records.
 
 ## Record Types {#record-types}
 
@@ -17,7 +17,7 @@ Every handler method that takes one record gets a `TriggerHandler` record type. 
 | BeforeDelete, AfterDelete | `DeleteRecord` | | `DeleteRecords` |
 | AfterUndelete | `UndeleteRecord` | | `UndeleteRecords` |
 
-All types are nested in `TriggerHandler`. The collections are on [Record Collections](/api/record-collections).
+All types are nested in `TriggerHandler`. For the collections, see [Record Collections](/api/record-collections).
 
 ## Methods {#methods}
 
@@ -31,15 +31,14 @@ All types are nested in `TriggerHandler`. The collections are on [Record Collect
 | value predicates and record type checks | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | change detection | | | ✓ | ✓ | | |
 
-A member that a type lacks does not compile. For example, `isChanged` in an insert handler is a compile error.
+A missing member is a compile error, such as `isChanged` in an insert handler.
 
 - **`getId()`** is null in before insert.
-- **`getNewSObject()`** is the live row in before insert and before update. In the after contexts it is read-only: writing to it throws a `FinalException` that nothing can catch.
-- **`getOldSObject()`** is always read-only. In the delete contexts it is the only row. Stop a delete with `getOldSObject().addError(…)` in [BeforeDelete](/before-delete/handler).
-- **`getNewParent('Account')`** returns the parent a [ParentQuery](/api/field-selection) loaded. `getOldParent` returns the one a PriorParentQuery loaded. The name is case-sensitive. The result is null when the lookup is empty or not declared.
-- **Relationship fields on the row are empty.** `getNewSObject().Account` is null. Read parents with `getNewParent`.
-- **`put`** works only in before insert and before update. In the after contexts it compiles but throws a `FinalException`. Change saved records with a [Writer](/api/unit-of-work).
-- **`addError(field, error)`** shows the error at record level on `Name` and on address fields. The save is still blocked.
+- **`getNewSObject()`** is the live row in before insert and before update. In the after contexts it is read-only.
+- **`getOldSObject()`** is read-only. Stop a delete with `getOldSObject().addError(…)` in [BeforeDelete](/before-delete/handler).
+- **`getNewParent('Account')`** returns the parent a [ParentQuery](/api/field-selection) loaded, or null. `getOldParent` reads PriorParentQuery. The name is case-sensitive. The row itself holds only the lookup Id: `getNewSObject().Account` is null.
+- **`put`** works only in before insert and before update. In the after contexts it compiles but throws a `FinalException` that nothing can catch. Change saved records with a [Writer](/api/unit-of-work).
+- **`addError(field, error)`** shows the error at record level on `Name` and address fields. The save is still blocked.
 
 ## Value Predicates {#value-predicates}
 
@@ -57,12 +56,11 @@ Update contexts only: `isChanged`, `isAnyChanged`, `areAllChanged`, `isChangedTo
 
 - **`isAnyChanged` and `areAllChanged`** take 2 to 5 fields or an `Iterable<SObjectField>`.
 - **Text comparison ignores case.** `'Doe'` to `'DOE'` is not a change.
-- **Null is a value.** A change from null to a value, or back, is a change.
 - **`isChangedFromTo` does not require a change.** With the same `from` and `to`, it is true for a field that kept that value.
 
 ## Record Type {#record-type}
 
-`isRecordTypeEqual(developerName)` and `isRecordTypeNotEqual(developerName)` compare the record type by developer name, not by label. They cost no SOQL.
+`isRecordTypeEqual(developerName)` and `isRecordTypeNotEqual(developerName)` compare by developer name, not label. They cost no SOQL.
 
 - **Objects without record types throw** a `TriggerHandlerException`.
 - **An unknown name never matches.** `isRecordTypeEqual` is false for every record.
@@ -78,16 +76,16 @@ Update contexts only: `isChanged`, `isAnyChanged`, `areAllChanged`, `isChangedTo
 
 ## Test API {#test-api}
 
-These public members build records and results in memory. A test can then call a handler's methods directly, with no DML and no trigger.
+Build records in memory and call a handler's methods directly, with no DML and no trigger.
 
 | Member | Use |
 |---|---|
-| `new TriggerHandler.TriggerRecord(newRow, oldRow)` | one record for any context; pass `null` for the side the context lacks |
-| `new TriggerHandler.InsertTriggerRecords(records)` and the `Update`, `Delete` and `Undelete` versions | the collection a dispatch method, Finalizer or provider receives |
-| `new TriggerHandler.ProvidedRecords(rows)` and `groupUnderKey(key, row)` | the `RelatedRecords` a provider would produce |
-| `new TriggerHandler.RandomIdGenerator().get(SObjectType)` | a fake Id with the object's key prefix |
+| `new TriggerHandler.TriggerRecord(newRow, oldRow)` | one record; pass `null` for the missing side |
+| `new TriggerHandler.InsertTriggerRecords(records)`, `UpdateTriggerRecords`, `DeleteTriggerRecords`, `UndeleteTriggerRecords` | a collection |
+| `new TriggerHandler.ProvidedRecords(rows)`, `groupUnderKey(key, row)` | provider results |
+| `new TriggerHandler.RandomIdGenerator().get(SObjectType)` | a fake Id |
 
-Attach parents and provider results with `enrichNew`, `enrichOld` and `setProvidedRecords` on `TriggerRecord`. These are marked internal and may change. See [Testing](/guide/testing).
+Attach parents and provider results with `enrichNew`, `enrichOld` and `setProvidedRecords`. They are marked internal and may change. See [Testing](/guide/testing).
 
 ```apex
 @IsTest

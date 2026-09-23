@@ -124,9 +124,10 @@ Attach them yourself. Nothing is queried:
 ```apex
 record.enrichNew('Account', new Account(Name = 'Acme', Owner = new User(IsActive = true)));
 
+Account existing = new Account(Id = new TriggerHandler.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
 TriggerHandler.ProvidedRecords provided = new TriggerHandler.ProvidedRecords(new List<SObject>{ existing });
 provided.groupUnderKey('acme', existing);
-record.setProvidedRecords(new Map<String, TriggerHandler.RelatedRecords>{ 'sameName' => provided });
+record.setProvidedRecords(new Map<String, TriggerHandler.RelatedRecords>{ '<provider name>' => provided });
 ```
 
 - **Nest a grandparent** inside the parent, as `Owner` above.
@@ -137,10 +138,12 @@ record.setProvidedRecords(new Map<String, TriggerHandler.RelatedRecords>{ 'sameN
 Call `finalize<Ctx>` or `dispatchOn<Ctx>` directly with the records your predicate would qualify:
 
 ```apex
-new AccountRegionSyncDispatcher().dispatchOnAfterUpdate(new TriggerHandler.UpdateTriggerRecords(qualified));
+List<TriggerHandler.TriggerRecord> qualified = new List<TriggerHandler.TriggerRecord>{ new TriggerHandler.TriggerRecord(newRow, oldRow) };
+
+new <YourHandler>().finalize<Ctx>(new TriggerHandler.<X>TriggerRecords(qualified));
 ```
 
-`Limits.getQueueableJobs()` counts the jobs a Dispatcher enqueued.
+`<X>` is `Insert`, `Update`, `Delete` or `Undelete`. `Limits.getQueueableJobs()` counts the jobs a Dispatcher enqueued.
 
 ## Registration Tests {#registration}
 

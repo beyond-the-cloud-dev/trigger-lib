@@ -92,7 +92,7 @@ To switch off one handler on a condition, implement [BeforeDelete.Bypassable](/b
 - **A unit of work** (`TriggerHandler.UnitOfWork`): write directly from the [Finalizer](/before-delete/add-ons/finalizer), or register the writes in an [AfterDelete.Writer](/after-delete/writer).
 - **A DML guard**: none; DML runs at once in this context.
 - **The merge winner** (`MasterRecordId`): → [AfterDelete](/after-delete/#gotchas).
-- **before undelete**: the platform has no such event → [There Is No BeforeUndelete](/before-undelete).
+- **before undelete**: the platform has no such event → [There Is No BeforeUndelete](/after-undelete/#no-before-undelete).
 
 ## See Also {#see-also}
 

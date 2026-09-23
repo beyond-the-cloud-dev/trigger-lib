@@ -74,7 +74,7 @@ public interface AfterUndelete {
 - **One role per entry.** The list type is the context's `Handler` interface. Each entry implements one role of that context: Populator or Validator in before insert and before update, Writer or Dispatcher in the after contexts, and `BeforeDelete.Handler` in before delete.
 - **Two roles in one class.** Only the first runs: Populator over Validator, Writer over Dispatcher. Nothing throws.
 - **Only the marker.** Outside before delete, `Handler` is an empty marker. A class that implements only the marker compiles, fits in the list and never runs.
-- **No BeforeUndelete.** Salesforce has no `before undelete` trigger event. See [There Is No BeforeUndelete](/before-undelete).
+- **No BeforeUndelete.** Salesforce has no `before undelete` trigger event. See [There Is No BeforeUndelete](/after-undelete/#no-before-undelete).
 
 Every context's roles and method names: [Contexts at a Glance](/contexts#method-names).
 

@@ -30,7 +30,7 @@ The orchestrator implements one registration interface per context it handles. E
 | `TriggerOrchestrator.AfterDelete` | `afterDeleteHandlers()` | `AfterDelete.Handler` |
 | `TriggerOrchestrator.AfterUndelete` | `afterUndeleteHandlers()` | `AfterUndelete.Handler` |
 
-These seven are the whole set. Salesforce has no before undelete event: see [There Is No BeforeUndelete](/before-undelete).
+These seven are the whole set. Salesforce has no before undelete event: see [There Is No BeforeUndelete](/after-undelete/#no-before-undelete).
 
 <<< @/../examples/main/default/classes/account/AccountTriggerOrchestrator.cls
 

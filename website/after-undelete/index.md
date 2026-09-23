@@ -32,7 +32,7 @@ public with sharing class AccountRestoreGuardWriter implements AfterUndelete.Wri
 }
 ```
 
-List it first in `afterUndeleteHandlers()`. Later handlers still run for a rejected record, but their unit-of-work writes roll back with it, while an earlier Dispatcher may already have published a Publish Immediately event for it. More: [No BeforeUndelete](/before-undelete).
+List it first in `afterUndeleteHandlers()`. Later handlers still run for a rejected record, but their unit-of-work writes roll back with it, while an earlier Dispatcher may already have published a Publish Immediately event for it. More: [No BeforeUndelete](/after-undelete/#no-before-undelete).
 
 ## Pick a Role {#pick-a-role}
 
@@ -158,7 +158,6 @@ Also missing in after undelete:
 
 - [AfterInsert](/after-insert/): the same logic for new records.
 - [AfterDelete](/after-delete/): the delete that sent the record to the Recycle Bin.
-- [No BeforeUndelete](/before-undelete)
 - [Contexts at a Glance](/contexts)
 - [Unit of Work](/guide/unit-of-work)
 - [Execution Order & Cost](/guide/execution-order)

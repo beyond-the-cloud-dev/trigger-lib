@@ -131,4 +131,3 @@ To check that the orchestrator registers a handler, or to run the whole orchestr
 - Read Account fields from the contact's lookup: [BeforeInsert.ParentQuery](/before-insert/add-ons/parent-query).
 - Create or update other records after the save: [AfterInsert.Writer](/after-insert/writer).
 - See every context, role and method name: [Contexts at a Glance](/contexts).
-- Find the page for a task: [How do I…](/how-do-i).

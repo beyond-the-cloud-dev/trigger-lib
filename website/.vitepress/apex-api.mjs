@@ -525,7 +525,7 @@ export function missingBeforeContexts() {
     .map(context => ({
       name: `Before${context.operation}`,
       slug: `before-${kebab(context.operation)}`,
-      link: `/before-${kebab(context.operation)}`,
+      link: `${context.link}#no-before-${kebab(context.operation)}`,
       before: context.name
     }));
 }
@@ -571,15 +571,6 @@ export function expectedPages() {
       link: context.recordApiLink,
       template: 'record-api',
       context: context.name
-    });
-  }
-
-  for (const absent of missingBeforeContexts()) {
-    pages.push({
-      path: `${absent.slug}.md`,
-      link: absent.link,
-      template: null,
-      context: null
     });
   }
 
@@ -678,14 +669,13 @@ const findItFast = {
   text: 'Find It Fast',
   collapsed: false,
   items: [
-    { text: 'Contexts at a Glance', link: '/contexts' },
-    { text: 'How do I…', link: '/how-do-i' }
+    { text: 'Contexts at a Glance', link: '/contexts' }
   ]
 };
 
 const acrossContexts = {
   text: 'Across Contexts',
-  collapsed: true,
+  collapsed: false,
   items: [
     { text: 'Execution Order & Cost', link: '/guide/execution-order' },
     { text: 'Bypassing', link: '/guide/bypasses' },
@@ -698,7 +688,7 @@ const acrossContexts = {
 
 const reference = {
   text: 'Reference',
-  collapsed: true,
+  collapsed: false,
   items: [
     { text: 'TriggerOrchestrator', link: '/api/trigger-orchestrator' },
     { text: 'Record API', link: '/api/record' },
@@ -712,7 +702,7 @@ const reference = {
 
 const about = {
   text: 'About',
-  collapsed: true,
+  collapsed: false,
   items: [
     { text: 'Design Principles', link: '/introduction/design-principles' }
   ]
@@ -735,7 +725,7 @@ function contextGroup(context) {
       text: 'Add-ons',
       link: context.addOnsLink,
       docFooterText: `Add-ons in ${context.name}`,
-      collapsed: false,
+      collapsed: true,
       items: context.addOns.map(addOn => interfaceLeaf(context, addOn))
     });
   }
@@ -746,21 +736,11 @@ function contextGroup(context) {
     docFooterText: `Record API in ${context.name}`
   });
 
-  return { text: context.name, link: context.link, collapsed: true, items };
+  return { text: context.name, link: context.link, collapsed: false, items };
 }
 
 function buildSidebar() {
-  const missing = missingBeforeContexts();
-  const contextItems = [];
-
-  for (const context of model.contexts) {
-    for (const absent of missing.filter(
-      entry => entry.before === context.name
-    )) {
-      contextItems.push({ text: `No ${absent.name}`, link: absent.link });
-    }
-    contextItems.push(contextGroup(context));
-  }
+  const contextItems = model.contexts.map(context => contextGroup(context));
 
   return [
     gettingStarted,
@@ -773,39 +753,7 @@ function buildSidebar() {
 }
 
 function buildNav() {
-  return [
-    {
-      text: 'Contexts',
-      activeMatch: '^/(contexts|before-|after-)',
-      items: [
-        { text: 'Contexts at a Glance', link: '/contexts' },
-        {
-          text: 'Trigger Contexts',
-          items: model.contexts.map(context => ({
-            text: context.name,
-            link: context.link
-          }))
-        }
-      ]
-    },
-    { text: 'How do I…', link: '/how-do-i', activeMatch: '^/how-do-i' },
-    {
-      text: 'Guides',
-      activeMatch: '^/(guide/|introduction$|installation)',
-      items: [
-        { text: gettingStarted.text, items: gettingStarted.items },
-        { text: acrossContexts.text, items: acrossContexts.items }
-      ]
-    },
-    {
-      text: 'Reference',
-      activeMatch: '^/(api/|introduction/)',
-      items: [
-        { text: reference.text, items: reference.items },
-        { text: about.text, items: about.items }
-      ]
-    }
-  ];
+  return [{ text: 'Docs', link: '/introduction', activeMatch: '^/.+' }];
 }
 
 export const sidebar = buildSidebar();

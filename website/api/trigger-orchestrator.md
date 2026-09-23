@@ -4,7 +4,7 @@ description: 'TriggerOrchestrator reference: run() from the trigger, the seven r
 
 # TriggerOrchestrator
 
-The class your trigger calls. It runs the handlers your orchestrator registers, switches handlers off from Apex, and sends handler errors to your Logger.
+The class your trigger calls. It runs your handlers, switches them off from Apex, and sends their errors to your Logger.
 
 ## run {#run}
 
@@ -14,11 +14,10 @@ public static void run(Object orchestrator)
 
 <<< @/../examples/main/default/triggers/ContactTrigger.trigger
 
-- **List every event in the trigger.** `run` handles only the contexts your orchestrator registers. In any other context it does nothing.
+- **List every event in the trigger.** `run` does nothing in a context your orchestrator does not register.
 - **Once per chunk.** Every context and every chunk of up to 200 records is a separate run. Each run calls your handler method again.
 - **Handlers run in list order.** Each handler goes through every record of the chunk before the next handler starts.
 - **Switched off, it returns at once.** `bypass()` or a [`TriggerObject__mdt`](/api/custom-metadata) record can switch off the object or the orchestrator.
-- **Outside a trigger it throws.** For example, when you call it from anonymous Apex.
 
 ## Registration Interfaces {#registration}
 
@@ -59,7 +58,7 @@ public interface AfterUndelete {
 - **Two types per context name.** `TriggerOrchestrator.BeforeInsert` is the registration interface. `BeforeInsert` alone holds the role and add-on interfaces for handlers.
 - **Return an empty list, never `null`.** A `null` list throws before any handler runs, and the save fails.
 - **One role per class.** A class that implements two roles runs only as the first: Populator over Validator, Writer over Dispatcher.
-- **The marker alone never runs.** Outside BeforeDelete, `Handler` has no methods. A class that implements only `Handler` compiles and does nothing.
+- **The marker alone never runs.** Outside BeforeDelete, a class that implements only `Handler` compiles and does nothing.
 
 ## bypass {#bypass}
 
@@ -81,7 +80,6 @@ public interface Bypassable {
 | `orchestrator(X.class)` | every run of that orchestrator |
 | `handler(X.class)` | that handler in every context |
 | `all()` | every run |
-| `clear()` | nothing: it removes every switch |
 
 ```apex
 TriggerOrchestrator.bypass().sObject(Account.SObjectType).handler(ContactFollowUpTaskWriter.class);
@@ -92,7 +90,7 @@ try {
 }
 ```
 
-- **Lasts for the transaction.** A switch stays on until `clear()`. No method removes a single switch, so call `clear()` in a `finally` block.
+- **Lasts for the transaction.** A switch stays on until `clear()` removes every switch. Call it in a `finally` block.
 - **Top-level classes only.** `handler(X.class)` and `orchestrator(X.class)` never match an inner class. For an inner handler, use a [`TriggerHandler__mdt`](/api/custom-metadata#trigger-handler) record or the Bypassable add-on. For an inner orchestrator, use `sObject(…)`.
 - **Only Trigger Lib handlers.** Flows, validation rules and other triggers still run.
 
@@ -108,7 +106,7 @@ public interface Logger {
 - **`log(error)`** runs for every exception in a handler's turn, before the library rethrows it or ContinueOnError swallows it.
 - **`finalize()`** runs once when the outermost run ends, also when it failed.
 - **Found automatically.** Implement it in one class and register nothing. With two implementations, the first call to `run` or `bypass()` throws.
-- **Some exceptions are never logged.** An exception outside a handler's turn goes straight to the caller. This covers `<ctx>Handlers()`, `bypassOn<Ctx>When()`, the parent queries, and the commit of the default unit of work.
+- **Not logged:** exceptions outside a handler's turn, such as in `<ctx>Handlers()`, `bypassOn<Ctx>When()`, the parent queries and the default unit of work's commit.
 
 ## Error {#error}
 
@@ -129,7 +127,7 @@ public interface Error {
 
 ## TriggerOrchestratorException {#triggerorchestratorexception}
 
-The class is private, so you cannot catch it by type. Catch `Exception` and match the message. The library rethrows it even when the handler implements ContinueOnError.
+The class is private, so catch `Exception` and match the message. The library rethrows it even with ContinueOnError.
 
 | Message | Thrown when |
 |---|---|
@@ -138,4 +136,4 @@ The class is private, so you cannot catch it by type. Catch `Exception` and matc
 | `<Handler> performed DML in a before context. …` | a before insert or before update handler ran DML or published an immediate event |
 | `<Handler> qualified a record in errorShouldBeAttachedOn<Ctx>When but attached no error in addErrorOn<Ctx>.` | a Validator's predicate returned true and its error method attached no error |
 
-Code that fires the trigger through DML gets a `DmlException` instead. Its message contains the original message.
+Code that fires the trigger through DML gets a `DmlException` that contains the original message.

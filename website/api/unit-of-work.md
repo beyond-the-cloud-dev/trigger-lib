@@ -1,10 +1,10 @@
 ---
-description: 'TriggerHandler.UnitOfWork reference: the seven registration methods a Writer uses to insert, update, upsert, delete and publish in after contexts, DML.Record lookups to records inserted in the same unit, what the interface does not offer, and a recording unit for unit tests.'
+description: 'TriggerHandler.UnitOfWork reference: the seven registration methods a Writer uses to insert, update, upsert, delete and publish in after contexts, DML.Record lookups to records inserted in the same unit, which unit a Writer gets, and a recording unit for unit tests.'
 ---
 
 # TriggerHandler.UnitOfWork
 
-The unit of work an after-context Writer receives in its action. It registers inserts, updates, upserts, deletes and platform event publishes (DML) for the library to commit later, in bulk.
+An after-context Writer gets it in its action, `writeOn<Ctx>(record, unitOfWork)`. Register your writes on it. The library commits them later, in bulk.
 
 ## Interface {#interface}
 
@@ -24,56 +24,55 @@ public interface UnitOfWork {
 }
 ```
 
-It reaches only the Writer's action, `writeOn<Ctx>(record, unitOfWork)`, in after insert, after update, after delete and after undelete:
-
-<!--@include: @/_parts/generated/chips/writer/unit-of-work-methods.md-->
-
-## Methods {#methods}
-
-<!--@include: @/_parts/uow/methods.md-->
-
-### DML.Record {#dml-record}
-
-`DML.Record` comes from DML Lib, which ships with Trigger Lib. Build one from a record or an Id:
-
-| Member | Does |
-|---|---|
-| `DML.Record(SObject record)` | wraps a record you built |
-| `DML.Record(Id recordId)` | starts an update from an Id alone |
-| `with(SObjectField field, Object value)` | sets a field |
-| `withRelationship(SObjectField lookupField, SObject parent)` | fills the lookup with the Id of `parent` once `parent` is inserted |
-| `withRelationship(SObjectField lookupField, SObjectField externalIdField, Object externalIdValue)` | points the lookup at the parent with that external Id value; the field must be marked External ID |
-
-Each member returns the `DML.Record`, so calls chain:
+Every method returns the unit, so calls chain:
 
 ```apex
-unitOfWork.toUpdate(DML.Record(accountId).with(Account.Rating, 'Hot'));
+unitOfWork
+    .toInsert(new Task(WhatId = accountId, Subject = 'Welcome call'))
+    .toUpdate(new Account(Id = accountId, Rating = 'Hot'))
+    .toPublish(new AccountSync__e(AccountId__c = accountId));
 ```
 
-### toUpsert {#to-upsert}
+- **One record per call.** There are no List overloads.
+- **New instances only.** Build a record with the Id and the changed fields. A commit that includes a trigger row throws.
+- **Ids are checked at commit.** `toInsert` of a record with an Id, or `toUpdate` and `toDelete` of a record without one, throw a `DmlException` then.
+- **`toUpsert` with a `null` field** matches on the record Id.
+- **No undelete, merge, hard delete or commit.** Run direct DML for those operations.
 
-`toUpsert(record, externalIdField)` matches existing rows on that external Id field. Pass `null` as the field to match on the record Id instead. A commit runs one upsert statement per object type and per external Id field.
+## DML.Record {#dml-record}
 
-## Beyond the Interface {#not-available}
+`DML.Record` comes from DML Lib, which ships with Trigger Lib. Use it to point a lookup at a record inserted in the same unit:
 
-The interface only registers. Its methods, the missing List overloads and the missing undelete, merge and hard delete are covered above. Two more needs go through an OwnUnitOfWork, whose method returns a `DML.Committable` that you configure:
+```apex
+Account branch = new Account(Name = 'Acme Branch');
 
-- **User mode, sharing, partial success or your own statement order.** Configure them on the `DML` you return.
-- **The results of the commit, such as new Ids.** Add `commitHook(…)` with a `DML.Hook`, whose `after(DML.Result)` runs once the commit has finished without throwing. Later in the transaction, `DML.retrieveResultFor('<identifier>')` returns the results of every commit of a unit built with that `identifier`; tests can mock it with `DML.mock('<identifier>')`.
+unitOfWork
+    .toInsert(branch)
+    .toInsert(DML.Record(new Contact(LastName = 'Doe')).withRelationship(Contact.AccountId, branch));
+```
 
-OwnUnitOfWork in each after context:
-
-<!--@include: @/_parts/generated/chips/own-unit-of-work.md-->
+- **The parent goes first.** The unit inserts it, then fills the lookup with its new Id.
+- **Register the parent in the same unit,** with `toInsert` or `toUpsert`, or give it an Id. Otherwise a `toInsert` child makes the commit throw.
+- **Other members.** `DML.Record(recordId)` starts an update from an Id. `with(field, value)` sets a field. `withRelationship(lookupField, externalIdField, externalIdValue)` links by external Id.
 
 ## Which Unit a Writer Gets {#which-unit}
 
-<!--@include: @/_parts/uow/which-unit.md-->
+| The Writer implements | Its unit |
+|---|---|
+| OwnUnitOfWork | the unit its `ownUnitOfWorkOn<Ctx>()` method returns |
+| ContinueOnError, without OwnUnitOfWork | a private unit, so a failure drops only this Writer's writes |
+| neither | the default unit, shared by all such Writers in the run |
 
-When each unit commits, statement order, duplicates and failures: [Unit of Work](/guide/unit-of-work).
+- **The default unit** is `new DML().combineOnDuplicate().systemMode().withoutSharing().identifier('triggerUow')`. It commits once, after the last handler of the run.
+- **An own or private unit** commits right after its Writer, when at least one record qualified.
+- **Need user mode, sharing or partial success?** Implement OwnUnitOfWork and configure the `DML.Committable` it returns.
+- **Only Writers get a unit.** A Dispatcher gets none.
+
+Commit order, duplicates and failures: [Unit of Work](/guide/unit-of-work).
 
 ## In Unit Tests {#test}
 
-Your tests can implement the interface too. Pass a small recording unit to the Writer's action, then assert on what it kept. Nothing reaches the database, because the recording unit never commits.
+Pass a small recording unit to the Writer's action, then assert on what it kept. Nothing reaches the database.
 
 ::: details A recording unit of work
 
@@ -131,14 +130,3 @@ static void writeOnAfterUpdateRegistersAccountType() {
     Assert.areEqual('Customer - Direct', ((Account) unitOfWork.updated[0]).Type, 'The account type should be updated.');
 }
 ```
-
-`OpportunityAccountTypeWriter` is the example Writer on [Record API](/api/record#change-detection). Record doubles and fake Ids: [Test API](/api/record#test-api). Running the whole orchestrator with the shared unit mocked works in the same namespace only: [Testing](/guide/testing).
-
-## See Also {#see-also}
-
-- [Unit of Work](/guide/unit-of-work): commit timing, statement order, duplicates, reading results
-- [Test API](/api/record#test-api): records, collections and fake Ids for unit tests
-
-The Writer in each after context:
-
-<!--@include: @/_parts/generated/chips/writer.md-->

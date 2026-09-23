@@ -18,7 +18,7 @@ Platform exceptions such as `System.LimitException` cannot be caught. They fail 
 
 ## Logger {#logger}
 
-Implement `TriggerOrchestrator.Logger` in one class. The library finds it, so nothing is registered:
+Implement `TriggerOrchestrator.Logger` in one class. The library finds it; nothing is registered:
 
 ```apex
 public interface Logger {
@@ -67,11 +67,11 @@ public with sharing class TriggerErrorLogger implements TriggerOrchestrator.Logg
 
 | Method | Returns |
 |---|---|
-| `getHandlerName()` | the handler's simple class name: `Inner` for `Outer.Inner` |
+| `getHandlerName()` | the simple class name: `Inner` for `Outer.Inner` |
 | `getException()` | the exception |
 | `getOperation()` | the `System.TriggerOperation`, such as `AFTER_UPDATE` |
 | `getSObjectType()` | the trigger object |
-| `getRecordIds()` | the Ids of every record in the chunk; an empty set in before insert |
+| `getRecordIds()` | every Id in the chunk; empty in before insert |
 
 ## ContinueOnError {#continue-on-error}
 
@@ -95,12 +95,12 @@ This code runs outside every handler. An exception there is not logged, Continue
 
 | Message | Cause |
 |---|---|
-| `Called outside of a trigger context…` | `run()` called outside a trigger |
+| `Called outside of a trigger context…` | `run()` outside a trigger |
 | `Multiple implementations of TriggerOrchestrator.Logger found…` | two Logger classes |
 | `<Handler> performed DML in a before context…` | DML or an event publish in before insert or before update |
-| `<Handler> qualified a record … but attached no error…` | a Validator predicate returned true and no error was attached |
+| `<Handler> qualified a record … but attached no error…` | a Validator attached no error |
 | `<Object> has no record types…` | `isRecordTypeEqual` on an object without record types |
-| `No related records provider is registered under <name>…` | `getRelated` with a name the handler did not return |
+| `No related records provider is registered under <name>…` | `getRelated` with an unknown name |
 
 The first four are a `TriggerOrchestratorException`. It is private, so catch `Exception` and check the message. The last two are a public `TriggerHandler.TriggerHandlerException`.
 

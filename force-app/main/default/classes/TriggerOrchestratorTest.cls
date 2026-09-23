@@ -6350,21 +6350,26 @@ private class TriggerOrchestratorTest {
     }
 
     private static TriggerObject__mdt objectSetting(String objectApiName, Boolean bypass, List<String> bypassedHandlers) {
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
         Map<String, Object> setting = new Map<String, Object>{
-            'attributes' => new Map<String, Object>{ 'type' => 'TriggerObject__mdt' },
-            'ObjectAPIName__c' => objectApiName,
-            'Bypass__c' => bypass
+            'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+            String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => objectApiName,
+            String.valueOf(TriggerObject__mdt.Bypass__c) => bypass
         };
         List<Map<String, Object>> handlerSettings = new List<Map<String, Object>>();
 
         for (String handlerName : bypassedHandlers) {
             handlerSettings.add(
-                new Map<String, Object>{ 'attributes' => new Map<String, Object>{ 'type' => 'TriggerHandler__mdt' }, 'ApexClassName__c' => handlerName, 'Bypass__c' => true }
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                    String.valueOf(TriggerHandler__mdt.ApexClassName__c) => handlerName,
+                    String.valueOf(TriggerHandler__mdt.Bypass__c) => true
+                }
             );
         }
 
         if (!handlerSettings.isEmpty()) {
-            setting.put('TriggerHandlers__r', new Map<String, Object>{ 'totalSize' => handlerSettings.size(), 'done' => true, 'records' => handlerSettings });
+            setting.put(namespacePrefix + 'TriggerHandlers__r', new Map<String, Object>{ 'totalSize' => handlerSettings.size(), 'done' => true, 'records' => handlerSettings });
         }
 
         return (TriggerObject__mdt) JSON.deserialize(JSON.serialize(setting), TriggerObject__mdt.class);

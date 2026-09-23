@@ -297,11 +297,12 @@ public with sharing class TriggerOrchestrator {
 
         private Map<String, MetadataSettings> resolveMetadataSettings() {
             Map<String, MetadataSettings> settingsByObjectName = new Map<String, MetadataSettings>();
+            String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
 
             for (
                 TriggerObject__mdt triggerObject : (List<TriggerObject__mdt>) SOQL.of(TriggerObject__mdt.SObjectType)
                     .with(TriggerObject__mdt.ObjectAPIName__c, TriggerObject__mdt.Bypass__c)
-                    .with(SOQL.SubQuery.of('TriggerHandlers__r').with(TriggerHandler__mdt.ApexClassName__c, TriggerHandler__mdt.Bypass__c))
+                    .with(SOQL.SubQuery.of(namespacePrefix + 'TriggerHandlers__r').with(TriggerHandler__mdt.ApexClassName__c, TriggerHandler__mdt.Bypass__c))
                     .systemMode()
                     .mockId('TriggerObject__mdt')
                     .toList()

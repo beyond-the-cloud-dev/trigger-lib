@@ -1,7 +1,12 @@
 public class AfterDelete {
-    public interface Handler {
-        Boolean qualifiesForAfterDeleteWhen(TriggerHandler.DeleteRecord record);
-        void onAfterDelete(TriggerHandler.DeleteRecord record);
+    public interface Writer extends Handler {
+        Boolean writeOnAfterDeleteWhen(TriggerHandler.DeleteRecord record);
+        void writeOnAfterDelete(TriggerHandler.DeleteRecord record, TriggerHandler.UnitOfWork unitOfWork);
+    }
+
+    public interface Dispatcher extends Handler {
+        Boolean dispatchOnAfterDeleteWhen(TriggerHandler.DeleteRecord record);
+        void dispatchOnAfterDelete(TriggerHandler.DeleteRecords records);
     }
 
     public interface PriorParentQuery {
@@ -17,6 +22,10 @@ public class AfterDelete {
         String keyOf(SObject record);
     }
 
+    public interface OwnUnitOfWork {
+        DML.Committable ownUnitOfWorkOnAfterDelete();
+    }
+
     public interface Bypassable {
         Boolean bypassOnAfterDeleteWhen();
     }
@@ -26,5 +35,8 @@ public class AfterDelete {
     }
 
     public interface ContinueOnError {
+    }
+
+    public interface Handler {
     }
 }

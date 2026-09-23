@@ -1,7 +1,12 @@
 public class AfterInsert {
-    public interface Handler {
-        Boolean qualifiesForAfterInsertWhen(TriggerHandler.InsertRecord record);
-        void onAfterInsert(TriggerHandler.InsertRecord record);
+    public interface Writer extends Handler {
+        Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record);
+        void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork);
+    }
+
+    public interface Dispatcher extends Handler {
+        Boolean dispatchOnAfterInsertWhen(TriggerHandler.InsertRecord record);
+        void dispatchOnAfterInsert(TriggerHandler.InsertRecords records);
     }
 
     public interface ParentQuery {
@@ -17,6 +22,10 @@ public class AfterInsert {
         String keyOf(SObject record);
     }
 
+    public interface OwnUnitOfWork {
+        DML.Committable ownUnitOfWorkOnAfterInsert();
+    }
+
     public interface Bypassable {
         Boolean bypassOnAfterInsertWhen();
     }
@@ -26,5 +35,8 @@ public class AfterInsert {
     }
 
     public interface ContinueOnError {
+    }
+
+    public interface Handler {
     }
 }

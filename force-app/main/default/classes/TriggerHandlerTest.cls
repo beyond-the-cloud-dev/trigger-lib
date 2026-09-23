@@ -3434,6 +3434,58 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
+    static void addErrorOnRejectableInsertRecord() {
+        // Setup
+        Contact newContact = new Contact(LastName = 'New');
+        TriggerHandler.RejectableInsertRecord record = new TriggerHandler.TriggerRecord(newContact, null);
+
+        // Test
+        record.addError('The record is not allowed.');
+
+        // Verify
+        Assert.areEqual('The record is not allowed.', newContact.getErrors()[0].getMessage(), 'The error should be attached to the record.');
+    }
+
+    @IsTest
+    static void addErrorWithFieldOnRejectableInsertRecord() {
+        // Setup
+        Contact newContact = new Contact(LastName = 'New');
+        TriggerHandler.RejectableInsertRecord record = new TriggerHandler.TriggerRecord(newContact, null);
+
+        // Test
+        record.addError(Contact.Email, 'The email is not allowed.');
+
+        // Verify
+        Assert.areEqual(new List<String>{ 'Email' }, newContact.getErrors()[0].getFields(), 'The error should be attached to the field.');
+    }
+
+    @IsTest
+    static void addErrorOnRejectableUpdateRecord() {
+        // Setup
+        Contact newContact = new Contact(LastName = 'New');
+        TriggerHandler.RejectableUpdateRecord record = new TriggerHandler.TriggerRecord(newContact, new Contact(LastName = 'Old'));
+
+        // Test
+        record.addError('The record is not allowed.');
+
+        // Verify
+        Assert.areEqual('The record is not allowed.', newContact.getErrors()[0].getMessage(), 'The error should be attached to the new record.');
+    }
+
+    @IsTest
+    static void addErrorWithFieldOnRejectableUpdateRecord() {
+        // Setup
+        Contact newContact = new Contact(LastName = 'New');
+        TriggerHandler.RejectableUpdateRecord record = new TriggerHandler.TriggerRecord(newContact, new Contact(LastName = 'Old'));
+
+        // Test
+        record.addError(Contact.Email, 'The email is not allowed.');
+
+        // Verify
+        Assert.areEqual(new List<String>{ 'Email' }, newContact.getErrors()[0].getFields(), 'The error should be attached to the field.');
+    }
+
+    @IsTest
     static void getNewParent() {
         // Setup
         Id accountId = TriggerHandler.IdGenerator.get(Account.SObjectType);

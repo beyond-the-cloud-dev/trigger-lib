@@ -3,17 +3,13 @@ public with sharing class AccountCustomerDataValidator implements BeforeInsert.V
         return record.startsWith(Account.Type, 'Customer') && (record.isBlank(Account.Industry) || record.isBlank(Account.BillingCountry));
     }
 
-    public String beforeInsertValidationMessage(TriggerHandler.InsertRecord record) {
-        List<String> missingFields = new List<String>();
-
+    public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
         if (record.isBlank(Account.Industry)) {
-            missingFields.add('Industry');
+            record.addError(Account.Industry, 'A customer account requires Industry.');
         }
 
         if (record.isBlank(Account.BillingCountry)) {
-            missingFields.add('Billing Country');
+            record.addError(Account.BillingCountry, 'A customer account requires Billing Country.');
         }
-
-        return 'A customer account requires ' + String.join(missingFields, ' and ') + '.';
     }
 }

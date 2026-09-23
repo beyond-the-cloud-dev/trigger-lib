@@ -9,9 +9,9 @@ public with sharing class AccountParentTypeValidator implements BeforeInsert.Val
         return record.isNotNull(Account.ParentId) && parent?.Type == 'Prospect';
     }
 
-    public String beforeInsertValidationMessage(TriggerHandler.InsertRecord record) {
+    public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
         Account parent = (Account) record.getNewParent('Parent');
 
-        return 'Parent account "' + parent.Name + '" is still a Prospect and cannot head a hierarchy. Qualify it first.';
+        record.addError(Account.ParentId, 'Parent account "' + parent.Name + '" is still a Prospect and cannot head a hierarchy. Qualify it first.');
     }
 }

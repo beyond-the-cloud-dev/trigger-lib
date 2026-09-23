@@ -7,12 +7,13 @@ public with sharing class ContactEmailFormatValidator implements BeforeInsert.Va
         return record.doesNotContain(Contact.Email, '@') || this.isSharedMailbox(record);
     }
 
-    public String beforeInsertValidationMessage(TriggerHandler.InsertRecord record) {
+    public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
         if (record.doesNotContain(Contact.Email, '@')) {
-            return 'Email must be a full address, for example jane.doe@example.com.';
+            record.addError(Contact.Email, 'Email must be a full address, for example jane.doe@example.com.');
+            return;
         }
 
-        return 'A shared mailbox cannot be used as a contact email. Use the person\'s own address.';
+        record.addError(Contact.Email, 'A shared mailbox cannot be used as a contact email. Use the person\'s own address.');
     }
 
     private Boolean isSharedMailbox(TriggerHandler.InsertRecord record) {

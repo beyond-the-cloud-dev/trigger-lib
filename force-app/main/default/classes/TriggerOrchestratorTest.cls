@@ -2163,6 +2163,102 @@ private class TriggerOrchestratorTest {
     }
 
     @IsTest
+    static void beforeInsertValidatorWithFieldError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new DoeFieldValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<String>{ 'Email' }, doe.getErrors()[0].getFields(), 'The error should be attached to the field.');
+    }
+
+    @IsTest
+    static void beforeInsertValidatorWithRecordError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new DoeValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isTrue(doe.getErrors()[0].getFields().isEmpty(), 'The error should not be attached to a field.');
+    }
+
+    @IsTest
+    static void beforeInsertValidatorWithTwoErrors() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new DoubleDoeValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(2, doe.getErrors().size(), 'Both errors should be attached.');
+    }
+
+    @IsTest
+    static void beforeInsertValidatorWhenNoErrorIsAttached() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new SilentValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'SilentValidator qualified a record in errorShouldBeAttachedOnBeforeInsertWhen but attached no error in addErrorOnBeforeInsert.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
     static void afterInsertWriter() {
         // Setup
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
@@ -2396,6 +2492,108 @@ private class TriggerOrchestratorTest {
 
         // Verify
         Assert.isTrue(roe.getErrors().isEmpty(), 'The validator should not reject the record.');
+    }
+
+    @IsTest
+    static void beforeUpdateValidatorWithFieldError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new DoeFieldValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<String>{ 'Email' }, doe.getErrors()[0].getFields(), 'The error should be attached to the field.');
+    }
+
+    @IsTest
+    static void beforeUpdateValidatorWithRecordError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new DoeValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isTrue(doe.getErrors()[0].getFields().isEmpty(), 'The error should not be attached to a field.');
+    }
+
+    @IsTest
+    static void beforeUpdateValidatorWithTwoErrors() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new DoubleDoeValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(2, doe.getErrors().size(), 'Both errors should be attached.');
+    }
+
+    @IsTest
+    static void beforeUpdateValidatorWhenNoErrorIsAttached() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Id doeId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new SilentValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(Id = doeId, LastName = 'Doe') };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doeId, LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'SilentValidator qualified a record in errorShouldBeAttachedOnBeforeUpdateWhen but attached no error in addErrorOnBeforeUpdate.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
     }
 
     @IsTest
@@ -7552,7 +7750,7 @@ private class TriggerOrchestratorTest {
             return record.equals(Contact.LastName, 'Doe');
         }
 
-        public String beforeInsertValidationMessage(TriggerHandler.InsertRecord record) {
+        public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
             throw new TestException('The validator failed.');
         }
 
@@ -7560,7 +7758,7 @@ private class TriggerOrchestratorTest {
             return record.equals(Contact.LastName, 'Doe');
         }
 
-        public String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record) {
+        public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
             throw new TestException('The validator failed.');
         }
     }
@@ -7736,18 +7934,18 @@ private class TriggerOrchestratorTest {
             return record.equals(Contact.LastName, 'Doe');
         }
 
-        public String beforeInsertValidationMessage(TriggerHandler.InsertRecord record) {
+        public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
             Database.setSavepoint();
-            return 'Doe is not allowed.';
+            record.addError('Doe is not allowed.');
         }
 
         public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
             return record.equals(Contact.LastName, 'Doe');
         }
 
-        public String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record) {
+        public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
             Database.setSavepoint();
-            return 'Doe is not allowed.';
+            record.addError('Doe is not allowed.');
         }
     }
 
@@ -7803,7 +8001,7 @@ private class TriggerOrchestratorTest {
             return record.equals(Contact.LastName, 'Doe');
         }
 
-        public String beforeInsertValidationMessage(TriggerHandler.InsertRecord record) {
+        public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
             Database.setSavepoint();
             throw new TestException('The validator failed.');
         }
@@ -7812,7 +8010,7 @@ private class TriggerOrchestratorTest {
             return record.equals(Contact.LastName, 'Doe');
         }
 
-        public String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record) {
+        public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
             Database.setSavepoint();
             throw new TestException('The validator failed.');
         }
@@ -8567,16 +8765,70 @@ private class TriggerOrchestratorTest {
             return record.equals(Contact.LastName, 'Doe');
         }
 
-        public String beforeInsertValidationMessage(TriggerHandler.InsertRecord record) {
-            return 'Doe is not allowed.';
+        public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
+            record.addError('Doe is not allowed.');
         }
 
         public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
             return record.equals(Contact.LastName, 'Doe');
         }
 
-        public String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record) {
-            return 'Doe is not allowed.';
+        public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
+            record.addError('Doe is not allowed.');
+        }
+    }
+
+    private class DoeFieldValidator implements BeforeInsert.Validator, BeforeUpdate.Validator {
+        public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
+            record.addError(Contact.Email, 'Doe is not allowed.');
+        }
+
+        public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
+            record.addError(Contact.Email, 'Doe is not allowed.');
+        }
+    }
+
+    private class DoubleDoeValidator implements BeforeInsert.Validator, BeforeUpdate.Validator {
+        public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
+            record.addError('Doe is not allowed.');
+            record.addError(Contact.Email, 'Doe is not allowed.');
+        }
+
+        public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
+            record.addError('Doe is not allowed.');
+            record.addError(Contact.Email, 'Doe is not allowed.');
+        }
+    }
+
+    private class SilentValidator implements BeforeInsert.Validator, BeforeUpdate.Validator {
+        public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
+        }
+
+        public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
         }
     }
 

@@ -775,6 +775,20 @@ function recordMethods(context) {
   return lines.join('\n\n');
 }
 
+function collectionReceivers(context) {
+  const uses = context.typeUses.filter(use => use.category === 'collection');
+  const ordered = [
+    ...uses.filter(use => use.kind === 'support'),
+    ...uses.filter(use => use.kind !== 'support')
+  ];
+  return ordered.map(use => {
+    const item = getInterface(context.name, use.interfaceName);
+    return item.kind === 'support'
+      ? `${code(`${item.name}.${use.method}`)} (every record in the chunk)`
+      : `${code(use.method)} (the qualified records)`;
+  });
+}
+
 function collectionMethodNote(context, method) {
   const facts = contextFacts[context.name];
   const relationship = method.params.length === 2;

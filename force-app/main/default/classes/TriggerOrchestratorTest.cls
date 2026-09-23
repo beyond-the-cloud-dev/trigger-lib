@@ -10,682 +10,517 @@
  * - CyclomaticComplexity: It is a library and we tried to put everything into ONE test class
  * - CognitiveComplexity: It is a library and we tried to put everything into ONE test class
  * - NcssTypeCount: It is a library and we tried to put everything into ONE test class
- * - ExcessivePublicCount: Test handlers expose their recorded state so the assertions can read it
- * - TooManyFields: Test handlers expose their recorded state so the assertions can read it
- * - FieldDeclarationsShouldBeAtStart: The tests come first so the reader sees the behaviour before the fixture
  * - ApexUnitTestClassShouldHaveRunAs: The lib does not branch on the running user, so running as one proves nothing
  **/
-@SuppressWarnings(
-    'PMD.ExcessiveClassLength,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.NcssTypeCount,PMD.ExcessivePublicCount,PMD.TooManyFields,PMD.FieldDeclarationsShouldBeAtStart,PMD.ApexUnitTestClassShouldHaveRunAs'
-)
+@SuppressWarnings('PMD.ExcessiveClassLength,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.NcssTypeCount,PMD.ApexUnitTestClassShouldHaveRunAs')
 @IsTest(IsParallel=true)
 private class TriggerOrchestratorTest {
     @IsTest
-    static void staticRunEntryPointOutsideATriggerContextThrows() {
-        mockFramework();
-        String message;
+    static void runOutsideTriggerContext() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Exception expectedException = null;
 
         // Test
-        Test.startTest();
         try {
             TriggerOrchestrator.run(new TestOrchestrator());
         } catch (Exception e) {
-            message = e.getMessage();
+            expectedException = e;
         }
-        Test.stopTest();
 
         // Verify
         Assert.areEqual(
             'Called outside of a trigger context, or the trigger operation is not supported.',
-            message,
-            'It should be the missing trigger context message, because the entry point reads the operation of a trigger that is not running.'
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
         );
     }
 
     @IsTest
-    static void beforeInsertOperationRunsOnlyTheBeforeInsertHandlers() {
-        mockFramework();
-        TriggerOrchestrator runner = new TriggerOrchestrator(new LifecycleEveryContextOrchestrator());
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
+    static void beforeInsertOperation() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        OperationStamper stamper = new OperationStamper();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(stamper);
+        handlers.afterInsert.add(stamper);
+        handlers.beforeUpdate.add(stamper);
+        handlers.afterUpdate.add(stamper);
+        handlers.beforeDelete.add(stamper);
+        handlers.afterDelete.add(stamper);
+        handlers.afterUndelete.add(stamper);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
 
         // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
+        orchestrator.run();
 
         // Verify
-        Assert.areEqual(new List<String>{ 'beforeInsert.action:Doe' }, calls('action'), 'It should be the before insert handler alone, because the operation is BEFORE_INSERT.');
+        Assert.areEqual('BEFORE_INSERT', doe.Description, 'Only the before insert handlers should run.');
     }
 
     @IsTest
-    static void afterInsertOperationRunsOnlyTheAfterInsertHandlers() {
-        mockFramework();
-        TriggerOrchestrator runner = new TriggerOrchestrator(new LifecycleEveryContextOrchestrator());
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
+    static void afterInsertOperation() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        OperationStamper stamper = new OperationStamper();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(stamper);
+        handlers.afterInsert.add(stamper);
+        handlers.beforeUpdate.add(stamper);
+        handlers.afterUpdate.add(stamper);
+        handlers.beforeDelete.add(stamper);
+        handlers.afterDelete.add(stamper);
+        handlers.afterUndelete.add(stamper);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
 
         // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
+        orchestrator.run();
 
         // Verify
-        Assert.areEqual(new List<String>{ 'afterInsert.action:Doe' }, calls('action'), 'It should be the after insert handler alone, because the operation is AFTER_INSERT.');
+        Assert.areEqual('AFTER_INSERT', doe.Description, 'Only the after insert handlers should run.');
     }
 
     @IsTest
-    static void beforeUpdateOperationRunsOnlyTheBeforeUpdateHandlers() {
-        mockFramework();
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(new LifecycleEveryContextOrchestrator());
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
+    static void beforeUpdateOperation() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        OperationStamper stamper = new OperationStamper();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(stamper);
+        handlers.afterInsert.add(stamper);
+        handlers.beforeUpdate.add(stamper);
+        handlers.afterUpdate.add(stamper);
+        handlers.beforeDelete.add(stamper);
+        handlers.afterDelete.add(stamper);
+        handlers.afterUndelete.add(stamper);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
 
         // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
+        orchestrator.run();
 
         // Verify
-        Assert.areEqual(new List<String>{ 'beforeUpdate.action:Doe' }, calls('action'), 'It should be the before update handler alone, because the operation is BEFORE_UPDATE.');
+        Assert.areEqual('BEFORE_UPDATE', doe.Description, 'Only the before update handlers should run.');
     }
 
     @IsTest
-    static void afterUpdateOperationRunsOnlyTheAfterUpdateHandlers() {
-        mockFramework();
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(new LifecycleEveryContextOrchestrator());
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
+    static void afterUpdateOperation() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        OperationStamper stamper = new OperationStamper();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(stamper);
+        handlers.afterInsert.add(stamper);
+        handlers.beforeUpdate.add(stamper);
+        handlers.afterUpdate.add(stamper);
+        handlers.beforeDelete.add(stamper);
+        handlers.afterDelete.add(stamper);
+        handlers.afterUndelete.add(stamper);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
 
         // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
+        orchestrator.run();
 
         // Verify
-        Assert.areEqual(new List<String>{ 'afterUpdate.action:Doe' }, calls('action'), 'It should be the after update handler alone, because the operation is AFTER_UPDATE.');
+        Assert.areEqual('AFTER_UPDATE', doe.Description, 'Only the after update handlers should run.');
     }
 
     @IsTest
-    static void beforeDeleteOperationRunsOnlyTheBeforeDeleteHandlers() {
-        mockFramework();
-        TriggerOrchestrator runner = new TriggerOrchestrator(new LifecycleEveryContextOrchestrator());
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
+    static void beforeDeleteOperation() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        OperationStamper stamper = new OperationStamper();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(stamper);
+        handlers.afterInsert.add(stamper);
+        handlers.beforeUpdate.add(stamper);
+        handlers.afterUpdate.add(stamper);
+        handlers.beforeDelete.add(stamper);
+        handlers.afterDelete.add(stamper);
+        handlers.afterUndelete.add(stamper);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
 
         // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
+        orchestrator.run();
 
         // Verify
-        Assert.areEqual(new List<String>{ 'beforeDelete.action:Doe' }, calls('action'), 'It should be the before delete handler alone, because the operation is BEFORE_DELETE.');
+        Assert.areEqual('BEFORE_DELETE', doe.Description, 'Only the before delete handlers should run.');
     }
 
     @IsTest
-    static void afterDeleteOperationRunsOnlyTheAfterDeleteHandlers() {
-        mockFramework();
-        TriggerOrchestrator runner = new TriggerOrchestrator(new LifecycleEveryContextOrchestrator());
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
+    static void afterDeleteOperation() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        OperationStamper stamper = new OperationStamper();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(stamper);
+        handlers.afterInsert.add(stamper);
+        handlers.beforeUpdate.add(stamper);
+        handlers.afterUpdate.add(stamper);
+        handlers.beforeDelete.add(stamper);
+        handlers.afterDelete.add(stamper);
+        handlers.afterUndelete.add(stamper);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
 
         // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
+        orchestrator.run();
 
         // Verify
-        Assert.areEqual(new List<String>{ 'afterDelete.action:Doe' }, calls('action'), 'It should be the after delete handler alone, because the operation is AFTER_DELETE.');
+        Assert.areEqual('AFTER_DELETE', doe.Description, 'Only the after delete handlers should run.');
     }
 
     @IsTest
-    static void afterUndeleteOperationRunsOnlyTheAfterUndeleteHandlers() {
-        mockFramework();
-        TriggerOrchestrator runner = new TriggerOrchestrator(new LifecycleEveryContextOrchestrator());
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe');
+    static void afterUndeleteOperation() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        OperationStamper stamper = new OperationStamper();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(stamper);
+        handlers.afterInsert.add(stamper);
+        handlers.beforeUpdate.add(stamper);
+        handlers.afterUpdate.add(stamper);
+        handlers.beforeDelete.add(stamper);
+        handlers.afterDelete.add(stamper);
+        handlers.afterUndelete.add(stamper);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
 
         // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
+        orchestrator.run();
 
         // Verify
-        Assert.areEqual(new List<String>{ 'afterUndelete.action:Doe' }, calls('action'), 'It should be the after undelete handler alone, because the operation is AFTER_UNDELETE.');
+        Assert.areEqual('AFTER_UNDELETE', doe.Description, 'Only the after undelete handlers should run.');
     }
 
     @IsTest
-    static void operationTheOrchestratorDoesNotImplementIsSkippedWithoutError() {
-        mockFramework();
-        TriggerOrchestrator runner = new TriggerOrchestrator(new LifecycleBeforeInsertOnlyOrchestrator());
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
+    static void nullOrchestrator() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(null);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        Exception expectedException = null;
 
         // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
 
         // Verify
-        Assert.isNull(failure, 'It should be null, because an orchestrator that does not implement AfterInsert is skipped instead of being cast to it.');
+        Assert.isNull(expectedException, 'The run should not throw an exception.');
     }
 
     @IsTest
-    static void nullOrchestratorIsIgnoredWithoutError() {
-        mockFramework();
-        TriggerOrchestrator runner = new TriggerOrchestrator(null);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
+    static void handlerOrderAcrossRoles() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new DoeValidator());
+        handlers.beforeInsert.add(new RejectedRecordPopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
 
         // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
+        orchestrator.run();
 
         // Verify
-        Assert.isNull(failure, 'It should be null, because a missing orchestrator implements no context and is skipped.');
+        Assert.areEqual('Rejected', doe.Description, 'The validator should run before the populator declared after it.');
     }
 
     @IsTest
-    static void handlersRunInTheirDeclaredOrderAcrossRoles() {
-        mockFramework();
-        BeforeInsertValidatorSpy validator = new BeforeInsertValidatorSpy();
-        validator.label = 'first';
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.label = 'second';
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(validator);
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
+    static void handlerOrderAcrossRecords() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        LastNameCollector collector = new LastNameCollector();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(collector);
+        handlers.beforeInsert.add(collector);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe'), new Contact(LastName = 'Roe') };
 
         // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
+        orchestrator.run();
 
         // Verify
-        Assert.areEqual(
-            new List<String>{ 'first.action:Doe', 'second.action:Doe' },
-            calls('action'),
-            'It should be the validator first, because it is declared before the populator.'
-        );
+        Assert.areEqual(new List<String>{ 'Doe', 'Roe', 'Doe', 'Roe' }, collector.lastNames, 'Each handler should process every record before the next handler starts.');
     }
 
     @IsTest
-    static void eachHandlerProcessesEveryRecordBeforeTheNextHandlerStarts() {
-        mockFramework();
-        BeforeInsertPopulatorSpy first = new BeforeInsertPopulatorSpy();
-        first.label = 'first';
-        BeforeInsertPopulatorSpy second = new BeforeInsertPopulatorSpy();
-        second.label = 'second';
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(first);
-        orchestrator.beforeInsert.add(second);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe', 'Roe');
+    static void fieldsPopulatedByEarlierHandler() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+        handlers.beforeInsert.add(new CeoDepartmentPopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
 
         // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
+        orchestrator.run();
 
         // Verify
-        Assert.areEqual(
-            new List<String>{ 'first.when:Doe', 'first.when:Roe', 'second.when:Doe', 'second.when:Roe' },
-            calls('when'),
-            'It should be every record of the first handler before the second, because handlers run one after another over the whole batch.'
-        );
+        Assert.areEqual('Management', doe.Department, 'The later populator should see the title set by the earlier one.');
     }
 
     @IsTest
-    static void laterHandlerSeesFieldsPopulatedByAnEarlierHandler() {
-        mockFramework();
-        LifecyclePopulatedTitlePopulator titleReader = new LifecyclePopulatedTitlePopulator();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(new BeforeInsertPopulatorSpy());
-        orchestrator.beforeInsert.add(titleReader);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
+    static void handlerWithoutRole() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new RolelessHandler());
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
 
         // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
+        orchestrator.run();
 
         // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, titleReader.acted, 'It should be Doe, because the earlier populator set the Title the later one qualifies on.');
+        Assert.areEqual('CEO', doe.Title, 'The handler without a role should be skipped.');
     }
 
     @IsTest
-    static void handlerWithoutARoleIsSkipped() {
-        mockFramework();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(new LifecycleRolelessHandler());
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
+    static void processedRecordsWhenRunTwice() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        IdDispatcher dispatcher = new IdDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(dispatcher);
+
+        TriggerOrchestrator firstRun = new TriggerOrchestrator(handlers);
+        firstRun.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        firstRun.context.newRecords = new List<Contact>{ doe };
+
+        TriggerOrchestrator secondRun = new TriggerOrchestrator(handlers);
+        secondRun.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        secondRun.context.newRecords = new List<Contact>{ roe };
 
         // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, populator.acted, 'It should be Doe, because the role-less entry is skipped without error.');
-    }
-
-    @IsTest
-    static void beforeInsertPopulatorWithOnlyTheRoleInterfaceRuns() {
-        mockFramework();
-        LifecycleRoleOnlyBeforeInsertPopulator populator = new LifecycleRoleOnlyBeforeInsertPopulator();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, populator.acted, 'It should be Doe, because the framework calls an optional interface only on a populator that implements it.');
-    }
-
-    @IsTest
-    static void beforeInsertValidatorWithOnlyTheRoleInterfaceRuns() {
-        mockFramework();
-        LifecycleRoleOnlyBeforeInsertValidator validator = new LifecycleRoleOnlyBeforeInsertValidator();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(validator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, validator.acted, 'It should be Doe, because the framework calls an optional interface only on a validator that implements it.');
-    }
-
-    @IsTest
-    static void afterInsertWriterWithOnlyTheRoleInterfaceRuns() {
-        mockFramework();
-        LifecycleRoleOnlyAfterInsertWriter writer = new LifecycleRoleOnlyAfterInsertWriter();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, writer.acted, 'It should be Doe, because the framework calls an optional interface only on a writer that implements it.');
-    }
-
-    @IsTest
-    static void afterInsertDispatcherWithOnlyTheRoleInterfaceRuns() {
-        mockFramework();
-        LifecycleRoleOnlyAfterInsertDispatcher dispatcher = new LifecycleRoleOnlyAfterInsertDispatcher();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{ 'Doe' },
-            dispatcher.dispatched,
-            'It should be Doe, because the framework calls an optional interface only on a dispatcher that implements it.'
-        );
-    }
-
-    @IsTest
-    static void beforeUpdatePopulatorWithOnlyTheRoleInterfaceRuns() {
-        mockFramework();
-        LifecycleRoleOnlyBeforeUpdatePopulator populator = new LifecycleRoleOnlyBeforeUpdatePopulator();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(populator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, populator.acted, 'It should be Doe, because the framework calls an optional interface only on a populator that implements it.');
-    }
-
-    @IsTest
-    static void beforeUpdateValidatorWithOnlyTheRoleInterfaceRuns() {
-        mockFramework();
-        LifecycleRoleOnlyBeforeUpdateValidator validator = new LifecycleRoleOnlyBeforeUpdateValidator();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(validator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, validator.acted, 'It should be Doe, because the framework calls an optional interface only on a validator that implements it.');
-    }
-
-    @IsTest
-    static void afterUpdateWriterWithOnlyTheRoleInterfaceRuns() {
-        mockFramework();
-        LifecycleRoleOnlyAfterUpdateWriter writer = new LifecycleRoleOnlyAfterUpdateWriter();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(writer);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, writer.acted, 'It should be Doe, because the framework calls an optional interface only on a writer that implements it.');
-    }
-
-    @IsTest
-    static void afterUpdateDispatcherWithOnlyTheRoleInterfaceRuns() {
-        mockFramework();
-        LifecycleRoleOnlyAfterUpdateDispatcher dispatcher = new LifecycleRoleOnlyAfterUpdateDispatcher();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(dispatcher);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{ 'Doe' },
-            dispatcher.dispatched,
-            'It should be Doe, because the framework calls an optional interface only on a dispatcher that implements it.'
-        );
-    }
-
-    @IsTest
-    static void beforeDeleteHandlerWithOnlyTheRoleInterfaceRuns() {
-        mockFramework();
-        LifecycleRoleOnlyBeforeDeleteHandler handler = new LifecycleRoleOnlyBeforeDeleteHandler();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeDelete.add(handler);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, handler.acted, 'It should be Doe, because the framework calls an optional interface only on a handler that implements it.');
-    }
-
-    @IsTest
-    static void afterDeleteWriterWithOnlyTheRoleInterfaceRuns() {
-        mockFramework();
-        LifecycleRoleOnlyAfterDeleteWriter writer = new LifecycleRoleOnlyAfterDeleteWriter();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, writer.acted, 'It should be Doe, because the framework calls an optional interface only on a writer that implements it.');
-    }
-
-    @IsTest
-    static void afterDeleteDispatcherWithOnlyTheRoleInterfaceRuns() {
-        mockFramework();
-        LifecycleRoleOnlyAfterDeleteDispatcher dispatcher = new LifecycleRoleOnlyAfterDeleteDispatcher();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{ 'Doe' },
-            dispatcher.dispatched,
-            'It should be Doe, because the framework calls an optional interface only on a dispatcher that implements it.'
-        );
-    }
-
-    @IsTest
-    static void afterUndeleteWriterWithOnlyTheRoleInterfaceRuns() {
-        mockFramework();
-        LifecycleRoleOnlyAfterUndeleteWriter writer = new LifecycleRoleOnlyAfterUndeleteWriter();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, writer.acted, 'It should be Doe, because the framework calls an optional interface only on a writer that implements it.');
-    }
-
-    @IsTest
-    static void afterUndeleteDispatcherWithOnlyTheRoleInterfaceRuns() {
-        mockFramework();
-        LifecycleRoleOnlyAfterUndeleteDispatcher dispatcher = new LifecycleRoleOnlyAfterUndeleteDispatcher();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{ 'Doe' },
-            dispatcher.dispatched,
-            'It should be Doe, because the framework calls an optional interface only on a dispatcher that implements it.'
-        );
-    }
-
-    @IsTest
-    static void processedRecordsDoNotCarryOverToTheNextRun() {
-        mockFramework();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator firstRun = new TriggerOrchestrator(orchestrator);
-        firstRun.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        firstRun.context.newRecords = newContacts('Doe');
-        TriggerOrchestrator secondRun = new TriggerOrchestrator(orchestrator);
-        secondRun.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        secondRun.context.newRecords = newContacts('Roe');
-
-        // Test
-        Test.startTest();
         firstRun.run();
         secondRun.run();
-        Test.stopTest();
 
         // Verify
-        Assert.areEqual(new List<String>{ 'Roe' }, populator.finalized, 'It should be Roe alone, because every run starts with no processed records.');
+        Assert.areEqual(new List<Id>{ doe.Id }, dispatcher.dispatchedIds, 'The second run should not process the records of the first run.');
     }
 
     @IsTest
-    static void successfulRunFinalizesTheLoggerOnce() {
-        mockFramework();
-        LoggerSpy logger = spyOnLogger();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(new BeforeInsertPopulatorSpy());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
+    static void loggerFinalize() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
 
         // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
+        orchestrator.run();
 
         // Verify
-        Assert.areEqual(1, logger.finalizeCalls, 'It should be 1, because the run is the outermost one.');
+        Assert.areEqual(1, logger.finalizeCalls, 'The logger should be finalized once.');
     }
 
     @IsTest
-    static void failedRunStillFinalizesTheLogger() {
-        mockFramework();
-        LoggerSpy logger = spyOnLogger();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
+    static void loggerFinalizeWhenHandlerFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new FailingPopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        Exception expectedException = null;
 
         // Test
-        Test.startTest();
-        runCatching(runner);
-        Test.stopTest();
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
 
         // Verify
-        Assert.areEqual(1, logger.finalizeCalls, 'It should be 1, because the logger is finalized even when the run throws.');
+        Assert.areEqual(1, logger.finalizeCalls, 'The logger should be finalized once.');
     }
 
     @IsTest
-    static void nestedRunLeavesLoggerFinalizationToTheOutermostRun() {
-        mockFramework();
-        LoggerSpy logger = spyOnLogger();
-        TestOrchestrator nestedOrchestrator = new TestOrchestrator();
-        nestedOrchestrator.beforeInsert.add(new BeforeInsertPopulatorSpy());
-        TriggerOrchestrator nestedRunner = new TriggerOrchestrator(nestedOrchestrator);
-        nestedRunner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        nestedRunner.context.newRecords = newContacts('Nested');
-        BeforeInsertPopulatorSpy outerPopulator = new BeforeInsertPopulatorSpy();
-        outerPopulator.runNestedAt('action:Doe', nestedRunner);
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(outerPopulator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
+    static void loggerFinalizeWithNestedRun() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TriggerOrchestrator nestedOrchestrator = new TriggerOrchestrator(new TestOrchestrator());
+        nestedOrchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        nestedOrchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Roe') };
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new NestedRunPopulator(nestedOrchestrator));
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
 
         // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
+        orchestrator.run();
 
         // Verify
-        Assert.areEqual(1, logger.finalizeCalls, 'It should be 1, because only the outermost run finalizes the logger.');
+        Assert.areEqual(1, logger.finalizeCalls, 'Only the outermost run should finalize the logger.');
     }
 
     @IsTest
-    static void bypassedRunDoesNotFinalizeTheLogger() {
-        mockFramework();
-        LoggerSpy logger = spyOnLogger();
+    static void loggerFinalizeWhenBypassed() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
         TriggerOrchestrator.bypass().all();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(new BeforeInsertPopulatorSpy());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
 
         // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
+        orchestrator.run();
 
         // Verify
-        Assert.areEqual(0, logger.finalizeCalls, 'It should be 0, because a bypassed run returns before any execution starts.');
+        Assert.areEqual(0, logger.finalizeCalls, 'The logger should not be finalized.');
     }
 
     @IsTest
-    static void loggerImplementationIsResolvedFromApexTypeImplementor() {
+    static void loggerFromApexTypeImplementor() {
+        // Setup
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor')
             .thenReturn(
                 (ApexTypeImplementor) JSON.deserialize(
-                    '{"attributes":{"type":"ApexTypeImplementor"},"ClassName":"TriggerOrchestratorTest.LoggerSpy","ClassNamespacePrefix":null}',
+                    '{"attributes":{"type":"ApexTypeImplementor"},"ClassName":"TriggerOrchestratorTest.TestLogger","ClassNamespacePrefix":null}',
                     ApexTypeImplementor.class
                 )
             );
 
         // Test
-        Test.startTest();
         TriggerOrchestrator.Logger resolvedLogger = TriggerOrchestrator.triggerLogger.logger;
-        Test.stopTest();
 
         // Verify
-        Assert.isInstanceOfType(resolvedLogger, LoggerSpy.class, 'It should be LoggerSpy, because it is the only implementation ApexTypeImplementor returns.');
+        Assert.isInstanceOfType(resolvedLogger, TestLogger.class, 'The logger should be resolved from ApexTypeImplementor.');
     }
 
     @IsTest
-    static void moreThanOneLoggerImplementationThrowsOnFirstUse() {
+    static void loggerWithMultipleImplementations() {
+        // Setup
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor')
             .thenReturn(
@@ -694,5773 +529,8182 @@ private class TriggerOrchestratorTest {
                     List<ApexTypeImplementor>.class
                 )
             );
-        String message;
+
+        Exception expectedException = null;
 
         // Test
-        Test.startTest();
         try {
             new TriggerOrchestrator(new TestOrchestrator());
         } catch (Exception e) {
-            message = e.getMessage();
+            expectedException = e;
         }
-        Test.stopTest();
 
         // Verify
         Assert.areEqual(
             'Multiple implementations of TriggerOrchestrator.Logger found. Only one implementation is allowed.',
-            message,
-            'It should be the multiple implementations message, because ApexTypeImplementor returns two loggers.'
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
         );
     }
 
     @IsTest
-    static void frameworkConfigurationIsQueriedOncePerTransaction() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(new BeforeInsertPopulatorSpy());
-        TriggerOrchestrator firstRun = new TriggerOrchestrator(orchestrator);
+    static void configurationQueriesWhenRunTwice() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator firstRun = new TriggerOrchestrator(handlers);
         firstRun.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        firstRun.context.newRecords = newContacts('Doe');
-        TriggerOrchestrator secondRun = new TriggerOrchestrator(orchestrator);
+        firstRun.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        TriggerOrchestrator secondRun = new TriggerOrchestrator(handlers);
         secondRun.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        secondRun.context.newRecords = newContacts('Roe');
+        secondRun.context.newRecords = new List<Contact>{ new Contact(LastName = 'Roe') };
 
         // Test
-        Test.startTest();
         firstRun.run();
         secondRun.run();
-        Test.stopTest();
 
         // Verify
-        Assert.areEqual(2, SOQL.getQueries(), 'It should be 2, because the bypass metadata and the logger are queried once at class initialisation and never per run.');
+        Assert.areEqual(2, SOQL.getQueries(), 'The framework should query its configuration once per transaction.');
     }
 
     @IsTest
-    static void propagatedFailureIsLoggedOnce() {
-        mockFramework();
-        LoggerSpy logger = spyOnLogger();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
+    static void logWithContinueOnError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new FailingPopulatorWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
 
         // Test
-        Test.startTest();
-        runCatching(runner);
-        Test.stopTest();
+        orchestrator.run();
 
         // Verify
-        Assert.areEqual(1, logger.errors.size(), 'It should be 1, because a failure that propagates is logged exactly once.');
+        Assert.areEqual(1, logger.errors.size(), 'The swallowed failure should be logged.');
     }
 
     @IsTest
-    static void swallowedFailureIsStillLogged() {
-        mockFramework();
-        LoggerSpy logger = spyOnLogger();
-        ContinuingBeforeInsertPopulatorSpy populator = new ContinuingBeforeInsertPopulatorSpy();
-        populator.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
+    static void logWhenNothingFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
 
         // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
+        orchestrator.run();
 
         // Verify
-        Assert.areEqual(1, logger.errors.size(), 'It should be 1, because a failure swallowed by ContinueOnError is still logged.');
+        Assert.isTrue(logger.errors.isEmpty(), 'The logger should log nothing.');
     }
 
     @IsTest
-    static void successfulRunLogsNothing() {
-        mockFramework();
-        LoggerSpy logger = spyOnLogger();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(new BeforeInsertPopulatorSpy());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
+    static void loggedErrorHandlerName() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new DoeValidator());
+        handlers.beforeInsert.add(new FailingPopulatorWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
 
         // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
+        orchestrator.run();
 
         // Verify
-        Assert.isTrue(logger.errors.isEmpty(), 'It should be empty, because nothing failed.');
+        Assert.areEqual('FailingPopulatorWithContinueOnError', logger.errors[0].getHandlerName(), 'The logged handler name should match the failing handler.');
     }
 
     @IsTest
-    static void loggedErrorNamesTheFailingHandler() {
-        mockFramework();
-        LoggerSpy logger = spyOnLogger();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(new BeforeInsertValidatorSpy());
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
+    static void loggedErrorSObjectType() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new FailingPopulatorWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
 
         // Test
-        Test.startTest();
-        runCatching(runner);
-        Test.stopTest();
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(Contact.SObjectType, logger.errors[0].getSObjectType(), 'The logged SObject type should match the trigger records.');
+    }
+
+    @IsTest
+    static void loggedErrorException() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new FailingPopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.isTrue(logger.errors[0].getException() === expectedException, 'The logger should receive the thrown exception.');
+    }
+
+    @IsTest
+    static void loggedErrorOperation() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new FailingPopulatorWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(System.TriggerOperation.BEFORE_UPDATE, logger.errors[0].getOperation(), 'The logged operation should match the trigger operation.');
+    }
+
+    @IsTest
+    static void loggedErrorRecordIds() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new FailingPopulatorWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe, roe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe'), new Contact(Id = roe.Id, LastName = 'Roe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new Set<Id>{ doe.Id, roe.Id }, logger.errors[0].getRecordIds(), 'The logged record Ids should include every trigger record.');
+    }
+
+    @IsTest
+    static void loggedErrorRecordIdsOnBeforeInsert() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new FailingPopulatorWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isTrue(logger.errors[0].getRecordIds().isEmpty(), 'The logged record Ids should be empty.');
+    }
+
+    @IsTest
+    static void unimplementedOperation() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(new BeforeInsertOnlyOrchestrator());
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.isNull(expectedException, 'The run should not throw an exception.');
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWithoutOptionalInterfaces() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The populator should set the title.');
+    }
+
+    @IsTest
+    static void beforeInsertValidatorWithoutOptionalInterfaces() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new DoeValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Doe is not allowed.', doe.getErrors()[0].getMessage(), 'The validator should reject the record.');
+    }
+
+    @IsTest
+    static void afterInsertWriterWithoutOptionalInterfaces() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new AccountWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Doe', DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The writer should register the account.');
+    }
+
+    @IsTest
+    static void afterInsertDispatcherWithoutOptionalInterfaces() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        IdDispatcher dispatcher = new IdDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<Id>{ doe.Id }, dispatcher.dispatchedIds, 'The dispatcher should receive the qualified records.');
+    }
+
+    @IsTest
+    static void beforeUpdatePopulatorWithoutOptionalInterfaces() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The populator should set the title.');
+    }
+
+    @IsTest
+    static void beforeUpdateValidatorWithoutOptionalInterfaces() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new DoeValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Doe is not allowed.', doe.getErrors()[0].getMessage(), 'The validator should reject the record.');
+    }
+
+    @IsTest
+    static void afterUpdateWriterWithoutOptionalInterfaces() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(new AccountWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Doe', DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The writer should register the account.');
+    }
+
+    @IsTest
+    static void afterUpdateDispatcherWithoutOptionalInterfaces() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        IdDispatcher dispatcher = new IdDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<Id>{ doe.Id }, dispatcher.dispatchedIds, 'The dispatcher should receive the qualified records.');
+    }
+
+    @IsTest
+    static void beforeDeleteHandlerWithoutOptionalInterfaces() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeDelete.add(new DeletionBlocker());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Doe cannot be deleted.', doe.getErrors()[0].getMessage(), 'The handler should block the deletion.');
+    }
+
+    @IsTest
+    static void afterDeleteWriterWithoutOptionalInterfaces() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(new AccountWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Doe', DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The writer should register the account.');
+    }
+
+    @IsTest
+    static void afterDeleteDispatcherWithoutOptionalInterfaces() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        IdDispatcher dispatcher = new IdDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<Id>{ doe.Id }, dispatcher.dispatchedIds, 'The dispatcher should receive the qualified records.');
+    }
+
+    @IsTest
+    static void afterUndeleteWriterWithoutOptionalInterfaces() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(new AccountWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Doe', DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The writer should register the account.');
+    }
+
+    @IsTest
+    static void afterUndeleteDispatcherWithoutOptionalInterfaces() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        IdDispatcher dispatcher = new IdDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<Id>{ doe.Id }, dispatcher.dispatchedIds, 'The dispatcher should receive the qualified records.');
+    }
+
+    @IsTest
+    static void bypassSObject() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TriggerOrchestrator.bypass().sObject(Contact.SObjectType);
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(doe.Title, 'The handler should not run.');
+    }
+
+    @IsTest
+    static void bypassSObjectWhenObjectDoesNotMatch() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TriggerOrchestrator.bypass().sObject(Account.SObjectType);
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The populator should set the title.');
+    }
+
+    @IsTest
+    static void bypassAll() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TriggerOrchestrator.bypass().all();
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(doe.Title, 'The handler should not run.');
+    }
+
+    @IsTest
+    static void bypassClear() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TriggerOrchestrator.bypass().sObject(Contact.SObjectType);
+        TriggerOrchestrator.bypass().clear();
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The populator should set the title.');
+    }
+
+    @IsTest
+    static void bypassOrchestratorWhenTypeDoesNotMatch() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TriggerOrchestrator.bypass().orchestrator(TriggerHandler.class);
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The populator should set the title.');
+    }
+
+    @IsTest
+    static void bypassHandlerWhenTypeDoesNotMatch() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TriggerOrchestrator.bypass().handler(AccountWriter.class);
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The populator should set the title.');
+    }
+
+    @IsTest
+    static void bypassChaining() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        // Test
+        TriggerOrchestrator.Bypassable chained = TriggerOrchestrator.bypass().sObject(Account.SObjectType).orchestrator(TriggerHandler.class).handler(TriggerHandler.class);
+
+        // Verify
+        Assert.isTrue(chained === TriggerOrchestrator.bypass(), 'The bypass methods should return the same instance.');
+    }
+
+    @IsTest
+    static void bypassSObjectByMetadata() {
+        // Setup
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(ObjectAPIName__c = 'Contact', Bypass__c = true);
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(doe.Title, 'The handler should not run.');
+    }
+
+    @IsTest
+    static void bypassSObjectByMetadataWhenBypassIsOff() {
+        // Setup
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(ObjectAPIName__c = 'Contact', Bypass__c = false);
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The populator should set the title.');
+    }
+
+    @IsTest
+    static void bypassSObjectByMetadataWhenObjectDoesNotMatch() {
+        // Setup
+        TriggerObject__mdt accountSetting = new TriggerObject__mdt(ObjectAPIName__c = 'Account', Bypass__c = true);
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ accountSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The populator should set the title.');
+    }
+
+    @IsTest
+    static void bypassSObjectByMetadataWithOldRecords() {
+        // Setup
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(ObjectAPIName__c = 'Contact', Bypass__c = true);
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        IdDispatcher dispatcher = new IdDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isTrue(dispatcher.dispatchedIds.isEmpty(), 'The handler should not run.');
+    }
+
+    @IsTest
+    static void bypassSObjectByMetadataWithPaddedName() {
+        // Setup
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(ObjectAPIName__c = ' Contact ', Bypass__c = true);
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(doe.Title, 'The handler should not run.');
+    }
+
+    @IsTest
+    static void bypassSObjectByMetadataWithUpperCaseName() {
+        // Setup
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(ObjectAPIName__c = 'CONTACT', Bypass__c = true);
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(doe.Title, 'The handler should not run.');
+    }
+
+    @IsTest
+    static void bypassHandlerByMetadata() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TitlePopulator',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => true
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(doe.Title, 'The handler should not run.');
+    }
+
+    @IsTest
+    static void bypassHandlerByMetadataWithOtherHandlers() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'DoeValidator',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => true
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new DoeValidator());
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The populator should set the title.');
+    }
+
+    @IsTest
+    static void bypassHandlerByMetadataWithQualifiedName() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.TitlePopulator',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => true
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(doe.Title, 'The handler should not run.');
+    }
+
+    @IsTest
+    static void bypassHandlerByMetadataWhenObjectDoesNotMatch() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt accountSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Account',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TitlePopulator',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => true
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ accountSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The populator should set the title.');
+    }
+
+    @IsTest
+    static void bypassHandlerByMetadataWithBypassable() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TitlePopulatorWithBypassCounter',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => true
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TitlePopulatorWithBypassCounter populator = new TitlePopulatorWithBypassCounter();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(populator);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, populator.bypassChecks, 'The bypass should not be checked.');
+    }
+
+    @IsTest
+    static void bypassHandlerByMetadataWithPaddedName() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => ' TitlePopulator ',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => true
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(doe.Title, 'The handler should not run.');
+    }
+
+    @IsTest
+    static void bypassHandlerByMetadataWithUpperCaseName() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TITLEPOPULATOR',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => true
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(doe.Title, 'The handler should not run.');
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWithBypassable() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulatorWithBypassable());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(doe.Title, 'The handler should not run.');
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWithBypassableWhenBypassIsOff() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulatorWithBypassableOff());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The populator should set the title.');
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWithBypassableWhenManyRecords() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TitlePopulatorWithBypassCounter populator = new TitlePopulatorWithBypassCounter();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(populator);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe'), new Contact(LastName = 'Roe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(1, populator.bypassChecks, 'The bypass should be checked once per run.');
+    }
+
+    @IsTest
+    static void beforeInsertParentQueryWithBypassable() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new AccountNamePopulatorWithBypassable());
+        handlers.beforeInsert.add(new AccountNamePopulatorWithoutParentQuery());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(doe.Department, 'The parent should not be queried.');
+    }
+
+    @IsTest
+    static void beforeInsertValidatorWithBypassable() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new DoeValidatorWithBypassable());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isTrue(doe.getErrors().isEmpty(), 'The handler should not run.');
+    }
+
+    @IsTest
+    static void afterInsertWriterWithBypassable() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new AccountWriterWithBypassable());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The handler should not run.');
+    }
+
+    @IsTest
+    static void afterInsertDispatcherWithBypassable() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        IdDispatcherWithBypassable dispatcher = new IdDispatcherWithBypassable();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isTrue(dispatcher.dispatchedIds.isEmpty(), 'The handler should not run.');
+    }
+
+    @IsTest
+    static void beforeUpdatePopulatorWithBypassable() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new TitlePopulatorWithBypassable());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(doe.Title, 'The handler should not run.');
+    }
+
+    @IsTest
+    static void beforeUpdateValidatorWithBypassable() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new DoeValidatorWithBypassable());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isTrue(doe.getErrors().isEmpty(), 'The handler should not run.');
+    }
+
+    @IsTest
+    static void afterUpdateWriterWithBypassable() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(new AccountWriterWithBypassable());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The handler should not run.');
+    }
+
+    @IsTest
+    static void afterUpdateDispatcherWithBypassable() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        IdDispatcherWithBypassable dispatcher = new IdDispatcherWithBypassable();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isTrue(dispatcher.dispatchedIds.isEmpty(), 'The handler should not run.');
+    }
+
+    @IsTest
+    static void beforeDeleteHandlerWithBypassable() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeDelete.add(new DeletionBlockerWithBypassable());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isTrue(doe.getErrors().isEmpty(), 'The handler should not run.');
+    }
+
+    @IsTest
+    static void afterDeleteWriterWithBypassable() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(new AccountWriterWithBypassable());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The handler should not run.');
+    }
+
+    @IsTest
+    static void afterDeleteDispatcherWithBypassable() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        IdDispatcherWithBypassable dispatcher = new IdDispatcherWithBypassable();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isTrue(dispatcher.dispatchedIds.isEmpty(), 'The handler should not run.');
+    }
+
+    @IsTest
+    static void afterUndeleteWriterWithBypassable() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(new AccountWriterWithBypassable());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The handler should not run.');
+    }
+
+    @IsTest
+    static void afterUndeleteDispatcherWithBypassable() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        IdDispatcherWithBypassable dispatcher = new IdDispatcherWithBypassable();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isTrue(dispatcher.dispatchedIds.isEmpty(), 'The handler should not run.');
+    }
+
+    @IsTest
+    static void beforeInsertPopulator() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The populator should set the title.');
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWhenRecordDoesNotQualify() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(LastName = 'Roe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(roe.Title, 'The populator should not set the title.');
+    }
+
+    @IsTest
+    static void beforeInsertValidator() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new DoeValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Doe is not allowed.', doe.getErrors()[0].getMessage(), 'The validator should reject the record.');
+    }
+
+    @IsTest
+    static void beforeInsertValidatorWhenRecordDoesNotQualify() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(LastName = 'Roe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new DoeValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isTrue(roe.getErrors().isEmpty(), 'The validator should not reject the record.');
+    }
+
+    @IsTest
+    static void beforeInsertValidatorWithFieldError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new DoeFieldValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<String>{ 'Email' }, doe.getErrors()[0].getFields(), 'The error should be attached to the field.');
+    }
+
+    @IsTest
+    static void beforeInsertValidatorWithRecordError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new DoeValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isTrue(doe.getErrors()[0].getFields().isEmpty(), 'The error should not be attached to a field.');
+    }
+
+    @IsTest
+    static void beforeInsertValidatorWithTwoErrors() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new DoubleDoeValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(2, doe.getErrors().size(), 'Both errors should be attached.');
+    }
+
+    @IsTest
+    static void beforeInsertValidatorWhenNoErrorIsAttached() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new SilentValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
 
         // Verify
         Assert.areEqual(
-            'BeforeInsertPopulatorSpy',
-            logger.errors[0].getHandlerName(),
-            'It should be BeforeInsertPopulatorSpy, because the populator threw after the validator had already run.'
+            'SilentValidator qualified a record in errorShouldBeAttachedOnBeforeInsertWhen but attached no error in addErrorOnBeforeInsert.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
         );
     }
 
     @IsTest
-    static void loggedErrorCarriesTheSObjectType() {
-        mockFramework();
-        LoggerSpy logger = spyOnLogger();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
+    static void afterInsertWriter() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new AccountWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
 
         // Test
-        Test.startTest();
-        runCatching(runner);
-        Test.stopTest();
+        orchestrator.run();
 
         // Verify
-        Assert.areEqual(Contact.SObjectType, logger.errors[0].getSObjectType(), 'It should be Contact, because the trigger records are Contacts.');
+        Assert.areEqual('Doe', DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The writer should register the account.');
     }
 
     @IsTest
-    static void loggedErrorCarriesTheThrownException() {
-        mockFramework();
-        LoggerSpy logger = spyOnLogger();
-        SpyException thrown = new SpyException('Boom');
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.failAt('action', thrown);
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
+    static void afterInsertWriterWhenRecordDoesNotQualify() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new AccountWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
 
         // Test
-        Test.startTest();
-        runCatching(runner);
-        Test.stopTest();
+        orchestrator.run();
 
         // Verify
-        Assert.isTrue(logger.errors[0].getException() === thrown, 'It should be the same exception instance, because the logger receives what the handler threw.');
+        Assert.areEqual(0, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The writer should not register an account.');
     }
 
     @IsTest
-    static void loggedErrorCarriesTheTriggerOperation() {
-        mockFramework();
-        LoggerSpy logger = spyOnLogger();
-        AfterUpdateWriterSpy writer = new AfterUpdateWriterSpy();
-        writer.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(writer);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
+    static void afterInsertDispatcher() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        IdDispatcher dispatcher = new IdDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe, roe };
 
         // Test
-        Test.startTest();
-        runCatching(runner);
-        Test.stopTest();
+        orchestrator.run();
 
         // Verify
-        Assert.areEqual(System.TriggerOperation.AFTER_UPDATE, logger.errors[0].getOperation(), 'It should be AFTER_UPDATE, because the handler failed in that operation.');
+        Assert.areEqual(new List<Id>{ doe.Id }, dispatcher.dispatchedIds, 'The dispatcher should receive the qualified records.');
     }
 
     @IsTest
-    static void loggedErrorCarriesTheIdsOfTheTriggerRecords() {
-        mockFramework();
-        LoggerSpy logger = spyOnLogger();
-        AfterUpdateWriterSpy writer = new AfterUpdateWriterSpy();
-        writer.failAt('action:Doe', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(writer);
-        List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
+    static void afterInsertDispatcherWhenRecordDoesNotQualify() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        BatchDispatcher dispatcher = new BatchDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
 
         // Test
-        Test.startTest();
-        runCatching(runner);
-        Test.stopTest();
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, dispatcher.dispatchedBatches.size(), 'The dispatcher should not be called.');
+    }
+
+    @IsTest
+    static void afterInsertDispatcherWithMultipleRecords() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact johnDoe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), FirstName = 'John', LastName = 'Doe');
+        Contact janeDoe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), FirstName = 'Jane', LastName = 'Doe');
+
+        BatchDispatcher dispatcher = new BatchDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ johnDoe, janeDoe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<Set<Id>>{ new Set<Id>{ johnDoe.Id, janeDoe.Id } }, dispatcher.dispatchedBatches, 'The dispatcher should receive all records in one call.');
+    }
+
+    @IsTest
+    static void afterInsertDispatcherBeforeFinalizer() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        IdDispatcherWithFinalizerSnapshot dispatcher = new IdDispatcherWithFinalizerSnapshot();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<Id>{ doe.Id }, dispatcher.dispatchedIdsWhenFinalized, 'The dispatcher should dispatch before it finalizes.');
+    }
+
+    @IsTest
+    static void beforeUpdatePopulator() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The populator should set the title.');
+    }
+
+    @IsTest
+    static void beforeUpdatePopulatorWhenRecordDoesNotQualify() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = roe.Id, LastName = 'Roe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(roe.Title, 'The populator should not set the title.');
+    }
+
+    @IsTest
+    static void beforeUpdateValidator() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new DoeValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Doe is not allowed.', doe.getErrors()[0].getMessage(), 'The validator should reject the record.');
+    }
+
+    @IsTest
+    static void beforeUpdateValidatorWhenRecordDoesNotQualify() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new DoeValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = roe.Id, LastName = 'Roe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isTrue(roe.getErrors().isEmpty(), 'The validator should not reject the record.');
+    }
+
+    @IsTest
+    static void beforeUpdateValidatorWithFieldError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new DoeFieldValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<String>{ 'Email' }, doe.getErrors()[0].getFields(), 'The error should be attached to the field.');
+    }
+
+    @IsTest
+    static void beforeUpdateValidatorWithRecordError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new DoeValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isTrue(doe.getErrors()[0].getFields().isEmpty(), 'The error should not be attached to a field.');
+    }
+
+    @IsTest
+    static void beforeUpdateValidatorWithTwoErrors() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new DoubleDoeValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(2, doe.getErrors().size(), 'Both errors should be attached.');
+    }
+
+    @IsTest
+    static void beforeUpdateValidatorWhenNoErrorIsAttached() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Id doeId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new SilentValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(Id = doeId, LastName = 'Doe') };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doeId, LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
 
         // Verify
         Assert.areEqual(
-            new Set<Id>{ contacts[0].Id, contacts[1].Id },
-            logger.errors[0].getRecordIds(),
-            'It should be the Ids of Doe and Roe, because the error carries every trigger record, not only the failing one.'
+            'SilentValidator qualified a record in errorShouldBeAttachedOnBeforeUpdateWhen but attached no error in addErrorOnBeforeUpdate.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
         );
     }
 
     @IsTest
-    static void loggedErrorOnBeforeInsertCarriesNoRecordIds() {
-        mockFramework();
-        LoggerSpy logger = spyOnLogger();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
+    static void afterUpdateWriter() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(new AccountWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Doe', DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The writer should register the account.');
+    }
+
+    @IsTest
+    static void afterUpdateWriterWhenRecordDoesNotQualify() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(new AccountWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = roe.Id, LastName = 'Roe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The writer should not register an account.');
+    }
+
+    @IsTest
+    static void afterUpdateDispatcher() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        IdDispatcher dispatcher = new IdDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe, roe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe'), new Contact(Id = roe.Id, LastName = 'Roe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<Id>{ doe.Id }, dispatcher.dispatchedIds, 'The dispatcher should receive the qualified records.');
+    }
+
+    @IsTest
+    static void afterUpdateDispatcherWhenRecordDoesNotQualify() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        BatchDispatcher dispatcher = new BatchDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = roe.Id, LastName = 'Roe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, dispatcher.dispatchedBatches.size(), 'The dispatcher should not be called.');
+    }
+
+    @IsTest
+    static void afterUpdateDispatcherWithMultipleRecords() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact johnDoe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), FirstName = 'John', LastName = 'Doe');
+        Contact janeDoe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), FirstName = 'Jane', LastName = 'Doe');
+
+        BatchDispatcher dispatcher = new BatchDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ johnDoe, janeDoe };
+        orchestrator.context.oldRecords = new List<Contact>{
+            new Contact(Id = johnDoe.Id, FirstName = 'John', LastName = 'Doe'),
+            new Contact(Id = janeDoe.Id, FirstName = 'Jane', LastName = 'Doe')
+        };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<Set<Id>>{ new Set<Id>{ johnDoe.Id, janeDoe.Id } }, dispatcher.dispatchedBatches, 'The dispatcher should receive all records in one call.');
+    }
+
+    @IsTest
+    static void afterUpdateDispatcherBeforeFinalizer() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        IdDispatcherWithFinalizerSnapshot dispatcher = new IdDispatcherWithFinalizerSnapshot();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<Id>{ doe.Id }, dispatcher.dispatchedIdsWhenFinalized, 'The dispatcher should dispatch before it finalizes.');
+    }
+
+    @IsTest
+    static void beforeDeleteHandler() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeDelete.add(new DeletionBlocker());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Doe cannot be deleted.', doe.getErrors()[0].getMessage(), 'The handler should block the deletion.');
+    }
+
+    @IsTest
+    static void beforeDeleteHandlerWhenRecordDoesNotQualify() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeDelete.add(new DeletionBlocker());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isTrue(roe.getErrors().isEmpty(), 'The handler should not block the deletion.');
+    }
+
+    @IsTest
+    static void afterDeleteWriter() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(new AccountWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Doe', DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The writer should register the account.');
+    }
+
+    @IsTest
+    static void afterDeleteWriterWhenRecordDoesNotQualify() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(new AccountWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The writer should not register an account.');
+    }
+
+    @IsTest
+    static void afterDeleteDispatcher() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        IdDispatcher dispatcher = new IdDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe, roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<Id>{ doe.Id }, dispatcher.dispatchedIds, 'The dispatcher should receive the qualified records.');
+    }
+
+    @IsTest
+    static void afterDeleteDispatcherWhenRecordDoesNotQualify() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        BatchDispatcher dispatcher = new BatchDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, dispatcher.dispatchedBatches.size(), 'The dispatcher should not be called.');
+    }
+
+    @IsTest
+    static void afterDeleteDispatcherWithMultipleRecords() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact johnDoe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), FirstName = 'John', LastName = 'Doe');
+        Contact janeDoe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), FirstName = 'Jane', LastName = 'Doe');
+
+        BatchDispatcher dispatcher = new BatchDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ johnDoe, janeDoe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<Set<Id>>{ new Set<Id>{ johnDoe.Id, janeDoe.Id } }, dispatcher.dispatchedBatches, 'The dispatcher should receive all records in one call.');
+    }
+
+    @IsTest
+    static void afterDeleteDispatcherBeforeFinalizer() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        IdDispatcherWithFinalizerSnapshot dispatcher = new IdDispatcherWithFinalizerSnapshot();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<Id>{ doe.Id }, dispatcher.dispatchedIdsWhenFinalized, 'The dispatcher should dispatch before it finalizes.');
+    }
+
+    @IsTest
+    static void afterUndeleteWriter() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(new AccountWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Doe', DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The writer should register the account.');
+    }
+
+    @IsTest
+    static void afterUndeleteWriterWhenRecordDoesNotQualify() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(new AccountWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The writer should not register an account.');
+    }
+
+    @IsTest
+    static void afterUndeleteDispatcher() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        IdDispatcher dispatcher = new IdDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ doe, roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<Id>{ doe.Id }, dispatcher.dispatchedIds, 'The dispatcher should receive the qualified records.');
+    }
+
+    @IsTest
+    static void afterUndeleteDispatcherWhenRecordDoesNotQualify() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        BatchDispatcher dispatcher = new BatchDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, dispatcher.dispatchedBatches.size(), 'The dispatcher should not be called.');
+    }
+
+    @IsTest
+    static void afterUndeleteDispatcherWithMultipleRecords() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact johnDoe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), FirstName = 'John', LastName = 'Doe');
+        Contact janeDoe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), FirstName = 'Jane', LastName = 'Doe');
+
+        BatchDispatcher dispatcher = new BatchDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ johnDoe, janeDoe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<Set<Id>>{ new Set<Id>{ johnDoe.Id, janeDoe.Id } }, dispatcher.dispatchedBatches, 'The dispatcher should receive all records in one call.');
+    }
+
+    @IsTest
+    static void afterUndeleteDispatcherBeforeFinalizer() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        IdDispatcherWithFinalizerSnapshot dispatcher = new IdDispatcherWithFinalizerSnapshot();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<Id>{ doe.Id }, dispatcher.dispatchedIdsWhenFinalized, 'The dispatcher should dispatch before it finalizes.');
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWithFinalizer() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+        Contact roe = new Contact(LastName = 'Roe');
+
+        TitlePopulatorWithFinalizer populator = new TitlePopulatorWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(populator);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe, roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new Set<String>{ 'Doe' }, populator.finalizedNames, 'The finalizer should receive the processed records.');
+    }
+
+    @IsTest
+    static void beforeInsertValidatorWithFinalizer() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+        Contact roe = new Contact(LastName = 'Roe');
+
+        DoeValidatorWithFinalizer validator = new DoeValidatorWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(validator);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe, roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new Set<String>{ 'Doe' }, validator.finalizedNames, 'The finalizer should receive the processed records.');
+    }
+
+    @IsTest
+    static void afterInsertWriterWithFinalizer() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        AccountWriterWithFinalizer writer = new AccountWriterWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(writer);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe, roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new Set<Id>{ doe.Id }, writer.finalizedIds, 'The finalizer should receive the processed records.');
+    }
+
+    @IsTest
+    static void afterInsertDispatcherWithFinalizer() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        IdDispatcherWithFinalizer dispatcher = new IdDispatcherWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe, roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new Set<Id>{ doe.Id }, dispatcher.finalizedIds, 'The finalizer should receive the processed records.');
+    }
+
+    @IsTest
+    static void beforeUpdatePopulatorWithFinalizer() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        TitlePopulatorWithFinalizer populator = new TitlePopulatorWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(populator);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe, roe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe'), new Contact(Id = roe.Id, LastName = 'Roe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new Set<String>{ 'Doe' }, populator.finalizedNames, 'The finalizer should receive the processed records.');
+    }
+
+    @IsTest
+    static void beforeUpdateValidatorWithFinalizer() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        DoeValidatorWithFinalizer validator = new DoeValidatorWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(validator);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe, roe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe'), new Contact(Id = roe.Id, LastName = 'Roe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new Set<String>{ 'Doe' }, validator.finalizedNames, 'The finalizer should receive the processed records.');
+    }
+
+    @IsTest
+    static void afterUpdateWriterWithFinalizer() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        AccountWriterWithFinalizer writer = new AccountWriterWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(writer);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe, roe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe'), new Contact(Id = roe.Id, LastName = 'Roe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new Set<Id>{ doe.Id }, writer.finalizedIds, 'The finalizer should receive the processed records.');
+    }
+
+    @IsTest
+    static void afterUpdateDispatcherWithFinalizer() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        IdDispatcherWithFinalizer dispatcher = new IdDispatcherWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe, roe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe'), new Contact(Id = roe.Id, LastName = 'Roe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new Set<Id>{ doe.Id }, dispatcher.finalizedIds, 'The finalizer should receive the processed records.');
+    }
+
+    @IsTest
+    static void beforeDeleteHandlerWithFinalizer() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        DeletionBlockerWithFinalizer blocker = new DeletionBlockerWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeDelete.add(blocker);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe, roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new Set<Id>{ doe.Id }, blocker.finalizedIds, 'The finalizer should receive the processed records.');
+    }
+
+    @IsTest
+    static void afterDeleteWriterWithFinalizer() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        AccountWriterWithFinalizer writer = new AccountWriterWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(writer);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe, roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new Set<Id>{ doe.Id }, writer.finalizedIds, 'The finalizer should receive the processed records.');
+    }
+
+    @IsTest
+    static void afterDeleteDispatcherWithFinalizer() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        IdDispatcherWithFinalizer dispatcher = new IdDispatcherWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe, roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new Set<Id>{ doe.Id }, dispatcher.finalizedIds, 'The finalizer should receive the processed records.');
+    }
+
+    @IsTest
+    static void afterUndeleteWriterWithFinalizer() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        AccountWriterWithFinalizer writer = new AccountWriterWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(writer);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ doe, roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new Set<Id>{ doe.Id }, writer.finalizedIds, 'The finalizer should receive the processed records.');
+    }
+
+    @IsTest
+    static void afterUndeleteDispatcherWithFinalizer() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        IdDispatcherWithFinalizer dispatcher = new IdDispatcherWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ doe, roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new Set<Id>{ doe.Id }, dispatcher.finalizedIds, 'The finalizer should receive the processed records.');
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWithFinalizerWhenNoRecordQualifies() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(LastName = 'Roe');
+
+        TitlePopulatorWithFinalizer populator = new TitlePopulatorWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(populator);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(populator.finalizedNames, 'The finalizer should not run.');
+    }
+
+    @IsTest
+    static void beforeInsertValidatorWithFinalizerWhenNoRecordQualifies() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(LastName = 'Roe');
+
+        DoeValidatorWithFinalizer validator = new DoeValidatorWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(validator);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(validator.finalizedNames, 'The finalizer should not run.');
+    }
+
+    @IsTest
+    static void afterInsertWriterWithFinalizerWhenNoRecordQualifies() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        AccountWriterWithFinalizer writer = new AccountWriterWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(writer);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(writer.finalizedIds, 'The finalizer should not run.');
+    }
+
+    @IsTest
+    static void afterInsertDispatcherWithFinalizerWhenNoRecordQualifies() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        IdDispatcherWithFinalizer dispatcher = new IdDispatcherWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(dispatcher.finalizedIds, 'The finalizer should not run.');
+    }
+
+    @IsTest
+    static void beforeUpdatePopulatorWithFinalizerWhenNoRecordQualifies() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        TitlePopulatorWithFinalizer populator = new TitlePopulatorWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(populator);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = roe.Id, LastName = 'Roe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(populator.finalizedNames, 'The finalizer should not run.');
+    }
+
+    @IsTest
+    static void beforeUpdateValidatorWithFinalizerWhenNoRecordQualifies() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        DoeValidatorWithFinalizer validator = new DoeValidatorWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(validator);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = roe.Id, LastName = 'Roe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(validator.finalizedNames, 'The finalizer should not run.');
+    }
+
+    @IsTest
+    static void afterUpdateWriterWithFinalizerWhenNoRecordQualifies() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        AccountWriterWithFinalizer writer = new AccountWriterWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(writer);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = roe.Id, LastName = 'Roe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(writer.finalizedIds, 'The finalizer should not run.');
+    }
+
+    @IsTest
+    static void afterUpdateDispatcherWithFinalizerWhenNoRecordQualifies() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        IdDispatcherWithFinalizer dispatcher = new IdDispatcherWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = roe.Id, LastName = 'Roe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(dispatcher.finalizedIds, 'The finalizer should not run.');
+    }
+
+    @IsTest
+    static void beforeDeleteHandlerWithFinalizerWhenNoRecordQualifies() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        DeletionBlockerWithFinalizer blocker = new DeletionBlockerWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeDelete.add(blocker);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(blocker.finalizedIds, 'The finalizer should not run.');
+    }
+
+    @IsTest
+    static void afterDeleteWriterWithFinalizerWhenNoRecordQualifies() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        AccountWriterWithFinalizer writer = new AccountWriterWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(writer);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(writer.finalizedIds, 'The finalizer should not run.');
+    }
+
+    @IsTest
+    static void afterDeleteDispatcherWithFinalizerWhenNoRecordQualifies() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        IdDispatcherWithFinalizer dispatcher = new IdDispatcherWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(dispatcher.finalizedIds, 'The finalizer should not run.');
+    }
+
+    @IsTest
+    static void afterUndeleteWriterWithFinalizerWhenNoRecordQualifies() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        AccountWriterWithFinalizer writer = new AccountWriterWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(writer);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(writer.finalizedIds, 'The finalizer should not run.');
+    }
+
+    @IsTest
+    static void afterUndeleteDispatcherWithFinalizerWhenNoRecordQualifies() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        IdDispatcherWithFinalizer dispatcher = new IdDispatcherWithFinalizer();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(dispatcher.finalizedIds, 'The finalizer should not run.');
+    }
+
+    @IsTest
+    static void finalizerAfterLastRecord() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact janeDoe = new Contact(FirstName = 'Jane', LastName = 'Doe');
+        Contact johnDoe = new Contact(FirstName = 'John', LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitleCopyingFinalizer());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ janeDoe, johnDoe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', johnDoe.Description, 'The finalizer should run after the last record is processed.');
+    }
+
+    @IsTest
+    static void finalizerBeforeNextHandler() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitleCopyingFinalizer());
+        handlers.beforeInsert.add(new DescriptionCopyingPopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', doe.Department, 'The next handler should see the finalized record.');
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWhenHandlerFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new FailingPopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual('The populator failed.', expectedException?.getMessage(), 'The exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void beforeInsertValidatorWhenHandlerFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new FailingValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual('The validator failed.', expectedException?.getMessage(), 'The exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void afterInsertWriterWhenHandlerFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new FailingWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual('The writer failed.', expectedException?.getMessage(), 'The exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void afterInsertDispatcherWhenHandlerFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new FailingDispatcher());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual('The dispatcher failed.', expectedException?.getMessage(), 'The exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void beforeUpdatePopulatorWhenHandlerFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new FailingPopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual('The populator failed.', expectedException?.getMessage(), 'The exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void beforeUpdateValidatorWhenHandlerFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new FailingValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual('The validator failed.', expectedException?.getMessage(), 'The exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void afterUpdateWriterWhenHandlerFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(new FailingWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual('The writer failed.', expectedException?.getMessage(), 'The exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void afterUpdateDispatcherWhenHandlerFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(new FailingDispatcher());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual('The dispatcher failed.', expectedException?.getMessage(), 'The exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void beforeDeleteHandlerWhenHandlerFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeDelete.add(new FailingDeleteHandler());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual('The handler failed.', expectedException?.getMessage(), 'The exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void afterDeleteWriterWhenHandlerFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(new FailingWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual('The writer failed.', expectedException?.getMessage(), 'The exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void afterDeleteDispatcherWhenHandlerFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(new FailingDispatcher());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual('The dispatcher failed.', expectedException?.getMessage(), 'The exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void afterUndeleteWriterWhenHandlerFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(new FailingWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual('The writer failed.', expectedException?.getMessage(), 'The exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void afterUndeleteDispatcherWhenHandlerFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(new FailingDispatcher());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual('The dispatcher failed.', expectedException?.getMessage(), 'The exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWithContinueOnError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new FailingPopulatorWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('The populator failed.', logger.errors[0].getException().getMessage(), 'The logged exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void beforeInsertValidatorWithContinueOnError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new FailingValidatorWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('The validator failed.', logger.errors[0].getException().getMessage(), 'The logged exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void afterInsertWriterWithContinueOnError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new FailingWriterWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('The writer failed.', logger.errors[0].getException().getMessage(), 'The logged exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void afterInsertDispatcherWithContinueOnError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new FailingDispatcherWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('The dispatcher failed.', logger.errors[0].getException().getMessage(), 'The logged exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void beforeUpdatePopulatorWithContinueOnError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new FailingPopulatorWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('The populator failed.', logger.errors[0].getException().getMessage(), 'The logged exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void beforeUpdateValidatorWithContinueOnError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new FailingValidatorWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('The validator failed.', logger.errors[0].getException().getMessage(), 'The logged exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void afterUpdateWriterWithContinueOnError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(new FailingWriterWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('The writer failed.', logger.errors[0].getException().getMessage(), 'The logged exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void afterUpdateDispatcherWithContinueOnError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(new FailingDispatcherWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('The dispatcher failed.', logger.errors[0].getException().getMessage(), 'The logged exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void beforeDeleteHandlerWithContinueOnError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeDelete.add(new FailingDeleteHandlerWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('The handler failed.', logger.errors[0].getException().getMessage(), 'The logged exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void afterDeleteWriterWithContinueOnError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(new FailingWriterWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('The writer failed.', logger.errors[0].getException().getMessage(), 'The logged exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void afterDeleteDispatcherWithContinueOnError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(new FailingDispatcherWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('The dispatcher failed.', logger.errors[0].getException().getMessage(), 'The logged exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void afterUndeleteWriterWithContinueOnError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(new FailingWriterWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('The writer failed.', logger.errors[0].getException().getMessage(), 'The logged exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void afterUndeleteDispatcherWithContinueOnError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(new FailingDispatcherWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('The dispatcher failed.', logger.errors[0].getException().getMessage(), 'The logged exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWithContinueOnErrorWhenFailingRecordIsNotLast() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+        Contact roe = new Contact(LastName = 'Roe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulatorFailingOnDoeWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe, roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(roe.Title, 'The populator should stop at the failing record.');
+    }
+
+    @IsTest
+    static void beforeInsertFinalizerWhenHandlerFailsWithContinueOnError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new FailingPopulatorWithContinueOnErrorAndFinalizer());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(doe.Description, 'The finalizer should not run.');
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWhenPreviousHandlerFailsWithContinueOnError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new FailingPopulatorWithContinueOnError());
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The populator should set the title.');
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWithContinueOnErrorWhenQualificationFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new PopulatorFailingOnQualificationWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('The qualification failed.', logger.errors[0].getException().getMessage(), 'The logged exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWithContinueOnErrorWhenFinalizerFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulatorFailingOnFinalizeWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('The finalizer failed.', logger.errors[0].getException().getMessage(), 'The logged exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWithContinueOnErrorWhenRelatedProviderIsNotRegistered() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new UnregisteredProviderReaderWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'No related records provider is registered under unknown. Return it from the RelatedQuery method of the context first.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWithContinueOnErrorWhenNestedRunFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new NestedRunPopulatorWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'Called outside of a trigger context, or the trigger operation is not supported.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void loggerWhenHandlerFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new FailingPopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (TestException expected) {
+        }
+
+        // Verify
+        Assert.areEqual(1, logger.errors.size(), 'The failure should be logged once.');
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWhenHandlerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new DmlPopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'DmlPopulator performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void beforeInsertValidatorWhenHandlerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new DmlValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'DmlValidator performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void beforeUpdatePopulatorWhenHandlerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new DmlPopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'DmlPopulator performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void beforeUpdateValidatorWhenHandlerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new DmlValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'DmlValidator performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWithLoggerWhenHandlerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new DmlPopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(expectedException, logger.errors[0].getException(), 'The guard should log the exception it throws.');
+    }
+
+    @IsTest
+    static void beforeInsertValidatorWithLoggerWhenHandlerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new DmlValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(expectedException, logger.errors[0].getException(), 'The guard should log the exception it throws.');
+    }
+
+    @IsTest
+    static void beforeUpdatePopulatorWithLoggerWhenHandlerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new DmlPopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(expectedException, logger.errors[0].getException(), 'The guard should log the exception it throws.');
+    }
+
+    @IsTest
+    static void beforeUpdateValidatorWithLoggerWhenHandlerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new DmlValidator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(expectedException, logger.errors[0].getException(), 'The guard should log the exception it throws.');
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWhenQualificationPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new DmlQualificationPopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'DmlQualificationPopulator performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWhenFinalizerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulatorWithDmlFinalizer());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'TitlePopulatorWithDmlFinalizer performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWhenRelatedQueryPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulatorWithDmlRelatedQuery());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'TitlePopulatorWithDmlRelatedQuery performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWhenHandlerPerformsDmlAndFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new FailingDmlPopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual('The populator failed.', expectedException?.getMessage(), 'The exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWhenDmlIsPerformedBeforeRun() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Database.setSavepoint();
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The populator should set the title.');
+    }
+
+    @IsTest
+    static void beforeDeleteHandlerWhenHandlerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeDelete.add(new DmlDeletionBlocker());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Doe cannot be deleted.', doe.getErrors()[0].getMessage(), 'The handler should block the deletion.');
+    }
+
+    @IsTest
+    static void beforeUpdatePopulatorWithDefaultRecursionDepth() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new TitlePopulator());
+
+        for (Integer run = 0; run < 3; run++) {
+            TriggerOrchestrator earlierRun = new TriggerOrchestrator(handlers);
+            earlierRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            earlierRun.context.newRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+            earlierRun.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+            earlierRun.run();
+        }
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(doe.Title, 'The populator should not run beyond the recursion depth.');
+    }
+
+    @IsTest
+    static void afterUpdateWriterWithDefaultRecursionDepth() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(new AccountWriter());
+
+        for (Integer run = 0; run < 3; run++) {
+            TriggerOrchestrator earlierRun = new TriggerOrchestrator(handlers);
+            earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            earlierRun.context.newRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+            earlierRun.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+            earlierRun.run();
+        }
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(3, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The writer should not run beyond the recursion depth.');
+    }
+
+    @IsTest
+    static void afterUpdateDispatcherWithDefaultRecursionDepth() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        IdDispatcher dispatcher = new IdDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(dispatcher);
+
+        for (Integer run = 0; run < 3; run++) {
+            TriggerOrchestrator earlierRun = new TriggerOrchestrator(handlers);
+            earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            earlierRun.context.newRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+            earlierRun.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+            earlierRun.run();
+        }
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(3, dispatcher.dispatchedIds.size(), 'The dispatcher should not run beyond the recursion depth.');
+    }
+
+    @IsTest
+    static void beforeUpdatePopulatorWithRecursionGuard() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new TitlePopulatorWithRecursionGuard());
+
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(handlers);
+        earlierRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        earlierRun.context.newRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+        earlierRun.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+        earlierRun.run();
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(doe.Title, 'The populator should not run beyond its recursion depth.');
+    }
+
+    @IsTest
+    static void afterUpdateWriterWithRecursionGuard() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(new AccountWriterWithRecursionGuard());
+
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(handlers);
+        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        earlierRun.context.newRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+        earlierRun.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+        earlierRun.run();
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(1, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The writer should not run beyond its recursion depth.');
+    }
+
+    @IsTest
+    static void afterUpdateDispatcherWithRecursionGuard() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        IdDispatcherWithRecursionGuard dispatcher = new IdDispatcherWithRecursionGuard();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(dispatcher);
+
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(handlers);
+        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        earlierRun.context.newRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+        earlierRun.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+        earlierRun.run();
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(1, dispatcher.dispatchedIds.size(), 'The dispatcher should not run beyond its recursion depth.');
+    }
+
+    @IsTest
+    static void beforeUpdatePopulatorQualificationWhenRecursionDepthIsExceeded() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        QualificationCountingPopulator populator = new QualificationCountingPopulator();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(populator);
+
+        for (Integer run = 0; run < 3; run++) {
+            TriggerOrchestrator earlierRun = new TriggerOrchestrator(handlers);
+            earlierRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            earlierRun.context.newRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+            earlierRun.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+            earlierRun.run();
+        }
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(3, populator.qualificationCalls, 'The qualification should not be asked beyond the recursion depth.');
+    }
+
+    @IsTest
+    static void afterUpdateWriterQualificationWhenRecursionDepthIsExceeded() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        QualificationCountingWriter writer = new QualificationCountingWriter();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(writer);
+
+        for (Integer run = 0; run < 3; run++) {
+            TriggerOrchestrator earlierRun = new TriggerOrchestrator(handlers);
+            earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            earlierRun.context.newRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+            earlierRun.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+            earlierRun.run();
+        }
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(3, writer.qualificationCalls, 'The qualification should not be asked beyond the recursion depth.');
+    }
+
+    @IsTest
+    static void afterUpdateDispatcherQualificationWhenRecursionDepthIsExceeded() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        QualificationCountingDispatcher dispatcher = new QualificationCountingDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(dispatcher);
+
+        for (Integer run = 0; run < 3; run++) {
+            TriggerOrchestrator earlierRun = new TriggerOrchestrator(handlers);
+            earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            earlierRun.context.newRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+            earlierRun.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+            earlierRun.run();
+        }
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(3, dispatcher.qualificationCalls, 'The qualification should not be asked beyond the recursion depth.');
+    }
+
+    @IsTest
+    static void beforeUpdatePopulatorWithRecursionGuardWhenEarlierRunDoesNotQualify() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new TitlePopulatorWithRecursionGuard());
+
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(handlers);
+        earlierRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        earlierRun.context.newRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Roe') };
+        earlierRun.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Roe') };
+        earlierRun.run();
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The populator should set the title.');
+    }
+
+    @IsTest
+    static void afterUpdateWriterWithRecursionGuardWhenEarlierRunDoesNotQualify() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(new AccountWriterWithRecursionGuard());
+
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(handlers);
+        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        earlierRun.context.newRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Roe') };
+        earlierRun.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Roe') };
+        earlierRun.run();
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(1, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The writer should register the account.');
+    }
+
+    @IsTest
+    static void afterUpdateDispatcherWithRecursionGuardWhenEarlierRunDoesNotQualify() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        IdDispatcherWithRecursionGuard dispatcher = new IdDispatcherWithRecursionGuard();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(dispatcher);
+
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(handlers);
+        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        earlierRun.context.newRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Roe') };
+        earlierRun.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Roe') };
+        earlierRun.run();
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<Id>{ doe.Id }, dispatcher.dispatchedIds, 'The dispatcher should receive the qualified records.');
+    }
+
+    @IsTest
+    static void recursionDepthPerRecord() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+        Contact janeDoe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), FirstName = 'Jane', LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new TitlePopulatorWithRecursionGuard());
+
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(handlers);
+        earlierRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        earlierRun.context.newRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+        earlierRun.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+        earlierRun.run();
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe, janeDoe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe'), new Contact(Id = janeDoe.Id, FirstName = 'Jane', LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', janeDoe.Title, 'The recursion depth should be tracked per record.');
+    }
+
+    @IsTest
+    static void recursionDepthPerHandlerClass() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator writerHandlers = new TestOrchestrator();
+        writerHandlers.afterUpdate.add(new AccountWriterWithRecursionGuard());
+
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(writerHandlers);
+        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        earlierRun.context.newRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+        earlierRun.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+        earlierRun.run();
+
+        IdDispatcherWithRecursionGuard dispatcher = new IdDispatcherWithRecursionGuard();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<Id>{ doe.Id }, dispatcher.dispatchedIds, 'The recursion depth should be tracked per handler class.');
+    }
+
+    @IsTest
+    static void recursionDepthSharedByHandlerInstances() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(new AccountWriterWithRecursionGuard());
+        handlers.afterUpdate.add(new AccountWriterWithRecursionGuard());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(1, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The recursion depth should be shared by handler instances.');
+    }
+
+    @IsTest
+    static void recursionDepthPerContext() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        DepthOneUpdateHandler depthOneHandler = new DepthOneUpdateHandler();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(depthOneHandler);
+        handlers.afterUpdate.add(depthOneHandler);
+
+        TriggerOrchestrator earlierRun = new TriggerOrchestrator(handlers);
+        earlierRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        earlierRun.context.newRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+        earlierRun.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+        earlierRun.run();
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new List<Id>{ doe.Id }, depthOneHandler.dispatchedIds, 'The recursion depth should be tracked per context.');
+    }
+
+    @IsTest
+    static void afterUpdateFinalizerWhenRecursionDepthIsExceeded() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        FinalizeCountingWriter writer = new FinalizeCountingWriter();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(writer);
+
+        for (Integer run = 0; run < 3; run++) {
+            TriggerOrchestrator earlierRun = new TriggerOrchestrator(handlers);
+            earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+            earlierRun.context.newRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+            earlierRun.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+            earlierRun.run();
+        }
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(3, writer.finalizeCalls, 'The finalizer should not run beyond the recursion depth.');
+    }
+
+    @IsTest
+    static void beforeUpdateValidatorWhenRecursionDepthIsExceeded() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new DoeValidator());
+
+        for (Integer run = 0; run < 3; run++) {
+            TriggerOrchestrator earlierRun = new TriggerOrchestrator(handlers);
+            earlierRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+            earlierRun.context.newRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+            earlierRun.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+            earlierRun.run();
+        }
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Doe is not allowed.', doe.getErrors()[0].getMessage(), 'The validator should not be limited by the recursion depth.');
+    }
+
+    @IsTest
+    static void beforeInsertPopulatorWithContinueOnErrorWhenHandlerPerformsDmlAndFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new FailingDmlPopulatorWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'FailingDmlPopulatorWithContinueOnError performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void beforeInsertValidatorWithContinueOnErrorWhenHandlerPerformsDmlAndFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new FailingDmlValidatorWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'FailingDmlValidatorWithContinueOnError performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void beforeUpdatePopulatorWithContinueOnErrorWhenHandlerPerformsDmlAndFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new FailingDmlPopulatorWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'FailingDmlPopulatorWithContinueOnError performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void beforeUpdateValidatorWithContinueOnErrorWhenHandlerPerformsDmlAndFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new FailingDmlValidatorWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'FailingDmlValidatorWithContinueOnError performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void afterInsertWriterWhenHandlerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new DmlAccountWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(1, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The writer should register the account.');
+    }
+
+    @IsTest
+    static void beforeInsertParentQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new AccountNamePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', doe.Department, 'The populator should copy the account name.');
+    }
+
+    @IsTest
+    static void afterInsertParentQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe', AccountId = acme.Id);
+        SOQL.mock(Contact.SObjectType).thenReturn(new Contact(Id = doe.Id, Account = acme));
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new AccountNameWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()[0].get(Task.Subject), 'The writer should copy the account name.');
+    }
+
+    @IsTest
+    static void beforeUpdateParentQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe', AccountId = acme.Id);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new AccountNamePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', doe.Department, 'The populator should copy the account name.');
+    }
+
+    @IsTest
+    static void beforeUpdatePriorParentQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new PriorAccountNamePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe', AccountId = acme.Id) };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', doe.Department, 'The populator should copy the prior account name.');
+    }
+
+    @IsTest
+    static void afterUpdateParentQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe', AccountId = acme.Id);
+        SOQL.mock(Contact.SObjectType).thenReturn(new Contact(Id = doe.Id, Account = acme));
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(new AccountNameWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()[0].get(Task.Subject), 'The writer should copy the account name.');
+    }
+
+    @IsTest
+    static void afterUpdatePriorParentQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(new PriorAccountNameWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe', AccountId = acme.Id) };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()[0].get(Task.Subject), 'The writer should copy the prior account name.');
+    }
+
+    @IsTest
+    static void beforeDeletePriorParentQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe', AccountId = acme.Id);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeDelete.add(new PriorAccountDeletionBlocker());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Contacts of Acme cannot be deleted.', doe.getErrors()[0].getMessage(), 'The handler should block the deletion.');
+    }
+
+    @IsTest
+    static void afterDeletePriorParentQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe', AccountId = acme.Id);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(new PriorAccountNameWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()[0].get(Task.Subject), 'The writer should copy the prior account name.');
+    }
+
+    @IsTest
+    static void afterUndeleteParentQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe', AccountId = acme.Id);
+        SOQL.mock(Contact.SObjectType).thenReturn(new Contact(Id = doe.Id, Account = acme));
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(new AccountNameWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()[0].get(Task.Subject), 'The writer should copy the account name.');
+    }
+
+    @IsTest
+    static void parentQueryWithTwoHandlers() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme', Industry = 'Technology');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new AccountNamePopulator());
+        handlers.beforeInsert.add(new AccountIndustryPopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe', AccountId = acme.Id) };
 
         // Test
         Test.startTest();
-        runCatching(runner);
+        Integer queriesBefore = SOQL.getQueries();
+        orchestrator.run();
+        Integer queriesAfter = SOQL.getQueries();
         Test.stopTest();
 
         // Verify
-        Assert.isTrue(logger.errors[0].getRecordIds().isEmpty(), 'It should be empty, because records being inserted have no Id yet.');
+        Assert.areEqual(1, queriesAfter - queriesBefore, 'The accounts should be queried once.');
     }
 
-    private class LifecycleEveryContextOrchestrator extends TestOrchestrator {
-        public LifecycleEveryContextOrchestrator() {
-            BeforeInsertPopulatorSpy beforeInsertSpy = new BeforeInsertPopulatorSpy();
-            beforeInsertSpy.label = 'beforeInsert';
-            this.beforeInsert.add(beforeInsertSpy);
+    @IsTest
+    static void parentFieldsWithTwoHandlers() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
-            AfterInsertWriterSpy afterInsertSpy = new AfterInsertWriterSpy();
-            afterInsertSpy.label = 'afterInsert';
-            this.afterInsert.add(afterInsertSpy);
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme', Industry = 'Technology');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
 
-            BeforeUpdatePopulatorSpy beforeUpdateSpy = new BeforeUpdatePopulatorSpy();
-            beforeUpdateSpy.label = 'beforeUpdate';
-            this.beforeUpdate.add(beforeUpdateSpy);
+        Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
 
-            AfterUpdateWriterSpy afterUpdateSpy = new AfterUpdateWriterSpy();
-            afterUpdateSpy.label = 'afterUpdate';
-            this.afterUpdate.add(afterUpdateSpy);
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new AccountNamePopulator());
+        handlers.beforeInsert.add(new AccountIndustryPopulator());
 
-            BeforeDeleteHandlerSpy beforeDeleteSpy = new BeforeDeleteHandlerSpy();
-            beforeDeleteSpy.label = 'beforeDelete';
-            this.beforeDelete.add(beforeDeleteSpy);
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
 
-            AfterDeleteWriterSpy afterDeleteSpy = new AfterDeleteWriterSpy();
-            afterDeleteSpy.label = 'afterDelete';
-            this.afterDelete.add(afterDeleteSpy);
+        // Test
+        orchestrator.run();
 
-            AfterUndeleteWriterSpy afterUndeleteSpy = new AfterUndeleteWriterSpy();
-            afterUndeleteSpy.label = 'afterUndelete';
-            this.afterUndelete.add(afterUndeleteSpy);
+        // Verify
+        Assert.areEqual(new List<String>{ 'Acme', 'Technology' }, new List<String>{ doe.Department, doe.Description }, 'The populators should read the fields of both handlers.');
+    }
+
+    @IsTest
+    static void parentQueryWhenDeclaredByLaterHandler() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new UndeclaredAccountNamePopulator());
+        handlers.beforeInsert.add(new AccountNamePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', doe.Description, 'The populator should copy the account name.');
+    }
+
+    @IsTest
+    static void parentQueryWhenLookupIsEmpty() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new AccountNamePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        // Test
+        Test.startTest();
+        Integer queriesBefore = SOQL.getQueries();
+        orchestrator.run();
+        Integer queriesAfter = SOQL.getQueries();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(0, queriesAfter - queriesBefore, 'The accounts should not be queried.');
+    }
+
+    @IsTest
+    static void parentQueryWhenParentIsNotFound() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        Contact doe = new Contact(LastName = 'Doe', AccountId = TriggerHandler.IdGenerator.get(Account.SObjectType));
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new AccountNamePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(doe.Department, 'The populator should not find the account.');
+    }
+
+    @IsTest
+    static void priorParentQueryWithoutParentQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe', AccountId = acme.Id);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new PriorAccountNamePopulator());
+        handlers.beforeUpdate.add(new UndeclaredAccountNamePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe', AccountId = acme.Id) };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(doe.Description, 'The populator should not find the account.');
+    }
+
+    @IsTest
+    static void beforeUpdatePriorParentQueryWithParentQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Account globex = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Globex');
+        SOQL.mock(Account.SObjectType).thenReturn(new List<Account>{ acme, globex });
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe', AccountId = acme.Id);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new PriorAccountNamePopulatorWithParentQuery());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe', AccountId = globex.Id) };
+
+        // Test
+        Test.startTest();
+        Integer queriesBefore = SOQL.getQueries();
+        orchestrator.run();
+        Integer queriesAfter = SOQL.getQueries();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(1, queriesAfter - queriesBefore, 'The accounts should be queried once.');
+    }
+
+    @IsTest
+    static void afterUpdatePriorParentQueryWithParentQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe', AccountId = acme.Id);
+        SOQL.mock(Contact.SObjectType).thenReturn(new Contact(Id = doe.Id, Account = acme));
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(new AccountNameWriterWithPriorParentQuery());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe', AccountId = acme.Id) };
+
+        // Test
+        Test.startTest();
+        Integer queriesBefore = SOQL.getQueries();
+        orchestrator.run();
+        Integer queriesAfter = SOQL.getQueries();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(1, queriesAfter - queriesBefore, 'The prior account should come from the saved records.');
+    }
+
+    @IsTest
+    static void beforeInsertParentQueryWhenLookupIsRepointed() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Account globex = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Globex');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+        SOQL.mock(Account.SObjectType).thenReturn(globex);
+
+        Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new AccountRepointingPopulator(globex.Id));
+        handlers.beforeInsert.add(new AccountNamePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Globex', doe.Department, 'The populator should copy the new account name.');
+    }
+
+    @IsTest
+    static void beforeUpdateParentQueryWhenLookupIsRepointed() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Account globex = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Globex');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+        SOQL.mock(Account.SObjectType).thenReturn(globex);
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe', AccountId = acme.Id);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new AccountRepointingPopulator(globex.Id));
+        handlers.beforeUpdate.add(new AccountNamePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe', AccountId = acme.Id) };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Globex', doe.Department, 'The populator should copy the new account name.');
+    }
+
+    @IsTest
+    static void parentQueryWhenLookupIsRepointedToQueriedParent() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Account globex = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Globex');
+        SOQL.mock(Account.SObjectType).thenReturn(new List<Account>{ acme, globex });
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new AccountRepointingPopulator(globex.Id));
+        handlers.beforeInsert.add(new AccountNamePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe', AccountId = acme.Id), new Contact(LastName = 'Roe', AccountId = globex.Id) };
+
+        // Test
+        Test.startTest();
+        Integer queriesBefore = SOQL.getQueries();
+        orchestrator.run();
+        Integer queriesAfter = SOQL.getQueries();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(1, queriesAfter - queriesBefore, 'The accounts should be queried once.');
+    }
+
+    @IsTest
+    static void parentQueryWhenLookupIsCleared() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new AccountRepointingPopulator(null));
+        handlers.beforeInsert.add(new AccountNamePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isNull(doe.Department, 'The populator should not find the account.');
+    }
+
+    @IsTest
+    static void priorParentQueryWhenLookupIsRepointed() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Account globex = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Globex');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+        SOQL.mock(Account.SObjectType).thenReturn(globex);
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe', AccountId = acme.Id);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new AccountRepointingPopulator(globex.Id));
+        handlers.beforeUpdate.add(new PriorAccountNamePopulatorWithParentQuery());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe', AccountId = acme.Id) };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', doe.Department, 'The populator should copy the prior account name.');
+    }
+
+    @IsTest
+    static void beforeInsertRelatedQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new RelatedAccountNamePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', doe.Department, 'The populator should copy the related account name.');
+    }
+
+    @IsTest
+    static void afterInsertRelatedQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe', AccountId = acme.Id);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new RelatedAccountNameWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()[0].get(Task.Subject), 'The writer should copy the related account name.');
+    }
+
+    @IsTest
+    static void beforeUpdateRelatedQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe', AccountId = acme.Id);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeUpdate.add(new RelatedAccountNamePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe', AccountId = acme.Id) };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', doe.Department, 'The populator should copy the related account name.');
+    }
+
+    @IsTest
+    static void afterUpdateRelatedQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe', AccountId = acme.Id);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(new RelatedAccountNameWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe', AccountId = acme.Id) };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()[0].get(Task.Subject), 'The writer should copy the related account name.');
+    }
+
+    @IsTest
+    static void beforeDeleteRelatedQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe', AccountId = acme.Id);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeDelete.add(new RelatedAccountDeletionBlocker());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Contacts of Acme cannot be deleted.', doe.getErrors()[0].getMessage(), 'The handler should block the deletion.');
+    }
+
+    @IsTest
+    static void afterDeleteRelatedQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe', AccountId = acme.Id);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(new RelatedAccountNameWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()[0].get(Task.Subject), 'The writer should copy the related account name.');
+    }
+
+    @IsTest
+    static void afterUndeleteRelatedQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe', AccountId = acme.Id);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(new RelatedAccountNameWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()[0].get(Task.Subject), 'The writer should copy the related account name.');
+    }
+
+    @IsTest
+    static void relatedQueryWhenRecordDoesNotQualify() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        LastNameProvider provider = new LastNameProvider();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulatorWithRelatedQuery(provider));
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe'), new Contact(LastName = 'Roe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new Set<String>{ 'Doe', 'Roe' }, provider.lastNames, 'The provider should receive every record.');
+    }
+
+    @IsTest
+    static void relatedQueryWithNullProviders() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new TitlePopulatorWithNullRelatedQuery());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The populator should set the title.');
+    }
+
+    @IsTest
+    static void relatedQueryWhenDeclaredByAnotherHandler() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        SOQL.mock(Account.SObjectType).thenReturn(new List<Account>());
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new RelatedAccountNamePopulator());
+        handlers.beforeInsert.add(new UndeclaredRelatedAccountNamePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'No related records provider is registered under accounts. Return it from the RelatedQuery method of the context first.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void relatedQueryWithParentQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        ParentReadingProvider provider = new ParentReadingProvider();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new AccountNamePopulatorWithRelatedQuery(provider));
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe', AccountId = acme.Id) };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(new Set<String>{ 'Acme' }, provider.accountNames, 'The provider should read the account name.');
+    }
+
+    @IsTest
+    static void relatedQueryWithContinueOnError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new FailingRelatedQueryPopulatorWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('The related query failed.', logger.errors[0].getException().getMessage(), 'The logged exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void relatedQueryWithManyRecords() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new RelatedAccountNamePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ new Contact(LastName = 'Doe', AccountId = acme.Id), new Contact(LastName = 'Roe', AccountId = acme.Id) };
+
+        // Test
+        Test.startTest();
+        Integer queriesBefore = SOQL.getQueries();
+        orchestrator.run();
+        Integer queriesAfter = SOQL.getQueries();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(1, queriesAfter - queriesBefore, 'The related accounts should be queried once.');
+    }
+
+    @IsTest
+    static void qualificationWithRelatedQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.beforeInsert.add(new RelatedAccountTitlePopulator());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The populator should qualify by the related account.');
+    }
+
+    @IsTest
+    static void afterInsertWriterWithSharedUnitOfWorkWhenNextHandlerRuns() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        CommitCountingDispatcher dispatcher = new CommitCountingDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new AccountWriter());
+        handlers.afterInsert.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, dispatcher.committedAccounts, 'The shared unit of work should not commit before the next handler.');
+    }
+
+    @IsTest
+    static void afterUpdateWriterWithSharedUnitOfWorkWhenNextHandlerRuns() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        CommitCountingDispatcher dispatcher = new CommitCountingDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(new AccountWriter());
+        handlers.afterUpdate.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, dispatcher.committedAccounts, 'The shared unit of work should not commit before the next handler.');
+    }
+
+    @IsTest
+    static void afterDeleteWriterWithSharedUnitOfWorkWhenNextHandlerRuns() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        CommitCountingDispatcher dispatcher = new CommitCountingDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(new AccountWriter());
+        handlers.afterDelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, dispatcher.committedAccounts, 'The shared unit of work should not commit before the next handler.');
+    }
+
+    @IsTest
+    static void afterUndeleteWriterWithSharedUnitOfWorkWhenNextHandlerRuns() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        CommitCountingDispatcher dispatcher = new CommitCountingDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(new AccountWriter());
+        handlers.afterUndelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, dispatcher.committedAccounts, 'The shared unit of work should not commit before the next handler.');
+    }
+
+    @IsTest
+    static void afterInsertWriterWithOwnUnitOfWork() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('ownUnit').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new AccountWriterWithOwnUnitOfWork());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Doe', DML.retrieveResultFor('ownUnit').insertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The own unit of work should commit the account.');
+    }
+
+    @IsTest
+    static void afterUpdateWriterWithOwnUnitOfWork() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('ownUnit').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(new AccountWriterWithOwnUnitOfWork());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Doe', DML.retrieveResultFor('ownUnit').insertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The own unit of work should commit the account.');
+    }
+
+    @IsTest
+    static void afterDeleteWriterWithOwnUnitOfWork() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('ownUnit').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(new AccountWriterWithOwnUnitOfWork());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Doe', DML.retrieveResultFor('ownUnit').insertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The own unit of work should commit the account.');
+    }
+
+    @IsTest
+    static void afterUndeleteWriterWithOwnUnitOfWork() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('ownUnit').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(new AccountWriterWithOwnUnitOfWork());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Doe', DML.retrieveResultFor('ownUnit').insertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The own unit of work should commit the account.');
+    }
+
+    @IsTest
+    static void afterInsertWriterWithContinueOnErrorWhenNextHandlerRuns() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        CommitCountingDispatcher dispatcher = new CommitCountingDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new AccountWriterWithContinueOnError());
+        handlers.afterInsert.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(1, dispatcher.committedAccounts, 'The automatic unit of work should commit before the next handler.');
+    }
+
+    @IsTest
+    static void afterUpdateWriterWithContinueOnErrorWhenNextHandlerRuns() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        CommitCountingDispatcher dispatcher = new CommitCountingDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(new AccountWriterWithContinueOnError());
+        handlers.afterUpdate.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(1, dispatcher.committedAccounts, 'The automatic unit of work should commit before the next handler.');
+    }
+
+    @IsTest
+    static void afterDeleteWriterWithContinueOnErrorWhenNextHandlerRuns() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        CommitCountingDispatcher dispatcher = new CommitCountingDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(new AccountWriterWithContinueOnError());
+        handlers.afterDelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(1, dispatcher.committedAccounts, 'The automatic unit of work should commit before the next handler.');
+    }
+
+    @IsTest
+    static void afterUndeleteWriterWithContinueOnErrorWhenNextHandlerRuns() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        CommitCountingDispatcher dispatcher = new CommitCountingDispatcher();
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(new AccountWriterWithContinueOnError());
+        handlers.afterUndelete.add(dispatcher);
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(1, dispatcher.committedAccounts, 'The automatic unit of work should commit before the next handler.');
+    }
+
+    @IsTest
+    static void afterInsertWriterWithContinueOnErrorWhenWriteFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new FailingAccountWriterWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The automatic unit of work should not commit.');
+    }
+
+    @IsTest
+    static void afterUpdateWriterWithContinueOnErrorWhenWriteFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUpdate.add(new FailingAccountWriterWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+        orchestrator.context.oldRecords = new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe') };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The automatic unit of work should not commit.');
+    }
+
+    @IsTest
+    static void afterDeleteWriterWithContinueOnErrorWhenWriteFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterDelete.add(new FailingAccountWriterWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
+        orchestrator.context.oldRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The automatic unit of work should not commit.');
+    }
+
+    @IsTest
+    static void afterUndeleteWriterWithContinueOnErrorWhenWriteFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterUndelete.add(new FailingAccountWriterWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The automatic unit of work should not commit.');
+    }
+
+    @IsTest
+    static void afterInsertWriterWithOwnUnitOfWorkWhenNoRecordQualifies() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('ownUnit').allDmls();
+
+        Contact roe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Roe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new AccountWriterWithPrefilledOwnUnitOfWork());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ roe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(0, DML.retrieveResultFor('ownUnit').insertsOf(Account.SObjectType).records().size(), 'The own unit of work should not commit.');
+    }
+
+    @IsTest
+    static void afterInsertWriterWithOwnUnitOfWorkAndContinueOnError() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('ownUnit').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new AccountWriterWithOwnUnitOfWorkAndContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Doe', DML.retrieveResultFor('ownUnit').insertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The own unit of work should commit the account.');
+    }
+
+    @IsTest
+    static void afterInsertWriterWithSharedUnitOfWorkWhenCommitFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').exceptionOnInserts();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new AccountWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            orchestrator.run();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.isInstanceOfType(expectedException, DmlException.class, 'The commit exception should propagate.');
+    }
+
+    @IsTest
+    static void afterInsertWriterWithContinueOnErrorWhenCommitFails() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').exceptionOnInserts();
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new AccountWriterWithContinueOnError());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.isInstanceOfType(logger.errors[0].getException(), DmlException.class, 'The commit exception should be logged.');
+    }
+
+    @IsTest
+    static void unitOfWorkToInsertWithDmlRecord() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new DmlRecordInsertWriter(new Account(Name = 'Acme')));
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The unit of work should insert the account.');
+    }
+
+    @IsTest
+    static void unitOfWorkToUpdate() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new AccountUpdateWriter(new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme')));
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', DML.retrieveResultFor('triggerUow').updatesOf(Account.SObjectType).records()[0].get(Account.Name), 'The unit of work should update the account.');
+    }
+
+    @IsTest
+    static void unitOfWorkToUpdateWithDmlRecord() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new DmlRecordUpdateWriter(new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme')));
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', DML.retrieveResultFor('triggerUow').updatesOf(Account.SObjectType).records()[0].get(Account.Name), 'The unit of work should update the account.');
+    }
+
+    @IsTest
+    static void unitOfWorkToUpsert() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new AccountUpsertWriter(new Account(Name = 'Acme')));
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', DML.retrieveResultFor('triggerUow').upsertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The unit of work should upsert the account.');
+    }
+
+    @IsTest
+    static void unitOfWorkToDelete() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new AccountDeleteWriter(new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme')));
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual('Acme', DML.retrieveResultFor('triggerUow').deletesOf(Account.SObjectType).records()[0].get(Account.Name), 'The unit of work should delete the account.');
+    }
+
+    @IsTest
+    static void unitOfWorkToPublish() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new EventPublishWriter(new FlowOrchestrationEvent()));
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(1, DML.retrieveResultFor('triggerUow').eventsOf(FlowOrchestrationEvent.SObjectType).records().size(), 'The unit of work should publish the event.');
+    }
+
+    @IsTest
+    static void sharedUnitOfWorkWithTwoWriters() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new AccountWriter());
+        handlers.afterInsert.add(new AccountWriter());
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(2, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The shared unit of work should commit both accounts.');
+    }
+
+    @IsTest
+    static void sharedUnitOfWorkWhenTwoWritersUpdateSameRecord() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Id acmeId = TriggerHandler.IdGenerator.get(Account.SObjectType);
+        Contact doe = new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'Doe');
+
+        TestOrchestrator handlers = new TestOrchestrator();
+        handlers.afterInsert.add(new AccountUpdateWriter(new Account(Id = acmeId, Name = 'Acme')));
+        handlers.afterInsert.add(new AccountUpdateWriter(new Account(Id = acmeId, Industry = 'Technology')));
+
+        TriggerOrchestrator orchestrator = new TriggerOrchestrator(handlers);
+        orchestrator.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
+        orchestrator.context.newRecords = new List<Contact>{ doe };
+
+        // Test
+        orchestrator.run();
+
+        // Verify
+        Assert.areEqual(
+            new List<SObject>{ new Account(Id = acmeId, Name = 'Acme', Industry = 'Technology') },
+            DML.retrieveResultFor('triggerUow').updatesOf(Account.SObjectType).records(),
+            'The shared unit of work should merge both updates into one record.'
+        );
+    }
+
+    private class OperationStamper implements BeforeInsert.Populator, AfterInsert.Writer, BeforeUpdate.Populator, AfterUpdate.Writer, BeforeDelete.Handler, AfterDelete.Writer, AfterUndelete.Writer {
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            record.getNewSObject().put(Contact.Description, 'BEFORE_INSERT');
+        }
+
+        public Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            record.getNewSObject().put(Contact.Description, 'AFTER_INSERT');
+        }
+
+        public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
+            record.getNewSObject().put(Contact.Description, 'BEFORE_UPDATE');
+        }
+
+        public Boolean writeOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterUpdate(TriggerHandler.UpdateRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            record.getNewSObject().put(Contact.Description, 'AFTER_UPDATE');
+        }
+
+        public Boolean qualifiesForBeforeDeleteWhen(TriggerHandler.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void onBeforeDelete(TriggerHandler.DeleteRecord record) {
+            record.getOldSObject().put(Contact.Description, 'BEFORE_DELETE');
+        }
+
+        public Boolean writeOnAfterDeleteWhen(TriggerHandler.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterDelete(TriggerHandler.DeleteRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            record.getOldSObject().put(Contact.Description, 'AFTER_DELETE');
+        }
+
+        public Boolean writeOnAfterUndeleteWhen(TriggerHandler.UndeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterUndelete(TriggerHandler.UndeleteRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            record.getNewSObject().put(Contact.Description, 'AFTER_UNDELETE');
         }
     }
 
-    private class LifecycleBeforeInsertOnlyOrchestrator implements TriggerOrchestrator.BeforeInsert {
+    private class RejectedRecordPopulator implements BeforeInsert.Populator {
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.getNewSObject().hasErrors();
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            record.put(Contact.Description, 'Rejected');
+        }
+    }
+
+    private class LastNameCollector implements BeforeInsert.Populator {
+        public List<String> lastNames = new List<String>();
+
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return true;
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            this.lastNames.add((String) record.getNewSObject().get(Contact.LastName));
+        }
+    }
+
+    private class CeoDepartmentPopulator implements BeforeInsert.Populator {
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.Title, 'CEO');
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            record.put(Contact.Department, 'Management');
+        }
+    }
+
+    private class RolelessHandler implements BeforeInsert.Handler {
+    }
+
+    private class NestedRunPopulator implements BeforeInsert.Populator {
+        private TriggerOrchestrator nestedOrchestrator;
+
+        public NestedRunPopulator(TriggerOrchestrator nestedOrchestrator) {
+            this.nestedOrchestrator = nestedOrchestrator;
+        }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            this.nestedOrchestrator.run();
+        }
+    }
+
+    private class BeforeInsertOnlyOrchestrator implements TriggerOrchestrator.BeforeInsert {
         public List<BeforeInsert.Handler> beforeInsertHandlers() {
             return new List<BeforeInsert.Handler>();
         }
     }
 
-    private class LifecyclePopulatedTitlePopulator extends BeforeInsertPopulatorSpy {
-        public override Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
-            return record.equals(Contact.Title, 'Populated');
+    private class TitlePopulatorWithBypassable extends TitlePopulator implements BeforeInsert.Bypassable, BeforeUpdate.Bypassable {
+        public Boolean bypassOnBeforeInsertWhen() {
+            return true;
+        }
+
+        public Boolean bypassOnBeforeUpdateWhen() {
+            return true;
         }
     }
 
-    private class LifecycleRolelessHandler implements BeforeInsert.Handler {
+    private class TitlePopulatorWithBypassableOff extends TitlePopulator implements BeforeInsert.Bypassable {
+        public Boolean bypassOnBeforeInsertWhen() {
+            return false;
+        }
     }
 
-    private class LifecycleRoleOnlyBeforeInsertPopulator extends Spy implements BeforeInsert.Populator {
+    private class TitlePopulatorWithBypassCounter extends TitlePopulator implements BeforeInsert.Bypassable {
+        public Integer bypassChecks = 0;
+
+        public Boolean bypassOnBeforeInsertWhen() {
+            this.bypassChecks++;
+            return false;
+        }
+    }
+
+    private class DoeValidatorWithBypassable extends DoeValidator implements BeforeInsert.Bypassable, BeforeUpdate.Bypassable {
+        public Boolean bypassOnBeforeInsertWhen() {
+            return true;
+        }
+
+        public Boolean bypassOnBeforeUpdateWhen() {
+            return true;
+        }
+    }
+
+    private class AccountWriterWithBypassable extends AccountWriter implements AfterInsert.Bypassable, AfterUpdate.Bypassable, AfterDelete.Bypassable, AfterUndelete.Bypassable {
+        public Boolean bypassOnAfterInsertWhen() {
+            return true;
+        }
+
+        public Boolean bypassOnAfterUpdateWhen() {
+            return true;
+        }
+
+        public Boolean bypassOnAfterDeleteWhen() {
+            return true;
+        }
+
+        public Boolean bypassOnAfterUndeleteWhen() {
+            return true;
+        }
+    }
+
+    private class IdDispatcherWithBypassable extends IdDispatcher implements AfterInsert.Bypassable, AfterUpdate.Bypassable, AfterDelete.Bypassable, AfterUndelete.Bypassable {
+        public Boolean bypassOnAfterInsertWhen() {
+            return true;
+        }
+
+        public Boolean bypassOnAfterUpdateWhen() {
+            return true;
+        }
+
+        public Boolean bypassOnAfterDeleteWhen() {
+            return true;
+        }
+
+        public Boolean bypassOnAfterUndeleteWhen() {
+            return true;
+        }
+    }
+
+    private class DeletionBlockerWithBypassable extends DeletionBlocker implements BeforeDelete.Bypassable {
+        public Boolean bypassOnBeforeDeleteWhen() {
+            return true;
+        }
+    }
+
+    private class AccountNamePopulatorWithBypassable extends AccountNamePopulator implements BeforeInsert.Bypassable {
+        public Boolean bypassOnBeforeInsertWhen() {
+            return true;
+        }
+    }
+
+    private class AccountNamePopulatorWithoutParentQuery implements BeforeInsert.Populator {
         public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
-            return this.evaluate(record);
+            return record.equals(Contact.LastName, 'Doe');
         }
 
         public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
-            this.act(record);
+            record.put(Contact.Department, record.getNewParent('Account')?.get(Account.Name));
         }
     }
 
-    private class LifecycleRoleOnlyBeforeInsertValidator extends Spy implements BeforeInsert.Validator {
-        public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
-            return this.evaluate(record);
-        }
+    private class BatchDispatcher implements AfterInsert.Dispatcher, AfterUpdate.Dispatcher, AfterDelete.Dispatcher, AfterUndelete.Dispatcher {
+        public List<Set<Id>> dispatchedBatches = new List<Set<Id>>();
 
-        public String beforeInsertValidationMessage(TriggerHandler.InsertRecord record) {
-            this.act(record);
-            return this.message;
-        }
-    }
-
-    private class LifecycleRoleOnlyAfterInsertWriter extends Spy implements AfterInsert.Writer {
-        public Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
-            return this.evaluate(record);
-        }
-
-        public void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
-            this.act(record);
-        }
-    }
-
-    private class LifecycleRoleOnlyAfterInsertDispatcher extends Spy implements AfterInsert.Dispatcher {
         public Boolean dispatchOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
-            return this.evaluate(record);
+            return record.equals(Contact.LastName, 'Doe');
         }
 
         public void dispatchOnAfterInsert(TriggerHandler.InsertRecords records) {
-            this.dispatchWith(records.getRecords());
-        }
-    }
-
-    private class LifecycleRoleOnlyBeforeUpdatePopulator extends Spy implements BeforeUpdate.Populator {
-        public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
-            return this.evaluate(record);
+            this.dispatchedBatches.add(records.getIds());
         }
 
-        public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
-            this.act(record);
-        }
-    }
-
-    private class LifecycleRoleOnlyBeforeUpdateValidator extends Spy implements BeforeUpdate.Validator {
-        public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
-            return this.evaluate(record);
-        }
-
-        public String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record) {
-            this.act(record);
-            return this.message;
-        }
-    }
-
-    private class LifecycleRoleOnlyAfterUpdateWriter extends Spy implements AfterUpdate.Writer {
-        public Boolean writeOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
-            return this.evaluate(record);
-        }
-
-        public void writeOnAfterUpdate(TriggerHandler.UpdateRecord record, TriggerHandler.UnitOfWork unitOfWork) {
-            this.act(record);
-        }
-    }
-
-    private class LifecycleRoleOnlyAfterUpdateDispatcher extends Spy implements AfterUpdate.Dispatcher {
         public Boolean dispatchOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
-            return this.evaluate(record);
+            return record.equals(Contact.LastName, 'Doe');
         }
 
         public void dispatchOnAfterUpdate(TriggerHandler.UpdateRecords records) {
-            this.dispatchWith(records.getRecords());
-        }
-    }
-
-    private class LifecycleRoleOnlyBeforeDeleteHandler extends Spy implements BeforeDelete.Handler {
-        public Boolean qualifiesForBeforeDeleteWhen(TriggerHandler.DeleteRecord record) {
-            return this.evaluate(record);
+            this.dispatchedBatches.add(records.getIds());
         }
 
-        public void onBeforeDelete(TriggerHandler.DeleteRecord record) {
-            this.act(record);
-        }
-    }
-
-    private class LifecycleRoleOnlyAfterDeleteWriter extends Spy implements AfterDelete.Writer {
-        public Boolean writeOnAfterDeleteWhen(TriggerHandler.DeleteRecord record) {
-            return this.evaluate(record);
-        }
-
-        public void writeOnAfterDelete(TriggerHandler.DeleteRecord record, TriggerHandler.UnitOfWork unitOfWork) {
-            this.act(record);
-        }
-    }
-
-    private class LifecycleRoleOnlyAfterDeleteDispatcher extends Spy implements AfterDelete.Dispatcher {
         public Boolean dispatchOnAfterDeleteWhen(TriggerHandler.DeleteRecord record) {
-            return this.evaluate(record);
+            return record.equals(Contact.LastName, 'Doe');
         }
 
         public void dispatchOnAfterDelete(TriggerHandler.DeleteRecords records) {
-            this.dispatchWith(records.getRecords());
-        }
-    }
-
-    private class LifecycleRoleOnlyAfterUndeleteWriter extends Spy implements AfterUndelete.Writer {
-        public Boolean writeOnAfterUndeleteWhen(TriggerHandler.UndeleteRecord record) {
-            return this.evaluate(record);
+            this.dispatchedBatches.add(records.getIds());
         }
 
-        public void writeOnAfterUndelete(TriggerHandler.UndeleteRecord record, TriggerHandler.UnitOfWork unitOfWork) {
-            this.act(record);
-        }
-    }
-
-    private class LifecycleRoleOnlyAfterUndeleteDispatcher extends Spy implements AfterUndelete.Dispatcher {
         public Boolean dispatchOnAfterUndeleteWhen(TriggerHandler.UndeleteRecord record) {
-            return this.evaluate(record);
+            return record.equals(Contact.LastName, 'Doe');
         }
 
         public void dispatchOnAfterUndelete(TriggerHandler.UndeleteRecords records) {
-            this.dispatchWith(records.getRecords());
+            this.dispatchedBatches.add(records.getIds());
         }
     }
 
-    @IsTest
-    static void staticSObjectBypassSkipsTheRun() {
-        mockFramework();
-        TriggerOrchestrator.bypass().sObject(Contact.SObjectType);
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), populator.evaluated, 'It should be empty, because every Contact trigger run is bypassed.');
-    }
-
-    @IsTest
-    static void staticSObjectBypassOfAnotherObjectLetsTheRunProceed() {
-        mockFramework();
-        TriggerOrchestrator.bypass().sObject(Account.SObjectType);
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, populator.acted, 'It should be Doe, because only Account trigger runs are bypassed.');
-    }
-
-    @IsTest
-    static void staticBypassAllSkipsTheRun() {
-        mockFramework();
-        TriggerOrchestrator.bypass().all();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), populator.evaluated, 'It should be empty, because every trigger run is bypassed.');
-    }
-
-    @IsTest
-    static void staticBypassClearLiftsEarlierBypasses() {
-        mockFramework();
-        TriggerOrchestrator.bypass().sObject(Contact.SObjectType);
-        TriggerOrchestrator.bypass().clear();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, populator.acted, 'It should be Doe, because clear removed the Contact bypass.');
-    }
-
-    @IsTest
-    static void staticOrchestratorBypassOfAnotherTypeLetsTheRunProceed() {
-        mockFramework();
-        TriggerOrchestrator.bypass().orchestrator(TriggerHandler.class);
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, populator.acted, 'It should be Doe, because the bypassed orchestrator type is not the one running.');
-    }
-
-    @IsTest
-    static void staticHandlerBypassOfAnotherTypeLetsTheHandlerRun() {
-        mockFramework();
-        TriggerOrchestrator.bypass().handler(AfterInsertWriterSpy.class);
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, populator.acted, 'It should be Doe, because the bypassed handler type is not the populator.');
-    }
-
-    @IsTest
-    static void staticBypassBuilderMethodsReturnTheSameInstance() {
-        mockFramework();
-
-        // Test
-        Test.startTest();
-        TriggerOrchestrator.Bypassable chained = TriggerOrchestrator.bypass().sObject(Account.SObjectType).orchestrator(TriggerHandler.class).handler(TriggerHandler.class);
-        Test.stopTest();
-
-        // Verify
-        Assert.isTrue(chained === TriggerOrchestrator.bypass(), 'It should be the bypass instance itself, because every builder method returns it for chaining.');
-    }
-
-    @IsTest
-    static void objectMetadataBypassSkipsTheRun() {
-        mockFramework(new List<TriggerObject__mdt>{ objectSetting('Contact', true, new List<String>()) });
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), populator.evaluated, 'It should be empty, because the Contact metadata record bypasses the object.');
-    }
-
-    @IsTest
-    static void objectMetadataWithBypassOffLetsTheRunProceed() {
-        mockFramework(new List<TriggerObject__mdt>{ objectSetting('Contact', false, new List<String>()) });
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, populator.acted, 'It should be Doe, because the Contact metadata record has Bypass__c off.');
-    }
-
-    @IsTest
-    static void objectMetadataOfAnotherObjectDoesNotBypass() {
-        mockFramework(new List<TriggerObject__mdt>{ objectSetting('Account', true, new List<String>()) });
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, populator.acted, 'It should be Doe, because only the Account metadata record is bypassed.');
-    }
-
-    @IsTest
-    static void objectMetadataNameIsTrimmed() {
-        mockFramework(new List<TriggerObject__mdt>{ objectSetting(' Contact ', true, new List<String>()) });
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), populator.evaluated, 'It should be empty, because the spaces around the object name are trimmed.');
-    }
-
-    @IsTest
-    static void objectMetadataNameIsCaseInsensitive() {
-        mockFramework(new List<TriggerObject__mdt>{ objectSetting('CONTACT', true, new List<String>()) });
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), populator.evaluated, 'It should be empty, because the object name is matched ignoring case.');
-    }
-
-    @IsTest
-    static void objectMetadataBypassOnDeleteResolvesTheObjectFromTheOldRecords() {
-        mockFramework(new List<TriggerObject__mdt>{ objectSetting('Contact', true, new List<String>()) });
-        AfterDeleteWriterSpy writer = new AfterDeleteWriterSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), writer.evaluated, 'It should be empty, because the object is resolved from the old records when there are no new ones.');
-    }
-
-    @IsTest
-    static void handlerMetadataBypassSkipsTheHandler() {
-        mockFramework(new List<TriggerObject__mdt>{ objectSetting('Contact', false, new List<String>{ 'BeforeInsertPopulatorSpy' }) });
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), populator.evaluated, 'It should be empty, because the handler metadata record bypasses the populator.');
-    }
-
-    @IsTest
-    static void handlerMetadataBypassLeavesOtherHandlersRunning() {
-        mockFramework(new List<TriggerObject__mdt>{ objectSetting('Contact', false, new List<String>{ 'BeforeInsertValidatorSpy' }) });
-        BeforeInsertValidatorSpy validator = new BeforeInsertValidatorSpy();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(validator);
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, populator.acted, 'It should be Doe, because only the validator is bypassed.');
-    }
-
-    @IsTest
-    static void handlerMetadataOuterQualifiedNameBypassesAnInnerClassHandler() {
-        mockFramework(new List<TriggerObject__mdt>{ objectSetting('Contact', false, new List<String>{ 'TriggerOrchestratorTest.BeforeInsertPopulatorSpy' }) });
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), populator.evaluated, 'It should be empty, because a qualified name also matches by its part after the last dot.');
-    }
-
-    @IsTest
-    static void handlerMetadataNameIsTrimmed() {
-        mockFramework(new List<TriggerObject__mdt>{ objectSetting('Contact', false, new List<String>{ ' BeforeInsertPopulatorSpy ' }) });
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), populator.evaluated, 'It should be empty, because the spaces around the handler name are trimmed.');
-    }
-
-    @IsTest
-    static void handlerMetadataNameIsCaseInsensitive() {
-        mockFramework(new List<TriggerObject__mdt>{ objectSetting('Contact', false, new List<String>{ 'BEFOREINSERTPOPULATORSPY' }) });
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), populator.evaluated, 'It should be empty, because the handler name is matched ignoring case.');
-    }
-
-    @IsTest
-    static void handlerMetadataUnderAnotherObjectDoesNotBypass() {
-        mockFramework(new List<TriggerObject__mdt>{ objectSetting('Account', false, new List<String>{ 'BeforeInsertPopulatorSpy' }) });
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, populator.acted, 'It should be Doe, because the handler is bypassed only for Account.');
-    }
-
-    @IsTest
-    static void handlerMetadataBypassedHandlerIsNotAskedForItsOwnBypass() {
-        mockFramework(new List<TriggerObject__mdt>{ objectSetting('Contact', false, new List<String>{ 'BeforeInsertPopulatorSpy' }) });
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), calls('bypass'), 'It should be empty, because the metadata bypass is decided before the handler is asked.');
-    }
-
-    @IsTest
-    static void beforeInsertPopulatorReturningBypassIsSkipped() {
-        mockFramework();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.bypassed = true;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), populator.evaluated, 'It should be empty, because the populator returns true from bypassOnBeforeInsertWhen.');
-    }
-
-    @IsTest
-    static void beforeInsertValidatorReturningBypassIsSkipped() {
-        mockFramework();
-        BeforeInsertValidatorSpy validator = new BeforeInsertValidatorSpy();
-        validator.bypassed = true;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(validator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), validator.evaluated, 'It should be empty, because the validator returns true from bypassOnBeforeInsertWhen.');
-    }
-
-    @IsTest
-    static void afterInsertWriterReturningBypassIsSkipped() {
-        mockFramework();
-        AfterInsertWriterSpy writer = new AfterInsertWriterSpy();
-        writer.bypassed = true;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), writer.evaluated, 'It should be empty, because the writer returns true from bypassOnAfterInsertWhen.');
-    }
-
-    @IsTest
-    static void afterInsertDispatcherReturningBypassIsSkipped() {
-        mockFramework();
-        AfterInsertDispatcherSpy dispatcher = new AfterInsertDispatcherSpy();
-        dispatcher.bypassed = true;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), dispatcher.evaluated, 'It should be empty, because the dispatcher returns true from bypassOnAfterInsertWhen.');
-    }
-
-    @IsTest
-    static void beforeUpdatePopulatorReturningBypassIsSkipped() {
-        mockFramework();
-        BeforeUpdatePopulatorSpy populator = new BeforeUpdatePopulatorSpy();
-        populator.bypassed = true;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(populator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), populator.evaluated, 'It should be empty, because the populator returns true from bypassOnBeforeUpdateWhen.');
-    }
-
-    @IsTest
-    static void beforeUpdateValidatorReturningBypassIsSkipped() {
-        mockFramework();
-        BeforeUpdateValidatorSpy validator = new BeforeUpdateValidatorSpy();
-        validator.bypassed = true;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(validator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), validator.evaluated, 'It should be empty, because the validator returns true from bypassOnBeforeUpdateWhen.');
-    }
-
-    @IsTest
-    static void afterUpdateWriterReturningBypassIsSkipped() {
-        mockFramework();
-        AfterUpdateWriterSpy writer = new AfterUpdateWriterSpy();
-        writer.bypassed = true;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(writer);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), writer.evaluated, 'It should be empty, because the writer returns true from bypassOnAfterUpdateWhen.');
-    }
-
-    @IsTest
-    static void afterUpdateDispatcherReturningBypassIsSkipped() {
-        mockFramework();
-        AfterUpdateDispatcherSpy dispatcher = new AfterUpdateDispatcherSpy();
-        dispatcher.bypassed = true;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(dispatcher);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), dispatcher.evaluated, 'It should be empty, because the dispatcher returns true from bypassOnAfterUpdateWhen.');
-    }
-
-    @IsTest
-    static void beforeDeleteHandlerReturningBypassIsSkipped() {
-        mockFramework();
-        BeforeDeleteHandlerSpy handler = new BeforeDeleteHandlerSpy();
-        handler.bypassed = true;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeDelete.add(handler);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), handler.evaluated, 'It should be empty, because the handler returns true from bypassOnBeforeDeleteWhen.');
-    }
-
-    @IsTest
-    static void afterDeleteWriterReturningBypassIsSkipped() {
-        mockFramework();
-        AfterDeleteWriterSpy writer = new AfterDeleteWriterSpy();
-        writer.bypassed = true;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), writer.evaluated, 'It should be empty, because the writer returns true from bypassOnAfterDeleteWhen.');
-    }
-
-    @IsTest
-    static void afterDeleteDispatcherReturningBypassIsSkipped() {
-        mockFramework();
-        AfterDeleteDispatcherSpy dispatcher = new AfterDeleteDispatcherSpy();
-        dispatcher.bypassed = true;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), dispatcher.evaluated, 'It should be empty, because the dispatcher returns true from bypassOnAfterDeleteWhen.');
-    }
-
-    @IsTest
-    static void afterUndeleteWriterReturningBypassIsSkipped() {
-        mockFramework();
-        AfterUndeleteWriterSpy writer = new AfterUndeleteWriterSpy();
-        writer.bypassed = true;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), writer.evaluated, 'It should be empty, because the writer returns true from bypassOnAfterUndeleteWhen.');
-    }
-
-    @IsTest
-    static void afterUndeleteDispatcherReturningBypassIsSkipped() {
-        mockFramework();
-        AfterUndeleteDispatcherSpy dispatcher = new AfterUndeleteDispatcherSpy();
-        dispatcher.bypassed = true;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), dispatcher.evaluated, 'It should be empty, because the dispatcher returns true from bypassOnAfterUndeleteWhen.');
-    }
-
-    @IsTest
-    static void bypassableReturningFalseLetsTheHandlerRun() {
-        mockFramework();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.bypassed = false;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, populator.acted, 'It should be Doe, because the populator returns false from bypassOnBeforeInsertWhen.');
-    }
-
-    @IsTest
-    static void bypassableIsAskedOncePerRunNotPerRecord() {
-        mockFramework();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, calls('bypass').size(), 'It should be 1, because the bypass decision covers the whole run, not each of the two records.');
-    }
-
-    @IsTest
-    static void bypassedHandlerContributesNoParentQuery() {
-        mockFramework();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.bypassed = true;
-        populator.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>(), calls('parentQuery'), 'It should be empty, because parents are declared only by active handlers.');
-    }
-
-    @IsTest
-    static void beforeInsertPopulatorPopulatesOnlyQualifiedRecords() {
-        mockFramework();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, populator.acted, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void beforeInsertValidatorAsksAMessageOnlyForQualifiedRecords() {
-        mockFramework();
-        BeforeInsertValidatorSpy validator = new BeforeInsertValidatorSpy();
-        validator.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(validator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, validator.acted, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void afterInsertWriterWritesOnlyQualifiedRecords() {
-        mockFramework();
-        AfterInsertWriterSpy writer = new AfterInsertWriterSpy();
-        writer.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, writer.acted, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void afterInsertDispatcherDispatchesOnlyQualifiedRecords() {
-        mockFramework();
-        AfterInsertDispatcherSpy dispatcher = new AfterInsertDispatcherSpy();
-        dispatcher.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, dispatcher.dispatched, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void beforeUpdatePopulatorPopulatesOnlyQualifiedRecords() {
-        mockFramework();
-        BeforeUpdatePopulatorSpy populator = new BeforeUpdatePopulatorSpy();
-        populator.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(populator);
-        List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, populator.acted, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void beforeUpdateValidatorAsksAMessageOnlyForQualifiedRecords() {
-        mockFramework();
-        BeforeUpdateValidatorSpy validator = new BeforeUpdateValidatorSpy();
-        validator.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(validator);
-        List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, validator.acted, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void afterUpdateWriterWritesOnlyQualifiedRecords() {
-        mockFramework();
-        AfterUpdateWriterSpy writer = new AfterUpdateWriterSpy();
-        writer.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(writer);
-        List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, writer.acted, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void afterUpdateDispatcherDispatchesOnlyQualifiedRecords() {
-        mockFramework();
-        AfterUpdateDispatcherSpy dispatcher = new AfterUpdateDispatcherSpy();
-        dispatcher.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(dispatcher);
-        List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, dispatcher.dispatched, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void beforeDeleteHandlerHandlesOnlyQualifiedRecords() {
-        mockFramework();
-        BeforeDeleteHandlerSpy handler = new BeforeDeleteHandlerSpy();
-        handler.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeDelete.add(handler);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        runner.context.oldRecords = savedContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, handler.acted, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void afterDeleteWriterWritesOnlyQualifiedRecords() {
-        mockFramework();
-        AfterDeleteWriterSpy writer = new AfterDeleteWriterSpy();
-        writer.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, writer.acted, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void afterDeleteDispatcherDispatchesOnlyQualifiedRecords() {
-        mockFramework();
-        AfterDeleteDispatcherSpy dispatcher = new AfterDeleteDispatcherSpy();
-        dispatcher.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, dispatcher.dispatched, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void afterUndeleteWriterWritesOnlyQualifiedRecords() {
-        mockFramework();
-        AfterUndeleteWriterSpy writer = new AfterUndeleteWriterSpy();
-        writer.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, writer.acted, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void afterUndeleteDispatcherDispatchesOnlyQualifiedRecords() {
-        mockFramework();
-        AfterUndeleteDispatcherSpy dispatcher = new AfterUndeleteDispatcherSpy();
-        dispatcher.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, dispatcher.dispatched, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void afterInsertDispatcherIsNotCalledWhenNoRecordQualifies() {
-        mockFramework();
-        AfterInsertDispatcherSpy dispatcher = new AfterInsertDispatcherSpy();
-        dispatcher.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(dispatcher.dispatched, 'It should be null, because an empty collection is never dispatched.');
-    }
-
-    @IsTest
-    static void afterUpdateDispatcherIsNotCalledWhenNoRecordQualifies() {
-        mockFramework();
-        AfterUpdateDispatcherSpy dispatcher = new AfterUpdateDispatcherSpy();
-        dispatcher.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(dispatcher);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(dispatcher.dispatched, 'It should be null, because an empty collection is never dispatched.');
-    }
-
-    @IsTest
-    static void afterDeleteDispatcherIsNotCalledWhenNoRecordQualifies() {
-        mockFramework();
-        AfterDeleteDispatcherSpy dispatcher = new AfterDeleteDispatcherSpy();
-        dispatcher.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(dispatcher.dispatched, 'It should be null, because an empty collection is never dispatched.');
-    }
-
-    @IsTest
-    static void afterUndeleteDispatcherIsNotCalledWhenNoRecordQualifies() {
-        mockFramework();
-        AfterUndeleteDispatcherSpy dispatcher = new AfterUndeleteDispatcherSpy();
-        dispatcher.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(dispatcher.dispatched, 'It should be null, because an empty collection is never dispatched.');
-    }
-
-    @IsTest
-    static void afterInsertDispatcherIsCalledOncePerRun() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(new AfterInsertDispatcherSpy());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, calls('dispatch').size(), 'It should be 1, because the dispatcher receives both qualified records in a single call.');
-    }
-
-    @IsTest
-    static void afterUpdateDispatcherIsCalledOncePerRun() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(new AfterUpdateDispatcherSpy());
-        List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, calls('dispatch').size(), 'It should be 1, because the dispatcher receives both qualified records in a single call.');
-    }
-
-    @IsTest
-    static void afterDeleteDispatcherIsCalledOncePerRun() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(new AfterDeleteDispatcherSpy());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, calls('dispatch').size(), 'It should be 1, because the dispatcher receives both qualified records in a single call.');
-    }
-
-    @IsTest
-    static void afterUndeleteDispatcherIsCalledOncePerRun() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(new AfterUndeleteDispatcherSpy());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, calls('dispatch').size(), 'It should be 1, because the dispatcher receives both qualified records in a single call.');
-    }
-
-    @IsTest
-    static void afterInsertDispatcherDispatchesBeforeItsFinalizer() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(new AfterInsertDispatcherSpy());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Integer callCount = TriggerOrchestratorTest.callLog.size();
-        Assert.areEqual(
-            new List<String>{ 'spy.dispatch', 'spy.finalize' },
-            new List<String>{ TriggerOrchestratorTest.callLog[callCount - 2], TriggerOrchestratorTest.callLog[callCount - 1] },
-            'It should be dispatch followed by finalize, because the finalizer closes the handler run.'
-        );
-    }
-
-    @IsTest
-    static void afterUpdateDispatcherDispatchesBeforeItsFinalizer() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(new AfterUpdateDispatcherSpy());
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Integer callCount = TriggerOrchestratorTest.callLog.size();
-        Assert.areEqual(
-            new List<String>{ 'spy.dispatch', 'spy.finalize' },
-            new List<String>{ TriggerOrchestratorTest.callLog[callCount - 2], TriggerOrchestratorTest.callLog[callCount - 1] },
-            'It should be dispatch followed by finalize, because the finalizer closes the handler run.'
-        );
-    }
-
-    @IsTest
-    static void afterDeleteDispatcherDispatchesBeforeItsFinalizer() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(new AfterDeleteDispatcherSpy());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Integer callCount = TriggerOrchestratorTest.callLog.size();
-        Assert.areEqual(
-            new List<String>{ 'spy.dispatch', 'spy.finalize' },
-            new List<String>{ TriggerOrchestratorTest.callLog[callCount - 2], TriggerOrchestratorTest.callLog[callCount - 1] },
-            'It should be dispatch followed by finalize, because the finalizer closes the handler run.'
-        );
-    }
-
-    @IsTest
-    static void afterUndeleteDispatcherDispatchesBeforeItsFinalizer() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(new AfterUndeleteDispatcherSpy());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Integer callCount = TriggerOrchestratorTest.callLog.size();
-        Assert.areEqual(
-            new List<String>{ 'spy.dispatch', 'spy.finalize' },
-            new List<String>{ TriggerOrchestratorTest.callLog[callCount - 2], TriggerOrchestratorTest.callLog[callCount - 1] },
-            'It should be dispatch followed by finalize, because the finalizer closes the handler run.'
-        );
-    }
-
-    @IsTest
-    static void beforeInsertValidatorAttachesItsMessageToTheTriggerRecord() {
-        mockFramework();
-        BeforeInsertValidatorSpy validator = new BeforeInsertValidatorSpy();
-        validator.message = 'Rejected';
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(validator);
-        List<Contact> contacts = newContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = contacts;
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual('Rejected', contacts[0].getErrors()[0].getMessage(), 'It should be Rejected, because that is the message the validator returned for Doe.');
-    }
-
-    @IsTest
-    static void beforeUpdateValidatorAttachesItsMessageToTheNewRecord() {
-        mockFramework();
-        BeforeUpdateValidatorSpy validator = new BeforeUpdateValidatorSpy();
-        validator.message = 'Rejected';
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(validator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual('Rejected', contacts[0].getErrors()[0].getMessage(), 'It should be Rejected, because that is the message the validator returned for Doe.');
-    }
-
-    @IsTest
-    static void beforeInsertPopulatorWritesLandOnTheTriggerRecord() {
-        mockFramework();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.populatedField = Contact.Title;
-        populator.populatedValue = 'Populated';
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        List<Contact> contacts = newContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = contacts;
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual('Populated', contacts[0].Title, 'It should be Populated, because the populator put that Title on the trigger record.');
-    }
-
-    @IsTest
-    static void beforeInsertPopulatorFinalizerReceivesTheProcessedRecords() {
-        mockFramework();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, populator.finalized, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void beforeInsertValidatorFinalizerReceivesTheProcessedRecords() {
-        mockFramework();
-        BeforeInsertValidatorSpy validator = new BeforeInsertValidatorSpy();
-        validator.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(validator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, validator.finalized, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void afterInsertWriterFinalizerReceivesTheProcessedRecords() {
-        mockFramework();
-        AfterInsertWriterSpy writer = new AfterInsertWriterSpy();
-        writer.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, writer.finalized, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void afterInsertDispatcherFinalizerReceivesTheProcessedRecords() {
-        mockFramework();
-        AfterInsertDispatcherSpy dispatcher = new AfterInsertDispatcherSpy();
-        dispatcher.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, dispatcher.finalized, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void beforeUpdatePopulatorFinalizerReceivesTheProcessedRecords() {
-        mockFramework();
-        BeforeUpdatePopulatorSpy populator = new BeforeUpdatePopulatorSpy();
-        populator.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(populator);
-        List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, populator.finalized, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void beforeUpdateValidatorFinalizerReceivesTheProcessedRecords() {
-        mockFramework();
-        BeforeUpdateValidatorSpy validator = new BeforeUpdateValidatorSpy();
-        validator.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(validator);
-        List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, validator.finalized, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void afterUpdateWriterFinalizerReceivesTheProcessedRecords() {
-        mockFramework();
-        AfterUpdateWriterSpy writer = new AfterUpdateWriterSpy();
-        writer.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(writer);
-        List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, writer.finalized, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void afterUpdateDispatcherFinalizerReceivesTheProcessedRecords() {
-        mockFramework();
-        AfterUpdateDispatcherSpy dispatcher = new AfterUpdateDispatcherSpy();
-        dispatcher.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(dispatcher);
-        List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, dispatcher.finalized, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void beforeDeleteHandlerFinalizerReceivesTheProcessedRecords() {
-        mockFramework();
-        BeforeDeleteHandlerSpy handler = new BeforeDeleteHandlerSpy();
-        handler.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeDelete.add(handler);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        runner.context.oldRecords = savedContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, handler.finalized, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void afterDeleteWriterFinalizerReceivesTheProcessedRecords() {
-        mockFramework();
-        AfterDeleteWriterSpy writer = new AfterDeleteWriterSpy();
-        writer.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, writer.finalized, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void afterDeleteDispatcherFinalizerReceivesTheProcessedRecords() {
-        mockFramework();
-        AfterDeleteDispatcherSpy dispatcher = new AfterDeleteDispatcherSpy();
-        dispatcher.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, dispatcher.finalized, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void afterUndeleteWriterFinalizerReceivesTheProcessedRecords() {
-        mockFramework();
-        AfterUndeleteWriterSpy writer = new AfterUndeleteWriterSpy();
-        writer.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, writer.finalized, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void afterUndeleteDispatcherFinalizerReceivesTheProcessedRecords() {
-        mockFramework();
-        AfterUndeleteDispatcherSpy dispatcher = new AfterUndeleteDispatcherSpy();
-        dispatcher.qualifying = new Set<String>{ 'Doe' };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, dispatcher.finalized, 'It should be Doe alone, because Roe does not qualify.');
-    }
-
-    @IsTest
-    static void beforeInsertPopulatorFinalizerIsSkippedWhenNoRecordQualifies() {
-        mockFramework();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(populator.finalized, 'It should be null, because the finalizer is skipped when no record qualifies.');
-    }
-
-    @IsTest
-    static void beforeInsertValidatorFinalizerIsSkippedWhenNoRecordQualifies() {
-        mockFramework();
-        BeforeInsertValidatorSpy validator = new BeforeInsertValidatorSpy();
-        validator.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(validator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(validator.finalized, 'It should be null, because the finalizer is skipped when no record qualifies.');
-    }
-
-    @IsTest
-    static void afterInsertWriterFinalizerIsSkippedWhenNoRecordQualifies() {
-        mockFramework();
-        AfterInsertWriterSpy writer = new AfterInsertWriterSpy();
-        writer.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(writer.finalized, 'It should be null, because the finalizer is skipped when no record qualifies.');
-    }
-
-    @IsTest
-    static void afterInsertDispatcherFinalizerIsSkippedWhenNoRecordQualifies() {
-        mockFramework();
-        AfterInsertDispatcherSpy dispatcher = new AfterInsertDispatcherSpy();
-        dispatcher.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(dispatcher.finalized, 'It should be null, because the finalizer is skipped when no record qualifies.');
-    }
-
-    @IsTest
-    static void beforeUpdatePopulatorFinalizerIsSkippedWhenNoRecordQualifies() {
-        mockFramework();
-        BeforeUpdatePopulatorSpy populator = new BeforeUpdatePopulatorSpy();
-        populator.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(populator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(populator.finalized, 'It should be null, because the finalizer is skipped when no record qualifies.');
-    }
-
-    @IsTest
-    static void beforeUpdateValidatorFinalizerIsSkippedWhenNoRecordQualifies() {
-        mockFramework();
-        BeforeUpdateValidatorSpy validator = new BeforeUpdateValidatorSpy();
-        validator.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(validator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(validator.finalized, 'It should be null, because the finalizer is skipped when no record qualifies.');
-    }
-
-    @IsTest
-    static void afterUpdateWriterFinalizerIsSkippedWhenNoRecordQualifies() {
-        mockFramework();
-        AfterUpdateWriterSpy writer = new AfterUpdateWriterSpy();
-        writer.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(writer);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(writer.finalized, 'It should be null, because the finalizer is skipped when no record qualifies.');
-    }
-
-    @IsTest
-    static void afterUpdateDispatcherFinalizerIsSkippedWhenNoRecordQualifies() {
-        mockFramework();
-        AfterUpdateDispatcherSpy dispatcher = new AfterUpdateDispatcherSpy();
-        dispatcher.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(dispatcher);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(dispatcher.finalized, 'It should be null, because the finalizer is skipped when no record qualifies.');
-    }
-
-    @IsTest
-    static void beforeDeleteHandlerFinalizerIsSkippedWhenNoRecordQualifies() {
-        mockFramework();
-        BeforeDeleteHandlerSpy handler = new BeforeDeleteHandlerSpy();
-        handler.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeDelete.add(handler);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(handler.finalized, 'It should be null, because the finalizer is skipped when no record qualifies.');
-    }
-
-    @IsTest
-    static void afterDeleteWriterFinalizerIsSkippedWhenNoRecordQualifies() {
-        mockFramework();
-        AfterDeleteWriterSpy writer = new AfterDeleteWriterSpy();
-        writer.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(writer.finalized, 'It should be null, because the finalizer is skipped when no record qualifies.');
-    }
-
-    @IsTest
-    static void afterDeleteDispatcherFinalizerIsSkippedWhenNoRecordQualifies() {
-        mockFramework();
-        AfterDeleteDispatcherSpy dispatcher = new AfterDeleteDispatcherSpy();
-        dispatcher.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(dispatcher.finalized, 'It should be null, because the finalizer is skipped when no record qualifies.');
-    }
-
-    @IsTest
-    static void afterUndeleteWriterFinalizerIsSkippedWhenNoRecordQualifies() {
-        mockFramework();
-        AfterUndeleteWriterSpy writer = new AfterUndeleteWriterSpy();
-        writer.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(writer.finalized, 'It should be null, because the finalizer is skipped when no record qualifies.');
-    }
-
-    @IsTest
-    static void afterUndeleteDispatcherFinalizerIsSkippedWhenNoRecordQualifies() {
-        mockFramework();
-        AfterUndeleteDispatcherSpy dispatcher = new AfterUndeleteDispatcherSpy();
-        dispatcher.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(dispatcher.finalized, 'It should be null, because the finalizer is skipped when no record qualifies.');
-    }
-
-    @IsTest
-    static void finalizerRunsAfterTheLastRecordIsProcessed() {
-        mockFramework();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isTrue(
-            TriggerOrchestratorTest.callLog.indexOf('spy.finalize') > TriggerOrchestratorTest.callLog.indexOf('spy.action:Roe'),
-            'It should come after Roe, because the finalizer waits until the last record is processed.'
-        );
-    }
-
-    @IsTest
-    static void finalizerRunsBeforeTheNextHandlerStarts() {
-        mockFramework();
-        BeforeInsertPopulatorSpy first = new BeforeInsertPopulatorSpy();
-        first.label = 'first';
-        BeforeInsertPopulatorSpy second = new BeforeInsertPopulatorSpy();
-        second.label = 'second';
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(first);
-        orchestrator.beforeInsert.add(second);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Integer firstFinalize = TriggerOrchestratorTest.callLog.indexOf('first.finalize');
-        Assert.isTrue(
-            firstFinalize != -1 && firstFinalize < TriggerOrchestratorTest.callLog.indexOf('second.when:Doe'),
-            'It should come before the second handler evaluates Doe, because a handler finalizes before the next handler starts.'
-        );
-    }
-
-    @IsTest
-    static void beforeInsertPopulatorFailureWithoutContinueOnErrorPropagates() {
-        mockFramework();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isInstanceOfType(failure, SpyException.class, 'It should be the populator exception, because the populator does not opt into ContinueOnError.');
-    }
-
-    @IsTest
-    static void beforeInsertValidatorFailureWithoutContinueOnErrorPropagates() {
-        mockFramework();
-        BeforeInsertValidatorSpy validator = new BeforeInsertValidatorSpy();
-        validator.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(validator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isInstanceOfType(failure, SpyException.class, 'It should be the validator exception, because the validator does not opt into ContinueOnError.');
-    }
-
-    @IsTest
-    static void afterInsertWriterFailureWithoutContinueOnErrorPropagates() {
-        mockFramework();
-        AfterInsertWriterSpy writer = new AfterInsertWriterSpy();
-        writer.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isInstanceOfType(failure, SpyException.class, 'It should be the writer exception, because the writer does not opt into ContinueOnError.');
-    }
-
-    @IsTest
-    static void afterInsertDispatcherFailureWithoutContinueOnErrorPropagates() {
-        mockFramework();
-        AfterInsertDispatcherSpy dispatcher = new AfterInsertDispatcherSpy();
-        dispatcher.failAt('dispatch', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isInstanceOfType(failure, SpyException.class, 'It should be the dispatcher exception, because the dispatcher does not opt into ContinueOnError.');
-    }
-
-    @IsTest
-    static void beforeUpdatePopulatorFailureWithoutContinueOnErrorPropagates() {
-        mockFramework();
-        BeforeUpdatePopulatorSpy populator = new BeforeUpdatePopulatorSpy();
-        populator.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(populator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isInstanceOfType(failure, SpyException.class, 'It should be the populator exception, because the populator does not opt into ContinueOnError.');
-    }
-
-    @IsTest
-    static void beforeUpdateValidatorFailureWithoutContinueOnErrorPropagates() {
-        mockFramework();
-        BeforeUpdateValidatorSpy validator = new BeforeUpdateValidatorSpy();
-        validator.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(validator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isInstanceOfType(failure, SpyException.class, 'It should be the validator exception, because the validator does not opt into ContinueOnError.');
-    }
-
-    @IsTest
-    static void afterUpdateWriterFailureWithoutContinueOnErrorPropagates() {
-        mockFramework();
-        AfterUpdateWriterSpy writer = new AfterUpdateWriterSpy();
-        writer.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(writer);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isInstanceOfType(failure, SpyException.class, 'It should be the writer exception, because the writer does not opt into ContinueOnError.');
-    }
-
-    @IsTest
-    static void afterUpdateDispatcherFailureWithoutContinueOnErrorPropagates() {
-        mockFramework();
-        AfterUpdateDispatcherSpy dispatcher = new AfterUpdateDispatcherSpy();
-        dispatcher.failAt('dispatch', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(dispatcher);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isInstanceOfType(failure, SpyException.class, 'It should be the dispatcher exception, because the dispatcher does not opt into ContinueOnError.');
-    }
-
-    @IsTest
-    static void beforeDeleteHandlerFailureWithoutContinueOnErrorPropagates() {
-        mockFramework();
-        BeforeDeleteHandlerSpy handler = new BeforeDeleteHandlerSpy();
-        handler.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeDelete.add(handler);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isInstanceOfType(failure, SpyException.class, 'It should be the handler exception, because the handler does not opt into ContinueOnError.');
-    }
-
-    @IsTest
-    static void afterDeleteWriterFailureWithoutContinueOnErrorPropagates() {
-        mockFramework();
-        AfterDeleteWriterSpy writer = new AfterDeleteWriterSpy();
-        writer.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isInstanceOfType(failure, SpyException.class, 'It should be the writer exception, because the writer does not opt into ContinueOnError.');
-    }
-
-    @IsTest
-    static void afterDeleteDispatcherFailureWithoutContinueOnErrorPropagates() {
-        mockFramework();
-        AfterDeleteDispatcherSpy dispatcher = new AfterDeleteDispatcherSpy();
-        dispatcher.failAt('dispatch', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isInstanceOfType(failure, SpyException.class, 'It should be the dispatcher exception, because the dispatcher does not opt into ContinueOnError.');
-    }
-
-    @IsTest
-    static void afterUndeleteWriterFailureWithoutContinueOnErrorPropagates() {
-        mockFramework();
-        AfterUndeleteWriterSpy writer = new AfterUndeleteWriterSpy();
-        writer.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isInstanceOfType(failure, SpyException.class, 'It should be the writer exception, because the writer does not opt into ContinueOnError.');
-    }
-
-    @IsTest
-    static void afterUndeleteDispatcherFailureWithoutContinueOnErrorPropagates() {
-        mockFramework();
-        AfterUndeleteDispatcherSpy dispatcher = new AfterUndeleteDispatcherSpy();
-        dispatcher.failAt('dispatch', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isInstanceOfType(failure, SpyException.class, 'It should be the dispatcher exception, because the dispatcher does not opt into ContinueOnError.');
-    }
-
-    @IsTest
-    static void beforeInsertPopulatorFailureWithContinueOnErrorIsSwallowed() {
-        mockFramework();
-        ContinuingBeforeInsertPopulatorSpy populator = new ContinuingBeforeInsertPopulatorSpy();
-        populator.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(failure, 'It should be null, because the populator opts into ContinueOnError.');
-    }
-
-    @IsTest
-    static void beforeInsertValidatorFailureWithContinueOnErrorIsSwallowed() {
-        mockFramework();
-        ContinuingBeforeInsertValidatorSpy validator = new ContinuingBeforeInsertValidatorSpy();
-        validator.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(validator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(failure, 'It should be null, because the validator opts into ContinueOnError.');
-    }
-
-    @IsTest
-    static void afterInsertWriterFailureWithContinueOnErrorIsSwallowed() {
-        mockFramework();
-        ContinuingAfterInsertWriterSpy writer = new ContinuingAfterInsertWriterSpy();
-        writer.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(failure, 'It should be null, because the writer opts into ContinueOnError.');
-    }
-
-    @IsTest
-    static void afterInsertDispatcherFailureWithContinueOnErrorIsSwallowed() {
-        mockFramework();
-        ContinuingAfterInsertDispatcherSpy dispatcher = new ContinuingAfterInsertDispatcherSpy();
-        dispatcher.failAt('dispatch', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(failure, 'It should be null, because the dispatcher opts into ContinueOnError.');
-    }
-
-    @IsTest
-    static void beforeUpdatePopulatorFailureWithContinueOnErrorIsSwallowed() {
-        mockFramework();
-        ContinuingBeforeUpdatePopulatorSpy populator = new ContinuingBeforeUpdatePopulatorSpy();
-        populator.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(populator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(failure, 'It should be null, because the populator opts into ContinueOnError.');
-    }
-
-    @IsTest
-    static void beforeUpdateValidatorFailureWithContinueOnErrorIsSwallowed() {
-        mockFramework();
-        ContinuingBeforeUpdateValidatorSpy validator = new ContinuingBeforeUpdateValidatorSpy();
-        validator.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(validator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(failure, 'It should be null, because the validator opts into ContinueOnError.');
-    }
-
-    @IsTest
-    static void afterUpdateWriterFailureWithContinueOnErrorIsSwallowed() {
-        mockFramework();
-        ContinuingAfterUpdateWriterSpy writer = new ContinuingAfterUpdateWriterSpy();
-        writer.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(writer);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(failure, 'It should be null, because the writer opts into ContinueOnError.');
-    }
-
-    @IsTest
-    static void afterUpdateDispatcherFailureWithContinueOnErrorIsSwallowed() {
-        mockFramework();
-        ContinuingAfterUpdateDispatcherSpy dispatcher = new ContinuingAfterUpdateDispatcherSpy();
-        dispatcher.failAt('dispatch', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(dispatcher);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(failure, 'It should be null, because the dispatcher opts into ContinueOnError.');
-    }
-
-    @IsTest
-    static void beforeDeleteHandlerFailureWithContinueOnErrorIsSwallowed() {
-        mockFramework();
-        ContinuingBeforeDeleteHandlerSpy handler = new ContinuingBeforeDeleteHandlerSpy();
-        handler.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeDelete.add(handler);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(failure, 'It should be null, because the handler opts into ContinueOnError.');
-    }
-
-    @IsTest
-    static void afterDeleteWriterFailureWithContinueOnErrorIsSwallowed() {
-        mockFramework();
-        ContinuingAfterDeleteWriterSpy writer = new ContinuingAfterDeleteWriterSpy();
-        writer.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(failure, 'It should be null, because the writer opts into ContinueOnError.');
-    }
-
-    @IsTest
-    static void afterDeleteDispatcherFailureWithContinueOnErrorIsSwallowed() {
-        mockFramework();
-        ContinuingAfterDeleteDispatcherSpy dispatcher = new ContinuingAfterDeleteDispatcherSpy();
-        dispatcher.failAt('dispatch', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(failure, 'It should be null, because the dispatcher opts into ContinueOnError.');
-    }
-
-    @IsTest
-    static void afterUndeleteWriterFailureWithContinueOnErrorIsSwallowed() {
-        mockFramework();
-        ContinuingAfterUndeleteWriterSpy writer = new ContinuingAfterUndeleteWriterSpy();
-        writer.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(failure, 'It should be null, because the writer opts into ContinueOnError.');
-    }
-
-    @IsTest
-    static void afterUndeleteDispatcherFailureWithContinueOnErrorIsSwallowed() {
-        mockFramework();
-        ContinuingAfterUndeleteDispatcherSpy dispatcher = new ContinuingAfterUndeleteDispatcherSpy();
-        dispatcher.failAt('dispatch', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(failure, 'It should be null, because the dispatcher opts into ContinueOnError.');
-    }
-
-    @IsTest
-    static void swallowedFailureStopsTheHandlerAtTheFailingRecord() {
-        mockFramework();
-        ContinuingBeforeInsertPopulatorSpy populator = new ContinuingBeforeInsertPopulatorSpy();
-        populator.failAt('action:Doe', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, populator.evaluated, 'It should be Doe alone, because the failure on Doe ends the loop before Roe is evaluated.');
-    }
-
-    @IsTest
-    static void swallowedFailureSkipsTheFailingHandlersFinalizer() {
-        mockFramework();
-        ContinuingBeforeInsertPopulatorSpy populator = new ContinuingBeforeInsertPopulatorSpy();
-        populator.failAt('action:Doe', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(populator.finalized, 'It should be null, because the failure skips the rest of the handler, including its finalizer.');
-    }
-
-    @IsTest
-    static void handlerAfterASwallowedFailureStillRuns() {
-        mockFramework();
-        ContinuingBeforeInsertPopulatorSpy first = new ContinuingBeforeInsertPopulatorSpy();
-        first.label = 'first';
-        first.failAt('action', new SpyException('Boom'));
-        BeforeInsertPopulatorSpy second = new BeforeInsertPopulatorSpy();
-        second.label = 'second';
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(first);
-        orchestrator.beforeInsert.add(second);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, second.acted, 'It should be Doe, because the first handler failure is swallowed.');
-    }
-
-    @IsTest
-    static void predicateFailureIsSwallowedWithContinueOnError() {
-        mockFramework();
-        ContinuingBeforeInsertPopulatorSpy populator = new ContinuingBeforeInsertPopulatorSpy();
-        populator.failAt('when', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(failure, 'It should be null, because ContinueOnError covers the predicate too.');
-    }
-
-    @IsTest
-    static void finalizerFailureIsSwallowedWithContinueOnError() {
-        mockFramework();
-        ContinuingBeforeInsertPopulatorSpy populator = new ContinuingBeforeInsertPopulatorSpy();
-        populator.failAt('finalize', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(failure, 'It should be null, because ContinueOnError covers the finalizer too.');
-    }
-
-    @IsTest
-    static void relatedQueryFailureIsSwallowedWithContinueOnError() {
-        mockFramework();
-        ContinuingBeforeInsertPopulatorSpy populator = new ContinuingBeforeInsertPopulatorSpy();
-        populator.failAt('relatedQuery', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(failure, 'It should be null, because ContinueOnError covers the related query too.');
-    }
-
-    @IsTest
-    static void triggerHandlerExceptionPropagatesDespiteContinueOnError() {
-        mockFramework();
-        ContinuingBeforeInsertPopulatorSpy populator = new ContinuingBeforeInsertPopulatorSpy();
-        populator.readsProvider = 'unknown';
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isInstanceOfType(
-            failure,
-            TriggerHandler.TriggerHandlerException.class,
-            'It should be the TriggerHandlerException, because a misused framework API is never swallowed.'
-        );
-    }
-
-    @IsTest
-    static void frameworkExceptionPropagatesDespiteContinueOnError() {
-        mockFramework();
-        ContinuingBeforeInsertPopulatorSpy populator = new ContinuingBeforeInsertPopulatorSpy();
-        TriggerOrchestrator nestedRunner = new TriggerOrchestrator(new TestOrchestrator());
-        populator.runNestedAt('action:Doe', nestedRunner);
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            'Called outside of a trigger context, or the trigger operation is not supported.',
-            failure?.getMessage(),
-            'It should be the nested run TriggerOrchestratorException, because framework exceptions are never swallowed.'
-        );
-    }
-
-    @IsTest
-    static void beforeInsertPopulatorPerformingDmlThrows() {
-        mockFramework();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.performDmlAt('action');
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            'BeforeInsertPopulatorSpy performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
-            failure?.getMessage(),
-            'It should be the DML guard message, because the populator performed DML in a before context.'
-        );
-    }
-
-    @IsTest
-    static void beforeInsertValidatorPerformingDmlThrows() {
-        mockFramework();
-        BeforeInsertValidatorSpy validator = new BeforeInsertValidatorSpy();
-        validator.performDmlAt('action');
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(validator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            'BeforeInsertValidatorSpy performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
-            failure?.getMessage(),
-            'It should be the DML guard message, because the validator performed DML in a before context.'
-        );
-    }
-
-    @IsTest
-    static void beforeUpdatePopulatorPerformingDmlThrows() {
-        mockFramework();
-        BeforeUpdatePopulatorSpy populator = new BeforeUpdatePopulatorSpy();
-        populator.performDmlAt('action');
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(populator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            'BeforeUpdatePopulatorSpy performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
-            failure?.getMessage(),
-            'It should be the DML guard message, because the populator performed DML in a before context.'
-        );
-    }
-
-    @IsTest
-    static void beforeUpdateValidatorPerformingDmlThrows() {
-        mockFramework();
-        BeforeUpdateValidatorSpy validator = new BeforeUpdateValidatorSpy();
-        validator.performDmlAt('action');
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(validator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            'BeforeUpdateValidatorSpy performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
-            failure?.getMessage(),
-            'It should be the DML guard message, because the validator performed DML in a before context.'
-        );
-    }
-
-    @IsTest
-    static void beforeInsertPopulatorDmlViolationIsLogged() {
-        mockFramework();
-        LoggerSpy logger = spyOnLogger();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.performDmlAt('action');
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            'BeforeInsertPopulatorSpy performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
-            logger.errors[0].getException().getMessage(),
-            'It should be the DML guard message, because the guard logs the violation before it throws.'
-        );
-    }
-
-    @IsTest
-    static void beforeInsertValidatorDmlViolationIsLogged() {
-        mockFramework();
-        LoggerSpy logger = spyOnLogger();
-        BeforeInsertValidatorSpy validator = new BeforeInsertValidatorSpy();
-        validator.performDmlAt('action');
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(validator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            'BeforeInsertValidatorSpy performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
-            logger.errors[0].getException().getMessage(),
-            'It should be the DML guard message, because the guard logs the violation before it throws.'
-        );
-    }
-
-    @IsTest
-    static void beforeUpdatePopulatorDmlViolationIsLogged() {
-        mockFramework();
-        LoggerSpy logger = spyOnLogger();
-        BeforeUpdatePopulatorSpy populator = new BeforeUpdatePopulatorSpy();
-        populator.performDmlAt('action');
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(populator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            'BeforeUpdatePopulatorSpy performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
-            logger.errors[0].getException().getMessage(),
-            'It should be the DML guard message, because the guard logs the violation before it throws.'
-        );
-    }
-
-    @IsTest
-    static void beforeUpdateValidatorDmlViolationIsLogged() {
-        mockFramework();
-        LoggerSpy logger = spyOnLogger();
-        BeforeUpdateValidatorSpy validator = new BeforeUpdateValidatorSpy();
-        validator.performDmlAt('action');
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(validator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            'BeforeUpdateValidatorSpy performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
-            logger.errors[0].getException().getMessage(),
-            'It should be the DML guard message, because the guard logs the violation before it throws.'
-        );
-    }
-
-    @IsTest
-    static void beforeInsertPopulatorGuardStillFiresAfterASwallowedFailure() {
-        mockFramework();
-        ContinuingBeforeInsertPopulatorSpy populator = new ContinuingBeforeInsertPopulatorSpy();
-        populator.performDmlAt('action:Doe');
-        populator.failAt('action:Doe', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            'ContinuingBeforeInsertPopulatorSpy performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
-            failure?.getMessage(),
-            'It should be the DML guard message, because ContinueOnError swallows only the handler exception, not the guard.'
-        );
-    }
-
-    @IsTest
-    static void beforeInsertValidatorGuardStillFiresAfterASwallowedFailure() {
-        mockFramework();
-        ContinuingBeforeInsertValidatorSpy validator = new ContinuingBeforeInsertValidatorSpy();
-        validator.performDmlAt('action:Doe');
-        validator.failAt('action:Doe', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(validator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            'ContinuingBeforeInsertValidatorSpy performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
-            failure?.getMessage(),
-            'It should be the DML guard message, because ContinueOnError swallows only the handler exception, not the guard.'
-        );
-    }
-
-    @IsTest
-    static void beforeUpdatePopulatorGuardStillFiresAfterASwallowedFailure() {
-        mockFramework();
-        ContinuingBeforeUpdatePopulatorSpy populator = new ContinuingBeforeUpdatePopulatorSpy();
-        populator.performDmlAt('action:Doe');
-        populator.failAt('action:Doe', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(populator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            'ContinuingBeforeUpdatePopulatorSpy performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
-            failure?.getMessage(),
-            'It should be the DML guard message, because ContinueOnError swallows only the handler exception, not the guard.'
-        );
-    }
-
-    @IsTest
-    static void beforeUpdateValidatorGuardStillFiresAfterASwallowedFailure() {
-        mockFramework();
-        ContinuingBeforeUpdateValidatorSpy validator = new ContinuingBeforeUpdateValidatorSpy();
-        validator.performDmlAt('action:Doe');
-        validator.failAt('action:Doe', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(validator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            'ContinuingBeforeUpdateValidatorSpy performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
-            failure?.getMessage(),
-            'It should be the DML guard message, because ContinueOnError swallows only the handler exception, not the guard.'
-        );
-    }
-
-    @IsTest
-    static void dmlInAPredicateTripsTheGuard() {
-        mockFramework();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.performDmlAt('when');
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            'BeforeInsertPopulatorSpy performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
-            failure?.getMessage(),
-            'It should be the DML guard message, because the guard also covers the predicate.'
-        );
-    }
-
-    @IsTest
-    static void dmlInAFinalizerTripsTheGuard() {
-        mockFramework();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.performDmlAt('finalize');
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            'BeforeInsertPopulatorSpy performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
-            failure?.getMessage(),
-            'It should be the DML guard message, because the guard also covers the finalizer.'
-        );
-    }
-
-    @IsTest
-    static void dmlInARelatedQueryTripsTheGuard() {
-        mockFramework();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.performDmlAt('relatedQuery');
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            'BeforeInsertPopulatorSpy performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.',
-            failure?.getMessage(),
-            'It should be the DML guard message, because the guard also covers the related query.'
-        );
-    }
-
-    @IsTest
-    static void handlerFailureAfterDmlPropagatesTheHandlersOwnException() {
-        mockFramework();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.performDmlAt('action');
-        populator.failAt('action', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isInstanceOfType(failure, SpyException.class, 'It should be the handler exception, because it propagates before the guard runs.');
-    }
-
-    @IsTest
-    static void dmlBeforeTheRunDoesNotTripTheGuard() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(new BeforeInsertPopulatorSpy());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Database.setSavepoint();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(failure, 'It should be null, because the guard counts only the DML performed while the handler runs.');
-    }
-
-    @IsTest
-    static void beforeDeleteHandlerMayPerformDml() {
-        mockFramework();
-        BeforeDeleteHandlerSpy handler = new BeforeDeleteHandlerSpy();
-        handler.performDmlAt('action');
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeDelete.add(handler);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(failure, 'It should be null, because before delete has no DML guard.');
-    }
-
-    @IsTest
-    static void afterInsertWriterMayPerformDml() {
-        mockFramework();
-        AfterInsertWriterSpy writer = new AfterInsertWriterSpy();
-        writer.performDmlAt('action');
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(failure, 'It should be null, because the after insert writer has no DML guard.');
-    }
-
-    @IsTest
-    static void beforeUpdatePopulatorStopsAfterTheDefaultThreeRuns() {
-        mockFramework();
-        BeforeUpdatePopulatorSpy populator = new BeforeUpdatePopulatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(populator);
-        List<Contact> contacts = savedContacts('Doe');
-        for (Integer run = 0; run < 3; run++) {
-            TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
-            earlierRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            earlierRun.context.newRecords = contacts;
-            earlierRun.context.oldRecords = priorVersionsOf(contacts);
-            earlierRun.run();
+    private class IdDispatcherWithFinalizerSnapshot extends IdDispatcher implements AfterInsert.Finalizer, AfterUpdate.Finalizer, AfterDelete.Finalizer, AfterUndelete.Finalizer {
+        public List<Id> dispatchedIdsWhenFinalized;
+
+        public void finalizeAfterInsert(TriggerHandler.InsertRecords records) {
+            this.dispatchedIdsWhenFinalized = this.dispatchedIds.clone();
         }
-        TriggerOrchestrator fourthRun = new TriggerOrchestrator(orchestrator);
-        fourthRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        fourthRun.context.newRecords = contacts;
-        fourthRun.context.oldRecords = priorVersionsOf(contacts);
 
-        // Test
-        Test.startTest();
-        fourthRun.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(3, populator.acted.size(), 'It should be 3, because the fourth run exceeds the default recursion depth of 3.');
-    }
-
-    @IsTest
-    static void afterUpdateWriterStopsAfterTheDefaultThreeRuns() {
-        mockFramework();
-        AfterUpdateWriterSpy writer = new AfterUpdateWriterSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(writer);
-        List<Contact> contacts = savedContacts('Doe');
-        for (Integer run = 0; run < 3; run++) {
-            TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
-            earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            earlierRun.context.newRecords = contacts;
-            earlierRun.context.oldRecords = priorVersionsOf(contacts);
-            earlierRun.run();
+        public void finalizeAfterUpdate(TriggerHandler.UpdateRecords records) {
+            this.dispatchedIdsWhenFinalized = this.dispatchedIds.clone();
         }
-        TriggerOrchestrator fourthRun = new TriggerOrchestrator(orchestrator);
-        fourthRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        fourthRun.context.newRecords = contacts;
-        fourthRun.context.oldRecords = priorVersionsOf(contacts);
 
-        // Test
-        Test.startTest();
-        fourthRun.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(3, writer.acted.size(), 'It should be 3, because the fourth run exceeds the default recursion depth of 3.');
-    }
-
-    @IsTest
-    static void afterUpdateDispatcherStopsAfterTheDefaultThreeRuns() {
-        mockFramework();
-        AfterUpdateDispatcherSpy dispatcher = new AfterUpdateDispatcherSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(dispatcher);
-        List<Contact> contacts = savedContacts('Doe');
-        for (Integer run = 0; run < 3; run++) {
-            TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
-            earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-            earlierRun.context.newRecords = contacts;
-            earlierRun.context.oldRecords = priorVersionsOf(contacts);
-            earlierRun.run();
+        public void finalizeAfterDelete(TriggerHandler.DeleteRecords records) {
+            this.dispatchedIdsWhenFinalized = this.dispatchedIds.clone();
         }
-        TriggerOrchestrator fourthRun = new TriggerOrchestrator(orchestrator);
-        fourthRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        fourthRun.context.newRecords = contacts;
-        fourthRun.context.oldRecords = priorVersionsOf(contacts);
 
-        // Test
-        Test.startTest();
-        fourthRun.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(3, calls('dispatch').size(), 'It should be 3, because the fourth run exceeds the default recursion depth of 3.');
-    }
-
-    @IsTest
-    static void beforeUpdatePopulatorRecursionGuardSetsItsOwnDepth() {
-        mockFramework();
-        GuardedBeforeUpdatePopulatorSpy populator = new GuardedBeforeUpdatePopulatorSpy();
-        populator.maxDepth = 1;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(populator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
-        earlierRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        earlierRun.context.newRecords = contacts;
-        earlierRun.context.oldRecords = priorVersionsOf(contacts);
-        earlierRun.run();
-        TriggerOrchestrator secondRun = new TriggerOrchestrator(orchestrator);
-        secondRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        secondRun.context.newRecords = contacts;
-        secondRun.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        secondRun.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, populator.acted.size(), 'It should be 1, because the handler limits its own recursion depth to 1.');
-    }
-
-    @IsTest
-    static void afterUpdateWriterRecursionGuardSetsItsOwnDepth() {
-        mockFramework();
-        GuardedAfterUpdateWriterSpy writer = new GuardedAfterUpdateWriterSpy();
-        writer.maxDepth = 1;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(writer);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
-        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        earlierRun.context.newRecords = contacts;
-        earlierRun.context.oldRecords = priorVersionsOf(contacts);
-        earlierRun.run();
-        TriggerOrchestrator secondRun = new TriggerOrchestrator(orchestrator);
-        secondRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        secondRun.context.newRecords = contacts;
-        secondRun.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        secondRun.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, writer.acted.size(), 'It should be 1, because the handler limits its own recursion depth to 1.');
-    }
-
-    @IsTest
-    static void afterUpdateDispatcherRecursionGuardSetsItsOwnDepth() {
-        mockFramework();
-        GuardedAfterUpdateDispatcherSpy dispatcher = new GuardedAfterUpdateDispatcherSpy();
-        dispatcher.maxDepth = 1;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(dispatcher);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
-        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        earlierRun.context.newRecords = contacts;
-        earlierRun.context.oldRecords = priorVersionsOf(contacts);
-        earlierRun.run();
-        TriggerOrchestrator secondRun = new TriggerOrchestrator(orchestrator);
-        secondRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        secondRun.context.newRecords = contacts;
-        secondRun.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        secondRun.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, calls('dispatch').size(), 'It should be 1, because the handler limits its own recursion depth to 1.');
-    }
-
-    @IsTest
-    static void beforeUpdatePopulatorSkipsAnExhaustedRecordBeforeItsPredicate() {
-        mockFramework();
-        GuardedBeforeUpdatePopulatorSpy populator = new GuardedBeforeUpdatePopulatorSpy();
-        populator.maxDepth = 1;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(populator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
-        earlierRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        earlierRun.context.newRecords = contacts;
-        earlierRun.context.oldRecords = priorVersionsOf(contacts);
-        earlierRun.run();
-        TriggerOrchestrator secondRun = new TriggerOrchestrator(orchestrator);
-        secondRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        secondRun.context.newRecords = contacts;
-        secondRun.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        secondRun.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, populator.evaluated.size(), 'It should be 1, because the exhausted Doe is skipped before its predicate is asked.');
-    }
-
-    @IsTest
-    static void afterUpdateWriterSkipsAnExhaustedRecordBeforeItsPredicate() {
-        mockFramework();
-        GuardedAfterUpdateWriterSpy writer = new GuardedAfterUpdateWriterSpy();
-        writer.maxDepth = 1;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(writer);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
-        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        earlierRun.context.newRecords = contacts;
-        earlierRun.context.oldRecords = priorVersionsOf(contacts);
-        earlierRun.run();
-        TriggerOrchestrator secondRun = new TriggerOrchestrator(orchestrator);
-        secondRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        secondRun.context.newRecords = contacts;
-        secondRun.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        secondRun.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, writer.evaluated.size(), 'It should be 1, because the exhausted Doe is skipped before its predicate is asked.');
-    }
-
-    @IsTest
-    static void afterUpdateDispatcherSkipsAnExhaustedRecordBeforeItsPredicate() {
-        mockFramework();
-        GuardedAfterUpdateDispatcherSpy dispatcher = new GuardedAfterUpdateDispatcherSpy();
-        dispatcher.maxDepth = 1;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(dispatcher);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
-        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        earlierRun.context.newRecords = contacts;
-        earlierRun.context.oldRecords = priorVersionsOf(contacts);
-        earlierRun.run();
-        TriggerOrchestrator secondRun = new TriggerOrchestrator(orchestrator);
-        secondRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        secondRun.context.newRecords = contacts;
-        secondRun.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        secondRun.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, dispatcher.evaluated.size(), 'It should be 1, because the exhausted Doe is skipped before its predicate is asked.');
-    }
-
-    @IsTest
-    static void beforeUpdatePopulatorUnqualifiedRunDoesNotConsumeTheBudget() {
-        mockFramework();
-        GuardedBeforeUpdatePopulatorSpy populator = new GuardedBeforeUpdatePopulatorSpy();
-        populator.maxDepth = 1;
-        populator.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(populator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
-        earlierRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        earlierRun.context.newRecords = contacts;
-        earlierRun.context.oldRecords = priorVersionsOf(contacts);
-        earlierRun.run();
-        populator.qualifying = null;
-        TriggerOrchestrator qualifiedRun = new TriggerOrchestrator(orchestrator);
-        qualifiedRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        qualifiedRun.context.newRecords = contacts;
-        qualifiedRun.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        qualifiedRun.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, populator.acted, 'It should be Doe, because a run in which Doe does not qualify leaves its budget untouched.');
-    }
-
-    @IsTest
-    static void afterUpdateWriterUnqualifiedRunDoesNotConsumeTheBudget() {
-        mockFramework();
-        GuardedAfterUpdateWriterSpy writer = new GuardedAfterUpdateWriterSpy();
-        writer.maxDepth = 1;
-        writer.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(writer);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
-        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        earlierRun.context.newRecords = contacts;
-        earlierRun.context.oldRecords = priorVersionsOf(contacts);
-        earlierRun.run();
-        writer.qualifying = null;
-        TriggerOrchestrator qualifiedRun = new TriggerOrchestrator(orchestrator);
-        qualifiedRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        qualifiedRun.context.newRecords = contacts;
-        qualifiedRun.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        qualifiedRun.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, writer.acted, 'It should be Doe, because a run in which Doe does not qualify leaves its budget untouched.');
-    }
-
-    @IsTest
-    static void afterUpdateDispatcherUnqualifiedRunDoesNotConsumeTheBudget() {
-        mockFramework();
-        GuardedAfterUpdateDispatcherSpy dispatcher = new GuardedAfterUpdateDispatcherSpy();
-        dispatcher.maxDepth = 1;
-        dispatcher.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(dispatcher);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
-        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        earlierRun.context.newRecords = contacts;
-        earlierRun.context.oldRecords = priorVersionsOf(contacts);
-        earlierRun.run();
-        dispatcher.qualifying = null;
-        TriggerOrchestrator qualifiedRun = new TriggerOrchestrator(orchestrator);
-        qualifiedRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        qualifiedRun.context.newRecords = contacts;
-        qualifiedRun.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        qualifiedRun.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe' }, dispatcher.dispatched, 'It should be Doe, because a run in which Doe does not qualify leaves its budget untouched.');
-    }
-
-    @IsTest
-    static void recursionBudgetIsTrackedPerRecord() {
-        mockFramework();
-        GuardedAfterUpdateWriterSpy writer = new GuardedAfterUpdateWriterSpy();
-        writer.maxDepth = 1;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(writer);
-        List<Contact> doe = savedContacts('Doe');
-        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
-        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        earlierRun.context.newRecords = doe;
-        earlierRun.context.oldRecords = priorVersionsOf(doe);
-        earlierRun.run();
-        List<Contact> doeAndRoe = savedContacts('Doe', 'Roe');
-        doeAndRoe[0].Id = doe[0].Id;
-        TriggerOrchestrator secondRun = new TriggerOrchestrator(orchestrator);
-        secondRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        secondRun.context.newRecords = doeAndRoe;
-        secondRun.context.oldRecords = priorVersionsOf(doeAndRoe);
-
-        // Test
-        Test.startTest();
-        secondRun.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe', 'Roe' }, writer.acted, 'It should be Doe once and Roe once, because the budget Doe used up does not apply to Roe.');
-    }
-
-    @IsTest
-    static void recursionBudgetIsTrackedPerHandlerClass() {
-        mockFramework();
-        GuardedAfterUpdateWriterSpy writer = new GuardedAfterUpdateWriterSpy();
-        writer.maxDepth = 1;
-        GuardedAfterUpdateDispatcherSpy dispatcher = new GuardedAfterUpdateDispatcherSpy();
-        dispatcher.maxDepth = 1;
-        TestOrchestrator writerOrchestrator = new TestOrchestrator();
-        writerOrchestrator.afterUpdate.add(writer);
-        TestOrchestrator dispatcherOrchestrator = new TestOrchestrator();
-        dispatcherOrchestrator.afterUpdate.add(dispatcher);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator earlierRun = new TriggerOrchestrator(writerOrchestrator);
-        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        earlierRun.context.newRecords = contacts;
-        earlierRun.context.oldRecords = priorVersionsOf(contacts);
-        earlierRun.run();
-        TriggerOrchestrator dispatcherRun = new TriggerOrchestrator(dispatcherOrchestrator);
-        dispatcherRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        dispatcherRun.context.newRecords = contacts;
-        dispatcherRun.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        dispatcherRun.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, calls('dispatch').size(), 'It should be 1, because the budget the writer used up belongs to the writer class alone.');
-    }
-
-    @IsTest
-    static void twoInstancesOfOneHandlerClassShareOneBudget() {
-        mockFramework();
-        GuardedAfterUpdateWriterSpy first = new GuardedAfterUpdateWriterSpy();
-        first.maxDepth = 1;
-        first.label = 'first';
-        GuardedAfterUpdateWriterSpy second = new GuardedAfterUpdateWriterSpy();
-        second.maxDepth = 1;
-        second.label = 'second';
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(first);
-        orchestrator.afterUpdate.add(second);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'first.action:Doe' }, calls('action'), 'It should be the first instance alone, because both instances draw on one budget per class.');
-    }
-
-    @IsTest
-    static void beforeUpdateAndAfterUpdateBudgetsAreIndependent() {
-        mockFramework();
-        GuardBothUpdateContextsSpy handler = new GuardBothUpdateContextsSpy();
-        handler.maxDepth = 1;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(handler);
-        orchestrator.afterUpdate.add(handler);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
-        earlierRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        earlierRun.context.newRecords = contacts;
-        earlierRun.context.oldRecords = priorVersionsOf(contacts);
-        earlierRun.run();
-        TriggerOrchestrator afterUpdateRun = new TriggerOrchestrator(orchestrator);
-        afterUpdateRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        afterUpdateRun.context.newRecords = contacts;
-        afterUpdateRun.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        afterUpdateRun.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe', 'Doe' }, handler.acted, 'It should be Doe in both contexts, because each context keeps its own budget.');
-    }
-
-    @IsTest
-    static void exhaustedRecordsSkipTheFinalizer() {
-        mockFramework();
-        GuardedAfterUpdateWriterSpy writer = new GuardedAfterUpdateWriterSpy();
-        writer.maxDepth = 1;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(writer);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
-        earlierRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        earlierRun.context.newRecords = contacts;
-        earlierRun.context.oldRecords = priorVersionsOf(contacts);
-        earlierRun.run();
-        TriggerOrchestrator secondRun = new TriggerOrchestrator(orchestrator);
-        secondRun.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        secondRun.context.newRecords = contacts;
-        secondRun.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        secondRun.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, calls('finalize').size(), 'It should be 1, because a run with only exhausted records processes nothing to finalize.');
-    }
-
-    @IsTest
-    static void beforeUpdateValidatorHasNoRecursionLimit() {
-        mockFramework();
-        BeforeUpdateValidatorSpy validator = new BeforeUpdateValidatorSpy();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(validator);
-        List<Contact> contacts = savedContacts('Doe');
-        for (Integer run = 0; run < 3; run++) {
-            TriggerOrchestrator earlierRun = new TriggerOrchestrator(orchestrator);
-            earlierRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-            earlierRun.context.newRecords = contacts;
-            earlierRun.context.oldRecords = priorVersionsOf(contacts);
-            earlierRun.run();
+        public void finalizeAfterUndelete(TriggerHandler.UndeleteRecords records) {
+            this.dispatchedIdsWhenFinalized = this.dispatchedIds.clone();
         }
-        TriggerOrchestrator fourthRun = new TriggerOrchestrator(orchestrator);
-        fourthRun.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        fourthRun.context.newRecords = contacts;
-        fourthRun.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        fourthRun.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(4, validator.acted.size(), 'It should be 4, because validators are not recursion tracked.');
     }
 
-    private class GuardBothUpdateContextsSpy extends GuardedBeforeUpdatePopulatorSpy implements AfterUpdate.Writer, AfterUpdate.RecursionGuard {
+    private class TitlePopulatorWithFinalizer extends TitlePopulator implements BeforeInsert.Finalizer, BeforeUpdate.Finalizer {
+        public Set<String> finalizedNames;
+
+        public void finalizeBeforeInsert(TriggerHandler.InsertRecords records) {
+            this.finalizedNames = records.getValuesOf(Contact.LastName);
+        }
+
+        public void finalizeBeforeUpdate(TriggerHandler.UpdateRecords records) {
+            this.finalizedNames = records.getValuesOf(Contact.LastName);
+        }
+    }
+
+    private class DoeValidatorWithFinalizer extends DoeValidator implements BeforeInsert.Finalizer, BeforeUpdate.Finalizer {
+        public Set<String> finalizedNames;
+
+        public void finalizeBeforeInsert(TriggerHandler.InsertRecords records) {
+            this.finalizedNames = records.getValuesOf(Contact.LastName);
+        }
+
+        public void finalizeBeforeUpdate(TriggerHandler.UpdateRecords records) {
+            this.finalizedNames = records.getValuesOf(Contact.LastName);
+        }
+    }
+
+    private class AccountWriterWithFinalizer extends AccountWriter implements AfterInsert.Finalizer, AfterUpdate.Finalizer, AfterDelete.Finalizer, AfterUndelete.Finalizer {
+        public Set<Id> finalizedIds;
+
+        public void finalizeAfterInsert(TriggerHandler.InsertRecords records) {
+            this.finalizedIds = records.getIds();
+        }
+
+        public void finalizeAfterUpdate(TriggerHandler.UpdateRecords records) {
+            this.finalizedIds = records.getIds();
+        }
+
+        public void finalizeAfterDelete(TriggerHandler.DeleteRecords records) {
+            this.finalizedIds = records.getIds();
+        }
+
+        public void finalizeAfterUndelete(TriggerHandler.UndeleteRecords records) {
+            this.finalizedIds = records.getIds();
+        }
+    }
+
+    private class IdDispatcherWithFinalizer extends IdDispatcher implements AfterInsert.Finalizer, AfterUpdate.Finalizer, AfterDelete.Finalizer, AfterUndelete.Finalizer {
+        public Set<Id> finalizedIds;
+
+        public void finalizeAfterInsert(TriggerHandler.InsertRecords records) {
+            this.finalizedIds = records.getIds();
+        }
+
+        public void finalizeAfterUpdate(TriggerHandler.UpdateRecords records) {
+            this.finalizedIds = records.getIds();
+        }
+
+        public void finalizeAfterDelete(TriggerHandler.DeleteRecords records) {
+            this.finalizedIds = records.getIds();
+        }
+
+        public void finalizeAfterUndelete(TriggerHandler.UndeleteRecords records) {
+            this.finalizedIds = records.getIds();
+        }
+    }
+
+    private class DeletionBlockerWithFinalizer extends DeletionBlocker implements BeforeDelete.Finalizer {
+        public Set<Id> finalizedIds;
+
+        public void finalizeBeforeDelete(TriggerHandler.DeleteRecords records) {
+            this.finalizedIds = records.getIds();
+        }
+    }
+
+    private class TitleCopyingFinalizer extends TitlePopulator implements BeforeInsert.Finalizer {
+        public void finalizeBeforeInsert(TriggerHandler.InsertRecords records) {
+            for (TriggerHandler.InsertRecord record : records.getRecords()) {
+                record.put(Contact.Description, record.getNewSObject().get(Contact.Title));
+            }
+        }
+    }
+
+    private class DescriptionCopyingPopulator implements BeforeInsert.Populator {
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            record.put(Contact.Department, record.getNewSObject().get(Contact.Description));
+        }
+    }
+
+    private virtual class FailingValidator implements BeforeInsert.Validator, BeforeUpdate.Validator {
+        public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
+            throw new TestException('The validator failed.');
+        }
+
+        public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
+            throw new TestException('The validator failed.');
+        }
+    }
+
+    private class FailingValidatorWithContinueOnError extends FailingValidator implements BeforeInsert.ContinueOnError, BeforeUpdate.ContinueOnError {
+    }
+
+    private virtual class FailingWriter implements AfterInsert.Writer, AfterUpdate.Writer, AfterDelete.Writer, AfterUndelete.Writer {
+        public Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            throw new TestException('The writer failed.');
+        }
+
         public Boolean writeOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
-            return this.evaluate(record);
+            return record.equals(Contact.LastName, 'Doe');
         }
 
         public void writeOnAfterUpdate(TriggerHandler.UpdateRecord record, TriggerHandler.UnitOfWork unitOfWork) {
-            this.act(record);
+            throw new TestException('The writer failed.');
+        }
+
+        public Boolean writeOnAfterDeleteWhen(TriggerHandler.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterDelete(TriggerHandler.DeleteRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            throw new TestException('The writer failed.');
+        }
+
+        public Boolean writeOnAfterUndeleteWhen(TriggerHandler.UndeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterUndelete(TriggerHandler.UndeleteRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            throw new TestException('The writer failed.');
+        }
+    }
+
+    private class FailingWriterWithContinueOnError extends FailingWriter implements AfterInsert.ContinueOnError, AfterUpdate.ContinueOnError, AfterDelete.ContinueOnError, AfterUndelete.ContinueOnError {
+    }
+
+    private virtual class FailingDispatcher implements AfterInsert.Dispatcher, AfterUpdate.Dispatcher, AfterDelete.Dispatcher, AfterUndelete.Dispatcher {
+        public Boolean dispatchOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterInsert(TriggerHandler.InsertRecords records) {
+            throw new TestException('The dispatcher failed.');
+        }
+
+        public Boolean dispatchOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterUpdate(TriggerHandler.UpdateRecords records) {
+            throw new TestException('The dispatcher failed.');
+        }
+
+        public Boolean dispatchOnAfterDeleteWhen(TriggerHandler.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterDelete(TriggerHandler.DeleteRecords records) {
+            throw new TestException('The dispatcher failed.');
+        }
+
+        public Boolean dispatchOnAfterUndeleteWhen(TriggerHandler.UndeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterUndelete(TriggerHandler.UndeleteRecords records) {
+            throw new TestException('The dispatcher failed.');
+        }
+    }
+
+    private class FailingDispatcherWithContinueOnError extends FailingDispatcher implements AfterInsert.ContinueOnError, AfterUpdate.ContinueOnError, AfterDelete.ContinueOnError, AfterUndelete.ContinueOnError {
+    }
+
+    private virtual class FailingDeleteHandler implements BeforeDelete.Handler {
+        public Boolean qualifiesForBeforeDeleteWhen(TriggerHandler.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void onBeforeDelete(TriggerHandler.DeleteRecord record) {
+            throw new TestException('The handler failed.');
+        }
+    }
+
+    private class FailingDeleteHandlerWithContinueOnError extends FailingDeleteHandler implements BeforeDelete.ContinueOnError {
+    }
+
+    private class TitlePopulatorFailingOnDoeWithContinueOnError implements BeforeInsert.Populator, BeforeInsert.ContinueOnError {
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return true;
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            if (record.equals(Contact.LastName, 'Doe')) {
+                throw new TestException('The populator failed.');
+            }
+
+            record.put(Contact.Title, 'CEO');
+        }
+    }
+
+    private class FailingPopulatorWithContinueOnErrorAndFinalizer extends FailingPopulator implements BeforeInsert.ContinueOnError, BeforeInsert.Finalizer {
+        public void finalizeBeforeInsert(TriggerHandler.InsertRecords records) {
+            for (TriggerHandler.InsertRecord record : records.getRecords()) {
+                record.put(Contact.Description, 'Finalized');
+            }
+        }
+    }
+
+    private class PopulatorFailingOnQualificationWithContinueOnError implements BeforeInsert.Populator, BeforeInsert.ContinueOnError {
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            throw new TestException('The qualification failed.');
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            record.put(Contact.Title, 'CEO');
+        }
+    }
+
+    private class TitlePopulatorFailingOnFinalizeWithContinueOnError extends TitlePopulator implements BeforeInsert.Finalizer, BeforeInsert.ContinueOnError {
+        public void finalizeBeforeInsert(TriggerHandler.InsertRecords records) {
+            throw new TestException('The finalizer failed.');
+        }
+    }
+
+    private class UnregisteredProviderReaderWithContinueOnError implements BeforeInsert.Populator, BeforeInsert.ContinueOnError {
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            record.getRelated('unknown');
+        }
+    }
+
+    private class NestedRunPopulatorWithContinueOnError implements BeforeInsert.Populator, BeforeInsert.ContinueOnError {
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            new TriggerOrchestrator(new TestOrchestrator()).run();
+        }
+    }
+
+    private class DmlPopulator implements BeforeInsert.Populator, BeforeUpdate.Populator {
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            Database.setSavepoint();
+        }
+
+        public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
+            Database.setSavepoint();
+        }
+    }
+
+    private class DmlValidator implements BeforeInsert.Validator, BeforeUpdate.Validator {
+        public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
+            Database.setSavepoint();
+            record.addError('Doe is not allowed.');
+        }
+
+        public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
+            Database.setSavepoint();
+            record.addError('Doe is not allowed.');
+        }
+    }
+
+    private class DmlQualificationPopulator implements BeforeInsert.Populator {
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            Database.setSavepoint();
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            record.put(Contact.Title, 'CEO');
+        }
+    }
+
+    private class TitlePopulatorWithDmlFinalizer extends TitlePopulator implements BeforeInsert.Finalizer {
+        public void finalizeBeforeInsert(TriggerHandler.InsertRecords records) {
+            Database.setSavepoint();
+        }
+    }
+
+    private class TitlePopulatorWithDmlRelatedQuery extends TitlePopulator implements BeforeInsert.RelatedQuery {
+        public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
+            Database.setSavepoint();
+            return new Map<String, BeforeInsert.RecordsProvider>();
+        }
+    }
+
+    private virtual class FailingDmlPopulator implements BeforeInsert.Populator, BeforeUpdate.Populator {
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            Database.setSavepoint();
+            throw new TestException('The populator failed.');
+        }
+
+        public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
+            Database.setSavepoint();
+            throw new TestException('The populator failed.');
+        }
+    }
+
+    private class FailingDmlPopulatorWithContinueOnError extends FailingDmlPopulator implements BeforeInsert.ContinueOnError, BeforeUpdate.ContinueOnError {
+    }
+
+    private virtual class FailingDmlValidator implements BeforeInsert.Validator, BeforeUpdate.Validator {
+        public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
+            Database.setSavepoint();
+            throw new TestException('The validator failed.');
+        }
+
+        public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
+            Database.setSavepoint();
+            throw new TestException('The validator failed.');
+        }
+    }
+
+    private class FailingDmlValidatorWithContinueOnError extends FailingDmlValidator implements BeforeInsert.ContinueOnError, BeforeUpdate.ContinueOnError {
+    }
+
+    private class DmlDeletionBlocker implements BeforeDelete.Handler {
+        public Boolean qualifiesForBeforeDeleteWhen(TriggerHandler.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void onBeforeDelete(TriggerHandler.DeleteRecord record) {
+            Database.setSavepoint();
+            record.getOldSObject().addError('Doe cannot be deleted.');
+        }
+    }
+
+    private class DmlAccountWriter implements AfterInsert.Writer {
+        public Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            Database.setSavepoint();
+            unitOfWork.toInsert(new Account(Name = (String) record.getNewSObject().get(Contact.LastName)));
+        }
+    }
+
+    private class TitlePopulatorWithRecursionGuard extends TitlePopulator implements BeforeUpdate.RecursionGuard {
+        public Integer maxRecursionDepthOnBeforeUpdate() {
+            return 1;
+        }
+    }
+
+    private class AccountWriterWithRecursionGuard extends AccountWriter implements AfterUpdate.RecursionGuard {
+        public Integer maxRecursionDepthOnAfterUpdate() {
+            return 1;
+        }
+    }
+
+    private class IdDispatcherWithRecursionGuard extends IdDispatcher implements AfterUpdate.RecursionGuard {
+        public Integer maxRecursionDepthOnAfterUpdate() {
+            return 1;
+        }
+    }
+
+    private class QualificationCountingPopulator implements BeforeUpdate.Populator {
+        public Integer qualificationCalls = 0;
+
+        public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            this.qualificationCalls++;
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
+            record.put(Contact.Title, 'CEO');
+        }
+    }
+
+    private class QualificationCountingWriter implements AfterUpdate.Writer {
+        public Integer qualificationCalls = 0;
+
+        public Boolean writeOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+            this.qualificationCalls++;
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterUpdate(TriggerHandler.UpdateRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(new Account(Name = (String) record.getNewSObject().get(Contact.LastName)));
+        }
+    }
+
+    private class QualificationCountingDispatcher implements AfterUpdate.Dispatcher {
+        public Integer qualificationCalls = 0;
+
+        public Boolean dispatchOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+            this.qualificationCalls++;
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterUpdate(TriggerHandler.UpdateRecords records) {
+        }
+    }
+
+    private class DepthOneUpdateHandler implements BeforeUpdate.Populator, BeforeUpdate.RecursionGuard, AfterUpdate.Dispatcher, AfterUpdate.RecursionGuard {
+        public List<Id> dispatchedIds = new List<Id>();
+
+        public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
+            record.put(Contact.Title, 'CEO');
+        }
+
+        public Integer maxRecursionDepthOnBeforeUpdate() {
+            return 1;
+        }
+
+        public Boolean dispatchOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterUpdate(TriggerHandler.UpdateRecords records) {
+            this.dispatchedIds.addAll(records.getIds());
         }
 
         public Integer maxRecursionDepthOnAfterUpdate() {
-            return this.maxDepth;
+            return 1;
         }
     }
 
-    @IsTest
-    static void beforeInsertParentQueryAttachesTheNewParent() {
-        mockFramework();
-        Account parent = savedAccount('Acme');
-        SOQL.mock(Account.SObjectType).thenReturn(parent);
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        List<Contact> contacts = newContacts('Doe');
-        contacts[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = contacts;
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual('Acme', populator.newParents[0].get(Account.Name), 'It should be Acme, because Doe points at it.');
-    }
-
-    @IsTest
-    static void afterInsertParentQueryAttachesTheNewParentFromTheSavedRecords() {
-        mockFramework();
-        Account parent = savedAccount('Acme');
-        List<Contact> contacts = savedContacts('Doe');
-        contacts[0].AccountId = parent.Id;
-        Contact saved = new Contact(Id = contacts[0].Id, AccountId = parent.Id);
-        saved.Account = parent;
-        SOQL.mock(Contact.SObjectType).thenReturn(saved);
-        SOQL.mock(Account.SObjectType).thenReturn(new Account(Id = parent.Id, Name = 'Queried'));
-        AfterInsertWriterSpy writer = new AfterInsertWriterSpy();
-        writer.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = contacts;
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual('Acme', writer.newParents[0].get(Account.Name), 'It should be Acme, because the saved Doe carries it.');
-    }
-
-    @IsTest
-    static void beforeUpdateParentQueryAttachesTheNewParent() {
-        mockFramework();
-        Account parent = savedAccount('Acme');
-        SOQL.mock(Account.SObjectType).thenReturn(parent);
-        BeforeUpdatePopulatorSpy populator = new BeforeUpdatePopulatorSpy();
-        populator.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(populator);
-        List<Contact> contacts = savedContacts('Doe');
-        List<Contact> priorVersions = priorVersionsOf(contacts);
-        contacts[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersions;
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual('Acme', populator.newParents[0].get(Account.Name), 'It should be Acme, because the new Doe points at it.');
-    }
-
-    @IsTest
-    static void beforeUpdatePriorParentQueryAttachesTheOldParent() {
-        mockFramework();
-        Account parent = savedAccount('Acme');
-        SOQL.mock(Account.SObjectType).thenReturn(parent);
-        BeforeUpdatePopulatorSpy populator = new BeforeUpdatePopulatorSpy();
-        populator.priorParentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(populator);
-        List<Contact> contacts = savedContacts('Doe');
-        List<Contact> priorVersions = priorVersionsOf(contacts);
-        priorVersions[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersions;
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual('Acme', populator.oldParents[0].get(Account.Name), 'It should be Acme, because the old Doe points at it.');
-    }
-
-    @IsTest
-    static void afterUpdateParentQueryAttachesTheNewParentFromTheSavedRecords() {
-        mockFramework();
-        Account parent = savedAccount('Acme');
-        List<Contact> contacts = savedContacts('Doe');
-        List<Contact> priorVersions = priorVersionsOf(contacts);
-        contacts[0].AccountId = parent.Id;
-        Contact saved = new Contact(Id = contacts[0].Id, AccountId = parent.Id);
-        saved.Account = parent;
-        SOQL.mock(Contact.SObjectType).thenReturn(saved);
-        SOQL.mock(Account.SObjectType).thenReturn(new Account(Id = parent.Id, Name = 'Queried'));
-        AfterUpdateWriterSpy writer = new AfterUpdateWriterSpy();
-        writer.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersions;
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual('Acme', writer.newParents[0].get(Account.Name), 'It should be Acme, because the saved Doe carries it.');
-    }
-
-    @IsTest
-    static void afterUpdatePriorParentQueryAttachesTheOldParent() {
-        mockFramework();
-        Account parent = savedAccount('Acme');
-        SOQL.mock(Account.SObjectType).thenReturn(parent);
-        AfterUpdateWriterSpy writer = new AfterUpdateWriterSpy();
-        writer.priorParentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(writer);
-        List<Contact> contacts = savedContacts('Doe');
-        List<Contact> priorVersions = priorVersionsOf(contacts);
-        priorVersions[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersions;
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual('Acme', writer.oldParents[0].get(Account.Name), 'It should be Acme, because the old Doe points at it.');
-    }
-
-    @IsTest
-    static void beforeDeletePriorParentQueryAttachesTheOldParent() {
-        mockFramework();
-        Account parent = savedAccount('Acme');
-        SOQL.mock(Account.SObjectType).thenReturn(parent);
-        BeforeDeleteHandlerSpy handler = new BeforeDeleteHandlerSpy();
-        handler.priorParentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeDelete.add(handler);
-        List<Contact> contacts = savedContacts('Doe');
-        contacts[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        runner.context.oldRecords = contacts;
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual('Acme', handler.oldParents[0].get(Account.Name), 'It should be Acme, because the deleted Doe points at it.');
-    }
-
-    @IsTest
-    static void afterDeletePriorParentQueryAttachesTheOldParent() {
-        mockFramework();
-        Account parent = savedAccount('Acme');
-        SOQL.mock(Account.SObjectType).thenReturn(parent);
-        AfterDeleteWriterSpy writer = new AfterDeleteWriterSpy();
-        writer.priorParentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(writer);
-        List<Contact> contacts = savedContacts('Doe');
-        contacts[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = contacts;
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual('Acme', writer.oldParents[0].get(Account.Name), 'It should be Acme, because the deleted Doe points at it.');
-    }
-
-    @IsTest
-    static void afterUndeleteParentQueryAttachesTheNewParentFromTheSavedRecords() {
-        mockFramework();
-        Account parent = savedAccount('Acme');
-        List<Contact> contacts = savedContacts('Doe');
-        contacts[0].AccountId = parent.Id;
-        Contact saved = new Contact(Id = contacts[0].Id, AccountId = parent.Id);
-        saved.Account = parent;
-        SOQL.mock(Contact.SObjectType).thenReturn(saved);
-        SOQL.mock(Account.SObjectType).thenReturn(new Account(Id = parent.Id, Name = 'Queried'));
-        AfterUndeleteWriterSpy writer = new AfterUndeleteWriterSpy();
-        writer.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = contacts;
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual('Acme', writer.newParents[0].get(Account.Name), 'It should be Acme, because the saved Doe carries it.');
-    }
-
-    @IsTest
-    static void lookupsDeclaredByTwoHandlersCostOneQuery() {
-        mockFramework();
-        Account parent = savedAccount('Acme');
-        SOQL.mock(Account.SObjectType).thenReturn(parent);
-        BeforeInsertPopulatorSpy first = new BeforeInsertPopulatorSpy();
-        first.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        BeforeInsertValidatorSpy second = new BeforeInsertValidatorSpy();
-        second.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Industry) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(first);
-        orchestrator.beforeInsert.add(second);
-        List<Contact> contacts = newContacts('Doe');
-        contacts[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = contacts;
-
-        // Test
-        Test.startTest();
-        Integer queries = queriesIssuedBy(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, queries, 'It should be 1, because both handlers declare the same lookup.');
-    }
-
-    @IsTest
-    static void fieldsDeclaredByTwoHandlersAreMergedIntoTheParentQuery() {
-        mockFramework();
-        Account parent = savedAccount('Acme');
-        parent.Industry = 'Tech';
-        SOQL.mock(Account.SObjectType).thenReturn(parent);
-        BeforeInsertPopulatorSpy first = new BeforeInsertPopulatorSpy();
-        first.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        BeforeInsertPopulatorSpy second = new BeforeInsertPopulatorSpy();
-        second.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Industry) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(first);
-        orchestrator.beforeInsert.add(second);
-        List<Contact> contacts = newContacts('Doe');
-        contacts[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = contacts;
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            new List<Object>{ 'Acme', 'Tech' },
-            new List<Object>{ first.newParents[0].get(Account.Name), first.newParents[0].get(Account.Industry) },
-            'It should be Acme and Tech, because one query requests the fields of both handlers and the mock strips the rest.'
-        );
-    }
-
-    @IsTest
-    static void parentDeclaredByALaterHandlerIsAvailableToAnEarlierOne() {
-        mockFramework();
-        Account parent = savedAccount('Acme');
-        SOQL.mock(Account.SObjectType).thenReturn(parent);
-        BeforeInsertPopulatorSpy first = new BeforeInsertPopulatorSpy();
-        BeforeInsertPopulatorSpy second = new BeforeInsertPopulatorSpy();
-        second.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(first);
-        orchestrator.beforeInsert.add(second);
-        List<Contact> contacts = newContacts('Doe');
-        contacts[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = contacts;
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual('Acme', first.newParents[0].get(Account.Name), 'It should be Acme, because parents are attached before the first handler runs.');
-    }
-
-    @IsTest
-    static void unsetLookupIssuesNoParentQuery() {
-        mockFramework();
-        SOQL.mock(Account.SObjectType).thenReturn(savedAccount('Acme'));
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Integer queries = queriesIssuedBy(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(0, queries, 'It should be 0, because Doe has no AccountId to resolve.');
-    }
-
-    @IsTest
-    static void lookupToAMissingParentAttachesNull() {
-        mockFramework();
-        Account acme = savedAccount('Acme');
-        SOQL.mock(Account.SObjectType).thenReturn(acme);
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        List<Contact> contacts = newContacts('Doe', 'Roe');
-        contacts[0].AccountId = acme.Id;
-        contacts[1].AccountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = contacts;
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            new List<Object>{ 'Acme', null },
-            new List<Object>{ populator.newParents[0]?.get(Account.Name), populator.newParents[1] },
-            'It should be Acme for Doe and null for Roe, because the query finds no Account for the lookup of Roe.'
-        );
-    }
-
-    @IsTest
-    static void priorParentQueryAloneLeavesTheNewSideUnenriched() {
-        mockFramework();
-        Account parent = savedAccount('Acme');
-        SOQL.mock(Account.SObjectType).thenReturn(parent);
-        BeforeUpdatePopulatorSpy populator = new BeforeUpdatePopulatorSpy();
-        populator.priorParentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(populator);
-        List<Contact> contacts = savedContacts('Doe');
-        contacts[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(populator.newParents[0], 'It should be null, because only the old side is declared.');
-    }
-
-    @IsTest
-    static void changedLookupResolvesBothSidesInOneQuery() {
-        mockFramework();
-        Account acme = savedAccount('Acme');
-        Account globex = savedAccount('Globex');
-        SOQL.mock(Account.SObjectType).thenReturn(new List<Account>{ acme, globex });
-        SOQL.mock(Account.SObjectType).thenReturn(new List<Account>());
-        BeforeUpdatePopulatorSpy populator = new BeforeUpdatePopulatorSpy();
-        populator.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        populator.priorParentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(populator);
-        List<Contact> contacts = savedContacts('Doe');
-        List<Contact> priorVersions = priorVersionsOf(contacts);
-        contacts[0].AccountId = acme.Id;
-        priorVersions[0].AccountId = globex.Id;
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersions;
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            new List<Object>{ 'Acme', 'Globex' },
-            new List<Object>{ populator.newParents[0]?.get(Account.Name), populator.oldParents[0]?.get(Account.Name) },
-            'It should be Acme new and Globex old, because both Ids go into the first query and a second query would find nothing.'
-        );
-    }
-
-    @IsTest
-    static void afterUpdateOldParentIsReusedFromTheSavedRecordQuery() {
-        mockFramework();
-        Account parent = savedAccount('Acme');
-        List<Contact> contacts = savedContacts('Doe');
-        contacts[0].AccountId = parent.Id;
-        List<Contact> priorVersions = priorVersionsOf(contacts);
-        Contact saved = new Contact(Id = contacts[0].Id, AccountId = parent.Id);
-        saved.Account = parent;
-        SOQL.mock(Contact.SObjectType).thenReturn(saved);
-        SOQL.mock(Account.SObjectType).thenReturn(new Account(Id = parent.Id, Name = 'Requeried'));
-        AfterUpdateWriterSpy writer = new AfterUpdateWriterSpy();
-        writer.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        writer.priorParentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersions;
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual('Acme', writer.oldParents[0]?.get(Account.Name), 'It should be Acme, because the old side reuses the parent cached by the saved record query.');
-    }
-
-    @IsTest
-    static void beforeInsertPopulatorRepointingALookupRefreshesTheParentForLaterHandlers() {
-        mockFramework();
-        Account acme = savedAccount('Acme');
-        Account globex = savedAccount('Globex');
-        SOQL.mock(Account.SObjectType).thenReturn(acme);
-        SOQL.mock(Account.SObjectType).thenReturn(globex);
-        BeforeInsertPopulatorSpy first = new BeforeInsertPopulatorSpy();
-        first.populatedField = Contact.AccountId;
-        first.populatedValue = globex.Id;
-        BeforeInsertPopulatorSpy second = new BeforeInsertPopulatorSpy();
-        second.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(first);
-        orchestrator.beforeInsert.add(second);
-        List<Contact> contacts = newContacts('Doe');
-        contacts[0].AccountId = acme.Id;
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = contacts;
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual('Globex', second.newParents[0].get(Account.Name), 'It should be Globex, because the first populator repointed Doe to it.');
-    }
-
-    @IsTest
-    static void beforeUpdatePopulatorRepointingALookupRefreshesTheParentForLaterHandlers() {
-        mockFramework();
-        Account acme = savedAccount('Acme');
-        Account globex = savedAccount('Globex');
-        SOQL.mock(Account.SObjectType).thenReturn(acme);
-        SOQL.mock(Account.SObjectType).thenReturn(globex);
-        BeforeUpdatePopulatorSpy first = new BeforeUpdatePopulatorSpy();
-        first.populatedField = Contact.AccountId;
-        first.populatedValue = globex.Id;
-        BeforeUpdatePopulatorSpy second = new BeforeUpdatePopulatorSpy();
-        second.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(first);
-        orchestrator.beforeUpdate.add(second);
-        List<Contact> contacts = savedContacts('Doe');
-        contacts[0].AccountId = acme.Id;
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual('Globex', second.newParents[0].get(Account.Name), 'It should be Globex, because the first populator repointed Doe to it.');
-    }
-
-    @IsTest
-    static void repointToAnAlreadyQueriedParentIssuesNoQuery() {
-        mockFramework();
-        Account acme = savedAccount('Acme');
-        Account globex = savedAccount('Globex');
-        SOQL.mock(Account.SObjectType).thenReturn(new List<Account>{ acme, globex });
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.qualifying = new Set<String>{ 'Doe' };
-        populator.populatedField = Contact.AccountId;
-        populator.populatedValue = globex.Id;
-        populator.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        List<Contact> contacts = newContacts('Doe', 'Roe');
-        contacts[0].AccountId = acme.Id;
-        contacts[1].AccountId = globex.Id;
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = contacts;
-
-        // Test
-        Test.startTest();
-        Integer queries = queriesIssuedBy(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, queries, 'It should be the initial query alone, because Globex was already queried for Roe.');
-    }
-
-    @IsTest
-    static void clearedLookupDetachesTheParentForLaterHandlers() {
-        mockFramework();
-        Account parent = savedAccount('Acme');
-        SOQL.mock(Account.SObjectType).thenReturn(parent);
-        BeforeInsertPopulatorSpy first = new BeforeInsertPopulatorSpy();
-        first.populatedField = Contact.AccountId;
-        first.populatedValue = null;
-        BeforeInsertPopulatorSpy second = new BeforeInsertPopulatorSpy();
-        second.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(first);
-        orchestrator.beforeInsert.add(second);
-        List<Contact> contacts = newContacts('Doe');
-        contacts[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = contacts;
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(second.newParents[0], 'It should be null, because the first populator cleared the lookup.');
-    }
-
-    @IsTest
-    static void repointedLookupLeavesTheOldParentUnchanged() {
-        mockFramework();
-        Account acme = savedAccount('Acme');
-        Account globex = savedAccount('Globex');
-        SOQL.mock(Account.SObjectType).thenReturn(acme);
-        SOQL.mock(Account.SObjectType).thenReturn(globex);
-        BeforeUpdatePopulatorSpy first = new BeforeUpdatePopulatorSpy();
-        first.populatedField = Contact.AccountId;
-        first.populatedValue = globex.Id;
-        BeforeUpdatePopulatorSpy second = new BeforeUpdatePopulatorSpy();
-        second.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        second.priorParentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(first);
-        orchestrator.beforeUpdate.add(second);
-        List<Contact> contacts = savedContacts('Doe');
-        contacts[0].AccountId = acme.Id;
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual('Acme', second.oldParents[0].get(Account.Name), 'It should be Acme, because repointing refreshes the new side only.');
-    }
-
-    @IsTest
-    static void beforeInsertRelatedQueryProvidesRecordsByKey() {
-        mockFramework();
-        Account acme = savedAccount('Acme');
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.providers.put('accounts', new Provider(new List<Account>{ acme }, Account.Id));
-        populator.readsProvider = 'accounts';
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(acme, populator.related.getFirstWhereKeyEquals(acme.Id), 'It should be Acme, because the provider keys its records by Id.');
-    }
-
-    @IsTest
-    static void afterInsertRelatedQueryProvidesRecordsByKey() {
-        mockFramework();
-        Account acme = savedAccount('Acme');
-        AfterInsertWriterSpy writer = new AfterInsertWriterSpy();
-        writer.providers.put('accounts', new Provider(new List<Account>{ acme }, Account.Id));
-        writer.readsProvider = 'accounts';
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(acme, writer.related.getFirstWhereKeyEquals(acme.Id), 'It should be Acme, because the provider keys its records by Id.');
-    }
-
-    @IsTest
-    static void beforeUpdateRelatedQueryProvidesRecordsByKey() {
-        mockFramework();
-        Account acme = savedAccount('Acme');
-        BeforeUpdatePopulatorSpy populator = new BeforeUpdatePopulatorSpy();
-        populator.providers.put('accounts', new Provider(new List<Account>{ acme }, Account.Id));
-        populator.readsProvider = 'accounts';
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeUpdate.add(populator);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(acme, populator.related.getFirstWhereKeyEquals(acme.Id), 'It should be Acme, because the provider keys its records by Id.');
-    }
-
-    @IsTest
-    static void afterUpdateRelatedQueryProvidesRecordsByKey() {
-        mockFramework();
-        Account acme = savedAccount('Acme');
-        AfterUpdateWriterSpy writer = new AfterUpdateWriterSpy();
-        writer.providers.put('accounts', new Provider(new List<Account>{ acme }, Account.Id));
-        writer.readsProvider = 'accounts';
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(writer);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(acme, writer.related.getFirstWhereKeyEquals(acme.Id), 'It should be Acme, because the provider keys its records by Id.');
-    }
-
-    @IsTest
-    static void beforeDeleteRelatedQueryProvidesRecordsByKey() {
-        mockFramework();
-        Account acme = savedAccount('Acme');
-        BeforeDeleteHandlerSpy handler = new BeforeDeleteHandlerSpy();
-        handler.providers.put('accounts', new Provider(new List<Account>{ acme }, Account.Id));
-        handler.readsProvider = 'accounts';
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeDelete.add(handler);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(acme, handler.related.getFirstWhereKeyEquals(acme.Id), 'It should be Acme, because the provider keys its records by Id.');
-    }
-
-    @IsTest
-    static void afterDeleteRelatedQueryProvidesRecordsByKey() {
-        mockFramework();
-        Account acme = savedAccount('Acme');
-        AfterDeleteWriterSpy writer = new AfterDeleteWriterSpy();
-        writer.providers.put('accounts', new Provider(new List<Account>{ acme }, Account.Id));
-        writer.readsProvider = 'accounts';
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(acme, writer.related.getFirstWhereKeyEquals(acme.Id), 'It should be Acme, because the provider keys its records by Id.');
-    }
-
-    @IsTest
-    static void afterUndeleteRelatedQueryProvidesRecordsByKey() {
-        mockFramework();
-        Account acme = savedAccount('Acme');
-        AfterUndeleteWriterSpy writer = new AfterUndeleteWriterSpy();
-        writer.providers.put('accounts', new Provider(new List<Account>{ acme }, Account.Id));
-        writer.readsProvider = 'accounts';
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(acme, writer.related.getFirstWhereKeyEquals(acme.Id), 'It should be Acme, because the provider keys its records by Id.');
-    }
-
-    @IsTest
-    static void providerIsQueriedWithEveryTriggerRecord() {
-        mockFramework();
-        Provider provider = new Provider(new List<Account>{ savedAccount('Acme') }, Account.Id);
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.qualifying = new Set<String>{ 'Doe' };
-        populator.providers.put('accounts', provider);
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(new List<String>{ 'Doe', 'Roe' }, provider.queriedFor, 'It should be Doe and Roe, because the provider runs before qualification.');
-    }
-
-    @IsTest
-    static void relatedQueryRunsOncePerHandler() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(new BeforeInsertPopulatorSpy());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, calls('relatedQuery').size(), 'It should be 1, because providers are resolved once per handler, not once for each of the two records.');
-    }
-
-    @IsTest
-    static void relatedQueryRunsBeforeTheFirstPredicate() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(new BeforeInsertPopulatorSpy());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{ 'spy.relatedQuery', 'spy.when:Doe' },
-            enrichCallsOf(new Set<String>{ 'relatedQuery', 'when' }),
-            'It should be the related query ahead of the predicate, because providers are resolved before records are evaluated.'
-        );
-    }
-
-    @IsTest
-    static void nullRelatedQueryResultMeansNoProviders() {
-        mockFramework();
-        BeforeInsertPopulatorSpy populator = new BeforeInsertPopulatorSpy();
-        populator.providers = null;
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isNull(failure, 'It should be no exception, because a null provider map is treated as empty.');
-    }
-
-    @IsTest
-    static void providersAreScopedToTheHandlerThatDeclaredThem() {
-        mockFramework();
-        BeforeInsertPopulatorSpy first = new BeforeInsertPopulatorSpy();
-        first.providers.put('accounts', new Provider(new List<Account>{ savedAccount('Acme') }, Account.Id));
-        BeforeInsertPopulatorSpy second = new BeforeInsertPopulatorSpy();
-        second.readsProvider = 'accounts';
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(first);
-        orchestrator.beforeInsert.add(second);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = newContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isInstanceOfType(
-            failure,
-            TriggerHandler.TriggerHandlerException.class,
-            'It should be a TriggerHandlerException, because the accounts provider belongs to the first handler only.'
-        );
-    }
-
-    @IsTest
-    static void providerSeesTheParentsAttachedByParentQuery() {
-        mockFramework();
-        Account parent = savedAccount('Acme');
-        SOQL.mock(Account.SObjectType).thenReturn(parent);
-        EnrichParentReadingPopulator populator = new EnrichParentReadingPopulator();
-        populator.parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.beforeInsert.add(populator);
-        List<Contact> contacts = newContacts('Doe');
-        contacts[0].AccountId = parent.Id;
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.BEFORE_INSERT;
-        runner.context.newRecords = contacts;
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual('Acme', populator.provider.parentNameSeen, 'It should be Acme, because parents are attached before any related query runs.');
-    }
-
-    private static List<String> enrichCallsOf(Set<String> steps) {
-        List<String> matchingCalls = new List<String>();
-
-        for (String call : TriggerOrchestratorTest.callLog) {
-            if (steps.contains(call.substringAfter('.').substringBefore(':'))) {
-                matchingCalls.add(call);
-            }
-        }
-
-        return matchingCalls;
-    }
-
-    private class EnrichParentReadingPopulator extends BeforeInsertPopulatorSpy {
-        public EnrichParentReadingProvider provider = new EnrichParentReadingProvider();
-
-        public override Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
-            return new Map<String, BeforeInsert.RecordsProvider>{ 'parents' => this.provider };
+    private class FinalizeCountingWriter extends AccountWriter implements AfterUpdate.Finalizer {
+        public Integer finalizeCalls = 0;
+
+        public void finalizeAfterUpdate(TriggerHandler.UpdateRecords records) {
+            this.finalizeCalls++;
         }
     }
 
-    private class EnrichParentReadingProvider implements BeforeInsert.RecordsProvider {
-        public String parentNameSeen;
+    private virtual class PriorAccountNamePopulator implements BeforeUpdate.Populator, BeforeUpdate.PriorParentQuery {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnBeforeUpdate() {
+            return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
+        }
 
-        public List<SObject> query(TriggerHandler.InsertRecords triggerRecords) {
-            SObject parent = triggerRecords.getRecords()[0].getNewParent('Account');
-            this.parentNameSeen = (String) parent?.get(Account.Name);
-            return new List<SObject>();
+        public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
+            record.put(Contact.Department, record.getOldParent('Account')?.get(Account.Name));
+        }
+    }
+
+    private class PriorAccountNamePopulatorWithParentQuery extends PriorAccountNamePopulator implements BeforeUpdate.ParentQuery {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate() {
+            return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
+        }
+    }
+
+    private class UndeclaredAccountNamePopulator implements BeforeInsert.Populator, BeforeUpdate.Populator {
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            record.put(Contact.Description, record.getNewParent('Account')?.get(Account.Name));
+        }
+
+        public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
+            record.put(Contact.Description, record.getNewParent('Account')?.get(Account.Name));
+        }
+    }
+
+    private class AccountIndustryPopulator implements BeforeInsert.Populator, BeforeInsert.ParentQuery {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert() {
+            return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Industry) };
+        }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            record.put(Contact.Description, record.getNewParent('Account')?.get(Account.Industry));
+        }
+    }
+
+    private class AccountRepointingPopulator implements BeforeInsert.Populator, BeforeUpdate.Populator {
+        private Id accountId;
+
+        public AccountRepointingPopulator(Id accountId) {
+            this.accountId = accountId;
+        }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            record.put(Contact.AccountId, this.accountId);
+        }
+
+        public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
+            record.put(Contact.AccountId, this.accountId);
+        }
+    }
+
+    private virtual class AccountNameWriter implements AfterInsert.Writer, AfterInsert.ParentQuery, AfterUpdate.Writer, AfterUpdate.ParentQuery, AfterUndelete.Writer, AfterUndelete.ParentQuery {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert() {
+            return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
+        }
+
+        public Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(new Task(Subject = (String) record.getNewParent('Account')?.get(Account.Name)));
+        }
+
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
+            return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
+        }
+
+        public Boolean writeOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterUpdate(TriggerHandler.UpdateRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(new Task(Subject = (String) record.getNewParent('Account')?.get(Account.Name)));
+        }
+
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUndelete() {
+            return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
+        }
+
+        public Boolean writeOnAfterUndeleteWhen(TriggerHandler.UndeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterUndelete(TriggerHandler.UndeleteRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(new Task(Subject = (String) record.getNewParent('Account')?.get(Account.Name)));
+        }
+    }
+
+    private class AccountNameWriterWithPriorParentQuery extends AccountNameWriter implements AfterUpdate.PriorParentQuery {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnAfterUpdate() {
+            return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
+        }
+    }
+
+    private class PriorAccountNameWriter implements AfterUpdate.Writer, AfterUpdate.PriorParentQuery, AfterDelete.Writer, AfterDelete.PriorParentQuery {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnAfterUpdate() {
+            return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
+        }
+
+        public Boolean writeOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterUpdate(TriggerHandler.UpdateRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(new Task(Subject = (String) record.getOldParent('Account')?.get(Account.Name)));
+        }
+
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterDelete() {
+            return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
+        }
+
+        public Boolean writeOnAfterDeleteWhen(TriggerHandler.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterDelete(TriggerHandler.DeleteRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(new Task(Subject = (String) record.getOldParent('Account')?.get(Account.Name)));
+        }
+    }
+
+    private class PriorAccountDeletionBlocker implements BeforeDelete.Handler, BeforeDelete.PriorParentQuery {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeDelete() {
+            return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
+        }
+
+        public Boolean qualifiesForBeforeDeleteWhen(TriggerHandler.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void onBeforeDelete(TriggerHandler.DeleteRecord record) {
+            record.getOldSObject().addError('Contacts of ' + (String) record.getOldParent('Account')?.get(Account.Name) + ' cannot be deleted.');
+        }
+    }
+
+    private class RelatedAccountProvider implements BeforeInsert.RecordsProvider, AfterInsert.RecordsProvider, BeforeUpdate.RecordsProvider, AfterUpdate.RecordsProvider, BeforeDelete.RecordsProvider, AfterDelete.RecordsProvider, AfterUndelete.RecordsProvider {
+        public List<SObject> query(TriggerHandler.InsertRecords records) {
+            return SOQL.of(Account.SObjectType).with(Account.Name).byIds(records.getIdsOf(Contact.AccountId)).toList();
+        }
+
+        public List<SObject> query(TriggerHandler.UpdateRecords records) {
+            return SOQL.of(Account.SObjectType).with(Account.Name).byIds(records.getIdsOf(Contact.AccountId)).toList();
+        }
+
+        public List<SObject> query(TriggerHandler.DeleteRecords records) {
+            return SOQL.of(Account.SObjectType).with(Account.Name).byIds(records.getIdsOf(Contact.AccountId)).toList();
+        }
+
+        public List<SObject> query(TriggerHandler.UndeleteRecords records) {
+            return SOQL.of(Account.SObjectType).with(Account.Name).byIds(records.getIdsOf(Contact.AccountId)).toList();
         }
 
         public String keyOf(SObject record) {
+            return record.Id;
+        }
+    }
+
+    private class RelatedAccountNamePopulator implements BeforeInsert.Populator, BeforeInsert.RelatedQuery, BeforeUpdate.Populator, BeforeUpdate.RelatedQuery {
+        public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
+            return new Map<String, BeforeInsert.RecordsProvider>{ 'accounts' => new RelatedAccountProvider() };
+        }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            record.put(Contact.Department, record.getRelated('accounts').getFirstWhereKeyEquals(record.getNewSObject().get(Contact.AccountId))?.get(Account.Name));
+        }
+
+        public Map<String, BeforeUpdate.RecordsProvider> queryRelatedOnBeforeUpdate() {
+            return new Map<String, BeforeUpdate.RecordsProvider>{ 'accounts' => new RelatedAccountProvider() };
+        }
+
+        public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
+            record.put(Contact.Department, record.getRelated('accounts').getFirstWhereKeyEquals(record.getNewSObject().get(Contact.AccountId))?.get(Account.Name));
+        }
+    }
+
+    private class RelatedAccountNameWriter implements AfterInsert.Writer, AfterInsert.RelatedQuery, AfterUpdate.Writer, AfterUpdate.RelatedQuery, AfterDelete.Writer, AfterDelete.RelatedQuery, AfterUndelete.Writer, AfterUndelete.RelatedQuery {
+        public Map<String, AfterInsert.RecordsProvider> queryRelatedOnAfterInsert() {
+            return new Map<String, AfterInsert.RecordsProvider>{ 'accounts' => new RelatedAccountProvider() };
+        }
+
+        public Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(
+                new Task(Subject = (String) record.getRelated('accounts').getFirstWhereKeyEquals(record.getNewSObject().get(Contact.AccountId))?.get(Account.Name))
+            );
+        }
+
+        public Map<String, AfterUpdate.RecordsProvider> queryRelatedOnAfterUpdate() {
+            return new Map<String, AfterUpdate.RecordsProvider>{ 'accounts' => new RelatedAccountProvider() };
+        }
+
+        public Boolean writeOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterUpdate(TriggerHandler.UpdateRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(
+                new Task(Subject = (String) record.getRelated('accounts').getFirstWhereKeyEquals(record.getNewSObject().get(Contact.AccountId))?.get(Account.Name))
+            );
+        }
+
+        public Map<String, AfterDelete.RecordsProvider> queryRelatedOnAfterDelete() {
+            return new Map<String, AfterDelete.RecordsProvider>{ 'accounts' => new RelatedAccountProvider() };
+        }
+
+        public Boolean writeOnAfterDeleteWhen(TriggerHandler.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterDelete(TriggerHandler.DeleteRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(
+                new Task(Subject = (String) record.getRelated('accounts').getFirstWhereKeyEquals(record.getOldSObject().get(Contact.AccountId))?.get(Account.Name))
+            );
+        }
+
+        public Map<String, AfterUndelete.RecordsProvider> queryRelatedOnAfterUndelete() {
+            return new Map<String, AfterUndelete.RecordsProvider>{ 'accounts' => new RelatedAccountProvider() };
+        }
+
+        public Boolean writeOnAfterUndeleteWhen(TriggerHandler.UndeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterUndelete(TriggerHandler.UndeleteRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(
+                new Task(Subject = (String) record.getRelated('accounts').getFirstWhereKeyEquals(record.getNewSObject().get(Contact.AccountId))?.get(Account.Name))
+            );
+        }
+    }
+
+    private class RelatedAccountDeletionBlocker implements BeforeDelete.Handler, BeforeDelete.RelatedQuery {
+        public Map<String, BeforeDelete.RecordsProvider> queryRelatedOnBeforeDelete() {
+            return new Map<String, BeforeDelete.RecordsProvider>{ 'accounts' => new RelatedAccountProvider() };
+        }
+
+        public Boolean qualifiesForBeforeDeleteWhen(TriggerHandler.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void onBeforeDelete(TriggerHandler.DeleteRecord record) {
+            record.getOldSObject()
+                .addError(
+                    'Contacts of ' +
+                        (String) record.getRelated('accounts').getFirstWhereKeyEquals(record.getOldSObject().get(Contact.AccountId))?.get(Account.Name) +
+                        ' cannot be deleted.'
+                );
+        }
+    }
+
+    private class UndeclaredRelatedAccountNamePopulator implements BeforeInsert.Populator {
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            record.put(Contact.Department, record.getRelated('accounts').getFirstWhereKeyEquals(record.getNewSObject().get(Contact.AccountId))?.get(Account.Name));
+        }
+    }
+
+    private class RelatedAccountTitlePopulator implements BeforeInsert.Populator, BeforeInsert.RelatedQuery {
+        public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
+            return new Map<String, BeforeInsert.RecordsProvider>{ 'accounts' => new RelatedAccountProvider() };
+        }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.getRelated('accounts').getFirstWhereKeyEquals(record.getNewSObject().get(Contact.AccountId)) != null;
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            record.put(Contact.Title, 'CEO');
+        }
+    }
+
+    private class LastNameProvider implements BeforeInsert.RecordsProvider {
+        public Set<String> lastNames;
+
+        public List<SObject> query(TriggerHandler.InsertRecords records) {
+            this.lastNames = records.getValuesOf(Contact.LastName);
+            return new List<Account>();
+        }
+
+        public String keyOf(SObject record) {
+            return record.Id;
+        }
+    }
+
+    private class ParentReadingProvider implements BeforeInsert.RecordsProvider {
+        public Set<String> accountNames;
+
+        public List<SObject> query(TriggerHandler.InsertRecords records) {
+            this.accountNames = records.getValuesOf('Account', Account.Name);
+            return new List<Account>();
+        }
+
+        public String keyOf(SObject record) {
+            return record.Id;
+        }
+    }
+
+    private class TitlePopulatorWithRelatedQuery extends TitlePopulator implements BeforeInsert.RelatedQuery {
+        private BeforeInsert.RecordsProvider provider;
+
+        public TitlePopulatorWithRelatedQuery(BeforeInsert.RecordsProvider provider) {
+            this.provider = provider;
+        }
+
+        public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
+            return new Map<String, BeforeInsert.RecordsProvider>{ 'lastNames' => this.provider };
+        }
+    }
+
+    private class TitlePopulatorWithNullRelatedQuery extends TitlePopulator implements BeforeInsert.RelatedQuery {
+        public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
             return null;
         }
     }
 
-    @IsTest
-    static void afterInsertWriterRegistrationsAreCommittedByTheSharedUnit() {
-        mockFramework();
-        UowAfterInsertSnapshotDispatcher dispatcher = new UowAfterInsertSnapshotDispatcher();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(new AfterInsertWriterSpy());
-        orchestrator.afterInsert.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(0, dispatcher.committedAtDispatch, 'It should be 0, because the shared unit does not commit while a later handler still runs.');
-        Assert.areEqual(
-            new List<String>{ 'Doe' },
-            insertedAccountNames(TriggerOrchestratorTest.TRIGGER_UOW),
-            'It should be the Account registered for Doe, because the shared unit commits once the last handler is done.'
-        );
-    }
-
-    @IsTest
-    static void afterUpdateWriterRegistrationsAreCommittedByTheSharedUnit() {
-        mockFramework();
-        UowAfterUpdateSnapshotDispatcher dispatcher = new UowAfterUpdateSnapshotDispatcher();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(new AfterUpdateWriterSpy());
-        orchestrator.afterUpdate.add(dispatcher);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(0, dispatcher.committedAtDispatch, 'It should be 0, because the shared unit does not commit while a later handler still runs.');
-        Assert.areEqual(
-            new List<String>{ 'Doe' },
-            insertedAccountNames(TriggerOrchestratorTest.TRIGGER_UOW),
-            'It should be the Account registered for Doe, because the shared unit commits once the last handler is done.'
-        );
-    }
-
-    @IsTest
-    static void afterDeleteWriterRegistrationsAreCommittedByTheSharedUnit() {
-        mockFramework();
-        UowAfterDeleteSnapshotDispatcher dispatcher = new UowAfterDeleteSnapshotDispatcher();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(new AfterDeleteWriterSpy());
-        orchestrator.afterDelete.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(0, dispatcher.committedAtDispatch, 'It should be 0, because the shared unit does not commit while a later handler still runs.');
-        Assert.areEqual(
-            new List<String>{ 'Doe' },
-            insertedAccountNames(TriggerOrchestratorTest.TRIGGER_UOW),
-            'It should be the Account registered for Doe, because the shared unit commits once the last handler is done.'
-        );
-    }
-
-    @IsTest
-    static void afterUndeleteWriterRegistrationsAreCommittedByTheSharedUnit() {
-        mockFramework();
-        UowAfterUndeleteSnapshotDispatcher dispatcher = new UowAfterUndeleteSnapshotDispatcher();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(new AfterUndeleteWriterSpy());
-        orchestrator.afterUndelete.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(0, dispatcher.committedAtDispatch, 'It should be 0, because the shared unit does not commit while a later handler still runs.');
-        Assert.areEqual(
-            new List<String>{ 'Doe' },
-            insertedAccountNames(TriggerOrchestratorTest.TRIGGER_UOW),
-            'It should be the Account registered for Doe, because the shared unit commits once the last handler is done.'
-        );
-    }
-
-    @IsTest
-    static void afterInsertWriterWithOwnUnitOfWorkCommitsItsOwnUnit() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(new OwnUnitAfterInsertWriterSpy());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{ 'Doe' },
-            insertedAccountNames(TriggerOrchestratorTest.OWN_UNIT),
-            'It should be the Account registered for Doe, because the writer returns its own unit of work.'
-        );
-    }
-
-    @IsTest
-    static void afterUpdateWriterWithOwnUnitOfWorkCommitsItsOwnUnit() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(new OwnUnitAfterUpdateWriterSpy());
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{ 'Doe' },
-            insertedAccountNames(TriggerOrchestratorTest.OWN_UNIT),
-            'It should be the Account registered for Doe, because the writer returns its own unit of work.'
-        );
-    }
-
-    @IsTest
-    static void afterDeleteWriterWithOwnUnitOfWorkCommitsItsOwnUnit() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(new OwnUnitAfterDeleteWriterSpy());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{ 'Doe' },
-            insertedAccountNames(TriggerOrchestratorTest.OWN_UNIT),
-            'It should be the Account registered for Doe, because the writer returns its own unit of work.'
-        );
-    }
-
-    @IsTest
-    static void afterUndeleteWriterWithOwnUnitOfWorkCommitsItsOwnUnit() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(new OwnUnitAfterUndeleteWriterSpy());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{ 'Doe' },
-            insertedAccountNames(TriggerOrchestratorTest.OWN_UNIT),
-            'It should be the Account registered for Doe, because the writer returns its own unit of work.'
-        );
-    }
-
-    @IsTest
-    static void afterInsertContinueOnErrorWriterCommitsBeforeTheNextHandler() {
-        mockFramework();
-        UowAfterInsertSnapshotDispatcher dispatcher = new UowAfterInsertSnapshotDispatcher();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(new ContinuingAfterInsertWriterSpy());
-        orchestrator.afterInsert.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, dispatcher.committedAtDispatch, 'It should be 1, because a ContinueOnError writer commits its automatic unit before the next handler runs.');
-    }
-
-    @IsTest
-    static void afterUpdateContinueOnErrorWriterCommitsBeforeTheNextHandler() {
-        mockFramework();
-        UowAfterUpdateSnapshotDispatcher dispatcher = new UowAfterUpdateSnapshotDispatcher();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(new ContinuingAfterUpdateWriterSpy());
-        orchestrator.afterUpdate.add(dispatcher);
-        List<Contact> contacts = savedContacts('Doe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, dispatcher.committedAtDispatch, 'It should be 1, because a ContinueOnError writer commits its automatic unit before the next handler runs.');
-    }
-
-    @IsTest
-    static void afterDeleteContinueOnErrorWriterCommitsBeforeTheNextHandler() {
-        mockFramework();
-        UowAfterDeleteSnapshotDispatcher dispatcher = new UowAfterDeleteSnapshotDispatcher();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(new ContinuingAfterDeleteWriterSpy());
-        orchestrator.afterDelete.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, dispatcher.committedAtDispatch, 'It should be 1, because a ContinueOnError writer commits its automatic unit before the next handler runs.');
-    }
-
-    @IsTest
-    static void afterUndeleteContinueOnErrorWriterCommitsBeforeTheNextHandler() {
-        mockFramework();
-        UowAfterUndeleteSnapshotDispatcher dispatcher = new UowAfterUndeleteSnapshotDispatcher();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(new ContinuingAfterUndeleteWriterSpy());
-        orchestrator.afterUndelete.add(dispatcher);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(1, dispatcher.committedAtDispatch, 'It should be 1, because a ContinueOnError writer commits its automatic unit before the next handler runs.');
-    }
-
-    @IsTest
-    static void afterInsertContinueOnErrorWriterFailureDiscardsItsRegistrations() {
-        mockFramework();
-        ContinuingAfterInsertWriterSpy writer = new ContinuingAfterInsertWriterSpy();
-        writer.failAt('action:Roe', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>(),
-            insertedAccountNames(TriggerOrchestratorTest.TRIGGER_UOW),
-            'It should be empty, because the failure on Roe skips the commit of the Account registered for Doe.'
-        );
-    }
-
-    @IsTest
-    static void afterUpdateContinueOnErrorWriterFailureDiscardsItsRegistrations() {
-        mockFramework();
-        ContinuingAfterUpdateWriterSpy writer = new ContinuingAfterUpdateWriterSpy();
-        writer.failAt('action:Roe', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUpdate.add(writer);
-        List<Contact> contacts = savedContacts('Doe', 'Roe');
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UPDATE;
-        runner.context.newRecords = contacts;
-        runner.context.oldRecords = priorVersionsOf(contacts);
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>(),
-            insertedAccountNames(TriggerOrchestratorTest.TRIGGER_UOW),
-            'It should be empty, because the failure on Roe skips the commit of the Account registered for Doe.'
-        );
-    }
-
-    @IsTest
-    static void afterDeleteContinueOnErrorWriterFailureDiscardsItsRegistrations() {
-        mockFramework();
-        ContinuingAfterDeleteWriterSpy writer = new ContinuingAfterDeleteWriterSpy();
-        writer.failAt('action:Roe', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterDelete.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_DELETE;
-        runner.context.oldRecords = savedContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>(),
-            insertedAccountNames(TriggerOrchestratorTest.TRIGGER_UOW),
-            'It should be empty, because the failure on Roe skips the commit of the Account registered for Doe.'
-        );
-    }
-
-    @IsTest
-    static void afterUndeleteContinueOnErrorWriterFailureDiscardsItsRegistrations() {
-        mockFramework();
-        ContinuingAfterUndeleteWriterSpy writer = new ContinuingAfterUndeleteWriterSpy();
-        writer.failAt('action:Roe', new SpyException('Boom'));
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterUndelete.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_UNDELETE;
-        runner.context.newRecords = savedContacts('Doe', 'Roe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>(),
-            insertedAccountNames(TriggerOrchestratorTest.TRIGGER_UOW),
-            'It should be empty, because the failure on Roe skips the commit of the Account registered for Doe.'
-        );
-    }
-
-    @IsTest
-    static void registrationsOfEveryPlainWriterAreCommitted() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(new AfterInsertWriterSpy());
-        orchestrator.afterInsert.add(new AfterInsertWriterSpy());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(2, insertedAccountNames(TriggerOrchestratorTest.TRIGGER_UOW).size(), 'It should be 2, because the registrations of both writers are committed.');
-    }
-
-    @IsTest
-    static void sharedUnitMergesUpdatesOfTheSameRecordFromTwoWriters() {
-        mockFramework();
-        Id accountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
-        UowSameAccountWriter first = new UowSameAccountWriter();
-        first.target = new Account(Id = accountId, Name = 'Acme');
-        UowSameAccountWriter second = new UowSameAccountWriter();
-        second.target = new Account(Id = accountId, Industry = 'Technology');
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(first);
-        orchestrator.afterInsert.add(second);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        List<SObject> updatedAccounts = DML.retrieveResultFor(TriggerOrchestratorTest.TRIGGER_UOW).updatesOf(Account.SObjectType).records();
-        Assert.areEqual(
-            new List<Object>{ 'Acme', 'Technology' },
-            new List<Object>{ updatedAccounts[0].get(Account.Name), updatedAccounts[0].get(Account.Industry) },
-            'It should be Acme and Technology on one Account, because the shared unit merges the second update of the same Account into the first registration.'
-        );
-    }
-
-    @IsTest
-    static void ownUnitIsNotCommittedWhenNoRecordQualifies() {
-        mockFramework();
-        OwnUnitAfterInsertWriterSpy writer = new OwnUnitAfterInsertWriterSpy();
-        writer.ownUnit.toInsert(new Account(Name = 'Preregistered'));
-        writer.qualifying = new Set<String>();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(writer);
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>(),
-            insertedAccountNames(TriggerOrchestratorTest.OWN_UNIT),
-            'It should be empty, because no record qualifies, so the Preregistered Account is never committed.'
-        );
-    }
-
-    @IsTest
-    static void ownUnitOfWorkTakesPrecedenceOverTheAutomaticUnit() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(new UowOwnContinuingWriter());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{ 'Doe' },
-            insertedAccountNames(TriggerOrchestratorTest.OWN_UNIT),
-            'It should be the Account registered for Doe, because the own unit wins over the automatic unit of a ContinueOnError writer.'
-        );
-    }
-
-    @IsTest
-    static void failingSharedCommitPropagates() {
-        mockFramework();
-        DML.mock(TriggerOrchestratorTest.TRIGGER_UOW).exceptionOnInserts();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(new AfterInsertWriterSpy());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        Exception failure = runCatching(runner);
-        Test.stopTest();
-
-        // Verify
-        Assert.isInstanceOfType(failure, DmlException.class, 'It should be the commit DmlException, because a failed commit of a plain writer\'s registrations propagates.');
-    }
-
-    @IsTest
-    static void continueOnErrorWriterCommitFailureIsLogged() {
-        mockFramework();
-        DML.mock(TriggerOrchestratorTest.TRIGGER_UOW).exceptionOnInserts();
-        LoggerSpy logger = spyOnLogger();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(new ContinuingAfterInsertWriterSpy());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.isInstanceOfType(
-            logger.errors[0].getException(),
-            DmlException.class,
-            'It should be the commit DmlException, because the automatic unit commits inside the error handling of the writer.'
-        );
-    }
-
-    @IsTest
-    static void unitOfWorkToInsertRecordRegistersAnInsert() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(new UowInsertRecordWriter());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            1,
-            DML.retrieveResultFor(TriggerOrchestratorTest.TRIGGER_UOW).insertsOf(Account.SObjectType).records().size(),
-            'It should be 1, because toInsert(DML.Record) registers the Account.'
-        );
-    }
-
-    @IsTest
-    static void unitOfWorkToUpdateRegistersAnUpdate() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(new UowUpdateWriter());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            1,
-            DML.retrieveResultFor(TriggerOrchestratorTest.TRIGGER_UOW).updatesOf(Account.SObjectType).records().size(),
-            'It should be 1, because toUpdate registers the Account.'
-        );
-    }
-
-    @IsTest
-    static void unitOfWorkToUpdateRecordRegistersAnUpdate() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(new UowUpdateRecordWriter());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            1,
-            DML.retrieveResultFor(TriggerOrchestratorTest.TRIGGER_UOW).updatesOf(Account.SObjectType).records().size(),
-            'It should be 1, because toUpdate(DML.Record) registers the Account.'
-        );
-    }
-
-    @IsTest
-    static void unitOfWorkToUpsertRegistersAnUpsert() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(new UowUpsertWriter());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            1,
-            DML.retrieveResultFor(TriggerOrchestratorTest.TRIGGER_UOW).upsertsOf(Account.SObjectType).records().size(),
-            'It should be 1, because toUpsert registers the Account.'
-        );
-    }
-
-    @IsTest
-    static void unitOfWorkToDeleteRegistersADelete() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(new UowDeleteWriter());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            1,
-            DML.retrieveResultFor(TriggerOrchestratorTest.TRIGGER_UOW).deletesOf(Account.SObjectType).records().size(),
-            'It should be 1, because toDelete registers the Account.'
-        );
-    }
-
-    @IsTest
-    static void unitOfWorkToPublishRegistersAnEvent() {
-        mockFramework();
-        TestOrchestrator orchestrator = new TestOrchestrator();
-        orchestrator.afterInsert.add(new UowPublishWriter());
-        TriggerOrchestrator runner = new TriggerOrchestrator(orchestrator);
-        runner.context.triggerOperation = System.TriggerOperation.AFTER_INSERT;
-        runner.context.newRecords = savedContacts('Doe');
-
-        // Test
-        Test.startTest();
-        runner.run();
-        Test.stopTest();
-
-        // Verify
-        Assert.areEqual(
-            1,
-            DML.retrieveResultFor(TriggerOrchestratorTest.TRIGGER_UOW).eventsOf(Account.SObjectType).records().size(),
-            'It should be 1, because toPublish registers the event.'
-        );
-    }
-
-    private class UowAfterInsertSnapshotDispatcher extends AfterInsertDispatcherSpy {
-        public Integer committedAtDispatch;
-
-        public override void dispatchOnAfterInsert(TriggerHandler.InsertRecords records) {
-            this.committedAtDispatch = insertedAccountNames(TriggerOrchestratorTest.TRIGGER_UOW).size();
+    private class AccountNamePopulatorWithRelatedQuery extends AccountNamePopulator implements BeforeInsert.RelatedQuery {
+        private BeforeInsert.RecordsProvider provider;
+
+        public AccountNamePopulatorWithRelatedQuery(BeforeInsert.RecordsProvider provider) {
+            this.provider = provider;
+        }
+
+        public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
+            return new Map<String, BeforeInsert.RecordsProvider>{ 'accountNames' => this.provider };
         }
     }
 
-    private class UowAfterUpdateSnapshotDispatcher extends AfterUpdateDispatcherSpy {
-        public Integer committedAtDispatch;
-
-        public override void dispatchOnAfterUpdate(TriggerHandler.UpdateRecords records) {
-            this.committedAtDispatch = insertedAccountNames(TriggerOrchestratorTest.TRIGGER_UOW).size();
+    private class FailingRelatedQueryPopulatorWithContinueOnError extends TitlePopulator implements BeforeInsert.RelatedQuery, BeforeInsert.ContinueOnError {
+        public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
+            throw new TestException('The related query failed.');
         }
     }
 
-    private class UowAfterDeleteSnapshotDispatcher extends AfterDeleteDispatcherSpy {
-        public Integer committedAtDispatch;
+    private class CommitCountingDispatcher implements AfterInsert.Dispatcher, AfterUpdate.Dispatcher, AfterDelete.Dispatcher, AfterUndelete.Dispatcher {
+        public Integer committedAccounts;
 
-        public override void dispatchOnAfterDelete(TriggerHandler.DeleteRecords records) {
-            this.committedAtDispatch = insertedAccountNames(TriggerOrchestratorTest.TRIGGER_UOW).size();
+        public Boolean dispatchOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterInsert(TriggerHandler.InsertRecords records) {
+            this.committedAccounts = DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size();
+        }
+
+        public Boolean dispatchOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterUpdate(TriggerHandler.UpdateRecords records) {
+            this.committedAccounts = DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size();
+        }
+
+        public Boolean dispatchOnAfterDeleteWhen(TriggerHandler.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterDelete(TriggerHandler.DeleteRecords records) {
+            this.committedAccounts = DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size();
+        }
+
+        public Boolean dispatchOnAfterUndeleteWhen(TriggerHandler.UndeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterUndelete(TriggerHandler.UndeleteRecords records) {
+            this.committedAccounts = DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size();
         }
     }
 
-    private class UowAfterUndeleteSnapshotDispatcher extends AfterUndeleteDispatcherSpy {
-        public Integer committedAtDispatch;
+    private virtual class AccountWriterWithOwnUnitOfWork extends AccountWriter implements AfterInsert.OwnUnitOfWork, AfterUpdate.OwnUnitOfWork, AfterDelete.OwnUnitOfWork, AfterUndelete.OwnUnitOfWork {
+        public DML.Committable ownUnitOfWorkOnAfterInsert() {
+            return new DML().identifier('ownUnit');
+        }
 
-        public override void dispatchOnAfterUndelete(TriggerHandler.UndeleteRecords records) {
-            this.committedAtDispatch = insertedAccountNames(TriggerOrchestratorTest.TRIGGER_UOW).size();
+        public DML.Committable ownUnitOfWorkOnAfterUpdate() {
+            return new DML().identifier('ownUnit');
+        }
+
+        public DML.Committable ownUnitOfWorkOnAfterDelete() {
+            return new DML().identifier('ownUnit');
+        }
+
+        public DML.Committable ownUnitOfWorkOnAfterUndelete() {
+            return new DML().identifier('ownUnit');
         }
     }
 
-    private class UowOwnContinuingWriter extends OwnUnitAfterInsertWriterSpy implements AfterInsert.ContinueOnError {
+    private class AccountWriterWithOwnUnitOfWorkAndContinueOnError extends AccountWriterWithOwnUnitOfWork implements AfterInsert.ContinueOnError {
     }
 
-    private class UowInsertRecordWriter extends AfterInsertWriterSpy {
-        public override void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
-            unitOfWork.toInsert(DML.Record(new Account(Name = 'Doe')));
+    private class AccountWriterWithPrefilledOwnUnitOfWork extends AccountWriter implements AfterInsert.OwnUnitOfWork {
+        public DML.Committable ownUnitOfWorkOnAfterInsert() {
+            return new DML().toInsert(new Account(Name = 'Acme')).identifier('ownUnit');
         }
     }
 
-    private class UowUpdateWriter extends AfterInsertWriterSpy {
-        public override void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
-            unitOfWork.toUpdate(savedAccount('Acme'));
+    private class AccountWriterWithContinueOnError extends AccountWriter implements AfterInsert.ContinueOnError, AfterUpdate.ContinueOnError, AfterDelete.ContinueOnError, AfterUndelete.ContinueOnError {
+    }
+
+    private class FailingAccountWriterWithContinueOnError implements AfterInsert.Writer, AfterInsert.ContinueOnError, AfterUpdate.Writer, AfterUpdate.ContinueOnError, AfterDelete.Writer, AfterDelete.ContinueOnError, AfterUndelete.Writer, AfterUndelete.ContinueOnError {
+        public Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(new Account(Name = (String) record.getNewSObject().get(Contact.LastName)));
+            throw new TestException('The writer failed.');
+        }
+
+        public Boolean writeOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterUpdate(TriggerHandler.UpdateRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(new Account(Name = (String) record.getNewSObject().get(Contact.LastName)));
+            throw new TestException('The writer failed.');
+        }
+
+        public Boolean writeOnAfterDeleteWhen(TriggerHandler.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterDelete(TriggerHandler.DeleteRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(new Account(Name = (String) record.getOldSObject().get(Contact.LastName)));
+            throw new TestException('The writer failed.');
+        }
+
+        public Boolean writeOnAfterUndeleteWhen(TriggerHandler.UndeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterUndelete(TriggerHandler.UndeleteRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(new Account(Name = (String) record.getNewSObject().get(Contact.LastName)));
+            throw new TestException('The writer failed.');
         }
     }
 
-    private class UowUpdateRecordWriter extends AfterInsertWriterSpy {
-        public override void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
-            unitOfWork.toUpdate(DML.Record(savedAccount('Acme')));
+    private class DmlRecordInsertWriter implements AfterInsert.Writer {
+        private Account accountToInsert;
+
+        public DmlRecordInsertWriter(Account accountToInsert) {
+            this.accountToInsert = accountToInsert;
+        }
+
+        public Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(DML.Record(this.accountToInsert));
         }
     }
 
-    private class UowUpsertWriter extends AfterInsertWriterSpy {
-        public override void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
-            unitOfWork.toUpsert(new Account(Name = 'Acme'), Account.Id);
+    private class AccountUpdateWriter implements AfterInsert.Writer {
+        private Account accountToUpdate;
+
+        public AccountUpdateWriter(Account accountToUpdate) {
+            this.accountToUpdate = accountToUpdate;
+        }
+
+        public Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toUpdate(this.accountToUpdate);
         }
     }
 
-    private class UowDeleteWriter extends AfterInsertWriterSpy {
-        public override void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
-            unitOfWork.toDelete(savedAccount('Acme'));
+    private class DmlRecordUpdateWriter implements AfterInsert.Writer {
+        private Account accountToUpdate;
+
+        public DmlRecordUpdateWriter(Account accountToUpdate) {
+            this.accountToUpdate = accountToUpdate;
+        }
+
+        public Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toUpdate(DML.Record(this.accountToUpdate));
         }
     }
 
-    private class UowPublishWriter extends AfterInsertWriterSpy {
-        public override void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
-            unitOfWork.toPublish(new Account(Name = 'Acme'));
+    private class AccountUpsertWriter implements AfterInsert.Writer {
+        private Account accountToUpsert;
+
+        public AccountUpsertWriter(Account accountToUpsert) {
+            this.accountToUpsert = accountToUpsert;
+        }
+
+        public Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toUpsert(this.accountToUpsert, Account.Id);
         }
     }
 
-    private class UowSameAccountWriter extends AfterInsertWriterSpy {
-        public Account target;
+    private class AccountDeleteWriter implements AfterInsert.Writer {
+        private Account accountToDelete;
 
-        public override void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
-            unitOfWork.toUpdate(this.target);
+        public AccountDeleteWriter(Account accountToDelete) {
+            this.accountToDelete = accountToDelete;
+        }
+
+        public Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toDelete(this.accountToDelete);
         }
     }
 
-    private static final String TRIGGER_UOW = 'triggerUow';
-    private static final String OWN_UNIT = 'OwnUnitOfWork';
+    private class EventPublishWriter implements AfterInsert.Writer {
+        private SObject eventToPublish;
 
-    private static List<String> callLog = new List<String>();
-
-    private static void mockFramework() {
-        mockFramework(new List<TriggerObject__mdt>());
-    }
-
-    private static void mockFramework(List<TriggerObject__mdt> triggerSettings) {
-        SOQL.mock('TriggerObject__mdt').thenReturn(triggerSettings);
-        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
-        DML.mock(TriggerOrchestratorTest.TRIGGER_UOW).allDmls();
-        DML.mock(TriggerOrchestratorTest.OWN_UNIT).allDmls();
-    }
-
-    private static TriggerObject__mdt objectSetting(String objectApiName, Boolean bypass, List<String> bypassedHandlers) {
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        Map<String, Object> setting = new Map<String, Object>{
-            'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-            String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => objectApiName,
-            String.valueOf(TriggerObject__mdt.Bypass__c) => bypass
-        };
-        List<Map<String, Object>> handlerSettings = new List<Map<String, Object>>();
-
-        for (String handlerName : bypassedHandlers) {
-            handlerSettings.add(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                    String.valueOf(TriggerHandler__mdt.ApexClassName__c) => handlerName,
-                    String.valueOf(TriggerHandler__mdt.Bypass__c) => true
-                }
-            );
+        public EventPublishWriter(SObject eventToPublish) {
+            this.eventToPublish = eventToPublish;
         }
 
-        if (!handlerSettings.isEmpty()) {
-            setting.put(namespacePrefix + 'TriggerHandlers__r', new Map<String, Object>{ 'totalSize' => handlerSettings.size(), 'done' => true, 'records' => handlerSettings });
+        public Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
         }
 
-        return (TriggerObject__mdt) JSON.deserialize(JSON.serialize(setting), TriggerObject__mdt.class);
-    }
-
-    private static LoggerSpy spyOnLogger() {
-        LoggerSpy logger = new LoggerSpy();
-        TriggerOrchestrator.triggerLogger.logger = logger;
-        return logger;
-    }
-
-    private static List<Contact> newContacts(String lastName) {
-        return new List<Contact>{ new Contact(LastName = lastName) };
-    }
-
-    private static List<Contact> newContacts(String firstLastName, String secondLastName) {
-        return new List<Contact>{ new Contact(LastName = firstLastName), new Contact(LastName = secondLastName) };
-    }
-
-    private static List<Contact> savedContacts(String lastName) {
-        return new List<Contact>{ new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = lastName) };
-    }
-
-    private static List<Contact> savedContacts(String firstLastName, String secondLastName) {
-        return new List<Contact>{
-            new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = firstLastName),
-            new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = secondLastName)
-        };
-    }
-
-    private static List<Contact> priorVersionsOf(List<Contact> contacts) {
-        return contacts.deepClone(true);
-    }
-
-    private static Account savedAccount(String name) {
-        return new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = name);
-    }
-
-    private static Exception runCatching(TriggerOrchestrator runner) {
-        try {
-            runner.run();
-        } catch (Exception e) {
-            return e;
+        public void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toPublish(this.eventToPublish);
         }
-
-        return null;
     }
 
-    private static Integer queriesIssuedBy(TriggerOrchestrator runner) {
-        Integer queriesBefore = SOQL.getQueries();
-        runner.run();
-        return SOQL.getQueries() - queriesBefore;
-    }
-
-    private static List<String> calls(String step) {
-        List<String> matchingCalls = new List<String>();
-
-        for (String call : TriggerOrchestratorTest.callLog) {
-            if (call.substringAfter('.').substringBefore(':') == step) {
-                matchingCalls.add(call);
-            }
-        }
-
-        return matchingCalls;
-    }
-
-    private static List<String> insertedAccountNames(String unitOfWork) {
-        List<String> names = new List<String>();
-
-        for (SObject inserted : DML.retrieveResultFor(unitOfWork).insertsOf(Account.SObjectType).records()) {
-            names.add((String) inserted.get(Account.Name));
-        }
-
-        return names;
-    }
-
-    private static List<String> lastNamesOf(List<Object> triggerRecords) {
-        List<String> lastNames = new List<String>();
-
-        for (Object triggerRecord : triggerRecords) {
-            lastNames.add(lastNameOf(triggerRecord));
-        }
-
-        return lastNames;
-    }
-
-    private static String lastNameOf(Object triggerRecord) {
-        return (String) ((TriggerHandler.TriggerRecord) triggerRecord).getSObject().get(Contact.LastName);
-    }
-
-    private virtual class TestOrchestrator implements TriggerOrchestrator.BeforeInsert, TriggerOrchestrator.AfterInsert, TriggerOrchestrator.BeforeUpdate, TriggerOrchestrator.AfterUpdate, TriggerOrchestrator.BeforeDelete, TriggerOrchestrator.AfterDelete, TriggerOrchestrator.AfterUndelete {
+    private class TestOrchestrator implements TriggerOrchestrator.BeforeInsert, TriggerOrchestrator.AfterInsert, TriggerOrchestrator.BeforeUpdate, TriggerOrchestrator.AfterUpdate, TriggerOrchestrator.BeforeDelete, TriggerOrchestrator.AfterDelete, TriggerOrchestrator.AfterUndelete {
         public List<BeforeInsert.Handler> beforeInsert = new List<BeforeInsert.Handler>();
         public List<AfterInsert.Handler> afterInsert = new List<AfterInsert.Handler>();
         public List<BeforeUpdate.Handler> beforeUpdate = new List<BeforeUpdate.Handler>();
@@ -6498,7 +8742,224 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    public class LoggerSpy implements TriggerOrchestrator.Logger {
+    private virtual class TitlePopulator implements BeforeInsert.Populator, BeforeUpdate.Populator {
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            record.put(Contact.Title, 'CEO');
+        }
+
+        public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
+            record.put(Contact.Title, 'CEO');
+        }
+    }
+
+    private virtual class DoeValidator implements BeforeInsert.Validator, BeforeUpdate.Validator {
+        public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
+            record.addError('Doe is not allowed.');
+        }
+
+        public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
+            record.addError('Doe is not allowed.');
+        }
+    }
+
+    private class DoeFieldValidator implements BeforeInsert.Validator, BeforeUpdate.Validator {
+        public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
+            record.addError(Contact.Email, 'Doe is not allowed.');
+        }
+
+        public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
+            record.addError(Contact.Email, 'Doe is not allowed.');
+        }
+    }
+
+    private class DoubleDoeValidator implements BeforeInsert.Validator, BeforeUpdate.Validator {
+        public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
+            record.addError('Doe is not allowed.');
+            record.addError(Contact.Email, 'Doe is not allowed.');
+        }
+
+        public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
+            record.addError('Doe is not allowed.');
+            record.addError(Contact.Email, 'Doe is not allowed.');
+        }
+    }
+
+    private class SilentValidator implements BeforeInsert.Validator, BeforeUpdate.Validator {
+        public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
+        }
+
+        public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
+        }
+    }
+
+    private virtual class AccountWriter implements AfterInsert.Writer, AfterUpdate.Writer, AfterDelete.Writer, AfterUndelete.Writer {
+        public Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(new Account(Name = (String) record.getNewSObject().get(Contact.LastName)));
+        }
+
+        public Boolean writeOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterUpdate(TriggerHandler.UpdateRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(new Account(Name = (String) record.getNewSObject().get(Contact.LastName)));
+        }
+
+        public Boolean writeOnAfterDeleteWhen(TriggerHandler.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterDelete(TriggerHandler.DeleteRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(new Account(Name = (String) record.getOldSObject().get(Contact.LastName)));
+        }
+
+        public Boolean writeOnAfterUndeleteWhen(TriggerHandler.UndeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterUndelete(TriggerHandler.UndeleteRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(new Account(Name = (String) record.getNewSObject().get(Contact.LastName)));
+        }
+    }
+
+    private virtual class IdDispatcher implements AfterInsert.Dispatcher, AfterUpdate.Dispatcher, AfterDelete.Dispatcher, AfterUndelete.Dispatcher {
+        public List<Id> dispatchedIds = new List<Id>();
+
+        public Boolean dispatchOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterInsert(TriggerHandler.InsertRecords records) {
+            this.dispatchedIds.addAll(records.getIds());
+        }
+
+        public Boolean dispatchOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterUpdate(TriggerHandler.UpdateRecords records) {
+            this.dispatchedIds.addAll(records.getIds());
+        }
+
+        public Boolean dispatchOnAfterDeleteWhen(TriggerHandler.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterDelete(TriggerHandler.DeleteRecords records) {
+            this.dispatchedIds.addAll(records.getIds());
+        }
+
+        public Boolean dispatchOnAfterUndeleteWhen(TriggerHandler.UndeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterUndelete(TriggerHandler.UndeleteRecords records) {
+            this.dispatchedIds.addAll(records.getIds());
+        }
+    }
+
+    private virtual class DeletionBlocker implements BeforeDelete.Handler {
+        public Boolean qualifiesForBeforeDeleteWhen(TriggerHandler.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void onBeforeDelete(TriggerHandler.DeleteRecord record) {
+            record.getOldSObject().addError('Doe cannot be deleted.');
+        }
+    }
+
+    private virtual class AccountNamePopulator implements BeforeInsert.Populator, BeforeInsert.ParentQuery, BeforeUpdate.Populator, BeforeUpdate.ParentQuery {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert() {
+            return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
+        }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            record.put(Contact.Department, record.getNewParent('Account')?.get(Account.Name));
+        }
+
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate() {
+            return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
+        }
+
+        public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
+            record.put(Contact.Department, record.getNewParent('Account')?.get(Account.Name));
+        }
+    }
+
+    private virtual class FailingPopulator implements BeforeInsert.Populator, BeforeUpdate.Populator {
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            throw new TestException('The populator failed.');
+        }
+
+        public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
+            throw new TestException('The populator failed.');
+        }
+    }
+
+    private class FailingPopulatorWithContinueOnError extends FailingPopulator implements BeforeInsert.ContinueOnError, BeforeUpdate.ContinueOnError {
+    }
+
+    public class TestLogger implements TriggerOrchestrator.Logger {
         public List<TriggerOrchestrator.Error> errors = new List<TriggerOrchestrator.Error>();
         public Integer finalizeCalls = 0;
 
@@ -6511,620 +8972,6 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class SpyException extends Exception {
-    }
-
-    private class Provider implements BeforeInsert.RecordsProvider, AfterInsert.RecordsProvider, BeforeUpdate.RecordsProvider, AfterUpdate.RecordsProvider, BeforeDelete.RecordsProvider, AfterDelete.RecordsProvider, AfterUndelete.RecordsProvider {
-        public List<SObject> providedRecords;
-        public SObjectField keyField;
-        public List<String> queriedFor;
-
-        public Provider(List<SObject> providedRecords, SObjectField keyField) {
-            this.providedRecords = providedRecords;
-            this.keyField = keyField;
-        }
-
-        public List<SObject> query(TriggerHandler.InsertRecords triggerRecords) {
-            return this.provideFor(triggerRecords.getRecords());
-        }
-
-        public List<SObject> query(TriggerHandler.UpdateRecords triggerRecords) {
-            return this.provideFor(triggerRecords.getRecords());
-        }
-
-        public List<SObject> query(TriggerHandler.DeleteRecords triggerRecords) {
-            return this.provideFor(triggerRecords.getRecords());
-        }
-
-        public List<SObject> query(TriggerHandler.UndeleteRecords triggerRecords) {
-            return this.provideFor(triggerRecords.getRecords());
-        }
-
-        public String keyOf(SObject record) {
-            Object key = record.get(this.keyField);
-            return key == null ? null : String.valueOf(key);
-        }
-
-        private List<SObject> provideFor(List<Object> triggerRecords) {
-            this.queriedFor = TriggerOrchestratorTest.lastNamesOf(triggerRecords);
-            return this.providedRecords;
-        }
-    }
-
-    private virtual class Spy {
-        public String label = 'spy';
-        public Set<String> qualifying;
-        public Boolean bypassed = false;
-        public Map<SObjectField, TriggerHandler.ParentFields> parentQuery = new Map<SObjectField, TriggerHandler.ParentFields>();
-        public Map<SObjectField, TriggerHandler.ParentFields> priorParentQuery = new Map<SObjectField, TriggerHandler.ParentFields>();
-        public String relationship = 'Account';
-        public Map<String, Provider> providers = new Map<String, Provider>();
-        public String readsProvider;
-        public SObjectField populatedField = Contact.Title;
-        public Object populatedValue = 'Populated';
-        public String message = 'Rejected';
-
-        public List<String> evaluated = new List<String>();
-        public List<String> acted = new List<String>();
-        public List<String> finalized;
-        public List<String> dispatched;
-        public List<SObject> newParents = new List<SObject>();
-        public List<SObject> oldParents = new List<SObject>();
-        public TriggerHandler.RelatedRecords related;
-
-        private String failingStep;
-        private Exception failure;
-        private String dmlStep;
-        private String nestedStep;
-        private TriggerOrchestrator nestedRun;
-
-        public void failAt(String step, Exception failure) {
-            this.failingStep = step;
-            this.failure = failure;
-        }
-
-        public void performDmlAt(String step) {
-            this.dmlStep = step;
-        }
-
-        public void runNestedAt(String step, TriggerOrchestrator nestedRun) {
-            this.nestedStep = step;
-            this.nestedRun = nestedRun;
-        }
-
-        protected Boolean evaluate(Object record) {
-            TriggerHandler.TriggerRecord triggerRecord = (TriggerHandler.TriggerRecord) record;
-            String lastName = TriggerOrchestratorTest.lastNameOf(triggerRecord);
-
-            this.step('when', lastName);
-            this.evaluated.add(lastName);
-            this.newParents.add(triggerRecord.getNewParent(this.relationship));
-            this.oldParents.add(triggerRecord.getOldParent(this.relationship));
-
-            if (this.readsProvider != null) {
-                this.related = triggerRecord.getRelated(this.readsProvider);
-            }
-
-            return this.qualifying == null || this.qualifying.contains(lastName);
-        }
-
-        protected void act(Object record) {
-            String lastName = TriggerOrchestratorTest.lastNameOf(record);
-
-            this.step('action', lastName);
-            this.acted.add(lastName);
-        }
-
-        protected void register(Object record, TriggerHandler.UnitOfWork unitOfWork) {
-            unitOfWork.toInsert(new Account(Name = TriggerOrchestratorTest.lastNameOf(record)));
-        }
-
-        protected void finalizeWith(List<Object> records) {
-            this.step('finalize', null);
-            this.finalized = TriggerOrchestratorTest.lastNamesOf(records);
-        }
-
-        protected void dispatchWith(List<Object> records) {
-            this.step('dispatch', null);
-            this.dispatched = TriggerOrchestratorTest.lastNamesOf(records);
-        }
-
-        protected Map<SObjectField, TriggerHandler.ParentFields> declareParents(String step, Map<SObjectField, TriggerHandler.ParentFields> parentFields) {
-            this.step(step, null);
-            return parentFields;
-        }
-
-        protected Boolean isBypassed() {
-            this.step('bypass', null);
-            return this.bypassed;
-        }
-
-        protected void step(String name, String lastName) {
-            String call = lastName == null ? name : name + ':' + lastName;
-
-            TriggerOrchestratorTest.callLog.add(this.label + '.' + call);
-
-            if (this.nestedStep == name || this.nestedStep == call) {
-                this.nestedRun.run();
-            }
-
-            if (this.dmlStep == name || this.dmlStep == call) {
-                Database.setSavepoint();
-            }
-
-            if (this.failingStep == name || this.failingStep == call) {
-                throw this.failure;
-            }
-        }
-    }
-
-    private virtual class BeforeInsertPopulatorSpy extends Spy implements BeforeInsert.Populator, BeforeInsert.ParentQuery, BeforeInsert.RelatedQuery, BeforeInsert.Bypassable, BeforeInsert.Finalizer {
-        public virtual Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
-            return this.evaluate(record);
-        }
-
-        public virtual void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
-            this.act(record);
-            record.put(this.populatedField, this.populatedValue);
-        }
-
-        public virtual Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert() {
-            return this.declareParents('parentQuery', this.parentQuery);
-        }
-
-        public virtual Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
-            this.step('relatedQuery', null);
-            return (Map<String, BeforeInsert.RecordsProvider>) this.providers;
-        }
-
-        public virtual Boolean bypassOnBeforeInsertWhen() {
-            return this.isBypassed();
-        }
-
-        public virtual void finalizeBeforeInsert(TriggerHandler.InsertRecords records) {
-            this.finalizeWith(records.getRecords());
-        }
-    }
-
-    private virtual class BeforeInsertValidatorSpy extends Spy implements BeforeInsert.Validator, BeforeInsert.ParentQuery, BeforeInsert.RelatedQuery, BeforeInsert.Bypassable, BeforeInsert.Finalizer {
-        public virtual Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
-            return this.evaluate(record);
-        }
-
-        public virtual String beforeInsertValidationMessage(TriggerHandler.InsertRecord record) {
-            this.act(record);
-            return this.message;
-        }
-
-        public virtual Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert() {
-            return this.declareParents('parentQuery', this.parentQuery);
-        }
-
-        public virtual Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
-            this.step('relatedQuery', null);
-            return (Map<String, BeforeInsert.RecordsProvider>) this.providers;
-        }
-
-        public virtual Boolean bypassOnBeforeInsertWhen() {
-            return this.isBypassed();
-        }
-
-        public virtual void finalizeBeforeInsert(TriggerHandler.InsertRecords records) {
-            this.finalizeWith(records.getRecords());
-        }
-    }
-
-    private virtual class AfterInsertWriterSpy extends Spy implements AfterInsert.Writer, AfterInsert.ParentQuery, AfterInsert.RelatedQuery, AfterInsert.Bypassable, AfterInsert.Finalizer {
-        public virtual Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
-            return this.evaluate(record);
-        }
-
-        public virtual void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
-            this.act(record);
-            this.register(record, unitOfWork);
-        }
-
-        public virtual Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert() {
-            return this.declareParents('parentQuery', this.parentQuery);
-        }
-
-        public virtual Map<String, AfterInsert.RecordsProvider> queryRelatedOnAfterInsert() {
-            this.step('relatedQuery', null);
-            return (Map<String, AfterInsert.RecordsProvider>) this.providers;
-        }
-
-        public virtual Boolean bypassOnAfterInsertWhen() {
-            return this.isBypassed();
-        }
-
-        public virtual void finalizeAfterInsert(TriggerHandler.InsertRecords records) {
-            this.finalizeWith(records.getRecords());
-        }
-    }
-
-    private virtual class AfterInsertDispatcherSpy extends Spy implements AfterInsert.Dispatcher, AfterInsert.ParentQuery, AfterInsert.RelatedQuery, AfterInsert.Bypassable, AfterInsert.Finalizer {
-        public virtual Boolean dispatchOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
-            return this.evaluate(record);
-        }
-
-        public virtual void dispatchOnAfterInsert(TriggerHandler.InsertRecords records) {
-            this.dispatchWith(records.getRecords());
-        }
-
-        public virtual Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert() {
-            return this.declareParents('parentQuery', this.parentQuery);
-        }
-
-        public virtual Map<String, AfterInsert.RecordsProvider> queryRelatedOnAfterInsert() {
-            this.step('relatedQuery', null);
-            return (Map<String, AfterInsert.RecordsProvider>) this.providers;
-        }
-
-        public virtual Boolean bypassOnAfterInsertWhen() {
-            return this.isBypassed();
-        }
-
-        public virtual void finalizeAfterInsert(TriggerHandler.InsertRecords records) {
-            this.finalizeWith(records.getRecords());
-        }
-    }
-
-    private virtual class BeforeUpdatePopulatorSpy extends Spy implements BeforeUpdate.Populator, BeforeUpdate.ParentQuery, BeforeUpdate.PriorParentQuery, BeforeUpdate.RelatedQuery, BeforeUpdate.Bypassable, BeforeUpdate.Finalizer {
-        public virtual Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
-            return this.evaluate(record);
-        }
-
-        public virtual void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
-            this.act(record);
-            record.put(this.populatedField, this.populatedValue);
-        }
-
-        public virtual Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate() {
-            return this.declareParents('parentQuery', this.parentQuery);
-        }
-
-        public virtual Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnBeforeUpdate() {
-            return this.declareParents('priorParentQuery', this.priorParentQuery);
-        }
-
-        public virtual Map<String, BeforeUpdate.RecordsProvider> queryRelatedOnBeforeUpdate() {
-            this.step('relatedQuery', null);
-            return (Map<String, BeforeUpdate.RecordsProvider>) this.providers;
-        }
-
-        public virtual Boolean bypassOnBeforeUpdateWhen() {
-            return this.isBypassed();
-        }
-
-        public virtual void finalizeBeforeUpdate(TriggerHandler.UpdateRecords records) {
-            this.finalizeWith(records.getRecords());
-        }
-    }
-
-    private virtual class BeforeUpdateValidatorSpy extends Spy implements BeforeUpdate.Validator, BeforeUpdate.ParentQuery, BeforeUpdate.PriorParentQuery, BeforeUpdate.RelatedQuery, BeforeUpdate.Bypassable, BeforeUpdate.Finalizer {
-        public virtual Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
-            return this.evaluate(record);
-        }
-
-        public virtual String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record) {
-            this.act(record);
-            return this.message;
-        }
-
-        public virtual Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate() {
-            return this.declareParents('parentQuery', this.parentQuery);
-        }
-
-        public virtual Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnBeforeUpdate() {
-            return this.declareParents('priorParentQuery', this.priorParentQuery);
-        }
-
-        public virtual Map<String, BeforeUpdate.RecordsProvider> queryRelatedOnBeforeUpdate() {
-            this.step('relatedQuery', null);
-            return (Map<String, BeforeUpdate.RecordsProvider>) this.providers;
-        }
-
-        public virtual Boolean bypassOnBeforeUpdateWhen() {
-            return this.isBypassed();
-        }
-
-        public virtual void finalizeBeforeUpdate(TriggerHandler.UpdateRecords records) {
-            this.finalizeWith(records.getRecords());
-        }
-    }
-
-    private virtual class AfterUpdateWriterSpy extends Spy implements AfterUpdate.Writer, AfterUpdate.ParentQuery, AfterUpdate.PriorParentQuery, AfterUpdate.RelatedQuery, AfterUpdate.Bypassable, AfterUpdate.Finalizer {
-        public virtual Boolean writeOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
-            return this.evaluate(record);
-        }
-
-        public virtual void writeOnAfterUpdate(TriggerHandler.UpdateRecord record, TriggerHandler.UnitOfWork unitOfWork) {
-            this.act(record);
-            this.register(record, unitOfWork);
-        }
-
-        public virtual Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
-            return this.declareParents('parentQuery', this.parentQuery);
-        }
-
-        public virtual Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnAfterUpdate() {
-            return this.declareParents('priorParentQuery', this.priorParentQuery);
-        }
-
-        public virtual Map<String, AfterUpdate.RecordsProvider> queryRelatedOnAfterUpdate() {
-            this.step('relatedQuery', null);
-            return (Map<String, AfterUpdate.RecordsProvider>) this.providers;
-        }
-
-        public virtual Boolean bypassOnAfterUpdateWhen() {
-            return this.isBypassed();
-        }
-
-        public virtual void finalizeAfterUpdate(TriggerHandler.UpdateRecords records) {
-            this.finalizeWith(records.getRecords());
-        }
-    }
-
-    private virtual class AfterUpdateDispatcherSpy extends Spy implements AfterUpdate.Dispatcher, AfterUpdate.ParentQuery, AfterUpdate.PriorParentQuery, AfterUpdate.RelatedQuery, AfterUpdate.Bypassable, AfterUpdate.Finalizer {
-        public virtual Boolean dispatchOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
-            return this.evaluate(record);
-        }
-
-        public virtual void dispatchOnAfterUpdate(TriggerHandler.UpdateRecords records) {
-            this.dispatchWith(records.getRecords());
-        }
-
-        public virtual Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
-            return this.declareParents('parentQuery', this.parentQuery);
-        }
-
-        public virtual Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnAfterUpdate() {
-            return this.declareParents('priorParentQuery', this.priorParentQuery);
-        }
-
-        public virtual Map<String, AfterUpdate.RecordsProvider> queryRelatedOnAfterUpdate() {
-            this.step('relatedQuery', null);
-            return (Map<String, AfterUpdate.RecordsProvider>) this.providers;
-        }
-
-        public virtual Boolean bypassOnAfterUpdateWhen() {
-            return this.isBypassed();
-        }
-
-        public virtual void finalizeAfterUpdate(TriggerHandler.UpdateRecords records) {
-            this.finalizeWith(records.getRecords());
-        }
-    }
-
-    private virtual class BeforeDeleteHandlerSpy extends Spy implements BeforeDelete.Handler, BeforeDelete.PriorParentQuery, BeforeDelete.RelatedQuery, BeforeDelete.Bypassable, BeforeDelete.Finalizer {
-        public virtual Boolean qualifiesForBeforeDeleteWhen(TriggerHandler.DeleteRecord record) {
-            return this.evaluate(record);
-        }
-
-        public virtual void onBeforeDelete(TriggerHandler.DeleteRecord record) {
-            this.act(record);
-        }
-
-        public virtual Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeDelete() {
-            return this.declareParents('priorParentQuery', this.priorParentQuery);
-        }
-
-        public virtual Map<String, BeforeDelete.RecordsProvider> queryRelatedOnBeforeDelete() {
-            this.step('relatedQuery', null);
-            return (Map<String, BeforeDelete.RecordsProvider>) this.providers;
-        }
-
-        public virtual Boolean bypassOnBeforeDeleteWhen() {
-            return this.isBypassed();
-        }
-
-        public virtual void finalizeBeforeDelete(TriggerHandler.DeleteRecords records) {
-            this.finalizeWith(records.getRecords());
-        }
-    }
-
-    private virtual class AfterDeleteWriterSpy extends Spy implements AfterDelete.Writer, AfterDelete.PriorParentQuery, AfterDelete.RelatedQuery, AfterDelete.Bypassable, AfterDelete.Finalizer {
-        public virtual Boolean writeOnAfterDeleteWhen(TriggerHandler.DeleteRecord record) {
-            return this.evaluate(record);
-        }
-
-        public virtual void writeOnAfterDelete(TriggerHandler.DeleteRecord record, TriggerHandler.UnitOfWork unitOfWork) {
-            this.act(record);
-            this.register(record, unitOfWork);
-        }
-
-        public virtual Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterDelete() {
-            return this.declareParents('priorParentQuery', this.priorParentQuery);
-        }
-
-        public virtual Map<String, AfterDelete.RecordsProvider> queryRelatedOnAfterDelete() {
-            this.step('relatedQuery', null);
-            return (Map<String, AfterDelete.RecordsProvider>) this.providers;
-        }
-
-        public virtual Boolean bypassOnAfterDeleteWhen() {
-            return this.isBypassed();
-        }
-
-        public virtual void finalizeAfterDelete(TriggerHandler.DeleteRecords records) {
-            this.finalizeWith(records.getRecords());
-        }
-    }
-
-    private virtual class AfterDeleteDispatcherSpy extends Spy implements AfterDelete.Dispatcher, AfterDelete.PriorParentQuery, AfterDelete.RelatedQuery, AfterDelete.Bypassable, AfterDelete.Finalizer {
-        public virtual Boolean dispatchOnAfterDeleteWhen(TriggerHandler.DeleteRecord record) {
-            return this.evaluate(record);
-        }
-
-        public virtual void dispatchOnAfterDelete(TriggerHandler.DeleteRecords records) {
-            this.dispatchWith(records.getRecords());
-        }
-
-        public virtual Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterDelete() {
-            return this.declareParents('priorParentQuery', this.priorParentQuery);
-        }
-
-        public virtual Map<String, AfterDelete.RecordsProvider> queryRelatedOnAfterDelete() {
-            this.step('relatedQuery', null);
-            return (Map<String, AfterDelete.RecordsProvider>) this.providers;
-        }
-
-        public virtual Boolean bypassOnAfterDeleteWhen() {
-            return this.isBypassed();
-        }
-
-        public virtual void finalizeAfterDelete(TriggerHandler.DeleteRecords records) {
-            this.finalizeWith(records.getRecords());
-        }
-    }
-
-    private virtual class AfterUndeleteWriterSpy extends Spy implements AfterUndelete.Writer, AfterUndelete.ParentQuery, AfterUndelete.RelatedQuery, AfterUndelete.Bypassable, AfterUndelete.Finalizer {
-        public virtual Boolean writeOnAfterUndeleteWhen(TriggerHandler.UndeleteRecord record) {
-            return this.evaluate(record);
-        }
-
-        public virtual void writeOnAfterUndelete(TriggerHandler.UndeleteRecord record, TriggerHandler.UnitOfWork unitOfWork) {
-            this.act(record);
-            this.register(record, unitOfWork);
-        }
-
-        public virtual Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUndelete() {
-            return this.declareParents('parentQuery', this.parentQuery);
-        }
-
-        public virtual Map<String, AfterUndelete.RecordsProvider> queryRelatedOnAfterUndelete() {
-            this.step('relatedQuery', null);
-            return (Map<String, AfterUndelete.RecordsProvider>) this.providers;
-        }
-
-        public virtual Boolean bypassOnAfterUndeleteWhen() {
-            return this.isBypassed();
-        }
-
-        public virtual void finalizeAfterUndelete(TriggerHandler.UndeleteRecords records) {
-            this.finalizeWith(records.getRecords());
-        }
-    }
-
-    private virtual class AfterUndeleteDispatcherSpy extends Spy implements AfterUndelete.Dispatcher, AfterUndelete.ParentQuery, AfterUndelete.RelatedQuery, AfterUndelete.Bypassable, AfterUndelete.Finalizer {
-        public virtual Boolean dispatchOnAfterUndeleteWhen(TriggerHandler.UndeleteRecord record) {
-            return this.evaluate(record);
-        }
-
-        public virtual void dispatchOnAfterUndelete(TriggerHandler.UndeleteRecords records) {
-            this.dispatchWith(records.getRecords());
-        }
-
-        public virtual Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUndelete() {
-            return this.declareParents('parentQuery', this.parentQuery);
-        }
-
-        public virtual Map<String, AfterUndelete.RecordsProvider> queryRelatedOnAfterUndelete() {
-            this.step('relatedQuery', null);
-            return (Map<String, AfterUndelete.RecordsProvider>) this.providers;
-        }
-
-        public virtual Boolean bypassOnAfterUndeleteWhen() {
-            return this.isBypassed();
-        }
-
-        public virtual void finalizeAfterUndelete(TriggerHandler.UndeleteRecords records) {
-            this.finalizeWith(records.getRecords());
-        }
-    }
-
-    private virtual class ContinuingBeforeInsertPopulatorSpy extends BeforeInsertPopulatorSpy implements BeforeInsert.ContinueOnError {
-    }
-
-    private virtual class ContinuingBeforeInsertValidatorSpy extends BeforeInsertValidatorSpy implements BeforeInsert.ContinueOnError {
-    }
-
-    private virtual class ContinuingAfterInsertWriterSpy extends AfterInsertWriterSpy implements AfterInsert.ContinueOnError {
-    }
-
-    private virtual class ContinuingAfterInsertDispatcherSpy extends AfterInsertDispatcherSpy implements AfterInsert.ContinueOnError {
-    }
-
-    private virtual class ContinuingBeforeUpdatePopulatorSpy extends BeforeUpdatePopulatorSpy implements BeforeUpdate.ContinueOnError {
-    }
-
-    private virtual class ContinuingBeforeUpdateValidatorSpy extends BeforeUpdateValidatorSpy implements BeforeUpdate.ContinueOnError {
-    }
-
-    private virtual class ContinuingAfterUpdateWriterSpy extends AfterUpdateWriterSpy implements AfterUpdate.ContinueOnError {
-    }
-
-    private virtual class ContinuingAfterUpdateDispatcherSpy extends AfterUpdateDispatcherSpy implements AfterUpdate.ContinueOnError {
-    }
-
-    private virtual class ContinuingBeforeDeleteHandlerSpy extends BeforeDeleteHandlerSpy implements BeforeDelete.ContinueOnError {
-    }
-
-    private virtual class ContinuingAfterDeleteWriterSpy extends AfterDeleteWriterSpy implements AfterDelete.ContinueOnError {
-    }
-
-    private virtual class ContinuingAfterDeleteDispatcherSpy extends AfterDeleteDispatcherSpy implements AfterDelete.ContinueOnError {
-    }
-
-    private virtual class ContinuingAfterUndeleteWriterSpy extends AfterUndeleteWriterSpy implements AfterUndelete.ContinueOnError {
-    }
-
-    private virtual class ContinuingAfterUndeleteDispatcherSpy extends AfterUndeleteDispatcherSpy implements AfterUndelete.ContinueOnError {
-    }
-
-    private virtual class GuardedBeforeUpdatePopulatorSpy extends BeforeUpdatePopulatorSpy implements BeforeUpdate.RecursionGuard {
-        public Integer maxDepth;
-
-        public virtual Integer maxRecursionDepthOnBeforeUpdate() {
-            return this.maxDepth;
-        }
-    }
-
-    private virtual class GuardedAfterUpdateWriterSpy extends AfterUpdateWriterSpy implements AfterUpdate.RecursionGuard {
-        public Integer maxDepth;
-
-        public virtual Integer maxRecursionDepthOnAfterUpdate() {
-            return this.maxDepth;
-        }
-    }
-
-    private virtual class GuardedAfterUpdateDispatcherSpy extends AfterUpdateDispatcherSpy implements AfterUpdate.RecursionGuard {
-        public Integer maxDepth;
-
-        public virtual Integer maxRecursionDepthOnAfterUpdate() {
-            return this.maxDepth;
-        }
-    }
-
-    private virtual class OwnUnitAfterInsertWriterSpy extends AfterInsertWriterSpy implements AfterInsert.OwnUnitOfWork {
-        public DML.Committable ownUnit = new DML().identifier(TriggerOrchestratorTest.OWN_UNIT);
-
-        public virtual DML.Committable ownUnitOfWorkOnAfterInsert() {
-            return this.ownUnit;
-        }
-    }
-
-    private virtual class OwnUnitAfterUpdateWriterSpy extends AfterUpdateWriterSpy implements AfterUpdate.OwnUnitOfWork {
-        public DML.Committable ownUnit = new DML().identifier(TriggerOrchestratorTest.OWN_UNIT);
-
-        public virtual DML.Committable ownUnitOfWorkOnAfterUpdate() {
-            return this.ownUnit;
-        }
-    }
-
-    private virtual class OwnUnitAfterDeleteWriterSpy extends AfterDeleteWriterSpy implements AfterDelete.OwnUnitOfWork {
-        public DML.Committable ownUnit = new DML().identifier(TriggerOrchestratorTest.OWN_UNIT);
-
-        public virtual DML.Committable ownUnitOfWorkOnAfterDelete() {
-            return this.ownUnit;
-        }
-    }
-
-    private virtual class OwnUnitAfterUndeleteWriterSpy extends AfterUndeleteWriterSpy implements AfterUndelete.OwnUnitOfWork {
-        public DML.Committable ownUnit = new DML().identifier(TriggerOrchestratorTest.OWN_UNIT);
-
-        public virtual DML.Committable ownUnitOfWorkOnAfterUndelete() {
-            return this.ownUnit;
-        }
+    private class TestException extends Exception {
     }
 }

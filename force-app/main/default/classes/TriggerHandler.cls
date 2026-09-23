@@ -86,6 +86,70 @@ public with sharing class TriggerHandler {
         void put(SObjectField field, Object value);
     }
 
+    public interface RejectableInsertRecord {
+        Boolean isRecordTypeEqual(String recordTypeDeveloperName);
+        Boolean isRecordTypeNotEqual(String recordTypeDeveloperName);
+
+        Boolean equals(SObjectField field, Object value);
+        Boolean doesNotEqual(SObjectField field, Object value);
+
+        Boolean contains(SObjectField field, String value);
+        Boolean doesNotContain(SObjectField field, String value);
+        Boolean startsWith(SObjectField field, String value);
+        Boolean endsWith(SObjectField field, String value);
+
+        Boolean isNull(SObjectField field);
+        Boolean isNotNull(SObjectField field);
+
+        Boolean isEmpty(SObjectField field);
+        Boolean isNotEmpty(SObjectField field);
+
+        Boolean isBlank(SObjectField field);
+        Boolean isNotBlank(SObjectField field);
+
+        Boolean isTrue(SObjectField field);
+        Boolean isFalse(SObjectField field);
+
+        Boolean greaterThan(SObjectField field, Integer value);
+        Boolean greaterThan(SObjectField field, DateTime value);
+        Boolean greaterThan(SObjectField field, Date value);
+        Boolean greaterThan(SObjectField field, Double value);
+        Boolean greaterThan(SObjectField field, Decimal value);
+        Boolean greaterThan(SObjectField field, Long value);
+
+        Boolean greaterThanOrEqualTo(SObjectField field, Integer value);
+        Boolean greaterThanOrEqualTo(SObjectField field, DateTime value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Date value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Double value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Decimal value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Long value);
+
+        Boolean lessThan(SObjectField field, Integer value);
+        Boolean lessThan(SObjectField field, DateTime value);
+        Boolean lessThan(SObjectField field, Date value);
+        Boolean lessThan(SObjectField field, Double value);
+        Boolean lessThan(SObjectField field, Decimal value);
+        Boolean lessThan(SObjectField field, Long value);
+
+        Boolean lessThanOrEqualTo(SObjectField field, Integer value);
+        Boolean lessThanOrEqualTo(SObjectField field, DateTime value);
+        Boolean lessThanOrEqualTo(SObjectField field, Date value);
+        Boolean lessThanOrEqualTo(SObjectField field, Double value);
+        Boolean lessThanOrEqualTo(SObjectField field, Decimal value);
+        Boolean lessThanOrEqualTo(SObjectField field, Long value);
+
+        Id getId();
+
+        SObject getNewSObject();
+
+        SObject getNewParent(String relationshipName);
+
+        TriggerHandler.RelatedRecords getRelated(String providerName);
+
+        void addError(String error);
+        void addError(SObjectField field, String error);
+    }
+
     public interface UpdateRecord {
         Boolean isRecordTypeEqual(String recordTypeDeveloperName);
         Boolean isRecordTypeNotEqual(String recordTypeDeveloperName);
@@ -167,6 +231,90 @@ public with sharing class TriggerHandler {
         TriggerHandler.RelatedRecords getRelated(String providerName);
 
         void put(SObjectField field, Object value);
+    }
+
+    public interface RejectableUpdateRecord {
+        Boolean isRecordTypeEqual(String recordTypeDeveloperName);
+        Boolean isRecordTypeNotEqual(String recordTypeDeveloperName);
+
+        Boolean equals(SObjectField field, Object value);
+        Boolean doesNotEqual(SObjectField field, Object value);
+
+        Boolean contains(SObjectField field, String value);
+        Boolean doesNotContain(SObjectField field, String value);
+        Boolean startsWith(SObjectField field, String value);
+        Boolean endsWith(SObjectField field, String value);
+
+        Boolean isNull(SObjectField field);
+        Boolean isNotNull(SObjectField field);
+
+        Boolean isEmpty(SObjectField field);
+        Boolean isNotEmpty(SObjectField field);
+
+        Boolean isBlank(SObjectField field);
+        Boolean isNotBlank(SObjectField field);
+
+        Boolean isChanged(SObjectField field);
+
+        Boolean isAnyChanged(SObjectField field1, SObjectField field2);
+        Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3);
+        Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
+        Boolean isAnyChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
+        Boolean isAnyChanged(Iterable<SObjectField> fields);
+
+        Boolean areAllChanged(SObjectField field1, SObjectField field2);
+        Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3);
+        Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
+        Boolean areAllChanged(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
+        Boolean areAllChanged(Iterable<SObjectField> fields);
+
+        Boolean isChangedTo(SObjectField field, Object expectedValue);
+        Boolean isChangedFrom(SObjectField field, Object priorValue);
+        Boolean isChangedFromTo(SObjectField field, Object fromValue, Object toValue);
+
+        Boolean isTrue(SObjectField field);
+        Boolean isFalse(SObjectField field);
+
+        Boolean greaterThan(SObjectField field, Integer value);
+        Boolean greaterThan(SObjectField field, DateTime value);
+        Boolean greaterThan(SObjectField field, Date value);
+        Boolean greaterThan(SObjectField field, Double value);
+        Boolean greaterThan(SObjectField field, Decimal value);
+        Boolean greaterThan(SObjectField field, Long value);
+
+        Boolean greaterThanOrEqualTo(SObjectField field, Integer value);
+        Boolean greaterThanOrEqualTo(SObjectField field, DateTime value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Date value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Double value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Decimal value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Long value);
+
+        Boolean lessThan(SObjectField field, Integer value);
+        Boolean lessThan(SObjectField field, DateTime value);
+        Boolean lessThan(SObjectField field, Date value);
+        Boolean lessThan(SObjectField field, Double value);
+        Boolean lessThan(SObjectField field, Decimal value);
+        Boolean lessThan(SObjectField field, Long value);
+
+        Boolean lessThanOrEqualTo(SObjectField field, Integer value);
+        Boolean lessThanOrEqualTo(SObjectField field, DateTime value);
+        Boolean lessThanOrEqualTo(SObjectField field, Date value);
+        Boolean lessThanOrEqualTo(SObjectField field, Double value);
+        Boolean lessThanOrEqualTo(SObjectField field, Decimal value);
+        Boolean lessThanOrEqualTo(SObjectField field, Long value);
+
+        Id getId();
+
+        SObject getNewSObject();
+        SObject getOldSObject();
+
+        SObject getNewParent(String relationshipName);
+        SObject getOldParent(String relationshipName);
+
+        TriggerHandler.RelatedRecords getRelated(String providerName);
+
+        void addError(String error);
+        void addError(SObjectField field, String error);
     }
 
     public interface DeleteRecord {
@@ -702,7 +850,7 @@ public with sharing class TriggerHandler {
         }
     }
 
-    public class TriggerRecord implements TriggerHandler.InsertRecord, TriggerHandler.UpdateRecord, TriggerHandler.DeleteRecord, TriggerHandler.UndeleteRecord {
+    public class TriggerRecord implements TriggerHandler.InsertRecord, TriggerHandler.RejectableInsertRecord, TriggerHandler.UpdateRecord, TriggerHandler.RejectableUpdateRecord, TriggerHandler.DeleteRecord, TriggerHandler.UndeleteRecord {
         private SObject newRecord;
         private SObject oldRecord;
 
@@ -1028,6 +1176,14 @@ public with sharing class TriggerHandler {
 
         public void put(SObjectField field, Object value) {
             this.newRecord.put(field, value);
+        }
+
+        public void addError(String error) {
+            this.newRecord.addError(error);
+        }
+
+        public void addError(SObjectField field, String error) {
+            this.newRecord.addError(field, error);
         }
 
         // Internal use only

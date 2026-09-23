@@ -1,5 +1,8 @@
 import { defineConfig } from 'vitepress';
 import llmstxt from 'vitepress-plugin-llms';
+import { addOverviewLeaves, nav, sidebar } from './apex-api.mjs';
+import { check, formatReport } from './scripts/check-docs.mjs';
+import { generate } from './scripts/generate.mjs';
 
 // https://vitepress.dev/reference/site-config
 
@@ -8,11 +11,17 @@ const siteTitle = 'Trigger Lib';
 const siteDescription =
   'Apex trigger framework for Salesforce with record filtering, automatic parent enrichment, bypasses, and recursion control';
 
+generate();
+
 export default defineConfig({
   lang: 'en-US',
   title: siteTitle,
   description: siteDescription,
   cleanUrls: true,
+  srcExclude: ['**/_parts/**'],
+  markdown: {
+    languageAlias: { cls: 'apex', trigger: 'apex' }
+  },
   head: [
     ['link', { rel: 'icon', href: '/favicon.ico' }],
     ['meta', { name: 'author', content: 'Beyond The Cloud' }],
@@ -69,7 +78,28 @@ export default defineConfig({
     hostname: siteUrl
   },
   vite: {
-    plugins: [llmstxt({ domain: siteUrl })]
+    plugins: [
+      llmstxt({
+        domain: siteUrl,
+        sidebar: configSidebar => addOverviewLeaves(configSidebar)
+      })
+    ]
+  },
+  buildEnd(siteConfig) {
+    const result = check({
+      websiteDir: siteConfig.srcDir,
+      sidebar: siteConfig.site.themeConfig.sidebar,
+      nav: siteConfig.site.themeConfig.nav
+    });
+    if (result.errors.length === 0) {
+      console.log('check-docs: passed');
+      return;
+    }
+    console.error(formatReport(result));
+    if (process.env.CHECK_DOCS === 'warn') return;
+    throw new Error(
+      `check-docs found ${result.errors.length} problem(s), listed above; run node website/.vitepress/scripts/check-docs.mjs to reproduce`
+    );
   },
   transformPageData(pageData) {
     const canonicalUrl = `${siteUrl}/${pageData.relativePath}`
@@ -107,58 +137,27 @@ export default defineConfig({
   },
   themeConfig: {
     logo: '/logo.png',
+    outline: [2, 3],
     search: {
-      provider: 'local'
+      provider: 'local',
+      options: {
+        miniSearch: {
+          options: {
+            tokenize: (text: string) =>
+              text
+                .split(/[^A-Za-z0-9_]+/)
+                .filter(Boolean)
+                .flatMap(word => {
+                  const parts = word.split(/(?<=[a-z0-9])(?=[A-Z])/);
+                  return parts.length > 1 ? [word, ...parts] : [word];
+                })
+          }
+        }
+      }
     },
     // https://vitepress.dev/reference/default-theme-config
-    nav: [
-      { text: 'Home', link: '/' },
-      { text: 'Docs', link: '/introduction' }
-    ],
-
-    sidebar: [
-      {
-        text: 'Introduction',
-        collapsed: false,
-        items: [
-          { text: 'Introduction', link: '/introduction' },
-          { text: 'Installation', link: '/installation' },
-          {
-            text: 'Design Principles',
-            link: '/introduction/design-principles'
-          }
-        ]
-      },
-      {
-        text: 'Guide',
-        collapsed: false,
-        items: [
-          { text: 'Orchestrator', link: '/guide/orchestrator' },
-          { text: 'Handlers', link: '/guide/handlers' },
-          { text: 'Record Qualification', link: '/guide/qualification' },
-          { text: 'Parent Enrichment', link: '/guide/enrichment' },
-          { text: 'Related Records', link: '/guide/related-records' },
-          { text: 'Bypasses', link: '/guide/bypasses' },
-          { text: 'Recursion Control', link: '/guide/recursion-control' },
-          { text: 'Finalizers', link: '/guide/finalizers' },
-          { text: 'Error Handling', link: '/guide/error-handling' }
-        ]
-      },
-      {
-        text: 'API',
-        collapsed: false,
-        items: [
-          { text: 'TriggerOrchestrator', link: '/api/trigger-orchestrator' },
-          { text: 'Context Interfaces', link: '/api/context-interfaces' },
-          { text: 'Record Interfaces', link: '/api/record' },
-          { text: 'Related Records', link: '/api/related-records' },
-          {
-            text: 'TriggerHandler.ParentFields',
-            link: '/api/field-selection'
-          }
-        ]
-      }
-    ],
+    nav,
+    sidebar,
     socialLinks: [
       {
         icon: 'github',

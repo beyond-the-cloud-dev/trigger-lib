@@ -5,9 +5,9 @@ public with sharing class AccountBillingCountryValidator implements BeforeUpdate
         return record.isChanged(Account.BillingCountry) && record.isBlank(Account.BillingCountry) && String.isNotBlank(oldAccount.BillingCountry);
     }
 
-    public String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record) {
+    public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
         Account oldAccount = (Account) record.getOldSObject();
 
-        return 'Billing Country cannot be cleared. It is currently ' + oldAccount.BillingCountry + '; replace it with another country instead.';
+        record.addError(Account.BillingCountry, 'Billing Country cannot be cleared. It is currently ' + oldAccount.BillingCountry + '; replace it with another country instead.');
     }
 }

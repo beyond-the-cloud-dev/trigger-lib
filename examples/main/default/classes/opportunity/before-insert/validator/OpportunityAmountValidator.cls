@@ -3,7 +3,7 @@ public with sharing class OpportunityAmountValidator implements BeforeInsert.Val
         return record.isNotNull(Opportunity.Amount) && record.lessThanOrEqualTo(Opportunity.Amount, 0);
     }
 
-    public String beforeInsertValidationMessage(TriggerHandler.InsertRecord record) {
-        return 'Amount must be greater than zero. Leave it empty until the deal value is known.';
+    public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
+        record.addError(Opportunity.Amount, 'Amount must be greater than zero. Leave it empty until the deal value is known.');
     }
 }

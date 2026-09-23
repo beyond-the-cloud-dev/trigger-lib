@@ -18,18 +18,21 @@ public with sharing class AccountParentMoveValidator implements BeforeUpdate.Val
         return previousParent != null && newParent != null && previousParent.BillingCountry != newParent.BillingCountry;
     }
 
-    public String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record) {
+    public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
         Account previousParent = (Account) record.getOldParent('Parent');
         Account newParent = (Account) record.getNewParent('Parent');
 
-        return 'Moving this customer from "' +
-            previousParent.Name +
-            '" (' +
-            previousParent.BillingCountry +
-            ') to "' +
-            newParent.Name +
-            '" (' +
-            newParent.BillingCountry +
-            ') changes the invoicing entity. Raise a finance request for the transfer.';
+        record.addError(
+            Account.ParentId,
+            'Moving this customer from "' +
+                previousParent.Name +
+                '" (' +
+                previousParent.BillingCountry +
+                ') to "' +
+                newParent.Name +
+                '" (' +
+                newParent.BillingCountry +
+                ') changes the invoicing entity. Raise a finance request for the transfer.'
+        );
     }
 }

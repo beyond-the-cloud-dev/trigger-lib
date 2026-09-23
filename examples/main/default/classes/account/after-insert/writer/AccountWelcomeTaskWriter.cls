@@ -1,19 +1,17 @@
-public with sharing class AccountWelcomeTaskHandler implements AfterInsert.Handler, AfterInsert.ParentQuery, AfterInsert.Finalizer, AfterInsert.ContinueOnError {
-    private List<Task> onboardingTasks = new List<Task>();
-
+public with sharing class AccountWelcomeTaskWriter implements AfterInsert.Writer, AfterInsert.ParentQuery, AfterInsert.ContinueOnError {
     public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert() {
         return new Map<SObjectField, TriggerHandler.ParentFields>{ Account.OwnerId => TriggerHandler.ParentFields.with(User.Name, User.Email) };
     }
 
-    public Boolean qualifiesForAfterInsertWhen(TriggerHandler.InsertRecord record) {
+    public Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
         return record.startsWith(Account.Type, 'Customer');
     }
 
-    public void onAfterInsert(TriggerHandler.InsertRecord record) {
+    public void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
         Account accountRecord = (Account) record.getNewSObject();
         User owner = (User) record.getNewParent('Owner');
 
-        this.onboardingTasks.add(
+        unitOfWork.toInsert(
             new Task(
                 WhatId = record.getId(),
                 OwnerId = accountRecord.OwnerId,
@@ -24,9 +22,5 @@ public with sharing class AccountWelcomeTaskHandler implements AfterInsert.Handl
                 Status = 'Not Started'
             )
         );
-    }
-
-    public void finalizeAfterInsert() {
-        insert this.onboardingTasks;
     }
 }

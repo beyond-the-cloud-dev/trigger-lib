@@ -19,6 +19,6 @@ public with sharing class ContactTriggerOrchestrator implements TriggerOrchestra
     }
 
     public List<AfterInsert.Handler> afterInsertHandlers() {
-        return new List<AfterInsert.Handler>{ new ContactOwnerAlignmentHandler(), new ContactFollowUpTaskHandler() };
+        return new List<AfterInsert.Handler>{ new ContactOwnerAlignmentWriter(), new ContactFollowUpTaskWriter() };
     }
 }

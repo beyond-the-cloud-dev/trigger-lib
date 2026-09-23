@@ -21,6 +21,6 @@ public with sharing class OpportunityTriggerOrchestrator implements TriggerOrche
     }
 
     public List<AfterUpdate.Handler> afterUpdateHandlers() {
-        return new List<AfterUpdate.Handler>{ new OpportunityAccountTypeHandler(), new OpportunityWinTaskHandler() };
+        return new List<AfterUpdate.Handler>{ new OpportunityAccountTypeWriter(), new OpportunityWinTaskWriter() };
     }
 }

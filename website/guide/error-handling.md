@@ -85,20 +85,41 @@ Without `ContinueOnError`, the first exception a handler raises ends the invocat
 A handler that implements the `ContinueOnError` marker of its context does not stop the trigger. Its exception is passed to the logger, the orchestrator moves on to the next handler in the list, and the DML succeeds.
 
 ```apex
-public with sharing class AccountNotificationHandler implements AfterInsert.Handler, AfterInsert.ContinueOnError {
-  public Boolean qualifiesForAfterInsertWhen(
-    TriggerHandler.InsertRecord record
-  ) {
+public with sharing class AccountWelcomeTaskWriter implements AfterInsert.Writer, AfterInsert.ContinueOnError {
+  public Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
     return record.isNotBlank(Account.Website);
   }
 
-  public void onAfterInsert(TriggerHandler.InsertRecord record) {
-    // a failure here should not block the insert
+  public void writeOnAfterInsert(
+    TriggerHandler.InsertRecord record,
+    TriggerHandler.UnitOfWork unitOfWork
+  ) {
+    unitOfWork.toInsert(
+      new Task(WhatId = record.getId(), Subject = 'Send the welcome pack')
+    );
   }
 }
 ```
 
 Use it for side effects that are nice to have: notifications, analytics, non-critical integrations. Do not use it for handlers whose failure leaves data in an inconsistent state.
+
+### Writers Get Their Own Unit Of Work
+
+A writer normally registers its records in the unit of work shared by every writer of the invocation. That unit commits once, after the last handler, and a failure there fails the whole save. It cannot be skipped for one writer.
+
+A writer that implements `ContinueOnError` therefore gets a unit of work of its own, automatically. The framework commits it right after the writer's finalizer, inside the writer's error handling:
+
+- a failed commit is logged with the writer's name and swallowed, and the save goes on,
+- the shared writes of the other writers are not affected,
+- when the writer throws before its commit, nothing it registered is written.
+
+The unit is configured like the shared one: system mode, without sharing, and duplicate updates of one record combined. A writer that also implements `OwnUnitOfWork` keeps the unit it returns, and `ContinueOnError` only decides what happens when it fails.
+
+What changes compared to the shared unit:
+
+- The writes happen at the writer's position in the handler list, not after the last handler.
+- They are not pooled with the other writers, so the writer spends its own DML statements.
+- The commit is not atomic. When an insert succeeds and a later update in the same unit fails, the insert stays.
 
 ::: danger ContinueOnError covers the handler's own exceptions only
 It never suppresses a framework contract violation. A `TriggerOrchestratorException` and a `TriggerHandler.TriggerHandlerException` are logged and then rethrown even for a handler that implements `ContinueOnError`, and the DML is aborted.

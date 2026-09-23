@@ -88,14 +88,14 @@ public with sharing class TriggerOrchestrator {
     private TriggerContext context;
     private Object orchestrator;
     private LookupEnrichment lookupEnrichment;
-    private DML.Committable sharedUnitOfWork;
+    private TriggerUnitOfWork sharedUnitOfWork;
 
     @TestVisible
     private TriggerOrchestrator(Object orchestrator) {
         this.orchestrator = orchestrator;
         this.context = new TriggerContext();
         this.lookupEnrichment = new LookupEnrichment(this.context);
-        this.sharedUnitOfWork = new DML().combineOnDuplicate().systemMode().withoutSharing();
+        this.sharedUnitOfWork = new TriggerUnitOfWork();
     }
 
     @TestVisible
@@ -349,6 +349,8 @@ public with sharing class TriggerOrchestrator {
             for (TriggerHandlerAdapter adapter : activeAdapters) {
                 adapter.execute(orchestrator.context.triggerRecords);
             }
+
+            orchestrator.sharedUnitOfWork.commitWork();
         }
 
         private List<TriggerHandlerAdapter> getActiveAdapters(TriggerOrchestrator orchestrator) {
@@ -387,7 +389,11 @@ public with sharing class TriggerOrchestrator {
             List<TriggerHandlerAdapter> adapters = new List<TriggerHandlerAdapter>();
 
             for (AfterInsert.Handler handler : ((TriggerOrchestrator.AfterInsert) orchestrator.orchestrator).afterInsertHandlers()) {
-                adapters.add(new AfterInsertHandlerAdapter(handler, orchestrator));
+                if (handler instanceof AfterInsert.Writer) {
+                    adapters.add(new AfterInsertWriterAdapter((AfterInsert.Writer) handler, orchestrator));
+                } else if (handler instanceof AfterInsert.Dispatcher) {
+                    adapters.add(new AfterInsertDispatcherAdapter((AfterInsert.Dispatcher) handler, orchestrator));
+                }
             }
 
             return adapters;
@@ -415,7 +421,11 @@ public with sharing class TriggerOrchestrator {
             List<TriggerHandlerAdapter> adapters = new List<TriggerHandlerAdapter>();
 
             for (AfterUpdate.Handler handler : ((TriggerOrchestrator.AfterUpdate) orchestrator.orchestrator).afterUpdateHandlers()) {
-                adapters.add(new AfterUpdateHandlerAdapter(handler, orchestrator));
+                if (handler instanceof AfterUpdate.Writer) {
+                    adapters.add(new AfterUpdateWriterAdapter((AfterUpdate.Writer) handler, orchestrator));
+                } else if (handler instanceof AfterUpdate.Dispatcher) {
+                    adapters.add(new AfterUpdateDispatcherAdapter((AfterUpdate.Dispatcher) handler, orchestrator));
+                }
             }
 
             return adapters;
@@ -439,7 +449,11 @@ public with sharing class TriggerOrchestrator {
             List<TriggerHandlerAdapter> adapters = new List<TriggerHandlerAdapter>();
 
             for (AfterDelete.Handler handler : ((TriggerOrchestrator.AfterDelete) orchestrator.orchestrator).afterDeleteHandlers()) {
-                adapters.add(new AfterDeleteHandlerAdapter(handler, orchestrator));
+                if (handler instanceof AfterDelete.Writer) {
+                    adapters.add(new AfterDeleteWriterAdapter((AfterDelete.Writer) handler, orchestrator));
+                } else if (handler instanceof AfterDelete.Dispatcher) {
+                    adapters.add(new AfterDeleteDispatcherAdapter((AfterDelete.Dispatcher) handler, orchestrator));
+                }
             }
 
             return adapters;
@@ -451,7 +465,11 @@ public with sharing class TriggerOrchestrator {
             List<TriggerHandlerAdapter> adapters = new List<TriggerHandlerAdapter>();
 
             for (AfterUndelete.Handler handler : ((TriggerOrchestrator.AfterUndelete) orchestrator.orchestrator).afterUndeleteHandlers()) {
-                adapters.add(new AfterUndeleteHandlerAdapter(handler, orchestrator));
+                if (handler instanceof AfterUndelete.Writer) {
+                    adapters.add(new AfterUndeleteWriterAdapter((AfterUndelete.Writer) handler, orchestrator));
+                } else if (handler instanceof AfterUndelete.Dispatcher) {
+                    adapters.add(new AfterUndeleteDispatcherAdapter((AfterUndelete.Dispatcher) handler, orchestrator));
+                }
             }
 
             return adapters;
@@ -747,21 +765,25 @@ public with sharing class TriggerOrchestrator {
         }
     }
 
-    private class AfterInsertHandlerAdapter extends TriggerHandlerAdapter implements NewRecordEnricher {
-        private AfterInsert.Handler handler;
+    private class AfterInsertWriterAdapter extends TriggerHandlerAdapter implements NewRecordEnricher {
+        private AfterInsert.Writer writer;
+        private TriggerUnitOfWork unitOfWork;
 
-        public AfterInsertHandlerAdapter(AfterInsert.Handler handler, TriggerOrchestrator orchestrator) {
-            super(handler, orchestrator);
-            this.handler = handler;
+        public AfterInsertWriterAdapter(AfterInsert.Writer writer, TriggerOrchestrator orchestrator) {
+            super(writer, orchestrator);
+            this.writer = writer;
+            this.unitOfWork = this.writer instanceof AfterInsert.OwnUnitOfWork
+                ? new TriggerUnitOfWork(((AfterInsert.OwnUnitOfWork) this.writer).ownUnitOfWorkOnAfterInsert())
+                : this.writer instanceof AfterInsert.ContinueOnError ? new TriggerUnitOfWork() : this.orchestrator.sharedUnitOfWork;
         }
 
         public override Boolean isBypassedByInterface() {
-            return (this.handler instanceof AfterInsert.Bypassable && ((AfterInsert.Bypassable) this.handler).bypassOnAfterInsertWhen());
+            return (this.writer instanceof AfterInsert.Bypassable && ((AfterInsert.Bypassable) this.writer).bypassOnAfterInsertWhen());
         }
 
         public Map<SObjectField, TriggerHandler.ParentFields> getNewFieldsToEnrich() {
-            if (this.handler instanceof AfterInsert.ParentQuery) {
-                return ((AfterInsert.ParentQuery) this.handler).queryParentsOnAfterInsert();
+            if (this.writer instanceof AfterInsert.ParentQuery) {
+                return ((AfterInsert.ParentQuery) this.writer).queryParentsOnAfterInsert();
             }
 
             return new Map<SObjectField, TriggerHandler.ParentFields>();
@@ -772,40 +794,49 @@ public with sharing class TriggerOrchestrator {
                 this.loadRelated(records);
 
                 for (TriggerHandler.TriggerRecord record : records) {
-                    this.handle(record);
+                    this.write(record);
                 }
 
                 this.finalize();
+                this.commitOwnUnitOfWork();
             } catch (Exception e) {
                 this.handleException(e);
             }
         }
 
-        private void handle(TriggerHandler.TriggerRecord record) {
-            if (!this.handler.qualifiesForAfterInsertWhen(record)) {
+        private void write(TriggerHandler.TriggerRecord record) {
+            if (!this.writer.writeOnAfterInsertWhen(record)) {
                 return;
             }
 
             this.processedRecords.add(record);
-            this.handler.onAfterInsert(record);
+            this.writer.writeOnAfterInsert(record, this.unitOfWork);
         }
 
         private void finalize() {
-            if (this.processedRecords.isEmpty() || !(this.handler instanceof AfterInsert.Finalizer)) {
+            if (this.processedRecords.isEmpty() || !(this.writer instanceof AfterInsert.Finalizer)) {
                 return;
             }
 
-            ((AfterInsert.Finalizer) this.handler).finalizeAfterInsert();
+            ((AfterInsert.Finalizer) this.writer).finalizeAfterInsert();
+        }
+
+        private void commitOwnUnitOfWork() {
+            if (this.processedRecords.isEmpty() || this.unitOfWork === this.orchestrator.sharedUnitOfWork) {
+                return;
+            }
+
+            this.unitOfWork.commitWork();
         }
 
         public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
             Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
 
-            if (!(this.handler instanceof AfterInsert.RelatedQuery)) {
+            if (!(this.writer instanceof AfterInsert.RelatedQuery)) {
                 return relatedRecords;
             }
 
-            Map<String, AfterInsert.RecordsProvider> providers = ((AfterInsert.RelatedQuery) this.handler).queryRelatedOnAfterInsert() ??
+            Map<String, AfterInsert.RecordsProvider> providers = ((AfterInsert.RelatedQuery) this.writer).queryRelatedOnAfterInsert() ??
                 new Map<String, AfterInsert.RecordsProvider>();
             TriggerHandler.InsertRecords providedTo = new TriggerHandler.InsertTriggerRecords(records);
 
@@ -819,7 +850,93 @@ public with sharing class TriggerOrchestrator {
         private void handleException(Exception e) {
             this.logError(e);
 
-            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.handler instanceof AfterInsert.ContinueOnError)) {
+            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.writer instanceof AfterInsert.ContinueOnError)) {
+                throw e;
+            }
+        }
+    }
+
+    private class AfterInsertDispatcherAdapter extends TriggerHandlerAdapter implements NewRecordEnricher {
+        private AfterInsert.Dispatcher dispatcher;
+
+        public AfterInsertDispatcherAdapter(AfterInsert.Dispatcher dispatcher, TriggerOrchestrator orchestrator) {
+            super(dispatcher, orchestrator);
+            this.dispatcher = dispatcher;
+        }
+
+        public override Boolean isBypassedByInterface() {
+            return (this.dispatcher instanceof AfterInsert.Bypassable && ((AfterInsert.Bypassable) this.dispatcher).bypassOnAfterInsertWhen());
+        }
+
+        public Map<SObjectField, TriggerHandler.ParentFields> getNewFieldsToEnrich() {
+            if (this.dispatcher instanceof AfterInsert.ParentQuery) {
+                return ((AfterInsert.ParentQuery) this.dispatcher).queryParentsOnAfterInsert();
+            }
+
+            return new Map<SObjectField, TriggerHandler.ParentFields>();
+        }
+
+        public override void execute(List<TriggerHandler.TriggerRecord> records) {
+            try {
+                this.loadRelated(records);
+
+                for (TriggerHandler.TriggerRecord record : records) {
+                    this.qualify(record);
+                }
+
+                this.dispatch();
+                this.finalize();
+            } catch (Exception e) {
+                this.handleException(e);
+            }
+        }
+
+        private void qualify(TriggerHandler.TriggerRecord record) {
+            if (!this.dispatcher.dispatchOnAfterInsertWhen(record)) {
+                return;
+            }
+
+            this.processedRecords.add(record);
+        }
+
+        private void dispatch() {
+            if (this.processedRecords.isEmpty()) {
+                return;
+            }
+
+            this.dispatcher.dispatchOnAfterInsert(new TriggerHandler.InsertTriggerRecords(this.processedRecords));
+        }
+
+        private void finalize() {
+            if (this.processedRecords.isEmpty() || !(this.dispatcher instanceof AfterInsert.Finalizer)) {
+                return;
+            }
+
+            ((AfterInsert.Finalizer) this.dispatcher).finalizeAfterInsert();
+        }
+
+        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+
+            if (!(this.dispatcher instanceof AfterInsert.RelatedQuery)) {
+                return relatedRecords;
+            }
+
+            Map<String, AfterInsert.RecordsProvider> providers = ((AfterInsert.RelatedQuery) this.dispatcher).queryRelatedOnAfterInsert() ??
+                new Map<String, AfterInsert.RecordsProvider>();
+            TriggerHandler.InsertRecords providedTo = new TriggerHandler.InsertTriggerRecords(records);
+
+            for (String providerName : providers.keySet()) {
+                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+            }
+
+            return relatedRecords;
+        }
+
+        private void handleException(Exception e) {
+            this.logError(e);
+
+            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.dispatcher instanceof AfterInsert.ContinueOnError)) {
                 throw e;
             }
         }
@@ -1043,38 +1160,42 @@ public with sharing class TriggerOrchestrator {
         }
     }
 
-    private class AfterUpdateHandlerAdapter extends TriggerHandlerAdapter implements NewRecordEnricher, OldRecordEnricher {
-        private AfterUpdate.Handler handler;
+    private class AfterUpdateWriterAdapter extends TriggerHandlerAdapter implements NewRecordEnricher, OldRecordEnricher {
+        private AfterUpdate.Writer writer;
+        private TriggerUnitOfWork unitOfWork;
         private Map<Id, Integer> recursionDepthByRecord;
         private Integer maxRecursionDepth = 3;
 
-        public AfterUpdateHandlerAdapter(AfterUpdate.Handler handler, TriggerOrchestrator orchestrator) {
-            super(handler, orchestrator);
-            this.handler = handler;
+        public AfterUpdateWriterAdapter(AfterUpdate.Writer writer, TriggerOrchestrator orchestrator) {
+            super(writer, orchestrator);
+            this.writer = writer;
+            this.unitOfWork = this.writer instanceof AfterUpdate.OwnUnitOfWork
+                ? new TriggerUnitOfWork(((AfterUpdate.OwnUnitOfWork) this.writer).ownUnitOfWorkOnAfterUpdate())
+                : this.writer instanceof AfterUpdate.ContinueOnError ? new TriggerUnitOfWork() : this.orchestrator.sharedUnitOfWork;
 
             TriggerOrchestrator.triggerDepth.registerScope(this.handlerName + ':AFTER_UPDATE');
             this.recursionDepthByRecord = TriggerOrchestrator.triggerDepth.getForRecursionScope(this.handlerName + ':AFTER_UPDATE');
 
-            if (handler instanceof AfterUpdate.RecursionGuard) {
-                this.maxRecursionDepth = ((AfterUpdate.RecursionGuard) handler).maxRecursionDepthOnAfterUpdate();
+            if (writer instanceof AfterUpdate.RecursionGuard) {
+                this.maxRecursionDepth = ((AfterUpdate.RecursionGuard) writer).maxRecursionDepthOnAfterUpdate();
             }
         }
 
         public override Boolean isBypassedByInterface() {
-            return (this.handler instanceof AfterUpdate.Bypassable && ((AfterUpdate.Bypassable) this.handler).bypassOnAfterUpdateWhen());
+            return (this.writer instanceof AfterUpdate.Bypassable && ((AfterUpdate.Bypassable) this.writer).bypassOnAfterUpdateWhen());
         }
 
         public Map<SObjectField, TriggerHandler.ParentFields> getNewFieldsToEnrich() {
-            if (this.handler instanceof AfterUpdate.ParentQuery) {
-                return ((AfterUpdate.ParentQuery) this.handler).queryParentsOnAfterUpdate();
+            if (this.writer instanceof AfterUpdate.ParentQuery) {
+                return ((AfterUpdate.ParentQuery) this.writer).queryParentsOnAfterUpdate();
             }
 
             return new Map<SObjectField, TriggerHandler.ParentFields>();
         }
 
         public Map<SObjectField, TriggerHandler.ParentFields> getOldFieldsToEnrich() {
-            if (this.handler instanceof AfterUpdate.PriorParentQuery) {
-                return ((AfterUpdate.PriorParentQuery) this.handler).queryPriorParentsOnAfterUpdate();
+            if (this.writer instanceof AfterUpdate.PriorParentQuery) {
+                return ((AfterUpdate.PriorParentQuery) this.writer).queryPriorParentsOnAfterUpdate();
             }
 
             return new Map<SObjectField, TriggerHandler.ParentFields>();
@@ -1085,43 +1206,52 @@ public with sharing class TriggerOrchestrator {
                 this.loadRelated(records);
 
                 for (TriggerHandler.TriggerRecord record : records) {
-                    this.handle(record);
+                    this.write(record);
                 }
 
                 this.finalize();
+                this.commitOwnUnitOfWork();
             } catch (Exception e) {
                 this.handleException(e);
             }
         }
 
-        private void handle(TriggerHandler.TriggerRecord record) {
+        private void write(TriggerHandler.TriggerRecord record) {
             Integer recursionDepth = this.recursionDepthByRecord.get(record.getId()) ?? 0;
 
-            if (recursionDepth >= this.maxRecursionDepth || !this.handler.qualifiesForAfterUpdateWhen(record)) {
+            if (recursionDepth >= this.maxRecursionDepth || !this.writer.writeOnAfterUpdateWhen(record)) {
                 return;
             }
 
             this.recursionDepthByRecord.put(record.getId(), recursionDepth + 1);
             this.processedRecords.add(record);
-            this.handler.onAfterUpdate(record);
+            this.writer.writeOnAfterUpdate(record, this.unitOfWork);
         }
 
         private void finalize() {
-            if (this.processedRecords.isEmpty() || !(this.handler instanceof AfterUpdate.Finalizer)) {
+            if (this.processedRecords.isEmpty() || !(this.writer instanceof AfterUpdate.Finalizer)) {
                 return;
             }
 
-            ((AfterUpdate.Finalizer) this.handler).finalizeAfterUpdate();
+            ((AfterUpdate.Finalizer) this.writer).finalizeAfterUpdate();
+        }
+
+        private void commitOwnUnitOfWork() {
+            if (this.processedRecords.isEmpty() || this.unitOfWork === this.orchestrator.sharedUnitOfWork) {
+                return;
+            }
+
+            this.unitOfWork.commitWork();
         }
 
         public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
             Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
 
-            if (!(this.handler instanceof AfterUpdate.RelatedQuery)) {
+            if (!(this.writer instanceof AfterUpdate.RelatedQuery)) {
                 return relatedRecords;
             }
 
-            Map<String, AfterUpdate.RecordsProvider> providers = ((AfterUpdate.RelatedQuery) this.handler).queryRelatedOnAfterUpdate() ??
+            Map<String, AfterUpdate.RecordsProvider> providers = ((AfterUpdate.RelatedQuery) this.writer).queryRelatedOnAfterUpdate() ??
                 new Map<String, AfterUpdate.RecordsProvider>();
             TriggerHandler.UpdateRecords providedTo = new TriggerHandler.UpdateTriggerRecords(records);
 
@@ -1135,7 +1265,113 @@ public with sharing class TriggerOrchestrator {
         private void handleException(Exception e) {
             this.logError(e);
 
-            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.handler instanceof AfterUpdate.ContinueOnError)) {
+            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.writer instanceof AfterUpdate.ContinueOnError)) {
+                throw e;
+            }
+        }
+    }
+
+    private class AfterUpdateDispatcherAdapter extends TriggerHandlerAdapter implements NewRecordEnricher, OldRecordEnricher {
+        private AfterUpdate.Dispatcher dispatcher;
+        private Map<Id, Integer> recursionDepthByRecord;
+        private Integer maxRecursionDepth = 3;
+
+        public AfterUpdateDispatcherAdapter(AfterUpdate.Dispatcher dispatcher, TriggerOrchestrator orchestrator) {
+            super(dispatcher, orchestrator);
+            this.dispatcher = dispatcher;
+
+            TriggerOrchestrator.triggerDepth.registerScope(this.handlerName + ':AFTER_UPDATE');
+            this.recursionDepthByRecord = TriggerOrchestrator.triggerDepth.getForRecursionScope(this.handlerName + ':AFTER_UPDATE');
+
+            if (dispatcher instanceof AfterUpdate.RecursionGuard) {
+                this.maxRecursionDepth = ((AfterUpdate.RecursionGuard) dispatcher).maxRecursionDepthOnAfterUpdate();
+            }
+        }
+
+        public override Boolean isBypassedByInterface() {
+            return (this.dispatcher instanceof AfterUpdate.Bypassable && ((AfterUpdate.Bypassable) this.dispatcher).bypassOnAfterUpdateWhen());
+        }
+
+        public Map<SObjectField, TriggerHandler.ParentFields> getNewFieldsToEnrich() {
+            if (this.dispatcher instanceof AfterUpdate.ParentQuery) {
+                return ((AfterUpdate.ParentQuery) this.dispatcher).queryParentsOnAfterUpdate();
+            }
+
+            return new Map<SObjectField, TriggerHandler.ParentFields>();
+        }
+
+        public Map<SObjectField, TriggerHandler.ParentFields> getOldFieldsToEnrich() {
+            if (this.dispatcher instanceof AfterUpdate.PriorParentQuery) {
+                return ((AfterUpdate.PriorParentQuery) this.dispatcher).queryPriorParentsOnAfterUpdate();
+            }
+
+            return new Map<SObjectField, TriggerHandler.ParentFields>();
+        }
+
+        public override void execute(List<TriggerHandler.TriggerRecord> records) {
+            try {
+                this.loadRelated(records);
+
+                for (TriggerHandler.TriggerRecord record : records) {
+                    this.qualify(record);
+                }
+
+                this.dispatch();
+                this.finalize();
+            } catch (Exception e) {
+                this.handleException(e);
+            }
+        }
+
+        private void qualify(TriggerHandler.TriggerRecord record) {
+            Integer recursionDepth = this.recursionDepthByRecord.get(record.getId()) ?? 0;
+
+            if (recursionDepth >= this.maxRecursionDepth || !this.dispatcher.dispatchOnAfterUpdateWhen(record)) {
+                return;
+            }
+
+            this.recursionDepthByRecord.put(record.getId(), recursionDepth + 1);
+            this.processedRecords.add(record);
+        }
+
+        private void dispatch() {
+            if (this.processedRecords.isEmpty()) {
+                return;
+            }
+
+            this.dispatcher.dispatchOnAfterUpdate(new TriggerHandler.UpdateTriggerRecords(this.processedRecords));
+        }
+
+        private void finalize() {
+            if (this.processedRecords.isEmpty() || !(this.dispatcher instanceof AfterUpdate.Finalizer)) {
+                return;
+            }
+
+            ((AfterUpdate.Finalizer) this.dispatcher).finalizeAfterUpdate();
+        }
+
+        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+
+            if (!(this.dispatcher instanceof AfterUpdate.RelatedQuery)) {
+                return relatedRecords;
+            }
+
+            Map<String, AfterUpdate.RecordsProvider> providers = ((AfterUpdate.RelatedQuery) this.dispatcher).queryRelatedOnAfterUpdate() ??
+                new Map<String, AfterUpdate.RecordsProvider>();
+            TriggerHandler.UpdateRecords providedTo = new TriggerHandler.UpdateTriggerRecords(records);
+
+            for (String providerName : providers.keySet()) {
+                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+            }
+
+            return relatedRecords;
+        }
+
+        private void handleException(Exception e) {
+            this.logError(e);
+
+            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.dispatcher instanceof AfterUpdate.ContinueOnError)) {
                 throw e;
             }
         }
@@ -1219,21 +1455,25 @@ public with sharing class TriggerOrchestrator {
         }
     }
 
-    private class AfterDeleteHandlerAdapter extends TriggerHandlerAdapter implements OldRecordEnricher {
-        private AfterDelete.Handler handler;
+    private class AfterDeleteWriterAdapter extends TriggerHandlerAdapter implements OldRecordEnricher {
+        private AfterDelete.Writer writer;
+        private TriggerUnitOfWork unitOfWork;
 
-        public AfterDeleteHandlerAdapter(AfterDelete.Handler handler, TriggerOrchestrator orchestrator) {
-            super(handler, orchestrator);
-            this.handler = handler;
+        public AfterDeleteWriterAdapter(AfterDelete.Writer writer, TriggerOrchestrator orchestrator) {
+            super(writer, orchestrator);
+            this.writer = writer;
+            this.unitOfWork = this.writer instanceof AfterDelete.OwnUnitOfWork
+                ? new TriggerUnitOfWork(((AfterDelete.OwnUnitOfWork) this.writer).ownUnitOfWorkOnAfterDelete())
+                : this.writer instanceof AfterDelete.ContinueOnError ? new TriggerUnitOfWork() : this.orchestrator.sharedUnitOfWork;
         }
 
         public override Boolean isBypassedByInterface() {
-            return (this.handler instanceof AfterDelete.Bypassable && ((AfterDelete.Bypassable) this.handler).bypassOnAfterDeleteWhen());
+            return (this.writer instanceof AfterDelete.Bypassable && ((AfterDelete.Bypassable) this.writer).bypassOnAfterDeleteWhen());
         }
 
         public Map<SObjectField, TriggerHandler.ParentFields> getOldFieldsToEnrich() {
-            if (this.handler instanceof AfterDelete.PriorParentQuery) {
-                return ((AfterDelete.PriorParentQuery) this.handler).queryParentsOnAfterDelete();
+            if (this.writer instanceof AfterDelete.PriorParentQuery) {
+                return ((AfterDelete.PriorParentQuery) this.writer).queryParentsOnAfterDelete();
             }
 
             return new Map<SObjectField, TriggerHandler.ParentFields>();
@@ -1244,40 +1484,49 @@ public with sharing class TriggerOrchestrator {
                 this.loadRelated(records);
 
                 for (TriggerHandler.TriggerRecord record : records) {
-                    this.handle(record);
+                    this.write(record);
                 }
 
                 this.finalize();
+                this.commitOwnUnitOfWork();
             } catch (Exception e) {
                 this.handleException(e);
             }
         }
 
-        private void handle(TriggerHandler.TriggerRecord record) {
-            if (!this.handler.qualifiesForAfterDeleteWhen(record)) {
+        private void write(TriggerHandler.TriggerRecord record) {
+            if (!this.writer.writeOnAfterDeleteWhen(record)) {
                 return;
             }
 
             this.processedRecords.add(record);
-            this.handler.onAfterDelete(record);
+            this.writer.writeOnAfterDelete(record, this.unitOfWork);
         }
 
         private void finalize() {
-            if (this.processedRecords.isEmpty() || !(this.handler instanceof AfterDelete.Finalizer)) {
+            if (this.processedRecords.isEmpty() || !(this.writer instanceof AfterDelete.Finalizer)) {
                 return;
             }
 
-            ((AfterDelete.Finalizer) this.handler).finalizeAfterDelete();
+            ((AfterDelete.Finalizer) this.writer).finalizeAfterDelete();
+        }
+
+        private void commitOwnUnitOfWork() {
+            if (this.processedRecords.isEmpty() || this.unitOfWork === this.orchestrator.sharedUnitOfWork) {
+                return;
+            }
+
+            this.unitOfWork.commitWork();
         }
 
         public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
             Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
 
-            if (!(this.handler instanceof AfterDelete.RelatedQuery)) {
+            if (!(this.writer instanceof AfterDelete.RelatedQuery)) {
                 return relatedRecords;
             }
 
-            Map<String, AfterDelete.RecordsProvider> providers = ((AfterDelete.RelatedQuery) this.handler).queryRelatedOnAfterDelete() ??
+            Map<String, AfterDelete.RecordsProvider> providers = ((AfterDelete.RelatedQuery) this.writer).queryRelatedOnAfterDelete() ??
                 new Map<String, AfterDelete.RecordsProvider>();
             TriggerHandler.DeleteRecords providedTo = new TriggerHandler.DeleteTriggerRecords(records);
 
@@ -1291,27 +1540,27 @@ public with sharing class TriggerOrchestrator {
         private void handleException(Exception e) {
             this.logError(e);
 
-            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.handler instanceof AfterDelete.ContinueOnError)) {
+            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.writer instanceof AfterDelete.ContinueOnError)) {
                 throw e;
             }
         }
     }
 
-    private class AfterUndeleteHandlerAdapter extends TriggerHandlerAdapter implements NewRecordEnricher {
-        private AfterUndelete.Handler handler;
+    private class AfterDeleteDispatcherAdapter extends TriggerHandlerAdapter implements OldRecordEnricher {
+        private AfterDelete.Dispatcher dispatcher;
 
-        public AfterUndeleteHandlerAdapter(AfterUndelete.Handler handler, TriggerOrchestrator orchestrator) {
-            super(handler, orchestrator);
-            this.handler = handler;
+        public AfterDeleteDispatcherAdapter(AfterDelete.Dispatcher dispatcher, TriggerOrchestrator orchestrator) {
+            super(dispatcher, orchestrator);
+            this.dispatcher = dispatcher;
         }
 
         public override Boolean isBypassedByInterface() {
-            return (this.handler instanceof AfterUndelete.Bypassable && ((AfterUndelete.Bypassable) this.handler).bypassOnAfterUndeleteWhen());
+            return (this.dispatcher instanceof AfterDelete.Bypassable && ((AfterDelete.Bypassable) this.dispatcher).bypassOnAfterDeleteWhen());
         }
 
-        public Map<SObjectField, TriggerHandler.ParentFields> getNewFieldsToEnrich() {
-            if (this.handler instanceof AfterUndelete.ParentQuery) {
-                return ((AfterUndelete.ParentQuery) this.handler).queryParentsOnAfterUndelete();
+        public Map<SObjectField, TriggerHandler.ParentFields> getOldFieldsToEnrich() {
+            if (this.dispatcher instanceof AfterDelete.PriorParentQuery) {
+                return ((AfterDelete.PriorParentQuery) this.dispatcher).queryParentsOnAfterDelete();
             }
 
             return new Map<SObjectField, TriggerHandler.ParentFields>();
@@ -1322,40 +1571,139 @@ public with sharing class TriggerOrchestrator {
                 this.loadRelated(records);
 
                 for (TriggerHandler.TriggerRecord record : records) {
-                    this.handle(record);
+                    this.qualify(record);
                 }
 
+                this.dispatch();
                 this.finalize();
             } catch (Exception e) {
                 this.handleException(e);
             }
         }
 
-        private void handle(TriggerHandler.TriggerRecord record) {
-            if (!this.handler.qualifiesForAfterUndeleteWhen(record)) {
+        private void qualify(TriggerHandler.TriggerRecord record) {
+            if (!this.dispatcher.dispatchOnAfterDeleteWhen(record)) {
                 return;
             }
 
             this.processedRecords.add(record);
-            this.handler.onAfterUndelete(record);
         }
 
-        private void finalize() {
-            if (this.processedRecords.isEmpty() || !(this.handler instanceof AfterUndelete.Finalizer)) {
+        private void dispatch() {
+            if (this.processedRecords.isEmpty()) {
                 return;
             }
 
-            ((AfterUndelete.Finalizer) this.handler).finalizeAfterUndelete();
+            this.dispatcher.dispatchOnAfterDelete(new TriggerHandler.DeleteTriggerRecords(this.processedRecords));
+        }
+
+        private void finalize() {
+            if (this.processedRecords.isEmpty() || !(this.dispatcher instanceof AfterDelete.Finalizer)) {
+                return;
+            }
+
+            ((AfterDelete.Finalizer) this.dispatcher).finalizeAfterDelete();
         }
 
         public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
             Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
 
-            if (!(this.handler instanceof AfterUndelete.RelatedQuery)) {
+            if (!(this.dispatcher instanceof AfterDelete.RelatedQuery)) {
                 return relatedRecords;
             }
 
-            Map<String, AfterUndelete.RecordsProvider> providers = ((AfterUndelete.RelatedQuery) this.handler).queryRelatedOnAfterUndelete() ??
+            Map<String, AfterDelete.RecordsProvider> providers = ((AfterDelete.RelatedQuery) this.dispatcher).queryRelatedOnAfterDelete() ??
+                new Map<String, AfterDelete.RecordsProvider>();
+            TriggerHandler.DeleteRecords providedTo = new TriggerHandler.DeleteTriggerRecords(records);
+
+            for (String providerName : providers.keySet()) {
+                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+            }
+
+            return relatedRecords;
+        }
+
+        private void handleException(Exception e) {
+            this.logError(e);
+
+            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.dispatcher instanceof AfterDelete.ContinueOnError)) {
+                throw e;
+            }
+        }
+    }
+
+    private class AfterUndeleteWriterAdapter extends TriggerHandlerAdapter implements NewRecordEnricher {
+        private AfterUndelete.Writer writer;
+        private TriggerUnitOfWork unitOfWork;
+
+        public AfterUndeleteWriterAdapter(AfterUndelete.Writer writer, TriggerOrchestrator orchestrator) {
+            super(writer, orchestrator);
+            this.writer = writer;
+            this.unitOfWork = this.writer instanceof AfterUndelete.OwnUnitOfWork
+                ? new TriggerUnitOfWork(((AfterUndelete.OwnUnitOfWork) this.writer).ownUnitOfWorkOnAfterUndelete())
+                : this.writer instanceof AfterUndelete.ContinueOnError ? new TriggerUnitOfWork() : this.orchestrator.sharedUnitOfWork;
+        }
+
+        public override Boolean isBypassedByInterface() {
+            return (this.writer instanceof AfterUndelete.Bypassable && ((AfterUndelete.Bypassable) this.writer).bypassOnAfterUndeleteWhen());
+        }
+
+        public Map<SObjectField, TriggerHandler.ParentFields> getNewFieldsToEnrich() {
+            if (this.writer instanceof AfterUndelete.ParentQuery) {
+                return ((AfterUndelete.ParentQuery) this.writer).queryParentsOnAfterUndelete();
+            }
+
+            return new Map<SObjectField, TriggerHandler.ParentFields>();
+        }
+
+        public override void execute(List<TriggerHandler.TriggerRecord> records) {
+            try {
+                this.loadRelated(records);
+
+                for (TriggerHandler.TriggerRecord record : records) {
+                    this.write(record);
+                }
+
+                this.finalize();
+                this.commitOwnUnitOfWork();
+            } catch (Exception e) {
+                this.handleException(e);
+            }
+        }
+
+        private void write(TriggerHandler.TriggerRecord record) {
+            if (!this.writer.writeOnAfterUndeleteWhen(record)) {
+                return;
+            }
+
+            this.processedRecords.add(record);
+            this.writer.writeOnAfterUndelete(record, this.unitOfWork);
+        }
+
+        private void finalize() {
+            if (this.processedRecords.isEmpty() || !(this.writer instanceof AfterUndelete.Finalizer)) {
+                return;
+            }
+
+            ((AfterUndelete.Finalizer) this.writer).finalizeAfterUndelete();
+        }
+
+        private void commitOwnUnitOfWork() {
+            if (this.processedRecords.isEmpty() || this.unitOfWork === this.orchestrator.sharedUnitOfWork) {
+                return;
+            }
+
+            this.unitOfWork.commitWork();
+        }
+
+        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+
+            if (!(this.writer instanceof AfterUndelete.RelatedQuery)) {
+                return relatedRecords;
+            }
+
+            Map<String, AfterUndelete.RecordsProvider> providers = ((AfterUndelete.RelatedQuery) this.writer).queryRelatedOnAfterUndelete() ??
                 new Map<String, AfterUndelete.RecordsProvider>();
             TriggerHandler.UndeleteRecords providedTo = new TriggerHandler.UndeleteTriggerRecords(records);
 
@@ -1369,9 +1717,146 @@ public with sharing class TriggerOrchestrator {
         private void handleException(Exception e) {
             this.logError(e);
 
-            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.handler instanceof AfterUndelete.ContinueOnError)) {
+            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.writer instanceof AfterUndelete.ContinueOnError)) {
                 throw e;
             }
+        }
+    }
+
+    private class AfterUndeleteDispatcherAdapter extends TriggerHandlerAdapter implements NewRecordEnricher {
+        private AfterUndelete.Dispatcher dispatcher;
+
+        public AfterUndeleteDispatcherAdapter(AfterUndelete.Dispatcher dispatcher, TriggerOrchestrator orchestrator) {
+            super(dispatcher, orchestrator);
+            this.dispatcher = dispatcher;
+        }
+
+        public override Boolean isBypassedByInterface() {
+            return (this.dispatcher instanceof AfterUndelete.Bypassable && ((AfterUndelete.Bypassable) this.dispatcher).bypassOnAfterUndeleteWhen());
+        }
+
+        public Map<SObjectField, TriggerHandler.ParentFields> getNewFieldsToEnrich() {
+            if (this.dispatcher instanceof AfterUndelete.ParentQuery) {
+                return ((AfterUndelete.ParentQuery) this.dispatcher).queryParentsOnAfterUndelete();
+            }
+
+            return new Map<SObjectField, TriggerHandler.ParentFields>();
+        }
+
+        public override void execute(List<TriggerHandler.TriggerRecord> records) {
+            try {
+                this.loadRelated(records);
+
+                for (TriggerHandler.TriggerRecord record : records) {
+                    this.qualify(record);
+                }
+
+                this.dispatch();
+                this.finalize();
+            } catch (Exception e) {
+                this.handleException(e);
+            }
+        }
+
+        private void qualify(TriggerHandler.TriggerRecord record) {
+            if (!this.dispatcher.dispatchOnAfterUndeleteWhen(record)) {
+                return;
+            }
+
+            this.processedRecords.add(record);
+        }
+
+        private void dispatch() {
+            if (this.processedRecords.isEmpty()) {
+                return;
+            }
+
+            this.dispatcher.dispatchOnAfterUndelete(new TriggerHandler.UndeleteTriggerRecords(this.processedRecords));
+        }
+
+        private void finalize() {
+            if (this.processedRecords.isEmpty() || !(this.dispatcher instanceof AfterUndelete.Finalizer)) {
+                return;
+            }
+
+            ((AfterUndelete.Finalizer) this.dispatcher).finalizeAfterUndelete();
+        }
+
+        public override Map<String, TriggerHandler.RelatedRecords> queryRelated(List<TriggerHandler.TriggerRecord> records) {
+            Map<String, TriggerHandler.RelatedRecords> relatedRecords = new Map<String, TriggerHandler.RelatedRecords>();
+
+            if (!(this.dispatcher instanceof AfterUndelete.RelatedQuery)) {
+                return relatedRecords;
+            }
+
+            Map<String, AfterUndelete.RecordsProvider> providers = ((AfterUndelete.RelatedQuery) this.dispatcher).queryRelatedOnAfterUndelete() ??
+                new Map<String, AfterUndelete.RecordsProvider>();
+            TriggerHandler.UndeleteRecords providedTo = new TriggerHandler.UndeleteTriggerRecords(records);
+
+            for (String providerName : providers.keySet()) {
+                relatedRecords.put(providerName, new TriggerHandler.ProvidedRecords(providers.get(providerName), providedTo));
+            }
+
+            return relatedRecords;
+        }
+
+        private void handleException(Exception e) {
+            this.logError(e);
+
+            if (e instanceof TriggerOrchestratorException || e instanceof TriggerHandler.TriggerHandlerException || !(this.dispatcher instanceof AfterUndelete.ContinueOnError)) {
+                throw e;
+            }
+        }
+    }
+
+    private class TriggerUnitOfWork implements TriggerHandler.UnitOfWork {
+        private DML.Committable dml;
+
+        public TriggerUnitOfWork() {
+            this(new DML().combineOnDuplicate().systemMode().withoutSharing());
+        }
+
+        public TriggerUnitOfWork(DML.Committable dml) {
+            this.dml = dml;
+        }
+
+        public TriggerHandler.UnitOfWork toInsert(SObject record) {
+            this.dml.toInsert(record);
+            return this;
+        }
+
+        public TriggerHandler.UnitOfWork toInsert(DML.Record record) {
+            this.dml.toInsert(record);
+            return this;
+        }
+
+        public TriggerHandler.UnitOfWork toUpdate(SObject record) {
+            this.dml.toUpdate(record);
+            return this;
+        }
+
+        public TriggerHandler.UnitOfWork toUpdate(DML.Record record) {
+            this.dml.toUpdate(record);
+            return this;
+        }
+
+        public TriggerHandler.UnitOfWork toUpsert(SObject record, SObjectField externalIdField) {
+            this.dml.toUpsert(record, externalIdField);
+            return this;
+        }
+
+        public TriggerHandler.UnitOfWork toDelete(SObject record) {
+            this.dml.toDelete(record);
+            return this;
+        }
+
+        public TriggerHandler.UnitOfWork toPublish(SObject event) {
+            this.dml.toPublish(event);
+            return this;
+        }
+
+        public void commitWork() {
+            this.dml.commitWork();
         }
     }
 

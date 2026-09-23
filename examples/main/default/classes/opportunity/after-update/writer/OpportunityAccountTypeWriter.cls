@@ -1,6 +1,4 @@
-public with sharing class OpportunityAccountTypeHandler implements AfterUpdate.Handler, AfterUpdate.ParentQuery, AfterUpdate.RecursionGuard, AfterUpdate.Finalizer {
-    private Map<Id, Account> accountsToPromote = new Map<Id, Account>();
-
+public with sharing class OpportunityAccountTypeWriter implements AfterUpdate.Writer, AfterUpdate.ParentQuery, AfterUpdate.RecursionGuard {
     public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
         return new Map<SObjectField, TriggerHandler.ParentFields>{ Opportunity.AccountId => TriggerHandler.ParentFields.with(Account.Type) };
     }
@@ -9,19 +7,15 @@ public with sharing class OpportunityAccountTypeHandler implements AfterUpdate.H
         return 1;
     }
 
-    public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+    public Boolean writeOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
         Account parentAccount = (Account) record.getNewParent('Account');
 
         return record.isChangedTo(Opportunity.StageName, 'Closed Won') && parentAccount != null && parentAccount.Type != 'Customer - Direct';
     }
 
-    public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
+    public void writeOnAfterUpdate(TriggerHandler.UpdateRecord record, TriggerHandler.UnitOfWork unitOfWork) {
         Opportunity newOpportunity = (Opportunity) record.getNewSObject();
 
-        this.accountsToPromote.put(newOpportunity.AccountId, new Account(Id = newOpportunity.AccountId, Type = 'Customer - Direct'));
-    }
-
-    public void finalizeAfterUpdate() {
-        update this.accountsToPromote.values();
+        unitOfWork.toUpdate(new Account(Id = newOpportunity.AccountId, Type = 'Customer - Direct'));
     }
 }

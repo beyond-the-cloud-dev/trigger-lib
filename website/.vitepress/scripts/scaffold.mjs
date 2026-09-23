@@ -47,8 +47,7 @@ function placeholder(text) {
 }
 
 function includeLine(requirement) {
-  if (requirement.snippet) return `<<< ${requirement.snippet}`;
-  return `<!--@include: ${requirement.include}${requirement.region ? `#${requirement.region}` : ''}-->`;
+  return `<!--@include: ${requirement.include}-->`;
 }
 
 function sectionBody(page, sectionId, required) {

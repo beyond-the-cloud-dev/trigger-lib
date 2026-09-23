@@ -803,7 +803,6 @@ function createState(options) {
     generatedDir: join(websiteDir, '_parts', 'generated'),
     factsFile: join(WEBSITE_DIR, '.vitepress', 'context-facts.mjs'),
     sidebarFile: join(WEBSITE_DIR, '.vitepress', 'apex-api.mjs'),
-    checkerFile: join(WEBSITE_DIR, '.vitepress', 'scripts', 'check-docs.mjs'),
     vercelPath: options.vercelPath ?? join(repoRoot, 'vercel.json'),
     sidebar: options.sidebar ?? defaultSidebar,
     nav: options.nav ?? defaultNav,
@@ -1946,21 +1945,6 @@ function checkLinks(state) {
       }
     }
   }
-}
-
-function navigableFiles(state) {
-  if (!state.navigable) {
-    state.navigable = new Set();
-    for (const entry of [
-      ...sidebarLinks(state.sidebar),
-      ...sidebarLinks(state.nav)
-    ]) {
-      if (EXTERNAL_PATTERN.test(entry.link)) continue;
-      const resolved = resolveUrl(state, entry.link, null);
-      if (resolved.file) state.navigable.add(resolved.file);
-    }
-  }
-  return state.navigable;
 }
 
 function sidebarLinks(items, trail = [], found = []) {

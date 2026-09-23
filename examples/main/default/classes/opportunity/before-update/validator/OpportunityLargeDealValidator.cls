@@ -7,7 +7,7 @@ public with sharing class OpportunityLargeDealValidator implements BeforeUpdate.
             record.isBlank(Opportunity.NextStep);
     }
 
-    public String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record) {
-        return 'Open Opportunities above 100,000 must have a Next Step. Document the agreed action with the customer.';
+    public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
+        record.addError(Opportunity.NextStep, 'Open Opportunities above 100,000 must have a Next Step. Document the agreed action with the customer.');
     }
 }

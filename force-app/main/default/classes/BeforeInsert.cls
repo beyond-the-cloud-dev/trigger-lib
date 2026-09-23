@@ -8,7 +8,7 @@ public class BeforeInsert {
 
     public interface Validator extends Handler {
         Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record);
-        String beforeInsertValidationMessage(TriggerHandler.InsertRecord record);
+        void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record);
     }
 
     // Additional interfaces - pick as many as you need

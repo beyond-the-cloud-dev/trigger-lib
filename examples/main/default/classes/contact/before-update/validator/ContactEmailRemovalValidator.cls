@@ -3,7 +3,7 @@ public with sharing class ContactEmailRemovalValidator implements BeforeUpdate.V
         return record.isChanged(Contact.Email) && record.isBlank(Contact.Email) && record.isFalse(Contact.HasOptedOutOfEmail);
     }
 
-    public String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record) {
-        return 'Email cannot be cleared while the contact is still opted in. Tick Email Opt Out first, then remove the address.';
+    public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
+        record.addError(Contact.Email, 'Email cannot be cleared while the contact is still opted in. Tick Email Opt Out first, then remove the address.');
     }
 }

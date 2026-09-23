@@ -5,9 +5,9 @@ public with sharing class AccountDemotionValidator implements BeforeUpdate.Valid
         return record.isChangedTo(Account.Type, 'Prospect') && oldAccount.Type?.startsWith('Customer') == true;
     }
 
-    public String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record) {
+    public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
         Account oldAccount = (Account) record.getOldSObject();
 
-        return 'This account is already ' + oldAccount.Type + ' and cannot be moved back to Prospect. Close it as Lost instead.';
+        record.addError(Account.Type, 'This account is already ' + oldAccount.Type + ' and cannot be moved back to Prospect. Close it as Lost instead.');
     }
 }

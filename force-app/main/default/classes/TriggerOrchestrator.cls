@@ -685,7 +685,16 @@ public with sharing class TriggerOrchestrator {
             }
 
             this.processedRecords.add(record);
-            record.getNewSObject().addError(this.validator.beforeInsertValidationMessage(record));
+
+            Integer errorsBefore = record.getNewSObject().getErrors().size();
+
+            this.validator.addErrorOnBeforeInsert(record);
+
+            if (record.getNewSObject().getErrors().size() == errorsBefore) {
+                throw new TriggerOrchestratorException(
+                    this.handlerName + ' qualified a record in errorShouldBeAttachedOnBeforeInsertWhen but attached no error in addErrorOnBeforeInsert.'
+                );
+            }
         }
 
         private void finalize() {
@@ -961,7 +970,16 @@ public with sharing class TriggerOrchestrator {
             }
 
             this.processedRecords.add(record);
-            record.getNewSObject().addError(this.validator.beforeUpdateValidationMessage(record));
+
+            Integer errorsBefore = record.getNewSObject().getErrors().size();
+
+            this.validator.addErrorOnBeforeUpdate(record);
+
+            if (record.getNewSObject().getErrors().size() == errorsBefore) {
+                throw new TriggerOrchestratorException(
+                    this.handlerName + ' qualified a record in errorShouldBeAttachedOnBeforeUpdateWhen but attached no error in addErrorOnBeforeUpdate.'
+                );
+            }
         }
 
         private void finalize() {

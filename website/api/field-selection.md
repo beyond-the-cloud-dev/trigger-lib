@@ -1,58 +1,38 @@
 ---
-outline: deep
+description: 'TriggerHandler.ParentFields reference: choose the parent (lookup) and grandparent fields that ParentQuery and PriorParentQuery load, the lookup map key, how declarations merge, the SOQL each context spends on parents, and polymorphic lookups.'
 ---
 
 # TriggerHandler.ParentFields
 
-Describes which fields to query on a parent record during [enrichment](/guide/enrichment). A new selection starts from the `TriggerHandler.ParentFields` static property and every `with` call returns the same selection, so calls chain.
+`TriggerHandler.ParentFields` lists the parent (lookup) fields and grandparent fields that a ParentQuery or PriorParentQuery add-on loads. The library queries them once for all handlers, and a handler reads them with `record.getNewParent(…)` or `record.getOldParent(…)`.
 
-```apex
-public with sharing class ContactAccountHandler implements AfterUpdate.Handler, AfterUpdate.ParentQuery {
-  public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
-    return new Map<SObjectField, TriggerHandler.ParentFields>{
-      Contact.AccountId => TriggerHandler.ParentFields
-        .with(Account.Name, Account.Industry)
-        .with('Owner', User.Name, User.Email)
-    };
-  }
+## Example {#example}
 
-  public Boolean qualifiesForAfterUpdateWhen(
-    TriggerHandler.UpdateRecord record
-  ) {
-    return record.getNewParent('Account') != null;
-  }
+<<< @/../examples/main/default/classes/contact/after-insert/writer/ContactOwnerAlignmentWriter.cls
 
-  public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
-    Account account = (Account) record.getNewParent('Account');
+The Writer loads the contact's Account with its `OwnerId`, and the Account owner's `IsActive` through `with('Owner', …)`, then reads them as `accountRecord.OwnerId` and `accountRecord.Owner.IsActive`.
 
-    System.debug(account.Name + ' owned by ' + account.Owner.Email);
-  }
-}
-```
+## The Map Key {#map-key}
 
-Reading the `TriggerHandler.ParentFields` property hands back a new, empty selection every time, so each map entry starts from scratch.
+The ParentQuery and PriorParentQuery methods return a `Map<SObjectField, TriggerHandler.ParentFields>`. The key is a lookup or master-detail field of the trigger object; the fields in the value belong to the object that lookup points to.
 
-## The Map Key
+| Key | Parent object queried | Read back with |
+|---|---|---|
+| `Contact.AccountId` | `Account` | `getNewParent('Account')` |
+| `Contact.OwnerId` | `User` | `getNewParent('Owner')` |
+| `Contact.ReportsToId` | `Contact` | `getNewParent('ReportsTo')` |
+| `Invoice__c.Region__c` | `Region__c` | `getNewParent('Region__r')` |
 
-The map key is the lookup field on the triggering object. The fields in the selection belong to the parent object that lookup points to.
+- **Read back by relationship name**, the lookup's `getRelationshipName()`, case-sensitive.
+- **Both sides use the same keys.** PriorParentQuery returns the same map shape, read back with `getOldParent`. Declaring a lookup on one side does not declare it on the other.
 
-The key also decides the name the parent is read back under. The framework uses the relationship name of the lookup, so `Contact.AccountId` is read with `getNewParent('Account')` and a custom lookup `My_Lookup__c` with `getNewParent('My_Lookup__r')`.
+## Methods {#methods}
 
-| Declared key          | Parent object queried | Read back with              |
-| --------------------- | --------------------- | --------------------------- |
-| `Contact.AccountId`   | `Account`             | `getNewParent('Account')`   |
-| `Contact.OwnerId`     | `User`                | `getNewParent('Owner')`     |
-| `Contact.CreatedById` | `User`                | `getNewParent('CreatedBy')` |
+A selection starts from the static `TriggerHandler.ParentFields` property, which returns a new, empty selection on every read. Every `with` returns the same selection, so calls chain.
 
-`PriorParentQuery` uses the same keys and the same names, read with `getOldParent`. Declaring a lookup on one side does not declare it on the other.
-
-## Methods
-
-### with
+### with {#with}
 
 Adds fields of the parent object.
-
-**Signatures**
 
 ```apex
 ParentFields with(SObjectField field)
@@ -63,21 +43,13 @@ ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3,
 ParentFields with(Iterable<SObjectField> fields)
 ```
 
-**Example**
-
 ```apex
 TriggerHandler.ParentFields.with(Account.Name, Account.Industry, Account.BillingCountry)
 ```
 
-```apex
-TriggerHandler.ParentFields.with(new List<SObjectField>{ Account.Name, Account.Industry })
-```
+### with Relationship {#with-relationship}
 
-### with relationship
-
-Adds fields reached through a relationship on the parent object. `relationshipName` is the relationship name on the parent, for example `Owner`, `Parent` or `Custom_Lookup__r`.
-
-**Signatures**
+Adds fields of the record the parent points to, the grandparent. `relationshipName` is a relationship name on the parent object, such as `Owner`, `Parent` or `Region__r`, and the fields belong to the grandparent object.
 
 ```apex
 ParentFields with(String relationshipName, SObjectField field)
@@ -88,37 +60,48 @@ ParentFields with(String relationshipName, SObjectField field1, SObjectField fie
 ParentFields with(String relationshipName, Iterable<SObjectField> fields)
 ```
 
-Each field is added to the query as `relationshipName.Field`, so it is read by traversing the parent record that comes back. The relationship name does not change how the parent itself is read back, only what it carries.
-
-**Example**
-
 ```apex
-Contact.AccountId => TriggerHandler.ParentFields
-  .with(Account.Name)
-  .with('Owner', User.Name, User.Email)
-  .with('Parent', Account.Name)
+Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name).with('Owner', User.Email).with('Parent', Account.Name)
 ```
 
-```apex
-Account account = (Account) record.getNewParent('Account');
-String ownerEmail = account.Owner.Email;
-String parentName = account.Parent?.Name;
-```
+Each field is queried as `<relationshipName>.<field>`, so read it through the parent: `parentAccount.Owner.Email`, `parentAccount.Parent?.Name`.
 
-### getFields
+`ParentFields` also declares `getFields()`, which the library uses to build the query. It is internal: [Internal Members](/api/record#internals).
 
-```apex
-List<String> getFields()
-```
+## What Is Loaded {#what-is-loaded}
 
-Used by the framework to build the query. Handlers have no reason to call it.
+- **The declared fields and the parent's `Id`.** The `Id` is always selected. Reading a field that no handler declared throws an `SObjectException`.
+- **Merged across handlers.** Before the first handler runs, the library merges the declarations of every handler that is not switched off, per lookup, so one query serves them all. Declaring a field twice is harmless.
+- **One entry per lookup.** Two lookups to the same object, such as `OwnerId` and `CreatedById`, are loaded separately, each under its own relationship name.
+- **For every record, qualified or not.** Parents are attached to every record of the chunk before any predicate runs.
 
-## Merging
+## Query Cost {#query-cost}
 
-Selections from all handlers that run in the same context are merged per lookup field, so one query on the parent object serves every handler. Declaring the same field twice is harmless. A handler that is [bypassed](/guide/bypasses) contributes nothing, because bypassed handlers are removed before enrichment runs.
+The parent queries run once per run: per context and per 200-record chunk. None runs when no handler that is still active declares a lookup.
 
-Parents are fetched for every record in the invocation, before any qualification predicate is evaluated. That is what makes the parents readable inside the predicates, and it means the query cost does not depend on how many records qualify.
+| Context | Queries for declared parents |
+|---|---|
+| before insert | one per declared lookup that has a value on at least one record; after each Populator, one more per lookup when a lookup it changed points to a parent not loaded yet |
+| before update | the same, with the previous Ids of PriorParentQuery lookups in the same query per lookup |
+| after insert, after undelete | one query on the trigger object that reads every declared parent through its relationship path, plus one per lookup for a parent it did not return |
+| after update | as after insert, plus one per lookup for previous parents (PriorParentQuery) that are not loaded yet |
+| before delete, after delete | one per declared lookup that has a value on at least one old row |
 
-## Id
+The whole run, with providers and Logger discovery: [Execution Order & Cost](/guide/execution-order#query-cost).
 
-The parent `Id` is always populated on the returned record. There is no need to add it to the selection.
+## Gotchas {#gotchas}
+
+<!--@include: @/_parts/add-ons/parent-query.md#gotchas-->
+
+## See Also {#see-also}
+
+- [Record API](/api/record#getnewparent): `getNewParent` and `getOldParent`
+- [Record Collections](/api/record-collections): `getIdsOf('Account', …)` and `getValuesOf('Account', …)` read loaded parents in bulk
+
+ParentQuery in each context:
+
+<!--@include: @/_parts/generated/chips/parent-query.md-->
+
+PriorParentQuery in each context:
+
+<!--@include: @/_parts/generated/chips/prior-parent-query.md-->

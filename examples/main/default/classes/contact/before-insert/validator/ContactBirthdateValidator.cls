@@ -7,7 +7,7 @@ public with sharing class ContactBirthdateValidator implements BeforeInsert.Vali
         return record.greaterThan(Contact.Birthdate, Date.today()) || record.lessThan(Contact.Birthdate, Date.today().addYears(-120));
     }
 
-    public String beforeInsertValidationMessage(TriggerHandler.InsertRecord record) {
-        return 'Birthdate must be in the past and less than 120 years ago. Check the year.';
+    public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
+        record.addError(Contact.Birthdate, 'Birthdate must be in the past and less than 120 years ago. Check the year.');
     }
 }

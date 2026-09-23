@@ -8,7 +8,7 @@ public class BeforeUpdate {
 
     public interface Validator extends Handler {
         Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record);
-        String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record);
+        void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record);
     }
 
     // Additional interfaces - pick as many as you need

@@ -21,10 +21,10 @@ public with sharing class AccountTriggerOrchestrator implements TriggerOrchestra
     }
 
     public List<AfterInsert.Handler> afterInsertHandlers() {
-        return new List<AfterInsert.Handler>{ new AccountWelcomeTaskHandler() };
+        return new List<AfterInsert.Handler>{ new AccountWelcomeTaskWriter() };
     }
 
     public List<AfterUpdate.Handler> afterUpdateHandlers() {
-        return new List<AfterUpdate.Handler>{ new AccountAddressCascadeHandler(), new AccountOwnerTransferHandler() };
+        return new List<AfterUpdate.Handler>{ new AccountAddressCascadeWriter(), new AccountOwnerTransferWriter() };
     }
 }

@@ -515,21 +515,6 @@ export function pageLink(contextName, interfaceName, anchor) {
   return base.includes('#') ? base : `${base}#${anchor}`;
 }
 
-export function missingBeforeContexts() {
-  const names = new Set(model.contexts.map(context => context.name));
-  return model.contexts
-    .filter(
-      context =>
-        context.phase === 'After' && !names.has(`Before${context.operation}`)
-    )
-    .map(context => ({
-      name: `Before${context.operation}`,
-      slug: `before-${kebab(context.operation)}`,
-      link: `${context.link}#no-before-${kebab(context.operation)}`,
-      before: context.name
-    }));
-}
-
 export function expectedPages() {
   const pages = [];
 
@@ -668,9 +653,7 @@ const gettingStarted = {
 const findItFast = {
   text: 'Find It Fast',
   collapsed: false,
-  items: [
-    { text: 'Contexts at a Glance', link: '/contexts' }
-  ]
+  items: [{ text: 'Contexts at a Glance', link: '/contexts' }]
 };
 
 const acrossContexts = {

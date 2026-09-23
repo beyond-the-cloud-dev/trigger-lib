@@ -2,20 +2,12 @@
 template: add-on
 context: AfterUndelete
 interface: RelatedQuery
-description: Query children, siblings or configuration once per run for restored records in an after undelete Writer or Dispatcher, and read them by key.
+description: Query children, siblings or configuration once per chunk for restored records in an after undelete Writer or Dispatcher, and read them by key.
 ---
 
 # AfterUndelete.RelatedQuery
 
-Query other records once per run, such as children, siblings, records that share a value, or configuration, for the records restored in **after undelete**, and read them by key in your handler instead of running SOQL per record.
-
-<!--@include: @/_parts/generated/after-undelete/related-query/available-in.md-->
-
-## When to Use {#when-to-use}
-
-- The handler needs records that no lookup of the restored record points to: its children, its siblings under the same parent, or records with the same email.
-- The handler needs formula or roll-up values of the restored records themselves, which the trigger rows do not carry.
-- Use [ParentQuery](/after-undelete/add-ons/parent-query) instead for fields of the record a lookup points to.
+Queries other records once per chunk, such as children, siblings or configuration. Your handler reads them by key, with no SOQL per record.
 
 ## Interface {#interface}
 
@@ -33,46 +25,10 @@ Query other records once per run, such as children, siblings, records that share
 
 :::
 
-## How It Runs {#how-it-runs}
+## Good to Know {#good-to-know}
 
-<!--@include: @/_parts/add-ons/related-query.md#core-->
-
-<!--@include: @/_parts/add-ons/related-query.md#ids-after-->
-
-### Key Patterns {#key-patterns}
-
-::: details Children, siblings, text and composite keys, configuration, dependent queries, the trigger records themselves
-
-<!--@include: @/_parts/add-ons/related-query-patterns.md-->
-
-:::
-
-## Records Here {#records}
-
-`query(records)` receives `TriggerHandler.UndeleteRecords` with every restored record in the chunk, qualified or not: `getIds()`, `getIdsOf(…)`, `getValuesOf(…)`, `size()` and `getRecords()`. The RelatedQuery method itself takes no records.
-
-## Works With {#works-with}
-
-<!--@include: @/_parts/generated/after-undelete/related-query/works-with.md-->
-
-## Gotchas {#gotchas}
-
-<!--@include: @/_parts/add-ons/related-query.md#gotchas-->
-
-- **Records linked to a restored record may not be back yet.** Salesforce restores cascade-deleted children with their parent and restores cleared inbound lookups only when they were not changed in the meantime. Whether either is visible to a provider while AfterUndelete runs has not been verified, so check in a sandbox before a restore handler relies on them.
-
-## Test It {#test}
-
-<!--@include: @/_parts/add-ons/test-techniques.md#related-->
-
-With the Skeleton above, the provider name is `'accountContacts'` and the key is the contact's `AccountId`.
-
-## In Other Contexts {#other-contexts}
-
-<!--@include: @/_parts/generated/after-undelete/related-query/other-contexts.md-->
-
-## See Also {#see-also}
-
-- [RelatedQuery Recipes](/guide/related-records)
-- [RelatedRecords & RecordsProvider](/api/related-records)
-- [Record Collections](/api/record-collections)
+- **Runs before any predicate.** `query(records)` gets every record in the chunk and costs its SOQL even when none qualifies. Return an empty list when no record can qualify.
+- **SOQL sees the restored records.** Add `Id NOT IN :records.getIds()` to look only at other records.
+- **Exact keys.** Keys are compared as text, case included. Normalize text keys the same way on both sides.
+- **Unknown names throw.** `record.getRelated('<name>')` with a name the handler did not return throws `TriggerHandler.TriggerHandlerException`, even with ContinueOnError.
+- **Set sharing on the provider.** Its SOQL runs under its own class's sharing keyword. An inner class does not take its outer class's keyword.

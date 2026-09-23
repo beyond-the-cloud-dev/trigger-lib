@@ -20,7 +20,12 @@ import {
   sidebar as defaultSidebar
 } from '../apex-api.mjs';
 import { honourTable as defaultHonourTable } from '../context-facts.mjs';
-import { headingText, templates } from '../page-templates.mjs';
+import {
+  GOOD_TO_KNOW_MAX_BULLETS,
+  TEST_MAX_LINES,
+  headingText,
+  templates
+} from '../page-templates.mjs';
 
 export const RULES = {
   1: 'pages and interfaces',
@@ -187,30 +192,13 @@ export const REGION_MAP = {
   'records/gotchas.md': onePerContext()
 };
 
-export const TEST_TECHNIQUE_REGIONS = {
-  ParentQuery: 'parent',
-  PriorParentQuery: 'parent',
-  RelatedQuery: 'related',
-  Bypassable: 'bypass',
-  OwnUnitOfWork: 'uow',
-  Finalizer: 'finalizer'
-};
-
-export const CONTEXTS_PAGE_SECTIONS = [
-  {
-    id: 'method-names',
-    include: '@/_parts/generated/matrix-methods.md'
-  },
-  { id: 'facts', include: '@/_parts/generated/matrix-facts.md' },
-  { id: 'url-rules', include: null }
-];
+export const CONTEXTS_PAGE_INCLUDES = ['@/_parts/generated/matrix-methods.md'];
 
 export function expectedH1(template, contextName, interfaceName) {
   if (template === 'context') return [contextName];
   if (template === 'role' || template === 'add-on')
     return [`${contextName}.${interfaceName}`];
-  if (template === 'add-ons')
-    return [`${contextName} Add-ons`, `Add-ons in ${contextName}`];
+  if (template === 'add-ons') return [`Add-ons in ${contextName}`];
   if (template === 'record-api') return [`Record API in ${contextName}`];
   return null;
 }
@@ -224,111 +212,34 @@ export function requiredIncludes(template, contextName, interfaceName) {
 
   if (template === 'context') {
     return [
-      {
-        section: 'at-a-glance',
-        snippet: `@/../force-app/main/default/classes/${context.name}.cls`
-      },
-      { section: 'at-a-glance', include: `${generated}/facts.md` },
-      { section: 'add-ons', include: `${generated}/add-ons-table.md` },
-      { section: 'records', include: `${generated}/records.md` },
-      { section: 'register', include: `${generated}/register.md` },
-      { section: 'not-available', include: `${generated}/not-available.md` }
+      { section: 'add-ons', include: `${generated}/add-ons-list.md` },
+      { section: 'register', include: `${generated}/register.md` }
     ];
   }
 
-  if (template === 'role' && own) {
-    return [
-      { section: 'lead', include: `${own}/available-in.md` },
-      { section: 'interface', include: `${own}/signature.md` },
-      { section: 'interface', include: `${own}/method-table.md` },
-      {
-        section: 'example',
-        include: `${own}/skeleton.md`,
-        firstInCodeGroup: true
-      },
-      { section: 'register', include: `${generated}/register.md` },
-      { section: 'records', include: `${generated}/accessors.md` },
-      { section: 'works-with', include: `${own}/works-with.md` },
-      { section: 'other-contexts', include: `${own}/other-contexts.md` }
-    ];
-  }
-
-  if (template === 'add-on' && own) {
-    const required = [
-      { section: 'lead', include: `${own}/available-in.md` },
-      { section: 'interface', include: `${own}/signature.md` }
-    ];
-    if (item.supports.length > 0) {
-      for (const support of item.supports) {
-        required.push({
-          section: getInterface(contextName, support).slug,
-          include: `${own}/${getInterface(contextName, support).slug}.md`
-        });
-      }
-    }
-    required.push(
-      {
-        section: 'example',
-        include: `${own}/skeleton.md`,
-        firstInCodeGroup: true
-      },
-      { section: 'works-with', include: `${own}/works-with.md` }
-    );
-    if (TEST_TECHNIQUE_REGIONS[interfaceName]) {
-      required.push({
-        section: 'test',
-        include: '@/_parts/add-ons/test-techniques.md',
-        region: TEST_TECHNIQUE_REGIONS[interfaceName]
-      });
+  if ((template === 'role' || template === 'add-on') && own) {
+    const required = [{ section: 'interface', include: `${own}/signature.md` }];
+    for (const support of item.supports) {
+      const slug = getInterface(contextName, support).slug;
+      required.push({ section: slug, include: `${own}/${slug}.md` });
     }
     required.push({
-      section: 'other-contexts',
-      include: `${own}/other-contexts.md`
+      section: 'example',
+      include: `${own}/skeleton.md`,
+      firstInCodeGroup: true
     });
     return required;
   }
 
   if (template === 'add-ons') {
-    return [
-      { section: 'available', include: `${generated}/add-ons-available.md` },
-      {
-        section: 'not-available',
-        include: `${generated}/add-ons-not-available.md`
-      },
-      { section: 'works-with', include: `${generated}/add-ons-works-with.md` }
-    ];
+    return [{ section: 'available', include: `${generated}/add-ons-list.md` }];
   }
 
   if (template === 'record-api') {
-    const required = [
-      { section: 'accessors', include: `${generated}/accessors.md` }
+    return [
+      { section: 'record', include: `${generated}/record-methods.md` },
+      { section: 'records', include: `${generated}/collection-methods.md` }
     ];
-    if (context.operation === 'Update') {
-      required.push({
-        section: 'change-detection',
-        include: '@/_parts/records/change-detection.md'
-      });
-    }
-    required.push(
-      {
-        section: 'predicates',
-        include: '@/_parts/records/predicates.md',
-        region: context.slug
-      },
-      { section: 'comparisons', include: '@/_parts/records/comparisons.md' },
-      { section: 'record-type', include: '@/_parts/records/record-type.md' },
-      { section: 'collections', include: `${generated}/collections.md` },
-      {
-        section: 'trigger-variables',
-        include: `${generated}/trigger-variables.md`
-      },
-      {
-        section: 'gotchas',
-        include: '@/_parts/records/gotchas.md',
-        region: context.slug
-      }
-    );
-    return required;
   }
 
   return [];
@@ -1239,7 +1150,7 @@ function checkPages(state) {
         1,
         record,
         lineOf('description'),
-        'frontmatter needs a non-empty description (task words: bypass, skip, lookup, parent fields, callout…)'
+        'frontmatter needs a non-empty description'
       );
     }
   }
@@ -1390,13 +1301,13 @@ function checkTemplatePage(state, record) {
         paragraph.start < lead.end &&
         doc.kinds[paragraph.start] === 'text'
     );
-    if (!hasLead) {
+    if (!hasLead && templates[template].lead) {
       report(
         state,
         2,
         record,
         h1s[0].line,
-        'missing lead sentence under the H1 (spell out the context in words, with task synonyms)'
+        'missing lead under the H1: one or two sentences'
       );
     }
   }
@@ -1653,6 +1564,8 @@ function checkTemplatePage(state, record) {
     }
   }
 
+  checkSectionSizes(state, record, ranges);
+
   doc.lines.forEach((line, index) => {
     if (SCAFFOLD_PATTERN.test(line)) {
       report(
@@ -1664,6 +1577,63 @@ function checkTemplatePage(state, record) {
       );
     }
   });
+}
+
+function checkSectionSizes(state, record, ranges) {
+  const doc = record.doc;
+
+  const goodToKnow = ranges.get('good-to-know');
+  if (goodToKnow) {
+    const section = doc.lines
+      .slice(goodToKnow.start + 1, goodToKnow.end)
+      .map((line, offset) =>
+        doc.kinds[goodToKnow.start + 1 + offset] === 'fence' ? '' : line
+      )
+      .join('\n');
+    const expanded = expandIncludes(section, record.abs, state.websiteDir);
+    const bullets = parseMarkdown(expanded).lines.filter(line =>
+      /^[-*+] \S/.test(line)
+    ).length;
+    if (bullets > GOOD_TO_KNOW_MAX_BULLETS) {
+      report(
+        state,
+        2,
+        record,
+        goodToKnow.heading.line,
+        `"## Good to Know" has ${bullets} bullets (includes counted); keep at most ${GOOD_TO_KNOW_MAX_BULLETS}`
+      );
+    }
+  }
+
+  const test = ranges.get('test');
+  if (test && record.template === 'role') {
+    const fences = doc.fences.filter(
+      fence => fence.start > test.start && fence.start < test.end
+    );
+    const snippets = doc.snippets.filter(
+      snippet => snippet.index > test.start && snippet.index < test.end
+    );
+    if (fences.length !== 1 || snippets.length > 0) {
+      report(
+        state,
+        2,
+        record,
+        test.heading.line,
+        `"## Test" holds exactly one inline code block (found ${fences.length}${snippets.length > 0 ? ` and ${snippets.length} <<< import${snippets.length > 1 ? 's' : ''}` : ''})`
+      );
+    }
+    for (const fence of fences) {
+      if (fence.content.length > TEST_MAX_LINES) {
+        report(
+          state,
+          2,
+          record,
+          fence.startLine,
+          `the test snippet has ${fence.content.length} lines; keep it at ${TEST_MAX_LINES} or fewer`
+        );
+      }
+    }
+  }
 }
 
 function checkTemplates(state) {
@@ -2222,7 +2192,6 @@ function navigableFiles(state) {
   return state.navigable;
 }
 
-
 function sidebarLinks(items, trail = [], found = []) {
   if (!items) return found;
   if (!Array.isArray(items)) {
@@ -2426,40 +2395,21 @@ function checkRouters(state) {
 
   const contexts = state.pages.get(CONTEXTS_PAGE);
   if (contexts) {
-    const ranges = sectionRanges(contexts.doc);
-    for (const section of CONTEXTS_PAGE_SECTIONS) {
-      const range = ranges.get(section.id);
-      const heading = range?.heading;
-      if (!heading || heading.level !== 2) {
-        report(
-          state,
-          9,
-          contexts,
-          null,
-          `/contexts needs an H2 with {#${section.id}} (redirects and cross-links point at it)`
-        );
-        continue;
-      }
-      if (!section.include) continue;
-      const wanted = resolveIncludePath(
-        section.include,
-        contexts.abs,
-        state.websiteDir
+    for (const include of CONTEXTS_PAGE_INCLUDES) {
+      const wanted = resolve(
+        resolveIncludePath(include, contexts.abs, state.websiteDir)
       );
       const found = contexts.doc.includes.some(
-        include =>
-          include.index > range.start &&
-          include.index < range.end &&
-          resolve(includeTarget(state, contexts, include).abs) ===
-            resolve(wanted)
+        candidate =>
+          resolve(includeTarget(state, contexts, candidate).abs) === wanted
       );
       if (!found) {
         report(
           state,
           9,
           contexts,
-          heading.line,
-          `"## ${heading.text}" must include <!--@include: ${section.include}-->`
+          null,
+          `/contexts must include <!--@include: ${include}-->`
         );
       }
     }
@@ -2518,7 +2468,7 @@ function checkHonours(state) {
           10,
           factsFile,
           line,
-          `honourTable.${context.name}.${role} lists ${addOn}, but ${context.name}${role}Adapter never checks instanceof ${context.name}.${addOn}; Works With would claim an add-on the adapter ignores`
+          `honourTable.${context.name}.${role} lists ${addOn}, but ${context.name}${role}Adapter never checks instanceof ${context.name}.${addOn}; the docs would claim an add-on the adapter ignores`
         );
       }
     }

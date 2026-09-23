@@ -1,43 +1,25 @@
 ---
-description: Unit-test Trigger Lib handlers without DML - TriggerRecord, the record collections, ProvidedRecords and RandomIdGenerator, a purpose-built unit of work, registration tests, running the whole orchestrator with mocked metadata, Logger, SOQL and DML (same namespace only), and what needs real integration tests.
+description: Unit-test Trigger Lib handlers without DML - TriggerRecord, the record collections, ProvidedRecords and RandomIdGenerator, a recording unit of work, registration tests, and running the whole orchestrator with mocked metadata, Logger, SOQL and DML.
 ---
 
 # Testing
 
-Unit-test a handler without DML (mock, stub, fake Ids): build the trigger records in memory, call the handler's methods directly, and check the result. To test the whole run, with bypasses, parents and the shared unit of work, drive the orchestrator in a test, which works in the library's namespace only.
+Test a handler without DML: build records in memory, call its methods and assert the result. Every example uses one assertion and the comments `// Setup`, `// Test` and `// Verify`.
 
-## Test Style {#style}
-
-The examples on this site follow one style:
-
-- **One thing per test, one assertion.** About ten lines, with the expected value as a literal and a short, generic assertion message.
-- **Named after the API member plus a variant,** such as `populateOnBeforeInsertWhenEmailBlank`, never a sentence.
-- **Data inline, zero DML.** Rows are built in memory, and fake Ids come from `new TriggerHandler.RandomIdGenerator().get(…)`.
-- **Small purpose-built classes, no spy frameworks.** A Writer gets a class of your own that implements `TriggerHandler.UnitOfWork` and keeps what it receives.
-- **Only three comments:** `// Setup`, `// Test` and `// Verify`.
-
-## Supported Test API {#test-api}
-
-These members are public and meant for your tests:
+## Test API {#test-api}
 
 | Member | Gives you |
 |---|---|
-| `new TriggerHandler.TriggerRecord(SObject newRow, SObject oldRow)` | A record for any predicate, action, error method or Bypassable test. It implements every record type, `Rejectable…` included. Pass `null` for the side the context does not have: `oldRow` on insert and undelete, `newRow` on delete. |
-| `new TriggerHandler.InsertTriggerRecords(List<TriggerHandler.TriggerRecord>)`, and `UpdateTriggerRecords`, `DeleteTriggerRecords`, `UndeleteTriggerRecords` | The collection a Finalizer, a dispatch method or a provider's `query` receives |
-| `new TriggerHandler.ProvidedRecords(List<SObject>)` and `groupUnderKey(String key, SObject row)` | Provider results, grouped under the keys your `keyOf` would return |
-| `new TriggerHandler.RandomIdGenerator().get(SObjectType)`, `get(String keyPrefix)` | A fake Id with the object's key prefix |
-| `record.enrichNew(String relationshipName, SObject parent)`, `record.enrichOld(…)` | The parent that `getNewParent` or `getOldParent` returns |
-| `record.setProvidedRecords(Map<String, TriggerHandler.RelatedRecords>)` | The provider results that `getRelated` returns |
+| `new TriggerHandler.TriggerRecord(newRow, oldRow)` | a record of any type; pass `null` for the side the context lacks |
+| `new TriggerHandler.InsertTriggerRecords(records)`, and the `Update`, `Delete` and `Undelete` variants | the collection a Finalizer, dispatch or `query` receives |
+| `new TriggerHandler.ProvidedRecords(rows)` with `groupUnderKey(key, row)` | provider results |
+| `new TriggerHandler.RandomIdGenerator().get(SObjectType)` | a fake Id |
+| `record.enrichNew(relationshipName, parent)`, `record.enrichOld(…)` | what `getNewParent` and `getOldParent` return |
+| `record.setProvidedRecords(providers)` | what `getRelated` returns |
 
-`enrichNew`, `enrichOld` and `setProvidedRecords` are public, but `TriggerHandler` lists them under an `// Internal use only` comment, so they may change in a later version. The library itself uses them to attach parents and provider results. The full list, with the members that are not meant for you: [Record API](/api/record#test-api).
+`enrichNew`, `enrichOld` and `setProvidedRecords` are marked internal use only and may change.
 
-"Public" reaches your tests only when your code shares the library's namespace, as in a source install. Every class is `public`, none is `global`, so from another namespace nothing here is visible: [Visibility and Namespace](/installation#visibility).
-
-## Test a Handler Directly {#handler}
-
-### Predicates and Actions {#predicates-actions}
-
-Build a `TriggerHandler.TriggerRecord` from an in-memory row and call the method. `put` writes to the row, and an error added in a test stays on the row, where `hasErrors()` and `getErrors()` read it:
+## Predicates and Actions {#handler}
 
 ::: code-group
 
@@ -85,11 +67,11 @@ static void errorShouldBeAttachedOnBeforeInsertWhenNoPhoneOrEmail() {
 
 :::
 
-For the update contexts pass both rows, `new TriggerHandler.TriggerRecord(newRow, oldRow)`, so change detection has something to compare.
+In the update contexts, pass both rows so change detection has something to compare.
 
-### Writers {#writers}
+## Writers {#writers}
 
-Pass the action a small class of your own that implements `TriggerHandler.UnitOfWork` and keeps what it receives. It never commits, so nothing is saved:
+Pass the action a small class of your own that implements `TriggerHandler.UnitOfWork` and keeps what it receives. It never commits:
 
 ```apex
 @IsTest
@@ -135,84 +117,36 @@ private class RecordingUnitOfWork implements TriggerHandler.UnitOfWork {
 
 :::
 
-Keep what your Writers register: add lists to the methods they call.
+## Parents and Related Records {#parents}
 
-### Dispatchers {#dispatchers}
-
-Call the dispatch method with the records your predicate would qualify, in the context's collection, such as `new TriggerHandler.UpdateTriggerRecords(qualified)`. Then check what it started:
-
-- **A Queueable:** `Limits.getQueueableJobs()` counts the jobs enqueued in the test. Enqueueing is not DML.
-- **A publish or DML through DML Lib:** give the `DML` instance an `identifier`, mock it with `DML.mock('<identifier>').allPublishes()` or `.allDmls()`, and read it back with `DML.retrieveResultFor('<identifier>')`. The mocked statements never reach the database.
-
-### Parents {#parents}
-
-<!--@include: @/_parts/add-ons/test-techniques.md#parent-->
-
-A grandparent goes inside the parent. This predicate reads `Account.Owner.IsActive`:
+Attach them yourself. Nothing is queried:
 
 ```apex
-@IsTest
-static void writeOnAfterInsertWhenAccountOwnerActive() {
-    // Setup
-    TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
-    record.enrichNew('Account', new Account(OwnerId = new TriggerHandler.RandomIdGenerator().get(User.SObjectType), Owner = new User(IsActive = true)));
+record.enrichNew('Account', new Account(Name = 'Acme', Owner = new User(IsActive = true)));
 
-    // Test
-    Boolean result = new ContactOwnerAlignmentWriter().writeOnAfterInsertWhen(record);
-
-    // Verify
-    Assert.isTrue(result, 'A contact under an active account owner should qualify.');
-}
+TriggerHandler.ProvidedRecords provided = new TriggerHandler.ProvidedRecords(new List<SObject>{ existing });
+provided.groupUnderKey('acme', existing);
+record.setProvidedRecords(new Map<String, TriggerHandler.RelatedRecords>{ 'sameName' => provided });
 ```
 
-### Related Records {#related}
+- **Nest a grandparent** inside the parent, as `Owner` above.
+- **Group each row under the key your `keyOf` returns.** Test `keyOf` on its own with an in-memory row.
 
-<!--@include: @/_parts/add-ons/test-techniques.md#related-->
+## Finalizers and Dispatchers {#finalizers}
 
-### Bypassable {#bypassable}
+Call `finalize<Ctx>` or `dispatchOn<Ctx>` directly with the records your predicate would qualify:
 
 ```apex
-@IsTest
-static void bypassOnBeforeInsertWhenDisabled() {
-    // Setup
-    ContactReachabilityValidator.isDisabled = true;
-
-    // Test
-    Boolean result = new ContactReachabilityValidator().bypassOnBeforeInsertWhen();
-
-    // Verify
-    Assert.isTrue(result, 'The validator should be bypassed.');
-}
+new AccountRegionSyncDispatcher().dispatchOnAfterUpdate(new TriggerHandler.UpdateTriggerRecords(qualified));
 ```
 
-Every test method starts with fresh static values, so the flag does not leak into other tests.
-
-### Finalizers {#finalizers}
-
-<!--@include: @/_parts/add-ons/test-techniques.md#finalizer-->
-
-### Own Unit of Work {#own-unit}
-
-<!--@include: @/_parts/add-ons/test-techniques.md#uow-->
+`Limits.getQueueableJobs()` counts the jobs a Dispatcher enqueued.
 
 ## Registration Tests {#registration}
 
-A handler that is missing from the orchestrator never runs, and an orchestrator that does not implement a context's registration interface skips that context silently. Two short tests catch both:
+A handler missing from the orchestrator never runs. Test the list:
 
-::: code-group
-
-```apex [Context]
-@IsTest
-static void afterInsertHandlersIsImplemented() {
-    // Test
-    Object orchestrator = new AccountTriggerOrchestrator();
-
-    // Verify
-    Assert.isInstanceOfType(orchestrator, TriggerOrchestrator.AfterInsert.class, 'Account should register after insert handlers.');
-}
-```
-
-```apex [Handler]
+```apex
 @IsTest
 static void afterInsertHandlersContainsWelcomeTaskWriter() {
     // Test
@@ -223,23 +157,13 @@ static void afterInsertHandlersContainsWelcomeTaskWriter() {
 }
 ```
 
-:::
-
 ## Run the Orchestrator in a Test {#orchestrator}
 
 ::: warning Same namespace only
-These seams are `@TestVisible` private members. `@TestVisible` opens them to test code in the library's own namespace only, so they work in a source install, where your tests share the library's namespace, and never from another namespace. They may change in a later version.
+These seams are `@TestVisible` private members. They work only when your tests share the library's namespace, as in a source install, and they may change.
 :::
 
-| Seam | What it does |
-|---|---|
-| `new TriggerOrchestrator(Object orchestrator)` | builds a run for your orchestrator without a trigger |
-| `orchestrator.context.triggerOperation`, `.newRecords`, `.oldRecords` | the context the run sees: the `System.TriggerOperation`, and the lists a trigger has in `Trigger.new` and `Trigger.old` |
-| `orchestrator.run()` | runs it, the same way `TriggerOrchestrator.run(…)` does in a trigger |
-| `TriggerOrchestrator.triggerLogger.logger` | the transaction's Logger; set it to a class of your own |
-| `TriggerHandler.IdGenerator.get(…)` | the same Ids as `new TriggerHandler.RandomIdGenerator().get(…)`, which is public and needs no seam |
-
-Two helpers keep each test short. `newRecords` and `oldRecords` must be typed lists, such as `new List<Account>{ … }`, because the run reads the object from the list's type. In after contexts and in delete contexts, give every row an Id:
+Set the trigger context on a `new TriggerOrchestrator(…)` and call `run()`. Use typed lists, and give every row an Id in after and delete contexts:
 
 ```apex
 static void mockFramework() {
@@ -254,9 +178,7 @@ static TriggerOrchestrator runFor(System.TriggerOperation operation, List<SObjec
     orchestrator.context.oldRecords = oldRecords;
     return orchestrator;
 }
-```
 
-```apex
 @IsTest
 static void beforeInsertHandlersCopyBillingAddress() {
     // Setup
@@ -271,22 +193,15 @@ static void beforeInsertHandlersCopyBillingAddress() {
 }
 ```
 
-**Recursion.** The recursion count of the update contexts is a static that lasts for the whole test method and cannot be reset. To check a RecursionGuard, build two runs with `runFor(System.TriggerOperation.AFTER_UPDATE, …)` for rows with the same Ids, call `run()` on both, and assert that the handler acted only once when its limit is 1. Every test method starts with a fresh count.
-
 ### Mock the Metadata and the Logger {#mock-metadata}
 
-This works in the same namespace only, like every seam above.
+Call `mockFramework()` first, before anything refers to `TriggerOrchestrator`. Otherwise the org's deployed bypass records and its real Logger apply to your test.
 
-Start every orchestrator test with the two mocks in `mockFramework()`, before anything else refers to `TriggerOrchestrator`, `TriggerOrchestrator.bypass()` included. The library reads the bypass metadata and looks for the org's Logger once, when a test first uses `TriggerOrchestrator`. Without the mocks, the org's deployed `TriggerObject__mdt` and `TriggerHandler__mdt` records and its real Logger apply to your test.
+- **A metadata bypass.** Return `new TriggerObject__mdt(ObjectAPIName__c = 'Account', Bypass__c = true)` instead of the empty list.
+- **An Apex bypass.** Call `TriggerOrchestrator.bypass()` after the mocks and before `run()`.
+- **A Logger.** Set `TriggerOrchestrator.triggerLogger.logger` to a class of your own that collects the errors. Use it to test ContinueOnError.
 
-**A metadata bypass.** Return a row instead of the empty list. An object row can be built directly:
-
-```apex
-SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ new TriggerObject__mdt(ObjectAPIName__c = 'Account', Bypass__c = true) });
-SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
-```
-
-A handler row is a child record of the object row, which Apex cannot set on a new record, so build the object row from JSON. Building every key from a field or object token keeps it correct in a namespaced org:
+A `TriggerHandler__mdt` row is a child of the object row, so build the object row from JSON. Build every key from a token:
 
 ```apex
 static TriggerObject__mdt objectRowWithBypassedHandler(String objectName, String className) {
@@ -306,75 +221,13 @@ static TriggerObject__mdt objectRowWithBypassedHandler(String objectName, String
 }
 ```
 
-A row with a wrong key comes back with no fields set, and no error says so.
-
-**A `TriggerOrchestrator.bypass()` switch.** Set it after the mocks and before `run()`:
-
-```apex
-@IsTest
-static void beforeInsertHandlersWhenAccountBypassed() {
-    // Setup
-    mockFramework();
-    TriggerOrchestrator.bypass().sObject(Account.SObjectType);
-    Account acme = new Account(Name = 'Acme', BillingCity = 'Berlin', BillingCountry = 'Germany');
-
-    // Test
-    runFor(System.TriggerOperation.BEFORE_INSERT, new List<Account>{ acme }, null).run();
-
-    // Verify
-    Assert.isNull(acme.ShippingCity, 'No Account handler should run.');
-}
-```
-
-**A Logger.** Set a class of your own after the mocks. It receives every logged error and counts `finalize()` calls:
-
-```apex
-private class CollectingLogger implements TriggerOrchestrator.Logger {
-    public List<TriggerOrchestrator.Error> errors = new List<TriggerOrchestrator.Error>();
-    public Integer finalizeCalls = 0;
-
-    public void log(TriggerOrchestrator.Error error) {
-        this.errors.add(error);
-    }
-
-    public void finalize() {
-        this.finalizeCalls++;
-    }
-}
-```
-
-```apex
-CollectingLogger logger = new CollectingLogger();
-TriggerOrchestrator.triggerLogger.logger = logger;
-```
-
-This is how to test a ContinueOnError handler: the save goes on, and `logger.errors` holds the swallowed exception.
-
 ### Mock Queries and DML {#mock-queries-dml}
 
-- **Parents and SOQL Lib providers.** `SOQL.mock(Account.SObjectType).thenReturn(rows)` serves every SOQL Lib query on Account in the test that sets no identifier of its own: the per-lookup parent queries and any provider written with SOQL Lib. A provider with an inline `[SELECT …]` cannot be mocked.
-- **Parents in after insert, update and undelete.** The new parents come from one query on the trigger object, so mock the trigger object's type and return its rows with the parent attached, such as `SOQL.mock(Contact.SObjectType).thenReturn(new Contact(Id = contactId, Account = acme))`. A parent-type mock serves the parents that query did not return and, in after update, the previous parents.
-- **The shared unit.** `DML.mock('triggerUow').allDmls()` replaces the shared commit, and every private commit of a ContinueOnError Writer, which use the same identifier. Read the registrations with `DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()`.
-- **An own unit or a Dispatcher's DML.** Mock the identifier the handler gives its `DML` instance, `DML.mock('<identifier>')`. That is public DML Lib API and needs no seam.
-- **Tripping the DML guard.** `Database.setSavepoint()` counts as a DML statement, so a handler that sets a savepoint trips the guard without writing data.
-
-### Namespaced Orgs {#namespace}
-
-SOQL Lib's mock keeps only the fields the query selected and matches them by name. In an org with a namespace, custom field and relationship names carry its prefix: build the keys of hand-made rows from field tokens with `String.valueOf(…)`, and add the prefix to relationship names yourself, as in `objectRowWithBypassedHandler` above. Typed rows such as `new TriggerObject__mdt(ObjectAPIName__c = 'Account')` need nothing extra.
+- **Parents.** `SOQL.mock(Account.SObjectType).thenReturn(rows)` serves the parent queries on Account. In after insert, update and undelete, mock the trigger object instead and return its rows with the parent attached.
+- **Providers.** Only a provider written with SOQL Lib can be mocked. An inline `[SELECT …]` cannot.
+- **The shared unit.** `DML.mock('triggerUow').allDmls()` replaces the shared commit. Read it with `DML.retrieveResultFor('triggerUow')`.
+- **An own unit or a Dispatcher's DML.** Mock the identifier the handler gives its `DML` instance.
 
 ## Integration Tests {#integration}
 
-Some behaviour exists only in a real save, so it needs real DML. Keep those tests in separate test classes:
-
-- 201 or more records, split into 200-record chunks;
-- partial saves, where the platform runs the handlers a second time;
-- real nested triggers, where one object's commit fires another object's handlers.
-
-To insert test data there without running the handlers, switch the object off first: `TriggerOrchestrator.bypass().sObject(Account.SObjectType)` ([Bypassing](/guide/bypasses#testing)).
-
-## See Also {#see-also}
-
-- [Record API](/api/record#test-api): the supported test members
-- [Unit of Work](/guide/unit-of-work#testing): registrations and commits
-- [Bypassing](/guide/bypasses#testing): switches in tests
-- [Errors & Logging](/guide/error-handling#logger): what the Logger receives
+Only a real save shows 200-record chunks and real nested triggers. Test those with DML, in separate test classes. Insert their data with `TriggerOrchestrator.bypass().sObject(…)` set.

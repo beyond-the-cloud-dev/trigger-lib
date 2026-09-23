@@ -15,7 +15,6 @@ import {
   getContext,
   getInterface,
   getTriggerHandlerInterface,
-  missingBeforeContexts,
   model,
   pairedContext
 } from '../apex-api.mjs';
@@ -34,7 +33,6 @@ import {
   universalNotAvailable,
   unpairedRoles
 } from '../context-facts.mjs';
-import { templates } from '../page-templates.mjs';
 
 export const GENERATED_DIR = join(WEBSITE_DIR, '_parts', 'generated');
 
@@ -244,18 +242,29 @@ function signature(context, item) {
 
   const lines = [block];
 
+  if (item.methods.length === 0) {
+    lines.push(
+      `${code(item.qualifiedName)} has no methods: implementing it is the whole opt-in.`
+    );
+  } else {
+    lines.push(
+      item.methods
+        .map(
+          method =>
+            `- ${code(callForm(method))}: ${methodLine(context, item, method)}`
+        )
+        .join('\n')
+    );
+  }
+
   if (item.kind === 'addOn') {
     const honouring = honouringRoles(context, item.name);
     const ignoring = ignoringRoles(context, item.name);
-    const worksWith = `Works with: ${list(honouring.map(role => link(role, interfaceLink(context.name, role))))}${ignoring.length > 0 && honouring.length < context.roles.length ? ' only' : ''}.`;
-    const ignored =
-      ignoring.length > 0
-        ? ` ${list(
-            ignoring.map(role => `A ${role}`),
-            'and'
-          )} ${ignoring.length > 1 ? 'ignore' : 'ignores'} it.`
-        : '';
-    lines.push(worksWith + ignored);
+    if (ignoring.length > 0) {
+      lines.push(
+        `Only ${list(honouring.map(role => `a ${link(role, interfaceLink(context.name, role))}`))} ${honouring.length > 1 ? 'use' : 'uses'} it; ${list(ignoring.map(role => `a ${role}`))} ${ignoring.length > 1 ? 'ignore' : 'ignores'} it.`
+      );
+    }
   }
 
   if (item.name === 'PriorParentQuery' && priorParentNoteFor(context)) {
@@ -263,6 +272,45 @@ function signature(context, item) {
   }
 
   return lines.join('\n\n');
+}
+
+function sentence(text) {
+  const trimmed = text.trim();
+  return `${trimmed[0].toUpperCase()}${trimmed.slice(1)}${/[.!?]$/.test(trimmed) ? '' : '.'}`;
+}
+
+function methodLine(context, item, method) {
+  const parts = [];
+
+  if (item.kind === 'role') {
+    const isPredicate = method === roleOfPredicate(item);
+    let called = isPredicate
+      ? roleCalls[item.name].predicate
+      : roleCalls[item.name].action;
+    if (isPredicate && honours(context, item.name).includes('RecursionGuard')) {
+      called +=
+        '; a record that has used up its recursion budget is skipped without a call';
+    }
+    parts.push(`called ${called}.`);
+    if (isPredicate)
+      parts.push(`Return ${code('true')} ${predicateReturns[item.name]}.`);
+  } else if (item.kind === 'addOn') {
+    let called = addOnFacts[item.name].called;
+    if (item.name === 'Finalizer' && context.roles.includes('Dispatcher')) {
+      called += '; after the dispatch for a Dispatcher';
+    }
+    parts.push(`called ${called}.`);
+    if (item.name === 'Finalizer')
+      parts.push('It receives only the qualified records.');
+    if (addOnFacts[item.name].returns)
+      parts.push(sentence(`returns ${addOnFacts[item.name].returns}`));
+  } else if (item.kind === 'support') {
+    const facts = supportFacts[item.name]?.[method.name];
+    if (facts?.called) parts.push(`called ${facts.called}.`);
+    if (facts?.returns) parts.push(sentence(`returns ${facts.returns}`));
+  }
+
+  return parts.join(' ');
 }
 
 function receivesCell(context, item, method) {
@@ -771,10 +819,7 @@ function otherContexts(context, item) {
 }
 
 function recordsProvider(context) {
-  const provider = getInterface(context.name, 'RecordsProvider');
-  return [signature(context, provider), methodTable(context, provider)].join(
-    '\n\n'
-  );
+  return signature(context, getInterface(context.name, 'RecordsProvider'));
 }
 
 function register(context) {
@@ -982,13 +1027,7 @@ function notAvailable(context) {
     }
   } else if (unpairedRoles[context.name]) {
     const entry = unpairedRoles[context.name];
-    const absent = missingBeforeContexts().find(
-      candidate => candidate.before === context.name
-    );
-    rows.push([
-      list(entry.roles),
-      `none: ${entry.reason}${absent ? ` → ${link(`No ${absent.name}`, absent.link)}` : ''}`
-    ]);
+    rows.push([list(entry.roles), `none: ${entry.reason}`]);
   }
 
   for (const [addOn, rule] of Object.entries(notHere[context.name])) {
@@ -1241,104 +1280,286 @@ function triggerVariables(context) {
   return table(['Trigger variable', 'In Trigger Lib'], rows);
 }
 
-function matrixCell(context, name) {
-  const item = getInterface(context.name, name);
-  if (!item) return '—';
-  if (item.kind === 'marker') return 'internal marker¹';
+function addOnsList(context) {
+  return context.addOns
+    .map(addOn => {
+      const item = getInterface(context.name, addOn);
+      const honouring = honouringRoles(context, addOn);
+      const only =
+        honouring.length < context.roles.length
+          ? ` ${list(honouring)} only.`
+          : '';
+      const summary = addOnFacts[addOn].summary;
+      return `- ${link(addOn, item.link)}: ${summary[0].toLowerCase()}${summary.slice(1)}${only}`;
+    })
+    .join('\n');
+}
 
-  let text;
-  if (item.methods.length === 0) text = 'marker';
-  else if (item.kind === 'support')
-    text = item.methods
-      .map(method =>
-        code(
-          `${method.name}(${method.params.map(param => shortType(param.type)).join(', ')})`
-        )
-      )
-      .join(' / ');
-  else text = item.methods.map(method => code(method.name)).join(' / ');
+const recordMethodGroups = [
+  {
+    names: ['getId'],
+    note: context =>
+      contextFacts[context.name].idsExist
+        ? 'the record Id'
+        : `${code('null')}: not saved yet`
+  },
+  {
+    names: ['getNewSObject'],
+    note: context =>
+      contextFacts[context.name].put === 'works'
+        ? `the ${code('Trigger.new')} row`
+        : `the ${code('Trigger.new')} row, read-only`
+  },
+  {
+    names: ['getOldSObject'],
+    note: () => `the ${code('Trigger.old')} row, read-only`
+  },
+  {
+    names: ['getNewParent'],
+    note: () => `the parent loaded by ParentQuery, or ${code('null')}`
+  },
+  {
+    names: ['getOldParent'],
+    note: () =>
+      `the parent the old row pointed to, loaded by PriorParentQuery, or ${code('null')}`
+  },
+  {
+    names: ['getRelated'],
+    note: () => 'rows from a RelatedQuery provider'
+  },
+  {
+    names: ['put'],
+    note: context =>
+      contextFacts[context.name].put === 'works'
+        ? `sets a field on the ${code('Trigger.new')} row`
+        : putFact.throws
+  },
+  {
+    names: ['addError'],
+    note: () => 'rejects the record, with a record-level or a field error'
+  },
+  {
+    names: ['isRecordTypeEqual', 'isRecordTypeNotEqual'],
+    note: () => 'record type developer name matches / differs'
+  },
+  {
+    names: ['equals', 'doesNotEqual'],
+    note: () => 'equal / different; text ignores case'
+  },
+  {
+    names: ['contains', 'doesNotContain', 'startsWith', 'endsWith'],
+    note: () => 'text match; case-sensitive'
+  },
+  {
+    names: ['isNull', 'isNotNull'],
+    note: () => 'null / not null'
+  },
+  {
+    names: ['isEmpty', 'isNotEmpty'],
+    note: () => `null or ${code("''")} / neither`
+  },
+  {
+    names: ['isBlank', 'isNotBlank'],
+    note: () => `null, ${code("''")} or whitespace / none`
+  },
+  {
+    names: ['isTrue', 'isFalse'],
+    note: () => `${code('true')} / ${code('false')}`
+  },
+  {
+    names: [
+      'greaterThan',
+      'greaterThanOrEqualTo',
+      'lessThan',
+      'lessThanOrEqualTo'
+    ],
+    note: () => 'number or date comparison; false for null'
+  },
+  {
+    names: ['isChanged'],
+    note: () => 'the new value differs from the old one'
+  },
+  {
+    names: ['isAnyChanged', 'areAllChanged'],
+    call: name => `${name}(field1, field2, …)`,
+    note: () =>
+      `any / every field changed; 2 to 5 fields or an ${code('Iterable<SObjectField>')}`
+  },
+  {
+    names: ['isChangedTo', 'isChangedFrom'],
+    note: () => 'changed to / from the value'
+  },
+  {
+    names: ['isChangedFromTo'],
+    note: () => 'the old value is `fromValue` and the new one is `toValue`'
+  }
+];
 
-  let suffix = '';
-  if (item.kind === 'addOn') {
-    const honouring = honouringRoles(context, name);
-    if (honouring.length < context.roles.length)
-      suffix = ` (${list(honouring)} only)`;
-    if (name === 'PriorParentQuery' && priorParentNoteFor(context))
-      suffix += '²';
-    if (name === 'ContinueOnError' && context.roles.includes('Writer'))
-      suffix += '³';
+function groupCalls(declared, group) {
+  return group.names
+    .map((name, index) => {
+      if (group.call) return code(group.call(name));
+      if (index > 0) return code(name);
+      return code(
+        callForm(declared.methods.find(method => method.name === name))
+      );
+    })
+    .join(', ');
+}
+
+function recordMethodRows(context, declared) {
+  const covered = new Set(recordMethodGroups.flatMap(group => group.names));
+  const uncovered = declared.methodNames.filter(name => !covered.has(name));
+  if (uncovered.length > 0) {
+    throw new Error(
+      `generate: ${declared.qualifiedName} declares ${uncovered.join(', ')}, which recordMethodGroups in generate.mjs does not describe`
+    );
   }
 
-  return `${link(text, item.link)}${suffix}`;
+  return recordMethodGroups
+    .filter(group => group.names.some(name => hasMethod(declared, name)))
+    .map(group => {
+      const missing = group.names.filter(name => !hasMethod(declared, name));
+      if (missing.length > 0) {
+        throw new Error(
+          `generate: ${declared.qualifiedName} declares ${group.names.filter(name => !missing.includes(name)).join(', ')} but not ${missing.join(', ')}; split the group in recordMethodGroups`
+        );
+      }
+      return [groupCalls(declared, group), group.note(context)];
+    });
+}
+
+function recordMethods(context) {
+  const declared = recordInterface(context);
+  const lines = [
+    `Type: ${code(declared.qualifiedName)}. Predicates read the ${contextFacts[context.name].rowSide} row and never throw on null.`,
+    table(['Method', `In ${context.name}`], recordMethodRows(context, declared))
+  ];
+
+  for (const extra of context.extraRecordTypes) {
+    const extraDeclared = getTriggerHandlerInterface(extra.type);
+    const added = extraDeclared.methods.filter(
+      method => !hasMethod(declared, method.name)
+    );
+    const removed = declared.methodNames.filter(
+      name => !hasMethod(extraDeclared, name)
+    );
+    lines.push(
+      `${list(extra.uses.map(use => code(use.method)))} gets a ${code(extraDeclared.qualifiedName)}: ${
+        removed.length > 0
+          ? `no ${list(
+              removed.map(name => code(name)),
+              'or'
+            )}, plus `
+          : 'the same methods, plus '
+      }${list(added.map(method => code(callForm(method))))}.`
+    );
+  }
+
+  return lines.join('\n\n');
+}
+
+function collectionMethodNote(context, method) {
+  const facts = contextFacts[context.name];
+  const relationship = method.params.length === 2;
+  const oldForm = method.name.startsWith('getOld');
+  const row = oldForm ? 'old' : facts.rowSide;
+  const parentSource = row === 'old' ? 'PriorParentQuery' : 'ParentQuery';
+  const bothRows = collectionInterface(context).methodNames.some(name =>
+    name.startsWith('getOld')
+  );
+  const ofRow = bothRows ? ` of the ${row} row` : '';
+
+  switch (method.name) {
+    case 'getIds':
+      return facts.idsExist ? 'the record Ids' : 'always empty: no Id yet';
+    case 'getIdsOf':
+    case 'getOldIdsOf':
+      return relationship
+        ? `Ids in a field of a parent loaded by ${parentSource}`
+        : `non-null Ids in a lookup or Id field${ofRow}`;
+    case 'getValuesOf':
+    case 'getOldValuesOf':
+      return relationship
+        ? `values of a field of a parent loaded by ${parentSource}, as text`
+        : `non-null values of a field${ofRow}, as text`;
+    case 'getRecords':
+      return `the records, as ${code(shortType(context.recordType))}`;
+    case 'size':
+      return 'the number of records';
+    default:
+      throw new Error(
+        `generate: collectionMethodNote does not describe ${method.name}`
+      );
+  }
+}
+
+function collectionMethods(context) {
+  const declared = collectionInterface(context);
+  return [
+    `Type: ${code(declared.qualifiedName)}, passed to ${list(collectionReceivers(context))}.`,
+    table(
+      ['Method', `In ${context.name}`],
+      declared.methods.map(method => [
+        code(callForm(method)),
+        collectionMethodNote(context, method)
+      ])
+    )
+  ].join('\n\n');
+}
+
+function matrixCell(context, name) {
+  const item = getInterface(context.name, name);
+  if (!item || (item.kind !== 'role' && item.kind !== 'addOn')) return '';
+
+  const text =
+    item.methods.length === 0
+      ? '✓'
+      : item.methods.map(method => code(method.name)).join(', ');
+  const honouring =
+    item.kind === 'addOn' ? honouringRoles(context, name) : context.roles;
+  const only =
+    honouring.length < context.roles.length ? ` (${list(honouring)} only)` : '';
+
+  return `${link(text, item.link)}${only}`;
 }
 
 function matrixMethods() {
-  const absent = missingBeforeContexts();
-  const columns = [];
-  for (const context of model.contexts) {
-    for (const entry of absent.filter(
-      candidate => candidate.before === context.name
-    ))
-      columns.push({ absent: entry });
-    columns.push({ context });
-  }
-
-  const header = [
-    'Interface',
-    ...columns.map(column =>
-      column.context
-        ? link(column.context.name, column.context.link)
-        : link(column.absent.name, column.absent.link)
+  const rows = model.matrixRows
+    .filter(name =>
+      model.contexts.some(context =>
+        ['role', 'addOn'].includes(getInterface(context.name, name)?.kind)
+      )
     )
-  ];
-  const rows = model.matrixRows.map(name => [
-    name === 'Handler' ? 'Handler' : name,
-    ...columns.map((column, index) =>
-      column.context
-        ? matrixCell(column.context, name)
-        : name === model.matrixRows[0]
-          ? 'no such trigger event'
-          : '—'
-    )
-  ]);
+    .map(name => [
+      name,
+      ...model.contexts.map(context => matrixCell(context, name))
+    ]);
 
   rows.push([
     'Registration',
-    ...columns.map(column =>
-      column.context
-        ? link(
-            `${code(column.context.registration.interfaceName)} / ${code(`${column.context.registration.method.name}()`)}`,
-            `${column.context.link}#register`
-          )
-        : '—'
+    ...model.contexts.map(context =>
+      link(
+        `${code(context.registration.interfaceName)}, ${code(`${context.registration.method.name}()`)}`,
+        `${context.link}#register`
+      )
     )
   ]);
 
-  const precedence = model.contexts
-    .filter(context => context.roles.length > 1)
-    .map(context => `${context.roles[0]} over ${context.roles[1]}`)
-    .filter((entry, index, all) => all.indexOf(entry) === index);
-
-  const markerContexts = model.contexts
-    .filter(context => context.marker)
-    .map(context => context.name);
-  const roleHandlerContexts = model.contexts
-    .filter(context => context.roles.includes('Handler'))
-    .map(context => context.name);
-  const notes = [
-    `¹ ${code('Handler')} is an empty internal marker that the roles extend in ${list(markerContexts)}${roleHandlerContexts.length > 0 ? `; in ${list(roleHandlerContexts)} it is the role itself` : ''}. A class that implements only the marker compiles and never runs.`
-  ];
-  const priorNote = priorParentNote();
-  if (priorNote) notes.push(`² ${priorNote}`);
-  notes.push(
-    '³ On a Writer, ContinueOnError also switches it to a private unit of work.'
+  return table(
+    [
+      'Interface',
+      ...model.contexts.map(context => link(context.name, context.link))
+    ],
+    rows
   );
-  notes.push(
-    `When one class implements both roles of a context, only the first one runs: ${list(precedence)}.`
-  );
-
-  return [table(header, rows), notes.join('\n\n')].join('\n\n');
 }
+
+const LEGACY_CHIP_ANCHORS = {
+  'writer/unit-of-work-methods': 'interface',
+  'record-api/collections': 'records',
+  'continue-on-error/still-throws': 'good-to-know'
+};
 
 function chipKinds() {
   const kinds = [];
@@ -1348,11 +1569,7 @@ function chipKinds() {
       context => getInterface(context.name, roleName)?.kind === 'role'
     );
     kinds.push({
-      kind: contexts.map(
-        context => getInterface(context.name, roleName).slug
-      )[0],
-      template: 'role',
-      interfaceName: roleName,
+      kind: getInterface(contexts[0].name, roleName).slug,
       targets: contexts.map(context => ({
         context,
         href: interfaceLink(context.name, roleName)
@@ -1366,8 +1583,6 @@ function chipKinds() {
     );
     kinds.push({
       kind: getInterface(contexts[0].name, addOn).slug,
-      template: 'add-on',
-      interfaceName: addOn,
       targets: contexts.map(context => ({
         context,
         href: interfaceLink(context.name, addOn)
@@ -1377,14 +1592,10 @@ function chipKinds() {
 
   kinds.push({
     kind: 'overview',
-    template: 'context',
-    interfaceName: null,
     targets: model.contexts.map(context => ({ context, href: context.link }))
   });
   kinds.push({
     kind: 'add-ons',
-    template: 'add-ons',
-    interfaceName: null,
     targets: model.contexts.map(context => ({
       context,
       href: context.addOnsLink
@@ -1392,8 +1603,6 @@ function chipKinds() {
   });
   kinds.push({
     kind: 'record-api',
-    template: 'record-api',
-    interfaceName: null,
     targets: model.contexts.map(context => ({
       context,
       href: context.recordApiLink
@@ -1404,44 +1613,31 @@ function chipKinds() {
 }
 
 function chips(files) {
-  for (const entry of chipKinds()) {
-    const definition = templates[entry.template];
+  const kinds = chipKinds();
+  for (const entry of kinds) {
     files.set(
       `chips/${entry.kind}.md`,
       entry.targets
         .map(target => link(target.context.name, target.href))
         .join(' · ')
     );
+  }
 
-    const anchors = new Map();
-    for (const heading of definition.h2) anchors.set(heading.id, null);
-    for (const heading of definition.h3ByInterface[entry.interfaceName] ?? [])
-      anchors.set(heading.id, null);
-    for (const [contextName, headings] of Object.entries(
-      definition.h3ByContext
-    )) {
-      for (const heading of headings) anchors.set(heading.id, contextName);
-    }
-
-    for (const [anchor, onlyContext] of anchors) {
-      const targets = entry.targets.filter(
-        target => !onlyContext || target.context.name === onlyContext
-      );
-      files.set(
-        `chips/${entry.kind}/${anchor}.md`,
-        targets
-          .map(target => link(target.context.name, `${target.href}#${anchor}`))
-          .join(' · ')
-      );
-    }
+  for (const [path, anchor] of Object.entries(LEGACY_CHIP_ANCHORS)) {
+    const entry = kinds.find(
+      candidate => candidate.kind === path.split('/')[0]
+    );
+    files.set(
+      `chips/${path}.md`,
+      entry.targets
+        .map(target => link(target.context.name, `${target.href}#${anchor}`))
+        .join(' · ')
+    );
   }
 }
 
-function buildFiles() {
-  validate();
-
+function legacyFiles() {
   const files = new Map();
-  files.set('matrix-methods.md', matrixMethods());
   files.set('matrix-facts.md', matrixFacts());
   chips(files);
 
@@ -1457,25 +1653,92 @@ function buildFiles() {
     );
     files.set(`${folder}/add-ons-works-with.md`, addOnsWorksWith(context));
     files.set(`${folder}/not-available.md`, notAvailable(context));
-    files.set(`${folder}/register.md`, register(context));
     files.set(`${folder}/accessors.md`, accessors(context));
     files.set(`${folder}/trigger-variables.md`, triggerVariables(context));
     files.set(`${folder}/collections.md`, collections(context));
 
-    for (const item of context.interfaces.filter(
-      candidate => candidate.kind === 'role' || candidate.kind === 'addOn'
-    )) {
+    for (const item of pageInterfaces(context)) {
       const base = `${folder}/${item.slug}`;
-      files.set(`${base}/signature.md`, signature(context, item));
       files.set(`${base}/method-table.md`, methodTable(context, item));
-      files.set(`${base}/skeleton.md`, skeletonFor(context, item));
       files.set(`${base}/available-in.md`, availableIn(context, item));
       files.set(`${base}/works-with.md`, worksWith(context, item));
       files.set(`${base}/other-contexts.md`, otherContexts(context, item));
+    }
+  }
+
+  return files;
+}
+
+const INCLUDE_PATTERN = /<!--\s*@include:\s*(.*?)\s*-->/g;
+const UNSCANNED_DIRECTORIES = new Set([
+  '.vitepress',
+  'generated',
+  'node_modules',
+  'public'
+]);
+
+function markdownSources(directory) {
+  const found = [];
+  for (const name of readdirSync(directory)) {
+    const full = join(directory, name);
+    if (statSync(full).isDirectory()) {
+      if (!UNSCANNED_DIRECTORIES.has(name))
+        found.push(...markdownSources(full));
+    } else if (name.endsWith('.md')) {
+      found.push(full);
+    }
+  }
+  return found;
+}
+
+export function includedGeneratedPaths(websiteDir = WEBSITE_DIR) {
+  const generatedDir = join(websiteDir, '_parts', 'generated');
+  const included = new Set();
+  for (const file of markdownSources(websiteDir)) {
+    for (const match of readFileSync(file, 'utf8').matchAll(INCLUDE_PATTERN)) {
+      const spec = match[1].replace(/\{\d*,\d*\}$/, '').replace(/#[\w-]+$/, '');
+      const target = spec.startsWith('@')
+        ? join(websiteDir, spec.slice(spec[1] === '/' ? 2 : 1))
+        : join(dirname(file), spec);
+      const path = relative(generatedDir, target);
+      if (!path.startsWith('..')) included.add(path.split(sep).join('/'));
+    }
+  }
+  return included;
+}
+
+function pageInterfaces(context) {
+  return context.interfaces.filter(
+    candidate => candidate.kind === 'role' || candidate.kind === 'addOn'
+  );
+}
+
+function buildFiles() {
+  validate();
+
+  const files = new Map();
+  files.set('matrix-methods.md', matrixMethods());
+
+  for (const context of model.contexts) {
+    const folder = context.slug;
+    files.set(`${folder}/add-ons-list.md`, addOnsList(context));
+    files.set(`${folder}/register.md`, register(context));
+    files.set(`${folder}/record-methods.md`, recordMethods(context));
+    files.set(`${folder}/collection-methods.md`, collectionMethods(context));
+
+    for (const item of pageInterfaces(context)) {
+      const base = `${folder}/${item.slug}`;
+      files.set(`${base}/signature.md`, signature(context, item));
+      files.set(`${base}/skeleton.md`, skeletonFor(context, item));
       if (item.name === 'RelatedQuery') {
         files.set(`${base}/records-provider.md`, recordsProvider(context));
       }
     }
+  }
+
+  const stillIncluded = includedGeneratedPaths();
+  for (const [path, content] of legacyFiles()) {
+    if (stillIncluded.has(path) && !files.has(path)) files.set(path, content);
   }
 
   for (const [path, content] of files) {

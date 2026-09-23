@@ -26,7 +26,7 @@ public class BeforeDelete {
     }
 
     public interface Finalizer {
-        void finalizeBeforeDelete();
+        void finalizeBeforeDelete(TriggerHandler.DeleteRecords records);
     }
 
     public interface ContinueOnError {

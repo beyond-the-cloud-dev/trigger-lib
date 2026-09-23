@@ -43,7 +43,7 @@ public class AfterUpdate {
     }
 
     public interface Finalizer {
-        void finalizeAfterUpdate();
+        void finalizeAfterUpdate(TriggerHandler.UpdateRecords records);
     }
 
     public interface ContinueOnError {

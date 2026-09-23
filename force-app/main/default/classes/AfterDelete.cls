@@ -35,7 +35,7 @@ public class AfterDelete {
     }
 
     public interface Finalizer {
-        void finalizeAfterDelete();
+        void finalizeAfterDelete(TriggerHandler.DeleteRecords records);
     }
 
     public interface ContinueOnError {

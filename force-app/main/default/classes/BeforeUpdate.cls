@@ -39,7 +39,7 @@ public class BeforeUpdate {
     }
 
     public interface Finalizer {
-        void finalizeBeforeUpdate();
+        void finalizeBeforeUpdate(TriggerHandler.UpdateRecords records);
     }
 
     public interface ContinueOnError {

@@ -621,7 +621,7 @@ public with sharing class TriggerOrchestrator {
                 return;
             }
 
-            ((BeforeInsert.Finalizer) this.populator).finalizeBeforeInsert();
+            ((BeforeInsert.Finalizer) this.populator).finalizeBeforeInsert(new TriggerHandler.InsertTriggerRecords(this.processedRecords));
         }
 
         private void handleException(Exception e) {
@@ -692,7 +692,7 @@ public with sharing class TriggerOrchestrator {
                 return;
             }
 
-            ((BeforeInsert.Finalizer) this.validator).finalizeBeforeInsert();
+            ((BeforeInsert.Finalizer) this.validator).finalizeBeforeInsert(new TriggerHandler.InsertTriggerRecords(this.processedRecords));
         }
 
         private void handleException(Exception e) {
@@ -750,7 +750,7 @@ public with sharing class TriggerOrchestrator {
                 return;
             }
 
-            ((AfterInsert.Finalizer) this.writer).finalizeAfterInsert();
+            ((AfterInsert.Finalizer) this.writer).finalizeAfterInsert(new TriggerHandler.InsertTriggerRecords(this.processedRecords));
         }
 
         private void commitOwnUnitOfWork() {
@@ -821,7 +821,7 @@ public with sharing class TriggerOrchestrator {
                 return;
             }
 
-            ((AfterInsert.Finalizer) this.dispatcher).finalizeAfterInsert();
+            ((AfterInsert.Finalizer) this.dispatcher).finalizeAfterInsert(new TriggerHandler.InsertTriggerRecords(this.processedRecords));
         }
 
         private void handleException(Exception e) {
@@ -897,7 +897,7 @@ public with sharing class TriggerOrchestrator {
                 return;
             }
 
-            ((BeforeUpdate.Finalizer) this.populator).finalizeBeforeUpdate();
+            ((BeforeUpdate.Finalizer) this.populator).finalizeBeforeUpdate(new TriggerHandler.UpdateTriggerRecords(this.processedRecords));
         }
 
         private void handleException(Exception e) {
@@ -968,7 +968,7 @@ public with sharing class TriggerOrchestrator {
                 return;
             }
 
-            ((BeforeUpdate.Finalizer) this.validator).finalizeBeforeUpdate();
+            ((BeforeUpdate.Finalizer) this.validator).finalizeBeforeUpdate(new TriggerHandler.UpdateTriggerRecords(this.processedRecords));
         }
 
         private void handleException(Exception e) {
@@ -1029,7 +1029,7 @@ public with sharing class TriggerOrchestrator {
                 return;
             }
 
-            ((AfterUpdate.Finalizer) this.writer).finalizeAfterUpdate();
+            ((AfterUpdate.Finalizer) this.writer).finalizeAfterUpdate(new TriggerHandler.UpdateTriggerRecords(this.processedRecords));
         }
 
         private void commitOwnUnitOfWork() {
@@ -1103,7 +1103,7 @@ public with sharing class TriggerOrchestrator {
                 return;
             }
 
-            ((AfterUpdate.Finalizer) this.dispatcher).finalizeAfterUpdate();
+            ((AfterUpdate.Finalizer) this.dispatcher).finalizeAfterUpdate(new TriggerHandler.UpdateTriggerRecords(this.processedRecords));
         }
 
         private void handleException(Exception e) {
@@ -1158,7 +1158,7 @@ public with sharing class TriggerOrchestrator {
                 return;
             }
 
-            ((BeforeDelete.Finalizer) this.handler).finalizeBeforeDelete();
+            ((BeforeDelete.Finalizer) this.handler).finalizeBeforeDelete(new TriggerHandler.DeleteTriggerRecords(this.processedRecords));
         }
 
         private void handleException(Exception e) {
@@ -1216,7 +1216,7 @@ public with sharing class TriggerOrchestrator {
                 return;
             }
 
-            ((AfterDelete.Finalizer) this.writer).finalizeAfterDelete();
+            ((AfterDelete.Finalizer) this.writer).finalizeAfterDelete(new TriggerHandler.DeleteTriggerRecords(this.processedRecords));
         }
 
         private void commitOwnUnitOfWork() {
@@ -1287,7 +1287,7 @@ public with sharing class TriggerOrchestrator {
                 return;
             }
 
-            ((AfterDelete.Finalizer) this.dispatcher).finalizeAfterDelete();
+            ((AfterDelete.Finalizer) this.dispatcher).finalizeAfterDelete(new TriggerHandler.DeleteTriggerRecords(this.processedRecords));
         }
 
         private void handleException(Exception e) {
@@ -1345,7 +1345,7 @@ public with sharing class TriggerOrchestrator {
                 return;
             }
 
-            ((AfterUndelete.Finalizer) this.writer).finalizeAfterUndelete();
+            ((AfterUndelete.Finalizer) this.writer).finalizeAfterUndelete(new TriggerHandler.UndeleteTriggerRecords(this.processedRecords));
         }
 
         private void commitOwnUnitOfWork() {
@@ -1416,7 +1416,7 @@ public with sharing class TriggerOrchestrator {
                 return;
             }
 
-            ((AfterUndelete.Finalizer) this.dispatcher).finalizeAfterUndelete();
+            ((AfterUndelete.Finalizer) this.dispatcher).finalizeAfterUndelete(new TriggerHandler.UndeleteTriggerRecords(this.processedRecords));
         }
 
         private void handleException(Exception e) {

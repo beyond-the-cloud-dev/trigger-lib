@@ -35,7 +35,7 @@ public class AfterInsert {
     }
 
     public interface Finalizer {
-        void finalizeAfterInsert();
+        void finalizeAfterInsert(TriggerHandler.InsertRecords records);
     }
 
     public interface ContinueOnError {

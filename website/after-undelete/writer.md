@@ -166,7 +166,7 @@ Neither test runs DML or SOQL. `enrichNew` is public, but `TriggerHandler` lists
 
 <!--@include: @/_parts/generated/after-undelete/writer/other-contexts.md-->
 
-In the before contexts, change the trigger record with a Populator instead. There is no before undelete: [No BeforeUndelete](/before-undelete).
+In the before contexts, change the trigger record with a Populator instead. There is no before undelete: [No BeforeUndelete](/after-undelete/#no-before-undelete).
 
 ## See Also {#see-also}
 

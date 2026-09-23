@@ -14,9 +14,6 @@ hero:
     - theme: alt
       text: Contexts at a Glance
       link: /contexts
-    - theme: alt
-      text: How do I…
-      link: /how-do-i
 
 features:
   - title: Orchestrator & Handlers

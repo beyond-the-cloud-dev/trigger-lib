@@ -31,7 +31,7 @@ Trigger Lib is part of [Apex Fluently](https://apexfluently.beyondthecloud.dev/)
 | [AfterDelete](/after-delete/) | [Writer](/after-delete/writer), [Dispatcher](/after-delete/dispatcher) | Update parents and related records, notify |
 | [AfterUndelete](/after-undelete/) | [Writer](/after-undelete/writer), [Dispatcher](/after-undelete/dispatcher) | Restore related data, notify |
 
-Salesforce has no before undelete event, so there is no BeforeUndelete context: see [There Is No BeforeUndelete](/before-undelete).
+Salesforce has no before undelete event, so there is no BeforeUndelete context: see [There Is No BeforeUndelete](/after-undelete/#no-before-undelete).
 
 - **Populator** changes the record being saved with `put`. **Validator** attaches an error to it. Neither may run DML.
 - **Writer** registers inserts, updates, upserts, deletes and platform events on a unit of work that the library commits for it, by default once after the last handler.
@@ -85,5 +85,4 @@ In the after contexts, a Writer's action receives a `TriggerHandler.UnitOfWork`.
 - [Your First Handler](/guide/first-handler)
 - [Trigger & Orchestrator](/guide/orchestrator)
 - [Contexts at a Glance](/contexts)
-- [How do I…](/how-do-i)
 - [Design Principles](/introduction/design-principles)

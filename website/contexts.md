@@ -18,7 +18,7 @@ Salesforce has seven trigger events, and Trigger Lib has one context for each of
 | after update | `AFTER_UPDATE` | [AfterUpdate](/after-update/) | [Writer](/after-update/writer), [Dispatcher](/after-update/dispatcher) |
 | before delete | `BEFORE_DELETE` | [BeforeDelete](/before-delete/) | [Handler](/before-delete/handler) |
 | after delete | `AFTER_DELETE` | [AfterDelete](/after-delete/) | [Writer](/after-delete/writer), [Dispatcher](/after-delete/dispatcher) |
-| before undelete | none: Salesforce has no such event | [No BeforeUndelete](/before-undelete) | none |
+| before undelete | none: Salesforce has no such event | [No BeforeUndelete](/after-undelete/#no-before-undelete) | none |
 | after undelete | `AFTER_UNDELETE` | [AfterUndelete](/after-undelete/) | [Writer](/after-undelete/writer), [Dispatcher](/after-undelete/dispatcher) |
 
 A handler class implements one role of a context. It adds as many of that context's add-ons (ParentQuery, Bypassable, Finalizer and the others) as it needs, and is listed in the orchestrator's handler method for that context.
@@ -75,7 +75,6 @@ Some pages add sub-sections under `#how-it-runs` or `#interface`:
 
 ## See Also {#see-also}
 
-- [How do I…](/how-do-i): tasks mapped to the page that answers them.
 - [Your First Handler](/guide/first-handler): a trigger, an orchestrator and two handlers, step by step.
 - [Trigger & Orchestrator](/guide/orchestrator): how the trigger body and the handler lists work.
 - [Execution Order & Cost](/guide/execution-order): what runs when, and what it costs.

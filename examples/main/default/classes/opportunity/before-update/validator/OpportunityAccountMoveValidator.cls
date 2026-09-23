@@ -11,14 +11,17 @@ public with sharing class OpportunityAccountMoveValidator implements BeforeUpdat
         return record.equals(Opportunity.StageName, 'Closed Won') && record.isChanged(Opportunity.AccountId);
     }
 
-    public String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record) {
+    public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
         Account previousAccount = (Account) record.getOldParent('Account');
         Account currentAccount = (Account) record.getNewParent('Account');
 
-        return 'This Opportunity is Closed Won and stays with ' +
-            (previousAccount?.Name ?? 'its original Account') +
-            '. It cannot be moved to ' +
-            (currentAccount?.Name ?? 'another Account') +
-            '.';
+        record.addError(
+            Opportunity.AccountId,
+            'This Opportunity is Closed Won and stays with ' +
+                (previousAccount?.Name ?? 'its original Account') +
+                '. It cannot be moved to ' +
+                (currentAccount?.Name ?? 'another Account') +
+                '.'
+        );
     }
 }

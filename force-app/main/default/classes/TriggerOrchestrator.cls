@@ -1910,7 +1910,7 @@ public with sharing class TriggerOrchestrator {
         private DML.Committable dml;
 
         public UnitOfWork() {
-            this(new DML().combineOnDuplicate().systemMode().withoutSharing());
+            this(new DML().combineOnDuplicate().systemMode().withoutSharing().identifier('triggerUow'));
         }
 
         public UnitOfWork(DML.Committable dml) {

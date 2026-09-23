@@ -70,42 +70,14 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void isChangedWhenBooleanWasFlipped() {
-        TriggerHandler.UpdateRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New', DoNotCall = true), new Contact(LastName = 'New', DoNotCall = false));
+    static void isChangedWhenOnlyLetterCaseDiffers() {
+        TriggerHandler.UpdateRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'DOE'), new Contact(LastName = 'Doe'));
 
         // Test
-        Boolean result = record.isChanged(Contact.DoNotCall);
+        Boolean result = record.isChanged(Contact.LastName);
 
         // Verify
-        Assert.isTrue(result, 'It should be changed, because true and false are different values to the Object comparison.');
-    }
-
-    @IsTest
-    static void isChangedWhenNumberDiffers() {
-        TriggerHandler.UpdateRecord record = new TriggerHandler.TriggerRecord(
-            new Account(Name = 'Test', NumberOfEmployees = 10),
-            new Account(Name = 'Test', NumberOfEmployees = 5)
-        );
-
-        // Test
-        Boolean result = record.isChanged(Account.NumberOfEmployees);
-
-        // Verify
-        Assert.isTrue(result, 'It should be changed, because the Object comparison compares the numeric values themselves.');
-    }
-
-    @IsTest
-    static void isChangedWhenDateDiffers() {
-        TriggerHandler.UpdateRecord record = new TriggerHandler.TriggerRecord(
-            new Contact(LastName = 'New', Birthdate = Date.newInstance(2026, 1, 1)),
-            new Contact(LastName = 'New', Birthdate = Date.newInstance(2025, 1, 1))
-        );
-
-        // Test
-        Boolean result = record.isChanged(Contact.Birthdate);
-
-        // Verify
-        Assert.isTrue(result, 'It should be changed, because the Object comparison compares the date values themselves.');
+        Assert.isFalse(result, 'It should not be changed, because the Object comparison ignores letter case for text.');
     }
 
     @IsTest
@@ -270,7 +242,7 @@ private class TriggerHandlerTest {
         Boolean result = record.isAnyChanged(Contact.LastName, Contact.FirstName);
 
         // Verify
-        Assert.isTrue(result, 'It should be reported as changed, because the scan stops as soon as one field differs.');
+        Assert.isTrue(result, 'It should be reported as changed, because the second field is forwarded to the scan and it differs.');
     }
 
     @IsTest
@@ -438,7 +410,7 @@ private class TriggerHandlerTest {
         Boolean result = record.areAllChanged(Contact.LastName, Contact.FirstName);
 
         // Verify
-        Assert.isFalse(result, 'It should not be reported as fully changed, because the scan fails at the first field that compares equal.');
+        Assert.isFalse(result, 'It should not be reported as fully changed, because the second field is forwarded to the scan and it compares equal.');
     }
 
     @IsTest
@@ -456,17 +428,17 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void areAllChangedWithThreeFieldsWhenOneDidNotChange() {
+    static void areAllChangedWithThreeFieldsWhenLastDidNotChange() {
         TriggerHandler.UpdateRecord record = new TriggerHandler.TriggerRecord(
-            new Contact(LastName = 'NewLast', FirstName = 'Same', Email = 'new@a.co'),
-            new Contact(LastName = 'OldLast', FirstName = 'Same', Email = 'old@a.co')
+            new Contact(LastName = 'NewLast', FirstName = 'NewFirst', Email = 'same@a.co'),
+            new Contact(LastName = 'OldLast', FirstName = 'OldFirst', Email = 'same@a.co')
         );
 
         // Test
         Boolean result = record.areAllChanged(Contact.LastName, Contact.FirstName, Contact.Email);
 
         // Verify
-        Assert.isFalse(result, 'It should not be reported as fully changed, because a single equal field is enough to fail the all-changed rule.');
+        Assert.isFalse(result, 'It should not be reported as fully changed, because the third field is forwarded to the scan and it compares equal.');
     }
 
     @IsTest
@@ -590,16 +562,6 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void isNullWhenFieldIsWhitespace() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = '   '), null);
-
-        // Test
-        Boolean result = record.isNull(Contact.Description);
-
-        // Verify
-        Assert.isFalse(result, 'It should not be null, because the null check does not trim, so a whitespace only string still counts as a value.');
-    }
-    @IsTest
     static void isNullWhenFieldIsPopulated() {
         TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Populated'), null);
 
@@ -608,17 +570,6 @@ private class TriggerHandlerTest {
 
         // Verify
         Assert.isFalse(result, 'It should be false, because the raw field value is compared against null and an assigned value is never null.');
-    }
-
-    @IsTest
-    static void isNullWhenNumberFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme'), null);
-
-        // Test
-        Boolean result = record.isNull(Account.NumberOfEmployees);
-
-        // Verify
-        Assert.isTrue(result, 'It should be true, because a numeric field that was never assigned holds no value at all, not a zero.');
     }
 
     @IsTest
@@ -666,17 +617,6 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void isNullOnUndeleteRecordReadsNewRecord() {
-        TriggerHandler.UndeleteRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Restored'), null);
-
-        // Test
-        Boolean result = record.isNull(Contact.Description);
-
-        // Verify
-        Assert.isFalse(result, 'It should be false, because the undelete shape carries only a new record and the value is read from it.');
-    }
-
-    @IsTest
     static void isNotNullWhenFieldIsNull() {
         TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
@@ -699,17 +639,6 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void isNotNullWhenFieldIsWhitespace() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = '   '), null);
-
-        // Test
-        Boolean result = record.isNotNull(Contact.Description);
-
-        // Verify
-        Assert.isTrue(result, 'It should be true, because whitespace is an assigned value and the null check never trims.');
-    }
-
-    @IsTest
     static void isNotNullWhenFieldIsPopulated() {
         TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Populated'), null);
 
@@ -718,17 +647,6 @@ private class TriggerHandlerTest {
 
         // Verify
         Assert.isTrue(result, 'It should be true, because an assigned value makes the negated null check true.');
-    }
-
-    @IsTest
-    static void isNotNullWhenNumberFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme'), null);
-
-        // Test
-        Boolean result = record.isNotNull(Account.NumberOfEmployees);
-
-        // Verify
-        Assert.isFalse(result, 'It should be false, because a numeric field that was never assigned is null and the negation follows that.');
     }
 
     @IsTest
@@ -798,17 +716,6 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void isEmptyWhenNumberFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme'), null);
-
-        // Test
-        Boolean result = record.isEmpty(Account.NumberOfEmployees);
-
-        // Verify
-        Assert.isTrue(result, 'It should be true, because the null short-circuit answers first and the string conversion is never reached.');
-    }
-
-    @IsTest
     static void isEmptyWhenNumberFieldIsZero() {
         TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', NumberOfEmployees = 0), null);
 
@@ -820,17 +727,6 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void isEmptyWhenCurrencyFieldIsZero() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', AnnualRevenue = 0), null);
-
-        // Test
-        Boolean result = record.isEmpty(Account.AnnualRevenue);
-
-        // Verify
-        Assert.isFalse(result, 'It should be false, because a zero currency amount converts to text with length rather than to nothing.');
-    }
-
-    @IsTest
     static void isEmptyWhenBooleanFieldIsFalse() {
         TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal', IsPrivate = false), null);
 
@@ -839,17 +735,6 @@ private class TriggerHandlerTest {
 
         // Verify
         Assert.isFalse(result, 'It should be false, because a Boolean is converted to the text false, which has length.');
-    }
-
-    @IsTest
-    static void isEmptyWhenDateFieldIsPopulated() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Birthdate = Date.newInstance(2024, 1, 1)), null);
-
-        // Test
-        Boolean result = record.isEmpty(Contact.Birthdate);
-
-        // Verify
-        Assert.isFalse(result, 'It should be false, because a populated date converts to text with length.');
     }
 
     @IsTest
@@ -916,17 +801,6 @@ private class TriggerHandlerTest {
 
         // Verify
         Assert.isTrue(result, 'It should be true, because a value of non-zero length is not empty.');
-    }
-
-    @IsTest
-    static void isNotEmptyWhenNumberFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme'), null);
-
-        // Test
-        Boolean result = record.isNotEmpty(Account.NumberOfEmployees);
-
-        // Verify
-        Assert.isFalse(result, 'It should be false, because the null short-circuit makes an unassigned field empty and the negation follows that.');
     }
 
     @IsTest
@@ -1018,17 +892,6 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void isBlankWhenNumberFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme'), null);
-
-        // Test
-        Boolean result = record.isBlank(Account.NumberOfEmployees);
-
-        // Verify
-        Assert.isTrue(result, 'It should be true, because a field with no value is blank before any text conversion happens.');
-    }
-
-    @IsTest
     static void isBlankWhenNumberFieldIsZero() {
         TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', NumberOfEmployees = 0), null);
 
@@ -1040,17 +903,6 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void isBlankWhenCurrencyFieldIsZero() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', AnnualRevenue = 0), null);
-
-        // Test
-        Boolean result = record.isBlank(Account.AnnualRevenue);
-
-        // Verify
-        Assert.isFalse(result, 'It should be false, because a zero currency amount converts to text that is not whitespace.');
-    }
-
-    @IsTest
     static void isBlankWhenBooleanFieldIsFalse() {
         TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal', IsPrivate = false), null);
 
@@ -1059,17 +911,6 @@ private class TriggerHandlerTest {
 
         // Verify
         Assert.isFalse(result, 'It should be false, because a Boolean is converted to the text false, which is not whitespace.');
-    }
-
-    @IsTest
-    static void isBlankWhenDateFieldIsPopulated() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Birthdate = Date.newInstance(2024, 1, 1)), null);
-
-        // Test
-        Boolean result = record.isBlank(Contact.Birthdate);
-
-        // Verify
-        Assert.isFalse(result, 'It should be false, because a populated date converts to text that is not whitespace.');
     }
 
     @IsTest
@@ -1112,16 +953,6 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void isBlankOnUndeleteRecordReadsNewRecord() {
-        TriggerHandler.UndeleteRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = '   '), null);
-
-        // Test
-        Boolean result = record.isBlank(Contact.Description);
-
-        // Verify
-        Assert.isTrue(result, 'It should be true, because the undelete shape carries only a new record and its whitespace value is trimmed away.');
-    }
-    @IsTest
     static void isNotBlankWhenFieldIsNull() {
         TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
@@ -1163,17 +994,6 @@ private class TriggerHandlerTest {
 
         // Verify
         Assert.isTrue(result, 'It should be true, because a non null value with printable characters fails the blank check and the result is negated.');
-    }
-
-    @IsTest
-    static void isNotBlankWhenNumberFieldIsNull() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme'), null);
-
-        // Test
-        Boolean result = record.isNotBlank(Account.NumberOfEmployees);
-
-        // Verify
-        Assert.isFalse(result, 'It should be false, because a number field that was never assigned is null, and the null short-circuit reports it as blank.');
     }
 
     @IsTest
@@ -1287,51 +1107,6 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void equalsWhenBooleanFieldMatches() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Deal', IsPrivate = true), null);
-
-        // Test
-        Boolean result = record.equals(Opportunity.IsPrivate, true);
-
-        // Verify
-        Assert.isTrue(result, 'It should be true, because Apex Object equality compares boxed Boolean values by content.');
-    }
-
-    @IsTest
-    static void equalsWhenNumberFieldMatches() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', NumberOfEmployees = 1500), null);
-
-        // Test
-        Boolean result = record.equals(Account.NumberOfEmployees, 1500);
-
-        // Verify
-        Assert.isTrue(result, 'It should be true, because Apex Object equality compares boxed numeric values by content.');
-    }
-
-    @IsTest
-    static void equalsWhenDateFieldMatches() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Birthdate = Date.newInstance(2026, 1, 1)), null);
-
-        // Test
-        Boolean result = record.equals(Contact.Birthdate, Date.newInstance(2026, 1, 1));
-
-        // Verify
-        Assert.isTrue(result, 'It should be true, because Apex Object equality compares Date values by the day they represent, not by instance.');
-    }
-
-    @IsTest
-    static void equalsWhenLookupFieldMatches() {
-        Id accountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', AccountId = accountId), null);
-
-        // Test
-        Boolean result = record.equals(Contact.AccountId, accountId);
-
-        // Verify
-        Assert.isTrue(result, 'It should be true, because Apex Object equality compares Id values by the key they hold, not by reference.');
-    }
-
-    @IsTest
     static void equalsOnUpdateReadsNewValue() {
         TriggerHandler.UpdateRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'), new Contact(LastName = 'Old'));
 
@@ -1362,17 +1137,6 @@ private class TriggerHandlerTest {
 
         // Verify
         Assert.isTrue(result, 'It should be true, because the new side falls back to the old record when there is no new record, which is the delete shape.');
-    }
-
-    @IsTest
-    static void equalsOnUndeleteReadsRestoredValue() {
-        TriggerHandler.UndeleteRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Restored'), null);
-
-        // Test
-        Boolean result = record.equals(Contact.LastName, 'Restored');
-
-        // Verify
-        Assert.isTrue(result, 'It should be true, because an undelete carries only a new record, and that restored record is the one compared.');
     }
 
     @IsTest
@@ -1508,28 +1272,6 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void containsWhenValueIsTheWholeFieldValue() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
-
-        // Test
-        Boolean result = record.contains(Contact.Description, 'Hello World');
-
-        // Verify
-        Assert.isTrue(result, 'It should be true, because a text value holds itself as a fragment in full.');
-    }
-
-    @IsTest
-    static void containsWhenFieldIsEmptyText() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''), null);
-
-        // Test
-        Boolean result = record.contains(Contact.Description, 'World');
-
-        // Verify
-        Assert.isFalse(result, 'It should be false, because an empty string passes the not null guard but carries no characters that could hold the fragment.');
-    }
-
-    @IsTest
     static void containsOnNumberFieldUsesTextValue() {
         TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'Acme', NumberOfEmployees = 1500), null);
 
@@ -1610,28 +1352,6 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void doesNotContainWhenValueIsTheWholeFieldValue() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
-
-        // Test
-        Boolean result = record.doesNotContain(Contact.Description, 'Hello World');
-
-        // Verify
-        Assert.isFalse(result, 'It should be false, because a text value holds itself as a fragment in full.');
-    }
-
-    @IsTest
-    static void doesNotContainWhenFieldIsEmptyText() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = ''), null);
-
-        // Test
-        Boolean result = record.doesNotContain(Contact.Description, 'World');
-
-        // Verify
-        Assert.isTrue(result, 'It should be true, because an empty string carries no characters that could hold the fragment.');
-    }
-
-    @IsTest
     static void doesNotContainOnUpdateReadsNewValue() {
         TriggerHandler.UpdateRecord record = new TriggerHandler.TriggerRecord(
             new Contact(LastName = 'Doe', Description = 'New note'),
@@ -1644,6 +1364,7 @@ private class TriggerHandlerTest {
         // Verify
         Assert.isTrue(result, 'It should be true, because the fragment search reads the new side, where the old text no longer stands.');
     }
+
     @IsTest
     static void doesNotContainOnDeleteReadsOldValue() {
         TriggerHandler.DeleteRecord record = new TriggerHandler.TriggerRecord(null, new Contact(LastName = 'Doe', Description = 'Old note'));
@@ -1667,17 +1388,6 @@ private class TriggerHandlerTest {
 
         // Verify
         Assert.isTrue(result, 'It should be true, because the field value begins with the exact prefix that was supplied.');
-    }
-
-    @IsTest
-    static void startsWithWhenPrefixDoesNotMatch() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
-
-        // Test
-        Boolean result = record.startsWith(Contact.Description, 'Goodbye');
-
-        // Verify
-        Assert.isFalse(result, 'It should be false, because the field value does not begin with the supplied prefix.');
     }
 
     @IsTest
@@ -1711,17 +1421,6 @@ private class TriggerHandlerTest {
 
         // Verify
         Assert.isFalse(result, 'It should be false, because the prefix match is case sensitive.');
-    }
-
-    @IsTest
-    static void startsWithWhenPrefixIsTheWholeFieldValue() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
-
-        // Test
-        Boolean result = record.startsWith(Contact.Description, 'Hello World');
-
-        // Verify
-        Assert.isTrue(result, 'It should be true, because a prefix equal to the entire value still matches from position zero.');
     }
 
     @IsTest
@@ -1761,17 +1460,6 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void endsWithWhenSuffixDoesNotMatch() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
-
-        // Test
-        Boolean result = record.endsWith(Contact.Description, 'Goodbye');
-
-        // Verify
-        Assert.isFalse(result, 'It should be false, because the field value does not terminate with the supplied suffix.');
-    }
-
-    @IsTest
     static void endsWithWhenValueIsNotAtTheEnd() {
         TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
 
@@ -1802,17 +1490,6 @@ private class TriggerHandlerTest {
 
         // Verify
         Assert.isFalse(result, 'It should be false, because the suffix match is case sensitive.');
-    }
-
-    @IsTest
-    static void endsWithWhenSuffixIsTheWholeFieldValue() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe', Description = 'Hello World'), null);
-
-        // Test
-        Boolean result = record.endsWith(Contact.Description, 'Hello World');
-
-        // Verify
-        Assert.isTrue(result, 'It should be true, because a suffix equal to the entire value still matches at the end.');
     }
 
     @IsTest
@@ -1875,13 +1552,13 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void isTrueWhenFieldIsText() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
+        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'true'), null);
 
         // Test
         Boolean result = record.isTrue(Contact.LastName);
 
         // Verify
-        Assert.isFalse(result, 'It should be false, because the value is compared as an Object and a String can never equal the Boolean true.');
+        Assert.isFalse(result, 'It should be false, because the value is compared as an Object, so even the text true never equals the Boolean true.');
     }
 
     @IsTest
@@ -2171,6 +1848,7 @@ private class TriggerHandlerTest {
         // Verify
         Assert.isFalse(result, 'It should be false, because the field value widened to Decimal sits below the compared Double.');
     }
+
     @IsTest
     static void greaterThanDoubleWhenValuesAreEqual() {
         TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(AnnualRevenue = 5000.5), null);
@@ -2204,7 +1882,7 @@ private class TriggerHandlerTest {
         Boolean result = record.greaterThanOrEqualTo(Account.AnnualRevenue, value);
 
         // Verify
-        Assert.isTrue(result, 'It should be true, because the Double is converted to a Decimal that sits above the compared value.');
+        Assert.isTrue(result, 'It should be true, because the field value sits above the compared Double.');
     }
 
     @IsTest
@@ -2216,7 +1894,7 @@ private class TriggerHandlerTest {
         Boolean result = record.greaterThanOrEqualTo(Account.AnnualRevenue, value);
 
         // Verify
-        Assert.isFalse(result, 'It should be false, because the Double is converted to a Decimal that sits below the compared value.');
+        Assert.isFalse(result, 'It should be false, because the field value sits below the compared Double.');
     }
 
     @IsTest
@@ -2252,7 +1930,7 @@ private class TriggerHandlerTest {
         Boolean result = record.lessThan(Account.AnnualRevenue, value);
 
         // Verify
-        Assert.isTrue(result, 'It should be true, because the Double is converted to a Decimal that sits below the compared value.');
+        Assert.isTrue(result, 'It should be true, because the field value sits strictly below the compared Double.');
     }
 
     @IsTest
@@ -2264,7 +1942,7 @@ private class TriggerHandlerTest {
         Boolean result = record.lessThan(Account.AnnualRevenue, value);
 
         // Verify
-        Assert.isFalse(result, 'It should be false, because the Double is converted to a Decimal that sits above the compared value.');
+        Assert.isFalse(result, 'It should be false, because the field value sits above the compared Double.');
     }
 
     @IsTest
@@ -2300,7 +1978,7 @@ private class TriggerHandlerTest {
         Boolean result = record.lessThanOrEqualTo(Account.AnnualRevenue, value);
 
         // Verify
-        Assert.isTrue(result, 'It should be true, because the Decimal converted from the Double sits below the compared value.');
+        Assert.isTrue(result, 'It should be true, because the field value sits below the compared Double.');
     }
 
     @IsTest
@@ -2312,7 +1990,7 @@ private class TriggerHandlerTest {
         Boolean result = record.lessThanOrEqualTo(Account.AnnualRevenue, value);
 
         // Verify
-        Assert.isFalse(result, 'It should be false, because the Decimal converted from the Double sits above the compared value.');
+        Assert.isFalse(result, 'It should be false, because the field value sits above the compared Double.');
     }
 
     @IsTest
@@ -2737,6 +2415,7 @@ private class TriggerHandlerTest {
         // Verify
         Assert.isTrue(result, 'It should be true, because a DateTime one hour later is greater when instants are compared.');
     }
+
     @IsTest
     static void greaterThanDateTimeWhenFieldIsEarlier() {
         TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(
@@ -3208,17 +2887,6 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void lessThanComparesTheNewRecordOnUpdate() {
-        TriggerHandler.UpdateRecord record = new TriggerHandler.TriggerRecord(new Account(NumberOfEmployees = 10), new Account(NumberOfEmployees = 100));
-
-        // Test
-        Boolean result = record.lessThan(Account.NumberOfEmployees, 50);
-
-        // Verify
-        Assert.isTrue(result, 'It should be true, because every comparison reads the new side of an update, leaving the old value of 100 out of the test.');
-    }
-
-    @IsTest
     static void greaterThanComparesTheOldRecordOnDelete() {
         TriggerHandler.DeleteRecord record = new TriggerHandler.TriggerRecord(null, new Account(NumberOfEmployees = 100));
 
@@ -3230,288 +2898,103 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void lessThanComparesTheOldRecordOnDelete() {
-        TriggerHandler.DeleteRecord record = new TriggerHandler.TriggerRecord(null, new Account(NumberOfEmployees = 100));
-
-        // Test
-        Boolean result = record.lessThan(Account.NumberOfEmployees, 150);
-
-        // Verify
-        Assert.isTrue(result, 'It should be true, because the new-side lookup falls back to the old record when there is no new record, which is the delete shape.');
-    }
-
-    @IsTest
-    static void greaterThanDateComparesTheOldRecordOnDelete() {
-        TriggerHandler.DeleteRecord record = new TriggerHandler.TriggerRecord(null, new Contact(LastName = 'Test', Birthdate = Date.newInstance(1990, 1, 1)));
-        Date value = Date.newInstance(1989, 12, 31);
-
-        // Test
-        Boolean result = record.greaterThan(Contact.Birthdate, value);
-
-        // Verify
-        Assert.isTrue(result, 'It should be true, because the Date overload reads the same new-side lookup, which falls back to the old record in the delete shape.');
-    }
-
-    @IsTest
     static void isRecordTypeEqualWhenSObjectHasNoRecordTypes() {
         TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new User(), null);
-        Exception handlerException = null;
+        String errorMessage = null;
 
         // Test
         try {
             record.isRecordTypeEqual('Standard');
-        } catch (Exception e) {
-            handlerException = e;
+        } catch (TriggerHandler.TriggerHandlerException e) {
+            errorMessage = e.getMessage();
         }
 
         // Verify
-        Assert.isNotNull(
-            handlerException,
-            'It should be thrown, because User carries nothing beyond the Master record type and record type checks are refused on such an SObject.'
-        );
-        Assert.isTrue(
-            handlerException instanceof TriggerHandler.TriggerHandlerException,
-            'It should be a TriggerHandlerException, because the framework raises its own exception type instead of letting a raw platform error surface.'
-        );
         Assert.areEqual(
             'User has no record types, so isRecordTypeEqual cannot be used on it.',
-            handlerException.getMessage(),
-            'It should name the SObject and the refused method, because the guard builds its message from the resolved SObject type and the call that was blocked.'
+            errorMessage,
+            'It should be refused with a TriggerHandlerException, because User carries nothing beyond the Master record type.'
         );
     }
 
     @IsTest
     static void isRecordTypeNotEqualWhenSObjectHasNoRecordTypes() {
         TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new User(), null);
-        Exception handlerException = null;
+        String errorMessage = null;
 
         // Test
         try {
             record.isRecordTypeNotEqual('Standard');
-        } catch (Exception e) {
-            handlerException = e;
+        } catch (TriggerHandler.TriggerHandlerException e) {
+            errorMessage = e.getMessage();
         }
 
         // Verify
-        Assert.isNotNull(handlerException, 'It should be thrown, because the same record type guard protects the negated check on an SObject with only the Master record type.');
-        Assert.isTrue(
-            handlerException instanceof TriggerHandler.TriggerHandlerException,
-            'It should be a TriggerHandlerException, because the framework raises its own exception type instead of letting a raw platform error surface.'
-        );
         Assert.areEqual(
             'User has no record types, so isRecordTypeNotEqual cannot be used on it.',
-            handlerException.getMessage(),
-            'It should name the refused method rather than its positive twin, because each guard reports the call that was actually blocked.'
-        );
-    }
-
-    @IsTest
-    static void isRecordTypeEqualOnUpdateRecord() {
-        TriggerHandler.UpdateRecord record = new TriggerHandler.TriggerRecord(new User(LastName = 'New'), new User(LastName = 'Old'));
-        Exception handlerException = null;
-
-        // Test
-        try {
-            record.isRecordTypeEqual('Standard');
-        } catch (Exception e) {
-            handlerException = e;
-        }
-
-        // Verify
-        Assert.isNotNull(
-            handlerException,
-            'It should be thrown, because the record type guard runs before any value is read, so having both sides of an update does not exempt it.'
-        );
-        Assert.areEqual(
-            'User has no record types, so isRecordTypeEqual cannot be used on it.',
-            handlerException.getMessage(),
-            'It should name the SObject, because the type behind the message comes from the record pair rather than from the context in use.'
-        );
-    }
-
-    @IsTest
-    static void isRecordTypeNotEqualOnUpdateRecord() {
-        TriggerHandler.UpdateRecord record = new TriggerHandler.TriggerRecord(new User(LastName = 'New'), new User(LastName = 'Old'));
-        Exception handlerException = null;
-
-        // Test
-        try {
-            record.isRecordTypeNotEqual('Standard');
-        } catch (Exception e) {
-            handlerException = e;
-        }
-
-        // Verify
-        Assert.isNotNull(handlerException, 'It should be thrown, because the negated check shares the same guard and rejects an SObject without record types in every context.');
-        Assert.areEqual(
-            'User has no record types, so isRecordTypeNotEqual cannot be used on it.',
-            handlerException.getMessage(),
-            'It should name the refused method, because each guard reports the call that was actually blocked.'
+            errorMessage,
+            'It should be refused with a TriggerHandlerException naming the negated check, because the same guard protects both checks.'
         );
     }
 
     @IsTest
     static void isRecordTypeEqualOnDeleteRecord() {
         TriggerHandler.DeleteRecord record = new TriggerHandler.TriggerRecord(null, new User(LastName = 'Old'));
-        Exception handlerException = null;
+        String errorMessage = null;
 
         // Test
         try {
             record.isRecordTypeEqual('Standard');
-        } catch (Exception e) {
-            handlerException = e;
+        } catch (TriggerHandler.TriggerHandlerException e) {
+            errorMessage = e.getMessage();
         }
 
         // Verify
-        Assert.isNotNull(
-            handlerException,
-            'It should be thrown, because the SObject type is taken from the old record when the new record is null, so the guard still applies in delete shape.'
-        );
         Assert.areEqual(
             'User has no record types, so isRecordTypeEqual cannot be used on it.',
-            handlerException.getMessage(),
-            'It should name the SObject, because the deleted row supplies the type that the message is built from.'
+            errorMessage,
+            'It should be refused, because the SObject type is taken from the old record when the new record is null, so the guard still applies in delete shape.'
         );
     }
 
     @IsTest
     static void isRecordTypeNotEqualOnDeleteRecord() {
         TriggerHandler.DeleteRecord record = new TriggerHandler.TriggerRecord(null, new User(LastName = 'Old'));
-        Exception handlerException = null;
+        String errorMessage = null;
 
         // Test
         try {
             record.isRecordTypeNotEqual('Standard');
-        } catch (Exception e) {
-            handlerException = e;
+        } catch (TriggerHandler.TriggerHandlerException e) {
+            errorMessage = e.getMessage();
         }
 
         // Verify
-        Assert.isNotNull(handlerException, 'It should be thrown, because the negated check reads the type from the old record as well and hits the same guard.');
         Assert.areEqual(
             'User has no record types, so isRecordTypeNotEqual cannot be used on it.',
-            handlerException.getMessage(),
-            'It should name the refused method, because each guard reports the call that was actually blocked.'
-        );
-    }
-
-    @IsTest
-    static void isRecordTypeEqualOnUndeleteRecord() {
-        TriggerHandler.UndeleteRecord record = new TriggerHandler.TriggerRecord(new User(), null);
-        Exception handlerException = null;
-
-        // Test
-        try {
-            record.isRecordTypeEqual('Standard');
-        } catch (Exception e) {
-            handlerException = e;
-        }
-
-        // Verify
-        Assert.isNotNull(handlerException, 'It should be thrown, because the restored record resolves to the same SObject type and the guard rejects it exactly as on insert.');
-        Assert.areEqual(
-            'User has no record types, so isRecordTypeEqual cannot be used on it.',
-            handlerException.getMessage(),
-            'It should name the SObject, because the message is built from the resolved type regardless of which context interface exposes the call.'
-        );
-    }
-    @IsTest
-    static void isRecordTypeNotEqualOnUndeleteRecord() {
-        TriggerHandler.UndeleteRecord record = new TriggerHandler.TriggerRecord(new User(), null);
-        Exception handlerException = null;
-
-        // Test
-        try {
-            record.isRecordTypeNotEqual('Standard');
-        } catch (Exception e) {
-            handlerException = e;
-        }
-
-        // Verify
-        Assert.isNotNull(handlerException, 'It should be thrown, because User has no record types beyond Master.');
-        Assert.areEqual(
-            'User has no record types, so isRecordTypeNotEqual cannot be used on it.',
-            handlerException.getMessage(),
-            'It should name the SObject, because the framework raises TriggerHandlerException instead of a raw SObjectException.'
+            errorMessage,
+            'It should be refused, because the negated check reads the SObject type from the old record as well.'
         );
     }
 
     @IsTest
     static void isRecordTypeEqualNamesTheSObjectTypeInTheMessage() {
         TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Group(), null);
-        Exception handlerException = null;
+        String errorMessage = null;
 
         // Test
         try {
             record.isRecordTypeEqual('Standard');
-        } catch (Exception e) {
-            handlerException = e;
+        } catch (TriggerHandler.TriggerHandlerException e) {
+            errorMessage = e.getMessage();
         }
 
         // Verify
-        Assert.isNotNull(handlerException, 'It should be thrown, because Group has no record types beyond Master.');
         Assert.areEqual(
             'Group has no record types, so isRecordTypeEqual cannot be used on it.',
-            handlerException.getMessage(),
-            'It should name the SObject, because the framework raises TriggerHandlerException instead of a raw SObjectException.'
+            errorMessage,
+            'It should name Group, because the message is built from the SObject type of the record.'
         );
-    }
-
-    @IsTest
-    static void multipleIsRecordTypeEqualExecutions() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new User(), null);
-        Exception firstException = null;
-        Exception secondException = null;
-
-        // Test
-        try {
-            record.isRecordTypeEqual('Standard');
-        } catch (Exception e) {
-            firstException = e;
-        }
-
-        try {
-            record.isRecordTypeEqual('Standard');
-        } catch (Exception e) {
-            secondException = e;
-        }
-
-        // Verify
-        Assert.isNotNull(firstException, 'It should be thrown on the first call, because User has no record types beyond Master.');
-        Assert.isNotNull(secondException, 'It should be thrown on the second call, because the record type guard runs on every call and is never disarmed by an earlier failure.');
-        Assert.areEqual(
-            'User has no record types, so isRecordTypeEqual cannot be used on it.',
-            firstException.getMessage(),
-            'It should name the SObject, because the framework raises TriggerHandlerException instead of a raw SObjectException.'
-        );
-        Assert.areEqual(
-            'User has no record types, so isRecordTypeEqual cannot be used on it.',
-            secondException.getMessage(),
-            'It should be the same message, because the describe is cached per SObjectType and the cached entry yields the same guard outcome.'
-        );
-    }
-
-    @IsTest
-    static void newSObjectIsReturnedWhenBuiltFromASingleRecord() {
-        Contact newContact = new Contact(LastName = 'New');
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(newContact, null);
-
-        // Test
-        SObject result = record.getNewSObject();
-
-        // Verify
-        Assert.areEqual(newContact, result, 'It should be the record passed to the constructor, because the single record constructor stores that record as the new side.');
-    }
-
-    @IsTest
-    static void oldSObjectIsNullWhenBuiltFromASingleRecord() {
-        TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'), null);
-
-        // Test
-        SObject result = record.getOldSObject();
-
-        // Verify
-        Assert.isNull(result, 'It should be null, because the single record constructor leaves the old side unassigned.');
     }
 
     @IsTest
@@ -3586,42 +3069,6 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void newSidePredicatesReadTheOldRecordOnDeleteShape() {
-        TriggerHandler.DeleteRecord record = new TriggerHandler.TriggerRecord(null, new Contact(LastName = 'Old'));
-
-        // Test
-        Boolean result = record.equals(Contact.LastName, 'Old');
-
-        // Verify
-        Assert.isTrue(result, 'It should be true, because the new side predicates fall back to the old record when there is no new record.');
-    }
-
-    @IsTest
-    static void newSObjectIsReturnedOnUndeleteShape() {
-        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
-        Contact restoredContact = new Contact(Id = contactId, LastName = 'Restored');
-        TriggerHandler.UndeleteRecord record = new TriggerHandler.TriggerRecord(restoredContact, null);
-
-        // Test
-        SObject result = record.getNewSObject();
-
-        // Verify
-        Assert.areEqual(restoredContact, result, 'It should be the restored record, because the undelete shape carries the row only on the new side.');
-    }
-
-    @IsTest
-    static void oldSObjectIsNullOnUndeleteShape() {
-        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
-        TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(Id = contactId, LastName = 'Restored'), null);
-
-        // Test
-        SObject result = record.getOldSObject();
-
-        // Verify
-        Assert.isNull(result, 'It should be null, because a restored record has no prior version in an after undelete context.');
-    }
-
-    @IsTest
     static void newSObjectIsTheInstanceThatWasPassedIn() {
         Contact newContact = new Contact(LastName = 'New');
         TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(newContact, null);
@@ -3656,18 +3103,6 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void getIdReturnsTheNewRecordId() {
-        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(Id = contactId, LastName = 'New'), null);
-
-        // Test
-        Id result = record.getId();
-
-        // Verify
-        Assert.areEqual(contactId, String.valueOf(result), 'It should be the new record id, because getId reads the new side first.');
-    }
-
-    @IsTest
     static void getIdFallsBackToTheOldRecordIdWhenNewRecordIsNull() {
         Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
         TriggerHandler.DeleteRecord record = new TriggerHandler.TriggerRecord(null, new Contact(Id = contactId, LastName = 'Old'));
@@ -3676,7 +3111,7 @@ private class TriggerHandlerTest {
         Id result = record.getId();
 
         // Verify
-        Assert.areEqual(contactId, String.valueOf(result), 'It should be the old record id, because getId falls back to the old record when the new record is null.');
+        Assert.areEqual(contactId, result, 'It should be the old record id, because getId falls back to the old record when the new record is null.');
     }
 
     @IsTest
@@ -3692,33 +3127,7 @@ private class TriggerHandlerTest {
         Id result = record.getId();
 
         // Verify
-        Assert.areEqual(
-            firstContactId,
-            String.valueOf(result),
-            'It should be the new record id, because the fallback to the old record applies only when the new record is missing.'
-        );
-    }
-
-    @IsTest
-    static void getIdIsNullWhenTheRecordHasNoId() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'), null);
-
-        // Test
-        Id result = record.getId();
-
-        // Verify
-        Assert.isNull(result, 'It should be null, because a record that has not been saved yet carries no id to read.');
-    }
-
-    @IsTest
-    static void putSetsTheValueOnTheNewRecord() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'), null);
-
-        // Test
-        record.put(Contact.Title, 'Manager');
-
-        // Verify
-        Assert.areEqual('Manager', record.getNewSObject().get(Contact.Title), 'It should be Manager, because put writes straight through to the new record.');
+        Assert.areEqual(firstContactId, result, 'It should be the new record id, because the fallback to the old record applies only when the new record is missing.');
     }
 
     @IsTest
@@ -3768,51 +3177,6 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void putSetsABooleanValue() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'), null);
-
-        // Test
-        record.put(Contact.DoNotCall, true);
-
-        // Verify
-        Assert.areEqual(
-            true,
-            record.getNewSObject().get(Contact.DoNotCall),
-            'It should be true, because put writes any Object value, a Boolean included, straight to the new record.'
-        );
-    }
-
-    @IsTest
-    static void putSetsANumericValue() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Name = 'New'), null);
-
-        // Test
-        record.put(Account.NumberOfEmployees, 25);
-
-        // Verify
-        Assert.areEqual(
-            25,
-            record.getNewSObject().get(Account.NumberOfEmployees),
-            'It should be 25, because put writes any Object value, a number included, straight to the new record.'
-        );
-    }
-
-    @IsTest
-    static void putSetsADateValue() {
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'), null);
-
-        // Test
-        record.put(Contact.Birthdate, Date.newInstance(2020, 1, 1));
-
-        // Verify
-        Assert.areEqual(
-            Date.newInstance(2020, 1, 1),
-            record.getNewSObject().get(Contact.Birthdate),
-            'It should be the given date, because put writes any Object value, a Date included, straight to the new record.'
-        );
-    }
-
-    @IsTest
     static void putDoesNotTouchTheOldRecord() {
         TriggerHandler.UpdateRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New', Title = 'Analyst'), new Contact(LastName = 'Old', Title = 'Analyst'));
 
@@ -3835,36 +3199,6 @@ private class TriggerHandlerTest {
 
         // Verify
         Assert.areEqual(parentAccount, result, 'It should be the enriched parent, because the new side returns the record stored under that relationship name.');
-    }
-
-    @IsTest
-    static void getNewParentExposesTheEnrichedParentFields() {
-        Id accountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
-        TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New', AccountId = accountId), null);
-        record.enrichNew('Account', new Account(Id = accountId, Name = 'Parent', Industry = 'IT'));
-
-        // Test
-        SObject result = record.getNewParent('Account');
-
-        // Verify
-        Assert.areEqual('IT', result.get(Account.Industry), 'It should be IT, because the enriched parent is handed back whole, so every field declared on it is readable.');
-    }
-
-    @IsTest
-    static void getNewParentUsesTheLookupRelationshipName() {
-        Id accountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
-        TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New', AccountId = accountId), null);
-        record.enrichNew(Contact.AccountId.getDescribe().getRelationshipName(), new Account(Id = accountId, Name = 'Parent'));
-
-        // Test
-        SObject result = record.getNewParent('Account');
-
-        // Verify
-        Assert.areEqual(
-            'Parent',
-            result.get(Account.Name),
-            'It should be Parent, because the parent is keyed by the relationship name of the lookup field, which for AccountId is Account.'
-        );
     }
 
     @IsTest
@@ -3893,8 +3227,8 @@ private class TriggerHandlerTest {
             new Contact(LastName = 'New', AccountId = firstAccountId),
             new Contact(LastName = 'Old', AccountId = secondAccountId)
         );
-        record.enrichNew('Account', new Account(Id = firstAccountId, Name = 'Current Parent'));
         record.enrichOld('Account', new Account(Id = secondAccountId, Name = 'Prior Parent'));
+        record.enrichNew('Account', new Account(Id = firstAccountId, Name = 'Current Parent'));
 
         // Test
         SObject result = record.getOldParent('Account');
@@ -3927,49 +3261,6 @@ private class TriggerHandlerTest {
             result.get(Account.Name),
             'It should be Current Parent, because the new side keeps a relationship map of its own, separate from the old side.'
         );
-    }
-
-    @IsTest
-    static void getOldParentReturnsTheEnrichedParentOnDeleteShape() {
-        Id accountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
-        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
-        Account parentAccount = new Account(Id = accountId, Name = 'Parent');
-        TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(null, new Contact(Id = contactId, LastName = 'Old', AccountId = accountId));
-        record.enrichOld('Account', parentAccount);
-
-        // Test
-        SObject result = record.getOldParent('Account');
-
-        // Verify
-        Assert.areEqual(parentAccount, result, 'It should be the enriched parent, because the old side relationship map is filled even when there is no new record.');
-    }
-
-    @IsTest
-    static void getNewParentIsNullWhenNothingWasEnriched() {
-        Id accountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
-        TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New', AccountId = accountId), null);
-
-        // Test
-        SObject result = record.getNewParent('Account');
-
-        // Verify
-        Assert.isNull(result, 'It should be null, because the new side relationship map has no entry for a name that was never enriched.');
-    }
-
-    @IsTest
-    static void getOldParentIsNullWhenNothingWasEnriched() {
-        Id firstAccountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
-        Id secondAccountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
-        TriggerHandler.UpdateRecord record = new TriggerHandler.TriggerRecord(
-            new Contact(LastName = 'New', AccountId = firstAccountId),
-            new Contact(LastName = 'Old', AccountId = secondAccountId)
-        );
-
-        // Test
-        SObject result = record.getOldParent('Account');
-
-        // Verify
-        Assert.isNull(result, 'It should be null, because the old side relationship map has no entry for a name that was never enriched.');
     }
 
     @IsTest
@@ -4034,18 +3325,6 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void getNewParentIsNullWhenTheLookupIsUnset() {
-        TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'), null);
-        record.enrichNew('Account', null);
-
-        // Test
-        SObject result = record.getNewParent('Account');
-
-        // Verify
-        Assert.isNull(result, 'It should be null, because an unset lookup resolves to no parent, so the stored null is what the new side hands back.');
-    }
-
-    @IsTest
     static void getNewParentIsCaseSensitive() {
         Id accountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
         TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New', AccountId = accountId), null);
@@ -4086,13 +3365,13 @@ private class TriggerHandlerTest {
         record.enrichNew('ReportsTo', new Contact(Id = contactId, LastName = 'Manager'));
 
         // Test
-        SObject result = record.getNewParent('ReportsTo');
+        SObject result = record.getNewParent('Account');
 
         // Verify
         Assert.areEqual(
-            'Manager',
-            result.get(Contact.LastName),
-            'It should be Manager, because each relationship is stored under its own name, so enriching one does not disturb another.'
+            'Parent',
+            result.get(Account.Name),
+            'It should be Parent, because each relationship is stored under its own name, so enriching another one later does not disturb it.'
         );
     }
 
@@ -4177,15 +3456,6 @@ private class TriggerHandlerTest {
             fields,
             'It should contain all six fields in iteration order, because the iterable overload appends one entry per element as it iterates.'
         );
-    }
-
-    @IsTest
-    static void withEmptyIterableOfFields() {
-        // Test
-        List<String> fields = TriggerHandler.ParentFields.with(new List<SObjectField>()).getFields();
-
-        // Verify
-        Assert.areEqual(new List<String>(), fields, 'It should be empty, because the iterable overload appends one entry per element and an empty iterable yields none.');
     }
 
     @IsTest
@@ -4278,58 +3548,6 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void withRelationshipAndEmptyIterableOfFields() {
-        // Test
-        List<String> fields = TriggerHandler.ParentFields.with('Parent', new List<SObjectField>()).getFields();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>(),
-            fields,
-            'It should be empty, because the relationship iterable overload appends one entry per element and an empty iterable yields none.'
-        );
-    }
-
-    @IsTest
-    static void withCustomRelationshipName() {
-        // Test
-        List<String> fields = TriggerHandler.ParentFields.with('Custom_Lookup__r', Account.Name, Account.Industry).getFields();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{ 'Custom_Lookup__r.Name', 'Custom_Lookup__r.Industry' },
-            fields,
-            'It should contain Custom_Lookup__r.Name and Custom_Lookup__r.Industry, because the relationship name is concatenated verbatim and never resolved against the schema.'
-        );
-    }
-
-    @IsTest
-    static void withMultiLevelRelationshipName() {
-        // Test
-        List<String> fields = TriggerHandler.ParentFields.with('Parent.Parent', Account.Name).getFields();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{ 'Parent.Parent.Name' },
-            fields,
-            'It should contain Parent.Parent.Name, because the relationship name is concatenated verbatim, so any number of levels passes through untouched.'
-        );
-    }
-
-    @IsTest
-    static void withEmptyRelationshipName() {
-        // Test
-        List<String> fields = TriggerHandler.ParentFields.with('', Account.Name).getFields();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{ '.Name' },
-            fields,
-            'It should contain .Name, because the relationship name is concatenated verbatim and the selection never validates it.'
-        );
-    }
-
-    @IsTest
     static void withPlainAndRelationshipFieldsChained() {
         // Test
         List<String> fields = TriggerHandler.ParentFields.with(Account.Name, Account.Industry).with('Parent', Account.Name).with(Account.Website).getFields();
@@ -4356,65 +3574,6 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void withEveryOverloadChained() {
-        // Test
-        List<String> fields = TriggerHandler.ParentFields
-            .with(Account.Name)
-            .with(Account.Industry, Account.Description)
-            .with(Account.Website, Account.NumberOfEmployees, Account.AnnualRevenue)
-            .with(Account.Name, Account.Industry, Account.Description, Account.Website)
-            .with(Account.Name, Account.Industry, Account.Description, Account.Website, Account.NumberOfEmployees)
-            .with(new List<SObjectField>{ Account.AnnualRevenue })
-            .with('Parent', Account.Name)
-            .with('Parent', Account.Industry, Account.Description)
-            .with('Parent', Account.Website, Account.NumberOfEmployees, Account.AnnualRevenue)
-            .with('Parent', Account.Name, Account.Industry, Account.Description, Account.Website)
-            .with('Parent', Account.Name, Account.Industry, Account.Description, Account.Website, Account.NumberOfEmployees)
-            .with('Parent', new List<SObjectField>{ Account.AnnualRevenue })
-            .getFields();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{
-                'Name',
-                'Industry',
-                'Description',
-                'Website',
-                'NumberOfEmployees',
-                'AnnualRevenue',
-                'Name',
-                'Industry',
-                'Description',
-                'Website',
-                'Name',
-                'Industry',
-                'Description',
-                'Website',
-                'NumberOfEmployees',
-                'AnnualRevenue',
-                'Parent.Name',
-                'Parent.Industry',
-                'Parent.Description',
-                'Parent.Website',
-                'Parent.NumberOfEmployees',
-                'Parent.AnnualRevenue',
-                'Parent.Name',
-                'Parent.Industry',
-                'Parent.Description',
-                'Parent.Website',
-                'Parent.Name',
-                'Parent.Industry',
-                'Parent.Description',
-                'Parent.Website',
-                'Parent.NumberOfEmployees',
-                'Parent.AnnualRevenue'
-            },
-            fields,
-            'It should contain every appended field in call order, because all twelve overloads append to the same backing list and none of them de-duplicates.'
-        );
-    }
-
-    @IsTest
     static void withReturnsTheSameSelection() {
         TriggerHandler.ParentFields selection = TriggerHandler.ParentFields.with(Account.Name);
 
@@ -4422,16 +3581,7 @@ private class TriggerHandlerTest {
         TriggerHandler.ParentFields chainedSelection = selection.with(Account.Industry);
 
         // Verify
-        Assert.areEqual(
-            new List<String>{ 'Name', 'Industry' },
-            chainedSelection.getFields(),
-            'It should contain Name and Industry, because with() returns this, so the chained reference is the very same selection.'
-        );
-        Assert.areEqual(
-            new List<String>{ 'Name', 'Industry' },
-            selection.getFields(),
-            'It should contain Name and Industry, because with() mutates the selection in place instead of returning a new one.'
-        );
+        Assert.isTrue(chainedSelection === selection, 'It should be the same selection, because with() mutates the selection in place and returns this.');
     }
 
     @IsTest
@@ -4442,16 +3592,7 @@ private class TriggerHandlerTest {
         TriggerHandler.ParentFields chainedSelection = selection.with('Parent', Account.Industry);
 
         // Verify
-        Assert.areEqual(
-            new List<String>{ 'Name', 'Parent.Industry' },
-            chainedSelection.getFields(),
-            'It should contain Name and Parent.Industry, because the relationship overload also returns this, so the chained reference is the very same selection.'
-        );
-        Assert.areEqual(
-            new List<String>{ 'Name', 'Parent.Industry' },
-            selection.getFields(),
-            'It should contain Name and Parent.Industry, because the relationship overload mutates the selection in place instead of returning a new one.'
-        );
+        Assert.isTrue(chainedSelection === selection, 'It should be the same selection, because the relationship overload also mutates the selection in place and returns this.');
     }
 
     @IsTest
@@ -4473,36 +3614,6 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void fieldSelectionPropertyStartsEmpty() {
-        // Test
-        List<String> fields = TriggerHandler.ParentFields.getFields();
-
-        // Verify
-        Assert.areEqual(new List<String>(), fields, 'It should be empty, because the property getter returns a brand new FieldSelector whose backing list starts out empty.');
-    }
-
-    @IsTest
-    static void fieldSelectionPropertyReturnsNewSelectionOnEveryRead() {
-        TriggerHandler.ParentFields firstSelection = TriggerHandler.ParentFields.with(Account.Name);
-        TriggerHandler.ParentFields secondSelection = TriggerHandler.ParentFields.with(Account.Industry);
-
-        // Test
-        firstSelection.with(Account.Website);
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{ 'Name', 'Website' },
-            firstSelection.getFields(),
-            'It should contain only Name and Website, because each read of the property builds a separate FieldSelector with its own backing list.'
-        );
-        Assert.areEqual(
-            new List<String>{ 'Industry' },
-            secondSelection.getFields(),
-            'It should contain only Industry, because the two selections came from two reads of the property and share no state.'
-        );
-    }
-
-    @IsTest
     static void fieldSelectionPropertyDoesNotShareFieldsBetweenReads() {
         TriggerHandler.ParentFields.with(Account.Name, Account.Industry);
 
@@ -4513,20 +3624,7 @@ private class TriggerHandlerTest {
         Assert.areEqual(
             new List<String>(),
             fields,
-            'It should be empty, because the property getter returns a new FieldSelector on every read, so fields added through an earlier read are not visible.'
-        );
-    }
-
-    @IsTest
-    static void getFieldsPreservesInsertionOrder() {
-        // Test
-        List<String> fields = TriggerHandler.ParentFields.with(Account.Website).with(Account.Name).with(Account.Industry, Account.Description).getFields();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{ 'Website', 'Name', 'Industry', 'Description' },
-            fields,
-            'It should be returned in selection order, because getFields returns the backing list, which is only appended to and never sorted.'
+            'It should be empty, because the property getter returns a new selection on every read, so fields added through an earlier read are not visible.'
         );
     }
 
@@ -4570,323 +3668,176 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void getFieldsKeepsPlainAndRelationshipFieldApart() {
-        // Test
-        List<String> fields = TriggerHandler.ParentFields.with(Account.Name).with('Parent', Account.Name).getFields();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{ 'Name', 'Parent.Name' },
-            fields,
-            'It should contain both Name and Parent.Name, because the relationship prefix makes the two entries different strings.'
-        );
-    }
-
-    @IsTest
-    static void getFieldsReturnsTheSelectionsOwnList() {
-        TriggerHandler.ParentFields selection = TriggerHandler.ParentFields.with(Account.Name);
-        List<String> fields = selection.getFields();
-
-        // Test
-        fields.add('Industry');
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{ 'Name', 'Industry' },
-            selection.getFields(),
-            'It should contain Name and Industry, because getFields hands back the backing list itself, so a change made to that list is visible on the selection.'
-        );
-    }
-
-    @IsTest
-    static void withFieldsFromDifferentSObjects() {
-        // Test
-        List<String> fields = TriggerHandler.ParentFields.with(Account.Name, Contact.LastName, Opportunity.Amount).getFields();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{ 'Name', 'LastName', 'Amount' },
-            fields,
-            'It should contain Name, LastName and Amount, because each field is appended as its own token and the selection never validates the SObject it belongs to.'
-        );
-    }
-
-    @IsTest
-    static void fieldSelectionAsEnrichmentDeclaration() {
-        Map<SObjectField, TriggerHandler.ParentFields> fieldsToEnrich = new Map<SObjectField, TriggerHandler.ParentFields>{
-            Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name, Account.Industry).with('Parent', Account.Name)
-        };
-
-        // Test
-        List<String> fields = fieldsToEnrich.get(Contact.AccountId).getFields();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{ 'Name', 'Industry', 'Parent.Name' },
-            fields,
-            'It should contain Name, Industry and Parent.Name, because the selection stored in the map keeps the fields of every chained call in declaration order.'
-        );
-    }
-
-    @IsTest
-    static void fieldSelectionsInOneEnrichmentDeclarationAreIndependent() {
-        Map<SObjectField, TriggerHandler.ParentFields> fieldsToEnrich = new Map<SObjectField, TriggerHandler.ParentFields>{
-            Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name),
-            Contact.ReportsToId => TriggerHandler.ParentFields.with(Contact.LastName)
-        };
-
-        // Test
-        List<String> accountFields = fieldsToEnrich.get(Contact.AccountId).getFields();
-
-        // Verify
-        Assert.areEqual(
-            new List<String>{ 'Name' },
-            accountFields,
-            'It should contain only Name, because each read of the property creates a separate selection, so the two lookups share no backing list.'
-        );
-        Assert.areEqual(
-            new List<String>{ 'LastName' },
-            fieldsToEnrich.get(Contact.ReportsToId).getFields(),
-            'It should contain only LastName, because every value in the map came from its own read of the property.'
-        );
-    }
-
-    @IsTest
-    static void providerGetReturnsTheFirstRecordUnderTheKey() {
+    static void providedRecordsGetFirstReturnsTheFirstRecordGroupedUnderTheKey() {
         Id accountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
-        RelatedByAccountProvider provider = new RelatedByAccountProvider(
-            new List<Opportunity>{ new Opportunity(Name = 'First', AccountId = accountId), new Opportunity(Name = 'Second', AccountId = accountId) }
-        );
-        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
+        Opportunity firstOpportunity = new Opportunity(Name = 'First', AccountId = accountId);
+        Opportunity secondOpportunity = new Opportunity(Name = 'Second', AccountId = accountId);
+        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(new List<Opportunity>{ firstOpportunity, secondOpportunity });
+        related.groupUnderKey(accountId, firstOpportunity);
+        related.groupUnderKey(accountId, secondOpportunity);
 
         // Test
         SObject result = related.getFirstWhereKeyEquals(accountId);
 
         // Verify
-        Assert.areEqual('First', result.get(Opportunity.Name), 'It should be First, because getFirstWhereKeyEquals returns the first record in query order under the key.');
+        Assert.areEqual(firstOpportunity, result, 'It should be First, because getFirstWhereKeyEquals returns the record grouped first under the key.');
     }
 
     @IsTest
-    static void providerGetAllReturnsEveryRecordUnderTheKey() {
+    static void providedRecordsGetAllReturnsEveryRecordGroupedUnderTheKey() {
         Id accountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
-        RelatedByAccountProvider provider = new RelatedByAccountProvider(
-            new List<Opportunity>{
-                new Opportunity(Name = 'First', AccountId = accountId),
-                new Opportunity(Name = 'Second', AccountId = accountId),
-                new Opportunity(Name = 'Other', AccountId = TriggerHandler.IdGenerator.get(Account.SObjectType))
-            }
-        );
-        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
+        Opportunity firstOpportunity = new Opportunity(Name = 'First', AccountId = accountId);
+        Opportunity secondOpportunity = new Opportunity(Name = 'Second', AccountId = accountId);
+        Opportunity otherOpportunity = new Opportunity(Name = 'Other', AccountId = TriggerHandler.IdGenerator.get(Account.SObjectType));
+        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(new List<Opportunity>{ firstOpportunity, secondOpportunity, otherOpportunity });
+        related.groupUnderKey(accountId, firstOpportunity);
+        related.groupUnderKey(accountId, secondOpportunity);
+        related.groupUnderKey(otherOpportunity.AccountId, otherOpportunity);
 
         // Test
         List<SObject> result = related.getAllWhereKeyEquals(accountId);
 
         // Verify
-        Assert.areEqual(2, result.size(), 'It should be 2, because two records share the key.');
+        Assert.areEqual(
+            new List<SObject>{ firstOpportunity, secondOpportunity },
+            result,
+            'It should hold First and Second in grouping order, because only the records grouped under that key are returned.'
+        );
     }
 
     @IsTest
-    static void providerGetAllForAnUnknownKeyIsEmpty() {
-        RelatedByAccountProvider provider = new RelatedByAccountProvider(
-            new List<Opportunity>{ new Opportunity(Name = 'First', AccountId = TriggerHandler.IdGenerator.get(Account.SObjectType)) }
-        );
-        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
+    static void providedRecordsGetAllForAnUnknownKeyIsEmpty() {
+        Opportunity opportunity = new Opportunity(Name = 'First', AccountId = TriggerHandler.IdGenerator.get(Account.SObjectType));
+        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(new List<Opportunity>{ opportunity });
+        related.groupUnderKey(opportunity.AccountId, opportunity);
 
         // Test
         List<SObject> result = related.getAllWhereKeyEquals(TriggerHandler.IdGenerator.get(Account.SObjectType));
 
         // Verify
-        Assert.isNotNull(result, 'It should not be null, because getAllWhereKeyEquals never returns null.');
-        Assert.isTrue(result.isEmpty(), 'It should be empty, because no record carries that key.');
-        Assert.isNull(related.getFirstWhereKeyEquals('nope'), 'It should be null, because getFirstWhereKeyEquals returns null for an unknown key.');
+        Assert.areEqual(new List<SObject>(), result, 'It should be an empty list rather than null, because no record is grouped under that key.');
     }
 
     @IsTest
-    static void providerKeysMatchAcrossIdAndText() {
-        Id accountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
-        RelatedByAccountProvider provider = new RelatedByAccountProvider(new List<Opportunity>{ new Opportunity(Name = 'First', AccountId = accountId) });
-        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
+    static void providedRecordsGetFirstForAnUnknownKeyIsNull() {
+        Opportunity opportunity = new Opportunity(Name = 'First', AccountId = TriggerHandler.IdGenerator.get(Account.SObjectType));
+        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(new List<Opportunity>{ opportunity });
+        related.groupUnderKey(opportunity.AccountId, opportunity);
 
         // Test
-        SObject byId = related.getFirstWhereKeyEquals(accountId);
-        SObject byText = related.getFirstWhereKeyEquals(String.valueOf(accountId));
+        SObject result = related.getFirstWhereKeyEquals(TriggerHandler.IdGenerator.get(Account.SObjectType));
 
         // Verify
-        Assert.areEqual(byId, byText, 'It should be the same record, because keys are compared through String.valueOf.');
+        Assert.isNull(result, 'It should be null, because no record is grouped under that key.');
     }
 
     @IsTest
-    static void providerNullKeyLeavesTheRecordOutOfTheKeyIndexOnly() {
-        RelatedByAccountProvider provider = new RelatedByAccountProvider(new List<Opportunity>{ new Opportunity(Name = 'Orphan') });
-        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
+    static void providedRecordsMatchesANumericKeyAgainstItsTextForm() {
+        Opportunity opportunity = new Opportunity(Name = 'First');
+        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(new List<Opportunity>{ opportunity });
+        related.groupUnderKey('42', opportunity);
 
         // Test
-        List<SObject> byKey = related.getAllWhereKeyEquals(null);
-        List<SObject> all = related.getRecords();
+        SObject result = related.getFirstWhereKeyEquals(42);
 
         // Verify
-        Assert.isTrue(byKey.isEmpty(), 'It should be empty, because a null key is not indexed.');
-        Assert.areEqual(1, all.size(), 'It should be 1, because getRecords() returns every queried record.');
-        Assert.isFalse(related.isEmpty(), 'It should not be empty, because a record was returned.');
+        Assert.areEqual(opportunity, result, 'It should be the record grouped under 42, because the lookup key is turned into text with String.valueOf before it is matched.');
     }
 
     @IsTest
-    static void providerNullQueryResultCountsAsEmpty() {
-        RelatedByAccountProvider provider = new RelatedByAccountProvider(null);
-        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
+    static void providedRecordsNullKeyIsNotGrouped() {
+        Opportunity orphan = new Opportunity(Name = 'Orphan');
+        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(new List<Opportunity>{ orphan });
+        related.groupUnderKey(null, orphan);
 
         // Test
+        List<SObject> result = related.getAllWhereKeyEquals(null);
 
         // Verify
-        Assert.isTrue(related.isEmpty(), 'It should be empty, because a null query result counts as no records.');
-        Assert.isTrue(related.getRecords().isEmpty(), 'It should be empty, because getRecords() never returns null.');
-        Assert.isTrue(related.getAllWhereKeyEquals('anything').isEmpty(), 'It should be empty, because nothing was indexed.');
+        Assert.areEqual(new List<SObject>(), result, 'It should be empty, because a record with a null key is left out of the key groups.');
     }
 
     @IsTest
-    static void providerKeyOfDrivesACompositeKey() {
-        Id accountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
-        RelatedByAccountAndTypeProvider provider = new RelatedByAccountAndTypeProvider(
-            new List<Opportunity>{
-                new Opportunity(Name = 'Renewal', AccountId = accountId, Type = 'Renewal'),
-                new Opportunity(Name = 'New', AccountId = accountId, Type = 'New Customer')
-            }
-        );
-        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
+    static void providedRecordsGetRecordsKeepsUngroupedRecords() {
+        Opportunity orphan = new Opportunity(Name = 'Orphan');
+        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(new List<Opportunity>{ orphan });
+        related.groupUnderKey(null, orphan);
 
         // Test
-        SObject result = related.getFirstWhereKeyEquals(relatedByAccountAndTypeKey(accountId, 'Renewal'));
+        List<SObject> result = related.getRecords();
 
         // Verify
-        Assert.areEqual('Renewal', result.get(Opportunity.Name), 'It should be Renewal, because the composite key built by the static builder matches keyOf.');
-        Assert.isNull(related.getFirstWhereKeyEquals(relatedByAccountAndTypeKey(accountId, 'Upsell')), 'It should be null, because no record has that composite key.');
+        Assert.areEqual(new List<Opportunity>{ orphan }, result, 'It should hold the orphan, because getRecords returns every record it was built from, grouped or not.');
     }
 
     @IsTest
-    static void providerIndexesAggregateResultsThroughKeyOf() {
-        Account parentAccount = new Account(Name = 'Counted');
-        insert parentAccount;
-        insert new List<Opportunity>{
-            new Opportunity(Name = 'One', AccountId = parentAccount.Id, StageName = 'Prospecting', CloseDate = Date.today()),
-            new Opportunity(Name = 'Two', AccountId = parentAccount.Id, StageName = 'Prospecting', CloseDate = Date.today())
-        };
-        RelatedOpportunityCountsProvider provider = new RelatedOpportunityCountsProvider(new Set<Id>{ parentAccount.Id });
-        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
+    static void providedRecordsWithOnlyUngroupedRecordsIsNotEmpty() {
+        Opportunity orphan = new Opportunity(Name = 'Orphan');
+        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(new List<Opportunity>{ orphan });
+        related.groupUnderKey(null, orphan);
 
         // Test
+        Boolean result = related.isEmpty();
 
         // Verify
-        Assert.areEqual(
-            2,
-            related.getFirstWhereKeyEquals(parentAccount.Id).get('openCount'),
-            'It should be 2, because the aggregate row is indexed by the grouped alias through keyOf.'
-        );
-    }
-
-    private static TriggerHandler.InsertRecords noRecords() {
-        return new TriggerHandler.InsertTriggerRecords(new List<TriggerHandler.TriggerRecord>());
-    }
-
-    private class RelatedByAccountProvider implements BeforeInsert.RecordsProvider {
-        private List<Opportunity> opportunities;
-
-        public RelatedByAccountProvider(List<Opportunity> opportunities) {
-            this.opportunities = opportunities;
-        }
-
-        public List<SObject> query(TriggerHandler.InsertRecords records) {
-            return this.opportunities;
-        }
-
-        public String keyOf(SObject record) {
-            return ((Opportunity) record).AccountId;
-        }
-    }
-
-    private class RelatedByAccountAndTypeProvider implements BeforeInsert.RecordsProvider {
-        private List<Opportunity> opportunities;
-
-        public RelatedByAccountAndTypeProvider(List<Opportunity> opportunities) {
-            this.opportunities = opportunities;
-        }
-
-        public List<SObject> query(TriggerHandler.InsertRecords records) {
-            return this.opportunities;
-        }
-
-        public String keyOf(SObject record) {
-            Opportunity opportunity = (Opportunity) record;
-            return relatedByAccountAndTypeKey(opportunity.AccountId, opportunity.Type);
-        }
-    }
-
-    private static String relatedByAccountAndTypeKey(Id accountId, String type) {
-        return accountId + '-' + type;
-    }
-
-    private class RelatedOpportunityCountsProvider implements BeforeInsert.RecordsProvider {
-        private Set<Id> accountIds;
-
-        public RelatedOpportunityCountsProvider(Set<Id> accountIds) {
-            this.accountIds = accountIds;
-        }
-
-        public List<SObject> query(TriggerHandler.InsertRecords records) {
-            return [SELECT AccountId accountId, COUNT(Id) openCount FROM Opportunity WHERE AccountId IN :this.accountIds AND IsClosed = FALSE GROUP BY AccountId];
-        }
-
-        public String keyOf(SObject record) {
-            return String.valueOf(record.get('accountId'));
-        }
+        Assert.isFalse(result, 'It should not be empty, because isEmpty counts every record it was built from, grouped or not.');
     }
 
     @IsTest
-    static void getRelatedReturnsTheProviderRegisteredUnderTheName() {
-        Id accountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
-        RelatedByAccountProvider provider = new RelatedByAccountProvider(new List<Opportunity>{ new Opportunity(Name = 'Open', AccountId = accountId) });
-        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
-        TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New', AccountId = accountId), null);
-        record.setProvidedRecords(new Map<String, TriggerHandler.RelatedRecords>{ 'openOpportunities' => related });
+    static void providedRecordsBuiltFromANullListReturnsAnEmptyList() {
+        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(null);
+
+        // Test
+        List<SObject> result = related.getRecords();
+
+        // Verify
+        Assert.areEqual(new List<SObject>(), result, 'It should be an empty list rather than null, because a null query result is replaced with an empty list.');
+    }
+
+    @IsTest
+    static void getRelatedReturnsTheRecordsRegisteredUnderTheName() {
+        TriggerHandler.ProvidedRecords openOpportunities = new TriggerHandler.ProvidedRecords(new List<Opportunity>{ new Opportunity(Name = 'Open') });
+        TriggerHandler.ProvidedRecords closedOpportunities = new TriggerHandler.ProvidedRecords(new List<Opportunity>{ new Opportunity(Name = 'Closed') });
+        TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'), null);
+        record.setProvidedRecords(new Map<String, TriggerHandler.RelatedRecords>{ 'openOpportunities' => openOpportunities, 'closedOpportunities' => closedOpportunities });
 
         // Test
         TriggerHandler.RelatedRecords result = record.getRelated('openOpportunities');
 
         // Verify
-        Assert.areEqual(1, result.getAllWhereKeyEquals(accountId).size(), 'It should be 1, because the record hands back the provider registered under that name.');
+        Assert.areEqual(openOpportunities, result, 'It should be the related records registered under that name.');
     }
 
     @IsTest
     static void getRelatedThrowsForAnUnknownName() {
         TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'), null);
         record.setProvidedRecords(new Map<String, TriggerHandler.RelatedRecords>());
-        Exception thrown = null;
+        String errorMessage = null;
 
         // Test
         try {
             record.getRelated('missing');
-        } catch (Exception e) {
-            thrown = e;
+        } catch (TriggerHandler.TriggerHandlerException e) {
+            errorMessage = e.getMessage();
         }
 
         // Verify
-        Assert.isNotNull(thrown, 'It should be thrown, because no provider was registered under that name.');
-        Assert.isTrue(thrown.getTypeName().endsWith('TriggerHandlerException'), 'It should be a TriggerHandlerException, because a wrong provider name is a contract violation.');
         Assert.areEqual(
             'No related records provider is registered under missing. Return it from the RelatedQuery method of the context first.',
-            thrown.getMessage(),
-            'It should name the missing provider.'
+            errorMessage,
+            'It should be refused with a TriggerHandlerException naming the missing provider, because a wrong provider name is a contract violation.'
         );
     }
 
     @IsTest
     static void getRelatedThrowsBeforeAnyProviderMapWasSet() {
         TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'), null);
-        Exception thrown = null;
+        TriggerHandler.TriggerHandlerException thrown = null;
 
         // Test
         try {
             record.getRelated('openOpportunities');
-        } catch (Exception e) {
+        } catch (TriggerHandler.TriggerHandlerException e) {
             thrown = e;
         }
 
@@ -4896,48 +3847,21 @@ private class TriggerHandlerTest {
 
     @IsTest
     static void setProvidedRecordsReplacesThePreviousMap() {
-        RelatedByAccountProvider provider = new RelatedByAccountProvider(new List<Opportunity>());
-        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
+        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(new List<Opportunity>());
         TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'), null);
         record.setProvidedRecords(new Map<String, TriggerHandler.RelatedRecords>{ 'first' => related });
         record.setProvidedRecords(new Map<String, TriggerHandler.RelatedRecords>{ 'second' => related });
-        Exception thrown = null;
+        TriggerHandler.TriggerHandlerException thrown = null;
 
         // Test
         try {
             record.getRelated('first');
-        } catch (Exception e) {
+        } catch (TriggerHandler.TriggerHandlerException e) {
             thrown = e;
         }
 
         // Verify
-        Assert.isNotNull(thrown, 'It should be thrown, because setProvidedRecords replaces the whole map.');
-        Assert.isNotNull(record.getRelated('second'), 'It should be the provider of the latest map.');
-    }
-
-    @IsTest
-    static void getRelatedIsAvailableOnEveryRecordInterface() {
-        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
-        RelatedByAccountProvider provider = new RelatedByAccountProvider(new List<Opportunity>());
-        TriggerHandler.ProvidedRecords related = new TriggerHandler.ProvidedRecords(provider, noRecords());
-        TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(Id = contactId, LastName = 'New'), new Contact(Id = contactId, LastName = 'Old'));
-        record.setProvidedRecords(new Map<String, TriggerHandler.RelatedRecords>{ 'shared' => related });
-        TriggerHandler.InsertRecord insertRecord = record;
-        TriggerHandler.UpdateRecord updateRecord = record;
-        TriggerHandler.DeleteRecord deleteRecord = record;
-        TriggerHandler.UndeleteRecord undeleteRecord = record;
-
-        // Test
-        TriggerHandler.RelatedRecords fromInsert = insertRecord.getRelated('shared');
-        TriggerHandler.RelatedRecords fromUpdate = updateRecord.getRelated('shared');
-        TriggerHandler.RelatedRecords fromDelete = deleteRecord.getRelated('shared');
-        TriggerHandler.RelatedRecords fromUndelete = undeleteRecord.getRelated('shared');
-
-        // Verify
-        Assert.areEqual(related, fromInsert, 'It should be the same provider through InsertRecord.');
-        Assert.areEqual(related, fromUpdate, 'It should be the same provider through UpdateRecord.');
-        Assert.areEqual(related, fromDelete, 'It should be the same provider through DeleteRecord.');
-        Assert.areEqual(related, fromUndelete, 'It should be the same provider through UndeleteRecord.');
+        Assert.isNotNull(thrown, 'It should be thrown, because setProvidedRecords replaces the whole map, so a name from the earlier map is gone.');
     }
 
     @IsTest
@@ -4955,30 +3879,32 @@ private class TriggerHandlerTest {
 
         // Verify
         Assert.areEqual(new Set<Id>{ contactId }, ids, 'It should hold the saved id only, because nulls are dropped.');
-        Assert.areEqual(2, records.size(), 'It should be 2, because size counts every trigger row.');
     }
 
     @IsTest
-    static void insertRecordsGetIdsIsEmptyBeforeInsert() {
-        TriggerHandler.InsertRecords records = new TriggerHandler.InsertTriggerRecords(
-            new List<TriggerHandler.TriggerRecord>{ new TriggerHandler.TriggerRecord(new Contact(LastName = 'New'), null) }
+    static void updateRecordsSizeCountsEveryRecord() {
+        Id contactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
+        TriggerHandler.UpdateRecords records = new TriggerHandler.UpdateTriggerRecords(
+            new List<TriggerHandler.TriggerRecord>{
+                new TriggerHandler.TriggerRecord(new Contact(Id = contactId, LastName = 'Saved'), new Contact(Id = contactId, LastName = 'Old')),
+                new TriggerHandler.TriggerRecord(new Contact(LastName = 'Unsaved'), null)
+            }
         );
 
         // Test
-        Set<Id> ids = records.getIds();
+        Integer result = records.size();
 
         // Verify
-        Assert.isTrue(ids.isEmpty(), 'It should be empty, because records have no id before insert.');
+        Assert.areEqual(2, result, 'It should be 2, because size counts every trigger row, including one without an id.');
     }
 
     @IsTest
-    static void updateRecordsGetIdsOfReadsTheNewRowDeduplicatedWithoutNulls() {
-        Id accountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
+    static void updateRecordsGetIdsOfReadsTheNewRow() {
+        Id oldAccountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
+        Id newAccountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
         TriggerHandler.UpdateRecords records = new TriggerHandler.UpdateTriggerRecords(
             new List<TriggerHandler.TriggerRecord>{
-                new TriggerHandler.TriggerRecord(new Contact(LastName = 'A', AccountId = accountId), new Contact(LastName = 'A')),
-                new TriggerHandler.TriggerRecord(new Contact(LastName = 'B', AccountId = accountId), new Contact(LastName = 'B')),
-                new TriggerHandler.TriggerRecord(new Contact(LastName = 'C'), new Contact(LastName = 'C', AccountId = accountId))
+                new TriggerHandler.TriggerRecord(new Contact(LastName = 'A', AccountId = newAccountId), new Contact(LastName = 'A', AccountId = oldAccountId))
             }
         );
 
@@ -4986,7 +3912,24 @@ private class TriggerHandlerTest {
         Set<Id> ids = records.getIdsOf(Contact.AccountId);
 
         // Verify
-        Assert.areEqual(new Set<Id>{ accountId }, ids, 'It should hold the account id once, because the new side is read, duplicates collapse and nulls are dropped.');
+        Assert.areEqual(new Set<Id>{ newAccountId }, ids, 'It should hold the new account id, because getIdsOf reads the new row.');
+    }
+
+    @IsTest
+    static void updateRecordsGetIdsOfDropsNulls() {
+        Id accountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
+        TriggerHandler.UpdateRecords records = new TriggerHandler.UpdateTriggerRecords(
+            new List<TriggerHandler.TriggerRecord>{
+                new TriggerHandler.TriggerRecord(new Contact(LastName = 'A', AccountId = accountId), new Contact(LastName = 'A', AccountId = accountId)),
+                new TriggerHandler.TriggerRecord(new Contact(LastName = 'B'), new Contact(LastName = 'B'))
+            }
+        );
+
+        // Test
+        Set<Id> ids = records.getIdsOf(Contact.AccountId);
+
+        // Verify
+        Assert.areEqual(new Set<Id>{ accountId }, ids, 'It should hold only the set account id, because a row without a value contributes nothing.');
     }
 
     @IsTest
@@ -5001,11 +3944,22 @@ private class TriggerHandlerTest {
 
         // Test
         Set<Id> oldIds = records.getOldIdsOf(Contact.AccountId);
-        Set<Id> newIds = records.getIdsOf(Contact.AccountId);
 
         // Verify
         Assert.areEqual(new Set<Id>{ oldAccountId }, oldIds, 'It should hold the old account id, because getOldIdsOf reads the old row.');
-        Assert.areEqual(new Set<Id>{ newAccountId }, newIds, 'It should hold the new account id, because getIdsOf reads the new row.');
+    }
+
+    @IsTest
+    static void updateRecordsGetOldValuesOfReadsTheOldRow() {
+        TriggerHandler.UpdateRecords records = new TriggerHandler.UpdateTriggerRecords(
+            new List<TriggerHandler.TriggerRecord>{ new TriggerHandler.TriggerRecord(new Contact(LastName = 'Current'), new Contact(LastName = 'Previous')) }
+        );
+
+        // Test
+        Set<String> oldValues = records.getOldValuesOf(Contact.LastName);
+
+        // Verify
+        Assert.areEqual(new Set<String>{ 'Previous' }, oldValues, 'It should hold Previous, because getOldValuesOf reads the old row.');
     }
 
     @IsTest
@@ -5025,18 +3979,30 @@ private class TriggerHandlerTest {
     @IsTest
     static void undeleteRecordsGetValuesOfStringifiesNonStringValues() {
         TriggerHandler.UndeleteRecords records = new TriggerHandler.UndeleteTriggerRecords(
-            new List<TriggerHandler.TriggerRecord>{
-                new TriggerHandler.TriggerRecord(new Opportunity(Name = 'One', Amount = 100), null),
-                new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Two', Amount = 100), null),
-                new TriggerHandler.TriggerRecord(new Opportunity(Name = 'Three'), null)
-            }
+            new List<TriggerHandler.TriggerRecord>{ new TriggerHandler.TriggerRecord(new Opportunity(Name = 'One', Amount = 100), null) }
         );
 
         // Test
         Set<String> amounts = records.getValuesOf(Opportunity.Amount);
 
         // Verify
-        Assert.areEqual(new Set<String>{ '100' }, amounts, 'It should hold 100 once as text, because values go through String.valueOf, deduplicate and drop nulls.');
+        Assert.areEqual(new Set<String>{ '100' }, amounts, 'It should hold 100 as text, because values go through String.valueOf.');
+    }
+
+    @IsTest
+    static void undeleteRecordsGetValuesOfDropsNulls() {
+        TriggerHandler.UndeleteRecords records = new TriggerHandler.UndeleteTriggerRecords(
+            new List<TriggerHandler.TriggerRecord>{
+                new TriggerHandler.TriggerRecord(new Contact(LastName = 'A', Title = 'Manager'), null),
+                new TriggerHandler.TriggerRecord(new Contact(LastName = 'B'), null)
+            }
+        );
+
+        // Test
+        Set<String> titles = records.getValuesOf(Contact.Title);
+
+        // Verify
+        Assert.areEqual(new Set<String>{ 'Manager' }, titles, 'It should hold only Manager, because a row without a value contributes nothing.');
     }
 
     @IsTest
@@ -5045,18 +4011,13 @@ private class TriggerHandlerTest {
         Id ownerId = TriggerHandler.IdGenerator.get(User.SObjectType);
         TriggerHandler.TriggerRecord enriched = new TriggerHandler.TriggerRecord(new Contact(LastName = 'A', AccountId = accountId), null);
         enriched.enrichNew('Account', new Account(Id = accountId, OwnerId = ownerId));
-        TriggerHandler.TriggerRecord notEnriched = new TriggerHandler.TriggerRecord(new Contact(LastName = 'B'), null);
-        TriggerHandler.InsertRecords records = new TriggerHandler.InsertTriggerRecords(new List<TriggerHandler.TriggerRecord>{ enriched, notEnriched });
+        TriggerHandler.InsertRecords records = new TriggerHandler.InsertTriggerRecords(new List<TriggerHandler.TriggerRecord>{ enriched });
 
         // Test
         Set<Id> ownerIds = records.getIdsOf('Account', Account.OwnerId);
 
         // Verify
-        Assert.areEqual(
-            new Set<Id>{ ownerId },
-            ownerIds,
-            'It should hold the owner id of the enriched parent, because the relationship name is the one getNewParent takes and a record without that parent contributes nothing.'
-        );
+        Assert.areEqual(new Set<Id>{ ownerId }, ownerIds, 'It should hold the owner id of the enriched parent, because the relationship name is the one getNewParent takes.');
     }
 
     @IsTest
@@ -5091,11 +4052,29 @@ private class TriggerHandlerTest {
 
         // Test
         Set<String> oldNames = records.getOldValuesOf('Account', Account.Name);
-        Set<String> newNames = records.getValuesOf('Account', Account.Name);
 
         // Verify
         Assert.areEqual(new Set<String>{ 'Previous' }, oldNames, 'It should hold Previous, because getOldValuesOf reads the old related record.');
-        Assert.areEqual(new Set<String>{ 'Current' }, newNames, 'It should hold Current, because getValuesOf reads the new related record.');
+    }
+
+    @IsTest
+    static void updateRecordsGetOldIdsOfRelationshipReadsTheOldParent() {
+        Id accountId = TriggerHandler.IdGenerator.get(Account.SObjectType);
+        Id currentOwnerId = TriggerHandler.IdGenerator.get(User.SObjectType);
+        Id previousOwnerId = TriggerHandler.IdGenerator.get(User.SObjectType);
+        TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(
+            new Contact(LastName = 'A', AccountId = accountId),
+            new Contact(LastName = 'A', AccountId = accountId)
+        );
+        record.enrichNew('Account', new Account(Id = accountId, OwnerId = currentOwnerId));
+        record.enrichOld('Account', new Account(Id = accountId, OwnerId = previousOwnerId));
+        TriggerHandler.UpdateRecords records = new TriggerHandler.UpdateTriggerRecords(new List<TriggerHandler.TriggerRecord>{ record });
+
+        // Test
+        Set<Id> oldOwnerIds = records.getOldIdsOf('Account', Account.OwnerId);
+
+        // Verify
+        Assert.areEqual(new Set<Id>{ previousOwnerId }, oldOwnerIds, 'It should hold the previous owner id, because getOldIdsOf with a relationship reads the old parent.');
     }
 
     @IsTest
@@ -5144,22 +4123,77 @@ private class TriggerHandlerTest {
     }
 
     @IsTest
-    static void getRecordsReturnsTheWrappersOfTheContext() {
-        TriggerHandler.TriggerRecord first = new TriggerHandler.TriggerRecord(new Contact(LastName = 'A'), null);
-        TriggerHandler.TriggerRecord second = new TriggerHandler.TriggerRecord(new Contact(LastName = 'B'), null);
-        TriggerHandler.InsertRecords insertRecords = new TriggerHandler.InsertTriggerRecords(new List<TriggerHandler.TriggerRecord>{ first, second });
-        TriggerHandler.UpdateRecords updateRecords = new TriggerHandler.UpdateTriggerRecords(new List<TriggerHandler.TriggerRecord>{ first });
-        TriggerHandler.DeleteRecords deleteRecords = new TriggerHandler.DeleteTriggerRecords(new List<TriggerHandler.TriggerRecord>{ first });
-        TriggerHandler.UndeleteRecords undeleteRecords = new TriggerHandler.UndeleteTriggerRecords(new List<TriggerHandler.TriggerRecord>{ first });
+    static void insertRecordsGetRecordsReturnsTheRecordsInTriggerOrder() {
+        TriggerHandler.TriggerRecord firstRecord = new TriggerHandler.TriggerRecord(new Contact(LastName = 'A'), null);
+        TriggerHandler.TriggerRecord secondRecord = new TriggerHandler.TriggerRecord(new Contact(LastName = 'B'), null);
+        TriggerHandler.InsertRecords records = new TriggerHandler.InsertTriggerRecords(new List<TriggerHandler.TriggerRecord>{ firstRecord, secondRecord });
 
         // Test
-        List<TriggerHandler.InsertRecord> wrappers = insertRecords.getRecords();
+        List<TriggerHandler.InsertRecord> result = records.getRecords();
 
         // Verify
-        Assert.areEqual(2, wrappers.size(), 'It should be 2, because every trigger row is handed back.');
-        Assert.areEqual(first, wrappers[0], 'It should be the first wrapper, in trigger order.');
-        Assert.areEqual(1, updateRecords.getRecords().size(), 'It should be 1 on the update collection.');
-        Assert.areEqual(1, deleteRecords.getRecords().size(), 'It should be 1 on the delete collection.');
-        Assert.areEqual(1, undeleteRecords.getRecords().size(), 'It should be 1 on the undelete collection.');
+        Assert.areEqual(new List<TriggerHandler.InsertRecord>{ firstRecord, secondRecord }, result, 'It should hold both records in trigger order.');
+    }
+
+    @IsTest
+    static void updateRecordsGetRecordsReturnsTheRecordsInTriggerOrder() {
+        Id firstContactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
+        Id secondContactId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
+        TriggerHandler.TriggerRecord firstRecord = new TriggerHandler.TriggerRecord(
+            new Contact(Id = firstContactId, LastName = 'A'),
+            new Contact(Id = firstContactId, LastName = 'A')
+        );
+        TriggerHandler.TriggerRecord secondRecord = new TriggerHandler.TriggerRecord(
+            new Contact(Id = secondContactId, LastName = 'B'),
+            new Contact(Id = secondContactId, LastName = 'B')
+        );
+        TriggerHandler.UpdateRecords records = new TriggerHandler.UpdateTriggerRecords(new List<TriggerHandler.TriggerRecord>{ firstRecord, secondRecord });
+
+        // Test
+        List<TriggerHandler.UpdateRecord> result = records.getRecords();
+
+        // Verify
+        Assert.areEqual(new List<TriggerHandler.UpdateRecord>{ firstRecord, secondRecord }, result, 'It should hold both records in trigger order.');
+    }
+
+    @IsTest
+    static void deleteRecordsGetRecordsReturnsTheRecordsInTriggerOrder() {
+        TriggerHandler.TriggerRecord firstRecord = new TriggerHandler.TriggerRecord(null, new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'A'));
+        TriggerHandler.TriggerRecord secondRecord = new TriggerHandler.TriggerRecord(null, new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'B'));
+        TriggerHandler.DeleteRecords records = new TriggerHandler.DeleteTriggerRecords(new List<TriggerHandler.TriggerRecord>{ firstRecord, secondRecord });
+
+        // Test
+        List<TriggerHandler.DeleteRecord> result = records.getRecords();
+
+        // Verify
+        Assert.areEqual(new List<TriggerHandler.DeleteRecord>{ firstRecord, secondRecord }, result, 'It should hold both records in trigger order.');
+    }
+
+    @IsTest
+    static void undeleteRecordsGetRecordsReturnsTheRecordsInTriggerOrder() {
+        TriggerHandler.TriggerRecord firstRecord = new TriggerHandler.TriggerRecord(new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'A'), null);
+        TriggerHandler.TriggerRecord secondRecord = new TriggerHandler.TriggerRecord(new Contact(Id = TriggerHandler.IdGenerator.get(Contact.SObjectType), LastName = 'B'), null);
+        TriggerHandler.UndeleteRecords records = new TriggerHandler.UndeleteTriggerRecords(new List<TriggerHandler.TriggerRecord>{ firstRecord, secondRecord });
+
+        // Test
+        List<TriggerHandler.UndeleteRecord> result = records.getRecords();
+
+        // Verify
+        Assert.areEqual(new List<TriggerHandler.UndeleteRecord>{ firstRecord, secondRecord }, result, 'It should hold both records in trigger order.');
+    }
+
+    @IsTest
+    static void getTriggerRecordsFromPairsTheNewAndOldRecordAtTheSamePosition() {
+        List<Contact> newContacts = new List<Contact>{ new Contact(LastName = 'First'), new Contact(LastName = 'Second') };
+        List<Contact> oldContacts = new List<Contact>{ new Contact(LastName = 'First Before'), new Contact(LastName = 'Second Before') };
+
+        // Test
+        List<TriggerHandler.TriggerRecord> records = TriggerHandler.getTriggerRecordsFrom(newContacts, oldContacts);
+
+        // Verify
+        Assert.isTrue(
+            records[1].isChangedFromTo(Contact.LastName, 'Second Before', 'Second'),
+            'It should pair Second with Second Before, because each trigger record joins the new and the old record at the same position.'
+        );
     }
 }

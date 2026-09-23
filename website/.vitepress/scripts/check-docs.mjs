@@ -67,7 +67,6 @@ const SKIPPED_DIRECTORIES = new Set([
   'dist'
 ]);
 
-const STALE_API_PARTIAL = 'notes/stale-api.md';
 const TESTING_PAGE = 'guide/testing.md';
 const CONTEXTS_PAGE = 'contexts.md';
 const ROUTER_PAGES = [CONTEXTS_PAGE];
@@ -131,66 +130,6 @@ export const STALE_FENCE_PATTERNS = [
 const GUARD_SENTENCE_PATTERN = /\bguard\b/i;
 const FINALLY_PATTERN = /\b(?:runs|is|executes)\s+in\s+a\s+`?finally\b/i;
 const RECORD_IDS_NULL_PATTERN = /getRecordIds\(\)`?\s+(?:is|returns)\s+null\b/g;
-
-function contextsWhere(predicate) {
-  return model.contexts.filter(predicate).map(context => context.name);
-}
-
-const BEFORE_INSERT_UPDATE = contextsWhere(
-  context =>
-    context.phase === 'Before' &&
-    (context.operation === 'Insert' || context.operation === 'Update')
-);
-const AFTER_CONTEXTS = contextsWhere(context => context.phase === 'After');
-const AFTER_WITH_NEW_ROW = contextsWhere(
-  context => context.phase === 'After' && context.operation !== 'Delete'
-);
-
-function onePerContext() {
-  return Object.fromEntries(
-    model.contexts.map(context => [context.slug, [context.name]])
-  );
-}
-
-export const REGION_MAP = {
-  'roles/one-role.md': {
-    before: BEFORE_INSERT_UPDATE,
-    after: AFTER_CONTEXTS
-  },
-  'add-ons/parent-query.md': {
-    core: null,
-    before: BEFORE_INSERT_UPDATE,
-    after: AFTER_WITH_NEW_ROW,
-    gotchas: null
-  },
-  'add-ons/related-query.md': {
-    core: null,
-    'ids-before-insert': ['BeforeInsert'],
-    'ids-before-update': ['BeforeUpdate'],
-    'ids-after': AFTER_WITH_NEW_ROW,
-    'ids-before-delete': ['BeforeDelete'],
-    'ids-after-delete': ['AfterDelete'],
-    gotchas: null
-  },
-  'add-ons/finalizer.md': {
-    before: BEFORE_INSERT_UPDATE,
-    'before-delete': ['BeforeDelete'],
-    after: AFTER_CONTEXTS
-  },
-  'add-ons/continue-on-error.md': {
-    common: null,
-    writer: AFTER_CONTEXTS
-  },
-  'add-ons/test-techniques.md': {
-    parent: null,
-    related: null,
-    bypass: null,
-    uow: null,
-    finalizer: null
-  },
-  'records/predicates.md': onePerContext(),
-  'records/gotchas.md': onePerContext()
-};
 
 export const CONTEXTS_PAGE_INCLUDES = ['@/_parts/generated/matrix-methods.md'];
 
@@ -622,58 +561,6 @@ export function findRegion(lines, name) {
     }
   }
   return null;
-}
-
-export function scanRegions(lines) {
-  const open = new Map();
-  const regions = new Map();
-  const problems = [];
-
-  lines.forEach((line, index) => {
-    const trimmed = line.trim();
-    if (!REGION_MARKER_LOOSE.test(trimmed)) return;
-    const match = REGION_MARKER_STRICT.exec(trimmed);
-    if (!match) {
-      problems.push({
-        line: index + 1,
-        message: `malformed region marker "${trimmed}": write <!-- #region name --> and <!-- #endregion name -->, and repeat the name on the end marker`
-      });
-      return;
-    }
-    const [, tag, name] = match;
-    if (tag === 'region') {
-      if (open.has(name) || regions.has(name)) {
-        problems.push({
-          line: index + 1,
-          message: `region "${name}" starts twice; VitePress uses only the first`
-        });
-      } else {
-        open.set(name, index);
-      }
-    } else if (!open.has(name)) {
-      problems.push({
-        line: index + 1,
-        message: `<!-- #endregion ${name} --> has no <!-- #region ${name} --> above it`
-      });
-    } else {
-      regions.set(name, {
-        start: open.get(name) + 1,
-        end: index,
-        startLine: open.get(name) + 1,
-        endLine: index + 1
-      });
-      open.delete(name);
-    }
-  });
-
-  for (const [name, index] of open) {
-    problems.push({
-      line: index + 1,
-      message: `region "${name}" is never closed with <!-- #endregion ${name} -->`
-    });
-  }
-
-  return { regions, problems };
 }
 
 export function parseIncludeSpec(spec) {
@@ -1501,51 +1388,23 @@ function checkTemplatePage(state, record) {
     const range = ranges.get(requirement.section);
     if (!range) continue;
     const wanted = resolveIncludePath(
-      requirement.include ?? requirement.snippet,
+      requirement.include,
       record.abs,
       state.websiteDir
     );
-    const sectionName =
-      requirement.section === 'lead'
-        ? 'the lead (between the H1 and the first H2)'
-        : `"${'#'.repeat(range.heading.level)} ${range.heading.text}"`;
-    const inRange = item => item.index > range.start && item.index < range.end;
-
-    if (requirement.snippet) {
-      const found = doc.snippets.some(
-        snippet =>
-          inRange(snippet) &&
-          resolve(snippetTarget(state, record, snippet).file) ===
-            resolve(wanted)
-      );
-      if (!found) {
-        report(
-          state,
-          2,
-          record,
-          range.heading?.line ?? doc.bodyStart + 1,
-          `${sectionName} must import the whole context class: <<< ${requirement.snippet}`
-        );
-      }
-      continue;
-    }
-
-    const match = doc.includes.find(include => {
-      if (!inRange(include)) return false;
-      const target = includeTarget(state, record, include);
-      return (
-        resolve(target.abs) === resolve(wanted) &&
-        (target.region ?? null) === (requirement.region ?? null)
-      );
-    });
-    const spec = `${requirement.include}${requirement.region ? `#${requirement.region}` : ''}`;
+    const match = doc.includes.find(
+      include =>
+        include.index > range.start &&
+        include.index < range.end &&
+        resolve(includeTarget(state, record, include).abs) === resolve(wanted)
+    );
     if (!match) {
       report(
         state,
         2,
         record,
-        range.heading?.line ?? doc.bodyStart + 1,
-        `${sectionName} must include <!--@include: ${spec}-->`
+        range.heading.line,
+        `"${'#'.repeat(range.heading.level)} ${range.heading.text}" must include <!--@include: ${requirement.include}-->`
       );
       continue;
     }
@@ -1653,24 +1512,14 @@ function checkTemplates(state) {
   }
 }
 
-function regionContextFit(state, record, target) {
-  if (!isTemplatePage(record)) return;
-  const partRel = toPosix(relative(state.partsDir, target.abs));
-
+function generatedOwnerMisfit(state, record, target) {
+  if (!isTemplatePage(record)) return null;
   const generatedRel = toPosix(relative(state.generatedDir, target.abs));
-  if (!generatedRel.startsWith('..')) {
-    const folder = generatedRel.split('/')[0];
-    const owner = model.contexts.find(context => context.slug === folder);
-    if (owner && owner.name !== record.contextName) {
-      return `includes ${owner.name}'s generated partial on a ${record.contextName} page; use @/_parts/generated/${record.context.slug}/…`;
-    }
-  }
-
-  if (target.region && REGION_MAP[partRel]) {
-    const contexts = REGION_MAP[partRel][target.region];
-    if (contexts && !contexts.includes(record.contextName)) {
-      return `region #${target.region} of ${partRel} is written for ${contexts.join(', ')}, not ${record.contextName}`;
-    }
+  if (generatedRel.startsWith('..')) return null;
+  const folder = generatedRel.split('/')[0];
+  const owner = model.contexts.find(context => context.slug === folder);
+  if (owner && owner.name !== record.contextName) {
+    return `includes ${owner.name}'s generated partial on a ${record.contextName} page; use @/_parts/generated/${record.context.slug}/…`;
   }
   return null;
 }
@@ -1686,49 +1535,18 @@ function blankAround(doc, index) {
   return okBefore && okAfter;
 }
 
-function checkRegionsOfPartials(state) {
+function checkRegionMarkers(state) {
   for (const record of state.handPartials.values()) {
-    const scanned = scanRegions(record.doc.lines);
-    for (const problem of scanned.problems) {
-      report(state, 3, record, problem.line, problem.message);
-    }
-    const declared = [...scanned.regions.keys()];
-    const mapped = REGION_MAP[record.partRel];
-    if (!mapped) {
-      if (declared.length > 0) {
-        report(
-          state,
-          3,
-          record,
-          scanned.regions.get(declared[0]).startLine,
-          `${record.partRel} declares regions (${declared.join(', ')}) but is not in the region map; add it to REGION_MAP in check-docs.mjs or drop the regions`
-        );
-      }
-      continue;
-    }
-    const expectedNames = Object.keys(mapped);
-    for (const name of expectedNames) {
-      if (!scanned.regions.has(name)) {
-        report(
-          state,
-          3,
-          record,
-          1,
-          `region "${name}" from the region map is missing (write <!-- #region ${name} --> … <!-- #endregion ${name} -->)`
-        );
-      }
-    }
-    for (const name of declared) {
-      if (!expectedNames.includes(name)) {
-        report(
-          state,
-          3,
-          record,
-          scanned.regions.get(name).startLine,
-          `region "${name}" is not in the region map for ${record.partRel} (${expectedNames.join(', ')})`
-        );
-      }
-    }
+    record.doc.lines.forEach((line, index) => {
+      if (!REGION_MARKER_LOOSE.test(line.trim())) return;
+      report(
+        state,
+        3,
+        record,
+        index + 1,
+        'partials are included whole: drop the region marker'
+      );
+    });
   }
 }
 
@@ -1743,17 +1561,7 @@ function checkIncludes(state) {
     );
   }
 
-  checkRegionsOfPartials(state);
-  const regionCache = new Map();
-  const regionsOf = abs => {
-    if (!regionCache.has(abs)) {
-      regionCache.set(
-        abs,
-        scanRegions(readFileSync(abs, 'utf8').split(/\r?\n/)).regions
-      );
-    }
-    return regionCache.get(abs);
-  };
+  checkRegionMarkers(state);
 
   for (const record of allRecords(state)) {
     const doc = record.doc;
@@ -1798,51 +1606,21 @@ function checkIncludes(state) {
           3,
           record,
           include.line,
-          `line range ${target.range} drifts silently after an edit; include a named region instead`
+          `line range ${target.range} drifts silently after an edit; include the whole partial`
         );
       }
 
-      const partRel = toPosix(relative(state.partsDir, target.abs));
-      const regions = regionsOf(target.abs);
-
       if (target.region) {
-        const mapped = REGION_MAP[partRel];
-        if (!mapped) {
-          report(
-            state,
-            3,
-            record,
-            include.line,
-            `${target.path} has no regions in the region map; include it whole`
-          );
-        } else if (!(target.region in mapped)) {
-          report(
-            state,
-            3,
-            record,
-            include.line,
-            `#${target.region} is not a region of ${partRel}; use one of ${Object.keys(mapped).join(', ')}`
-          );
-        } else if (!regions.has(target.region)) {
-          report(
-            state,
-            3,
-            record,
-            include.line,
-            `region #${target.region} is not in ${partRel} (VitePress would include the whole file)`
-          );
-        }
-      } else if (regions.size > 0 && !target.range) {
         report(
           state,
           3,
           record,
           include.line,
-          `${target.path} has regions (${[...regions.keys()].join(', ')}); include one region, never the whole file`
+          `#${target.region}: partials are included whole; drop the region`
         );
       }
 
-      const misfit = regionContextFit(state, record, target);
+      const misfit = generatedOwnerMisfit(state, record, target);
       if (misfit) report(state, 3, record, include.line, misfit);
     }
 
@@ -1896,8 +1674,6 @@ function checkPartials(state) {
   ];
   for (const record of partials) {
     const doc = record.doc;
-    const exempt =
-      record.kind === 'hand' && record.partRel === STALE_API_PARTIAL;
 
     for (const problem of doc.problems) {
       report(state, 4, record, problem.line, problem.message);
@@ -1948,7 +1724,7 @@ function checkPartials(state) {
       }
     }
 
-    if (record.kind !== 'hand' || exempt) continue;
+    if (record.kind !== 'hand') continue;
 
     doc.lines.forEach((line, index) => {
       if (index < doc.bodyStart || doc.allowed.has(index)) return;
@@ -1996,12 +1772,7 @@ function checkMethodTokens(state) {
 }
 
 function checkStaleApi(state) {
-  const records = [
-    ...state.pages.values(),
-    ...[...state.handPartials.values()].filter(
-      record => record.partRel !== STALE_API_PARTIAL
-    )
-  ];
+  const records = [...state.pages.values(), ...state.handPartials.values()];
 
   for (const record of records) {
     const doc = record.doc;

@@ -24,10 +24,6 @@ export function kebab(name) {
   return name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 }
 
-function upperSnake(name) {
-  return name.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toUpperCase();
-}
-
 export function simpleType(type) {
   return type.replace(/\bTriggerHandler\./g, '');
 }
@@ -192,19 +188,7 @@ function parseTriggerHandler() {
       ...declared,
       qualifiedName: `TriggerHandler.${declared.name}`,
       category,
-      methodNames,
-      predicates:
-        category === 'record'
-          ? methodNames.filter(
-              name =>
-                declared.methods.find(method => method.name === name)
-                  .returnType === 'Boolean'
-            )
-          : [],
-      accessors:
-        category === 'record'
-          ? declared.methods.filter(method => method.returnType !== 'Boolean')
-          : []
+      methodNames
     });
   }
   return interfaces;
@@ -363,8 +347,6 @@ function buildContext(registration, triggerHandler) {
     slug,
     phase,
     operation,
-    operationConstant: upperSnake(name),
-    triggerFlags: `Trigger.is${phase} && Trigger.is${operation}`,
     triggerEvent: `${phase.toLowerCase()} ${operation.toLowerCase()}`,
     file: `force-app/main/default/classes/${name}.cls`,
     link: `/${slug}/`,
@@ -498,11 +480,6 @@ export function getTriggerHandlerInterface(type) {
   return model.triggerHandler.get(
     type.startsWith('TriggerHandler.') ? type : `TriggerHandler.${type}`
   );
-}
-
-export function pairedContext(context) {
-  const pairedName = `${context.phase === 'Before' ? 'After' : 'Before'}${context.operation}`;
-  return getContext(pairedName) ?? null;
 }
 
 export function pageLink(contextName, interfaceName, anchor) {

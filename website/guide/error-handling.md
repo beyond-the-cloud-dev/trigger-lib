@@ -1,203 +1,180 @@
 ---
-outline: deep
+description: What happens when a Trigger Lib handler throws - the TriggerOrchestrator.Logger and its Error payload, ContinueOnError, what is never logged, the library exceptions, failing one record instead of the whole save, the before-context DML guard and read-only rows in after contexts.
 ---
 
-# Error Handling
+# Errors & Logging
 
-By default an exception thrown by a handler stops the trigger and rolls back the DML, which is what Salesforce does with any unhandled exception. Trigger Lib adds two things on top: every error raised while a handler runs is reported to a logger before it propagates, and a handler can opt in to continue on error.
+What happens when a handler throws: which exceptions reach your `TriggerOrchestrator.Logger`, which ones ContinueOnError can swallow, which ones always fail the save, and how to reject one record instead of the whole DML statement.
 
-Rejecting a record is not an error. To block a record with a message, register a `Validator` in a before context instead of throwing. See [Handlers](/guide/handlers).
+## What Happens to an Exception {#exceptions}
 
-## Logger
+An exception thrown during a handler's work follows these steps. The handler's work is its RelatedQuery method and providers, every predicate and action, a Dispatcher's dispatch, the Finalizer, and the commit of a Writer's own or private unit of work.
 
-Implement `TriggerOrchestrator.Logger` once in your org. The framework discovers the implementation at runtime through `ApexTypeImplementor`, so no registration is needed.
+1. **It is logged.** The org's Logger, if there is one, receives it through `log(…)`, under the handler's name.
+2. **It is rethrown, unless the handler implements ContinueOnError.** A rethrown exception leaves `TriggerOrchestrator.run()` and fails the trigger: every record in the chunk fails, and with all-or-none DML, the default for `insert` and `update`, the whole statement fails.
+3. **Library exceptions are always rethrown.** `TriggerOrchestratorException` and `TriggerHandler.TriggerHandlerException` fail the save even with ContinueOnError. See [Library Exceptions](#library-exceptions).
+
+Code that runs outside every handler's work is never logged: see [Never Logged](#never-logged). Salesforce also has exceptions that no code can catch, such as `System.LimitException` and the `System.FinalException` of a write to a read-only row. They fail the save whatever the handler implements, and the Logger never sees them.
+
+## Logger {#logger}
+
+Implement `TriggerOrchestrator.Logger` once in the org. The library finds the implementation itself, so nothing is registered:
 
 ```apex
-public with sharing class TriggerLogger implements TriggerOrchestrator.Logger {
-  private List<Log__c> logs = new List<Log__c>();
-
-  public void log(TriggerOrchestrator.Error error) {
-    logs.add(
-      new Log__c(
-        Handler__c = error.getHandlerName(),
-        Operation__c = String.valueOf(error.getOperation()),
-        SObject__c = String.valueOf(error.getSObjectType()),
-        Record_Ids__c = String.join(
-          new List<Id>(error.getRecordIds() ?? new Set<Id>()),
-          ','
-        ),
-        Message__c = error.getException().getMessage(),
-        Stack_Trace__c = error.getException().getStackTraceString()
-      )
-    );
-  }
-
-  public void finalize() {
-    // persist the logs, for example by publishing a platform event
-  }
+public interface Logger {
+    void log(TriggerOrchestrator.Error error);
+    void finalize();
 }
 ```
 
-### Lifecycle
+This Logger collects the errors and publishes them as a platform event of your own, `TriggerError__e`, with Publish Behavior set to Publish Immediately, so the log survives the rollback of a failed save. A subscriber, such as a platform event trigger or a Flow, then stores the rows:
 
-`log(Error)` is called for every exception raised while a handler runs, before that exception propagates. That covers:
+```apex
+public with sharing class TriggerErrorLogger implements TriggerOrchestrator.Logger {
+    private List<TriggerError__e> events = new List<TriggerError__e>();
 
-- an exception thrown by the handler's own code, including its `...When` predicate, its action method and its finalizer,
-- a `TriggerOrchestratorException` the framework raises against that handler, such as the [before context DML guard](#before-context-dml-guard),
-- a `TriggerHandler.TriggerHandlerException` from the [record API](#record-api-exceptions).
+    public void log(TriggerOrchestrator.Error error) {
+        this.events.add(
+            new TriggerError__e(
+                Handler__c = error.getHandlerName(),
+                Operation__c = String.valueOf(error.getOperation()),
+                Object__c = String.valueOf(error.getSObjectType()),
+                RecordIds__c = String.join(new List<Id>(error.getRecordIds()), ','),
+                Message__c = error.getException().getMessage(),
+                StackTrace__c = error.getException().getStackTraceString()
+            )
+        );
+    }
 
-Errors raised before handler execution begins are not attributed to a handler: `run` called outside a trigger, a role violation in a handler list, and the multiple-logger error all abort the invocation on their own.
+    public void finalize() {
+        if (this.events.isEmpty()) {
+            return;
+        }
 
-`finalize()` runs once per top-level invocation of `TriggerOrchestrator.run`, which means **once per trigger phase, per chunk of 200 records** — not once per transaction:
+        EventBus.publish(this.events);
+        this.events.clear();
+    }
+}
+```
 
-- an insert of 201 records calls `finalize` twice for `before insert` and twice for `after insert`,
-- a handler whose DML fires another trigger through the orchestrator produces a nested invocation, and a nested invocation does not call `finalize`. Only the outermost one does,
-- it runs whether the invocation succeeded or failed.
+### Discovery {#discovery}
 
-A logger that buffers records, like the sample above, must therefore flush and clear its buffer on every `finalize` call, not only on the last one.
+- **One class, found once per transaction.** The first time a transaction uses `TriggerOrchestrator`, one query on `ApexTypeImplementor` looks for concrete classes that implement `TriggerOrchestrator.Logger`. It runs even when there is none. The class found is created with its no-argument constructor, and that one instance serves the whole transaction.
+- **None.** Errors are rethrown or swallowed as usual, and nothing else changes.
+- **More than one.** The first use of `TriggerOrchestrator` in any transaction throws a `TriggerOrchestratorException`: "Multiple implementations of TriggerOrchestrator.Logger found. Only one implementation is allowed." Every Trigger Lib trigger in the org then fails, so keep exactly one implementation.
+
+### When It Is Called {#lifecycle}
+
+- **`log(error)`** runs for every exception from a handler's work, before the library decides whether to rethrow or swallow it. That includes a swallowed ContinueOnError failure, the DML guard's exception and the Validator's "attached no error" exception.
+- **`finalize()`** runs at the end of every outermost Trigger Lib run, in `run()`'s `finally` block, so also when the run failed. A run is one context of one chunk of up to 200 records. An insert of 201 records therefore calls it four times: before insert and after insert for the first 200, then again for the last one. A run nested inside another, fired by a commit or by direct DML in a handler, does not call it; the outer run does, once it ends.
+- **Not called** when a run ends at a run-level switch (`TriggerOrchestrator.bypass()` or `TriggerObject__mdt.Bypass__c`), when the orchestrator does not implement the context, or when `run()` is called outside a trigger.
+- **Clear what you flushed.** The same instance lives for the whole transaction, so a Logger that buffers must empty its buffer in `finalize()`, as above.
+
+::: warning A Logger must not throw
+An exception from `log(…)` replaces the handler's exception and fails the save, even for a handler that implements ContinueOnError. An exception from `finalize()` leaves the `finally` block, replaces any exception already on its way out, and fails the save.
+:::
 
 ::: warning Rollback
-When an exception propagates out of the trigger, the whole transaction is rolled back, including any DML done in `finalize()`. Persist logs through a platform event with `PublishImmediately` behavior or another mechanism that survives a rollback.
+A failed save rolls back everything its transaction did, including records that `finalize()` inserted. Publish a Publish Immediately platform event, as above, to keep the log. It counts toward `Limits.getPublishImmediateDML()`, not toward the DML statement limit.
 :::
 
-### Rules
+To test code that uses a Logger, see [Testing](/guide/testing#mock-metadata).
 
-- Exactly one concrete class may implement `TriggerOrchestrator.Logger`. Two implementations raise `TriggerOrchestratorException` stating that only one implementation is allowed.
-- No implementation means errors are simply rethrown, and nothing else changes.
-- The implementor is resolved through a single `ApexTypeImplementor` query, once per transaction, and cached for the rest of it.
+## Error {#error}
 
-## Error
+`log(…)` receives a `TriggerOrchestrator.Error`:
 
-`TriggerOrchestrator.Error` describes a failure:
+| Method | Returns |
+|---|---|
+| `getHandlerName()` | The handler's simple class name: the text before the first `:` of its `toString()`. An inner class `Outer.Inner` is `Inner`. Always set, because only handler failures are logged. |
+| `getException()` | The exception that was thrown |
+| `getOperation()` | The `System.TriggerOperation` of the run, such as `AFTER_UPDATE` |
+| `getSObjectType()` | The object the trigger runs on |
+| `getRecordIds()` | The Ids of every record in the chunk, qualified or not. In before insert the records have no Id yet, so it is an empty set, not null. |
 
-| Method             | Returns                                                                                                                            |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `getException()`   | The thrown exception                                                                                                               |
-| `getHandlerName()` | Class name of the handler being processed, `null` when none was running                                                            |
-| `getOperation()`   | `System.TriggerOperation` of the invocation                                                                                        |
-| `getSObjectType()` | The triggering object                                                                                                              |
-| `getRecordIds()`   | Ids of all records in the trigger chunk, not only the qualified ones, and `null` in before insert where the records have no Id yet |
+## ContinueOnError {#continue-on-error}
 
-## Continue On Error
+A handler that implements its context's ContinueOnError add-on lets the save go on when it fails:
 
-Without `ContinueOnError`, the first exception a handler raises ends the invocation: it reaches the logger, then propagates, no later handler in the list runs, and the DML is rolled back.
+<!--@include: @/_parts/add-ons/continue-on-error.md#common-->
 
-A handler that implements the `ContinueOnError` marker of its context does not stop the trigger. Its exception is passed to the logger, the orchestrator moves on to the next handler in the list, and the DML succeeds.
+<!--@include: @/_parts/add-ons/continue-on-error.md#writer-->
+
+Use it for work that is nice to have, such as a notification or a follow-up task, never for work whose failure leaves data inconsistent. Without a Logger, a swallowed failure leaves no trace.
+
+### What Still Throws {#still-throws}
+
+- `TriggerOrchestratorException`: the DML guard in before insert and before update, and a Validator that qualified a record but attached no error.
+- `TriggerHandler.TriggerHandlerException`: `isRecordTypeEqual` on an object without record types, and `getRelated` with an unknown provider name.
+- Everything in [Never Logged](#never-logged), because it runs outside the handler's work.
+- Exceptions no code can catch, such as `System.LimitException`.
+
+Each context's ContinueOnError page lists what still throws there:
+
+<!--@include: @/_parts/generated/chips/continue-on-error/still-throws.md-->
+
+## Never Logged {#never-logged}
+
+<!--@include: @/_parts/notes/never-logged.md-->
+
+Two more exceptions stop a run before any handler, and neither is logged: `run()` called outside a trigger, and a second Logger implementation in the org.
+
+## Library Exceptions {#library-exceptions}
+
+**`TriggerOrchestratorException`** is private to `TriggerOrchestrator`, so it cannot be caught by type. Catch `Exception` and check the message. Its messages:
+
+- `Called outside of a trigger context, or the trigger operation is not supported.`
+- `Multiple implementations of TriggerOrchestrator.Logger found. Only one implementation is allowed.`
+- `<Handler> performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.`
+- `<Handler> qualified a record in errorShouldBeAttachedOn<Ctx>When but attached no error in addErrorOn<Ctx>.`
+
+**`TriggerHandler.TriggerHandlerException`** is public and can be caught by type around a direct call, for example in a unit test that calls a predicate. Its messages:
+
+- `<Object> has no record types, so isRecordTypeEqual cannot be used on it.` (or `isRecordTypeNotEqual`)
+- `No related records provider is registered under <name>. Return it from the RelatedQuery method of the context first.`
+
+Catching by type works only around a direct call. Code that fires the trigger through DML gets a `DmlException`, or a failed `Database.SaveResult` with partial success, whose message contains the original message.
+
+Reference: [TriggerOrchestratorException](/api/trigger-orchestrator#triggerorchestratorexception) · [TriggerHandlerException](/api/record#triggerhandlerexception)
+
+## Fail One Record, Not the Whole Save {#one-record}
+
+An uncaught exception fails every record in the chunk, and with all-or-none DML the whole statement. To fail only the record that caused it, catch the exception in the handler and add an error to that record:
 
 ```apex
-public with sharing class AccountWelcomeTaskWriter implements AfterInsert.Writer, AfterInsert.ContinueOnError {
-  public Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
-    return record.isNotBlank(Account.Website);
-  }
-
-  public void writeOnAfterInsert(
-    TriggerHandler.InsertRecord record,
-    TriggerHandler.UnitOfWork unitOfWork
-  ) {
-    unitOfWork.toInsert(
-      new Task(WhatId = record.getId(), Subject = 'Send the welcome pack')
-    );
-  }
+public void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+    try {
+        unitOfWork.toInsert(this.onboardingTaskFor(record));
+    } catch (Exception e) {
+        record.getNewSObject().addError('No onboarding task could be created: ' + e.getMessage());
+    }
 }
 ```
 
-Use it for side effects that are nice to have: notifications, analytics, non-critical integrations. Do not use it for handlers whose failure leaves data in an inconsistent state.
+- **Which row takes the error.** Call `record.getNewSObject().addError(message)`, or `record.getOldSObject().addError(message)` in before delete and after delete. Only a Validator's error method receives a record that has `addError` itself.
+- **In after contexts** the error reverts that record's save, delete or restore.
+- **All-or-none DML still fails the statement,** but the error now names the record that caused it. With partial success, as with Data Loader, the Bulk API or `Database.insert(records, false)`, the other records are saved.
+- **A partial save runs the handlers again.** The platform rolls back the first attempt and runs the triggers a second time for the records that remain, so every handler runs twice for them. See [Execution Order & Cost](/guide/execution-order#partial-save).
 
-### Writers Get Their Own Unit Of Work
+To reject a record on purpose in before insert or before update, use a Validator instead of an exception: [BeforeInsert](/before-insert/validator) · [BeforeUpdate](/before-update/validator).
 
-A writer normally registers its records in the unit of work shared by every writer of the invocation. That unit commits once, after the last handler, and a failure there fails the whole save. It cannot be skipped for one writer.
+## Before-Context DML Guard {#dml-guard}
 
-A writer that implements `ContinueOnError` therefore gets a unit of work of its own, automatically. The framework commits it right after the writer's finalizer, inside the writer's error handling:
+<!--@include: @/_parts/roles/dml-guard.md-->
 
-- a failed commit is logged with the writer's name and swallowed, and the save goes on,
-- the shared writes of the other writers are not affected,
-- when the writer throws before its commit, nothing it registered is written.
+## Read-Only Rows in After Contexts {#read-only}
 
-The unit is configured like the shared one: system mode, without sharing, and duplicate updates of one record combined. A writer that also implements `OwnUnitOfWork` keeps the unit it returns, and `ContinueOnError` only decides what happens when it fails.
+In after insert and after update, the record types still declare `put`, but the trigger rows are read-only there. `record.put(…)` throws `System.FinalException: Record is read-only`, which no code can catch, so neither a `try` block nor ContinueOnError stops it, and the save fails. Register an update on a new instance instead, from a Writer:
 
-What changes compared to the shared unit:
-
-- The writes happen at the writer's position in the handler list, not after the last handler.
-- They are not pooled with the other writers, so the writer spends its own DML statements.
-- The commit is not atomic. When an insert succeeds and a later update in the same unit fails, the insert stays.
-
-::: danger ContinueOnError covers the handler's own exceptions only
-It never suppresses a framework contract violation. A `TriggerOrchestratorException` and a `TriggerHandler.TriggerHandlerException` are logged and then rethrown even for a handler that implements `ContinueOnError`, and the DML is aborted.
-:::
-
-## Framework Exceptions
-
-Every contract violation the framework itself detects is raised as `TriggerOrchestratorException`, never as a bare platform exception. It is raised for:
-
-- `TriggerOrchestrator.run` called outside a trigger context,
-- a handler list entry that implements neither or both of the main interfaces of a context with roles, `Populator` and `Validator`,
-- DML, or an immediate platform event published, by a before insert or before update handler,
-- more than one `TriggerOrchestrator.Logger` implementation in the org.
-
-The exception type is declared inside `TriggerOrchestrator` and is not public, so your own code cannot catch it by type. The message identifies the violation and, where a handler is at fault, names the class.
-
-### Before Context DML Guard
-
-Before insert and before update handlers must not perform DML. The framework measures DML statements and immediate platform event publishes across the handler's execution, from its first qualified record through its finalizer, and raises:
-
-```
-ContactDefaultsHandler performed DML in a before context. Populate the trigger record instead, or move the DML to an after context.
+```apex
+unitOfWork.toUpdate(new Account(Id = record.getId(), Rating = 'Hot'));
 ```
 
-The sharp edges:
+Details per context: [AfterInsert Record API](/after-insert/record-api#accessors) · [AfterUpdate Record API](/after-update/record-api#accessors)
 
-- The guard counts DML performed anywhere below the handler, including inside a service class it calls.
-- Publishing a platform event configured to publish immediately counts as DML and is rejected the same way.
-- The guard covers the handler's finalizer too, because the finalizer runs inside the same measured span.
-- It applies to a `Populator` and a `Validator` alike.
-- **Throwing is not a way past it.** The check runs in a `finally`, so a handler that performs DML and then throws still trips the guard. The guard's exception replaces the handler's own, so the guard error is what reaches the logger and what propagates.
-- `ContinueOnError` does not suppress it. The DML is aborted and nothing is committed.
-- A handler that throws without having done DML is unaffected: the guard stays silent, and with `ContinueOnError` the error is swallowed and the DML succeeds.
+## See Also {#see-also}
 
-There is no opt-out. Populate the trigger record with `put` instead, or move the work to an after context, where DML on other records is allowed.
-
-### One Main Interface Per Context
-
-Before insert and before update have two roles. A class in `beforeInsertHandlers()` or `beforeUpdateHandlers()` must implement exactly one of them. Implementing both, or neither, aborts the invocation before any handler runs, with a message naming the class and both interfaces:
-
-```
-ContactDefaultsHandler implements both BeforeInsert.Populator and BeforeInsert.Validator. A class can implement only one main interface per context.
-```
-
-```
-ContactDefaultsHandler implements neither BeforeInsert.Populator nor BeforeInsert.Validator. A class must implement one main interface per context.
-```
-
-A class may still hold a different role in a different context, for example `BeforeInsert.Populator` and `BeforeUpdate.Validator`.
-
-### Outside a Trigger
-
-Calling `TriggerOrchestrator.run` from anonymous Apex or a service class throws:
-
-```
-Called outside of trigger context, or not supported operation type
-```
-
-## Record API Exceptions
-
-`isRecordTypeEqual` and `isRecordTypeNotEqual` throw `TriggerHandler.TriggerHandlerException` when the SObject has no record types beyond Master:
-
-```
-Invoice__c has no record types, so isRecordTypeEqual cannot be used on it.
-```
-
-This replaces the raw `SObjectException: Invalid field RecordTypeId` the platform would otherwise produce, so the message names the object and the helper. Like a framework exception, it is logged and rethrown even under `ContinueOnError`.
-
-## Platform Exceptions
-
-A platform error a handler causes — an invalid field, a bad cast, a failed DML in an after context — propagates unchanged. The framework never wraps or translates it, so the original Salesforce type and message reach the caller. The logger sees it first if one is implemented, and `ContinueOnError` applies to it like any other exception the handler raises.
-
-### Read-only Records In After Contexts
-
-`TriggerHandler.InsertRecord` and `TriggerHandler.UpdateRecord` serve both the before and the after phase of their operation, so nothing in the type system stops an after insert or after update handler from calling `put`. At run time the platform raises:
-
-```
-System.FinalException: Record is read-only
-```
-
-That exception is uncatchable. The handler's own `try` and `catch` cannot stop it, `ContinueOnError` cannot stop it, and the whole transaction is lost. In an after context, build your own SObject instance and DML that instead of writing to the trigger record.
+- [TriggerOrchestrator](/api/trigger-orchestrator): the `Logger` and `Error` interfaces
+- [Execution Order & Cost](/guide/execution-order): where each hook runs
+- [Unit of Work](/guide/unit-of-work#when-it-commits): commit failures
+- [Testing](/guide/testing): a purpose-built Logger in tests

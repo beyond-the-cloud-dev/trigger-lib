@@ -1,0 +1,4 @@
+- **Old lookup values.** The library reads each declared lookup's previous Id from the old rows (`Trigger.old`) before any handler runs.
+- **One query per lookup.** Each lookup gets one SOQL query against its parent object for the previous parent Ids that are not loaded yet, together with any current parents still missing. A parent that is already loaded is reused, whichever side loaded it.
+- **Never refreshed.** Previous parents are loaded once per run and never queried again during it.
+- **Read as it is now.** The previous parent is queried by Id when the trigger runs, so its fields show their current values, not the values it had when the record pointed to it. A parent that has since been deleted comes back null.

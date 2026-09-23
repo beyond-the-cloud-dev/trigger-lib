@@ -1,96 +1,75 @@
 ---
-outline: deep
+description: Switch Trigger Lib handlers off (bypass, skip, disable) from Apex for one transaction with TriggerOrchestrator.bypass(), org-wide with TriggerObject__mdt and TriggerHandler__mdt, or on a condition with a context's Bypassable, plus the fixed order of checks and a data migration recipe.
 ---
 
-# Bypasses
+# Bypassing
 
-A bypass switches a handler off for the current trigger invocation. There are two ways to express one:
+Switch Trigger Lib handlers off (bypass, skip, disable, turn off triggers) in three ways: from Apex for one transaction, org-wide from custom metadata without a deployment, or on a condition inside the handler. The library checks them in a fixed order, and none of them touches anything that does not run through Trigger Lib.
 
-- **In code**, with the `Bypassable` interface of the context, so the condition lives next to the logic it disables.
-- **In custom metadata**, with `TriggerObject__mdt` and `TriggerHandler__mdt`, so an admin can switch a handler or a whole object off without a deployment.
+## Three Layers {#layers}
 
-**Zero metadata records are required.** With no `TriggerObject__mdt` records in the org, every handler runs, nothing about the behaviour changes, and no SOQL is consumed. Metadata records only ever turn things off.
+| Layer | Switches off | Lasts | Set by |
+|---|---|---|---|
+| [`TriggerOrchestrator.bypass()`](#apex) | every run, an object, an orchestrator or a handler class | until `clear()` or the end of the transaction | Apex that runs before the DML |
+| [Custom metadata](#metadata) | an object, or one handler class on that object | while `Bypass__c` is checked, for every user | an admin in Setup, or a deployment |
+| [`<Ctx>.Bypassable`](#bypassable) | one handler in one context | one run: the method is asked again on every run | the handler's own code |
 
-## Bypassable Handler
+To skip only some records, return false from the handler's predicate instead. Each context's overview sums the layers up under Switching Handlers Off, for example [BeforeInsert](/before-insert/#switching-off).
 
-Implement the `Bypassable` interface of the context and return `true` from `bypassOn...When()` to skip the handler.
+## From Apex: `TriggerOrchestrator.bypass()` {#apex}
+
+`TriggerOrchestrator.bypass()` returns a builder, `TriggerOrchestrator.Bypassable`, that keeps its switches in a static for the rest of the transaction:
+
+| Method | Switches off | Returns |
+|---|---|---|
+| `sObject(SObjectType)` | every run on that object, in every context | the builder |
+| `orchestrator(System.Type)` | every run of that orchestrator class, in every context | the builder |
+| `handler(System.Type)` | that handler class, in every context and on every object | the builder |
+| `all()` | every Trigger Lib run | nothing |
+| `clear()` | removes every switch; there is no way to remove only one | nothing |
 
 ```apex
-public with sharing class AccountScoringHandler implements AfterUpdate.Handler, AfterUpdate.Bypassable {
-  public static Boolean isDisabled = false;
-
-  public Boolean bypassOnAfterUpdateWhen() {
-    return isDisabled || System.isBatch();
-  }
-
-  public Boolean qualifiesForAfterUpdateWhen(
-    TriggerHandler.UpdateRecord record
-  ) {
-    return record.isChanged(Account.AnnualRevenue);
-  }
-
-  public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
-    // ...
-  }
+TriggerOrchestrator.bypass().sObject(Contact.SObjectType).handler(AccountOwnerTransferWriter.class);
+try {
+    update accounts;
+} finally {
+    TriggerOrchestrator.bypass().clear();
 }
 ```
 
-`bypassOn...When()` takes no record. It is asked once per invocation, for the handler as a whole, not per record. Per-record decisions belong in [qualification](/guide/qualification).
+- **Set it before the DML.** A switch applies to the runs that start after it is set, nested saves included: a Writer's commit that updates Contacts sees the Contact switch above.
+- **One transaction only.** A Queueable, a future method or the next batch `execute` runs in a new transaction, where no switch is set.
+- **Same for every user.** It is plain Apex, so the code that sets it decides who is affected.
 
-| Context        | Interface                  | Method                      |
-| -------------- | -------------------------- | --------------------------- |
-| Before Insert  | `BeforeInsert.Bypassable`  | `bypassOnBeforeInsertWhen`  |
-| After Insert   | `AfterInsert.Bypassable`   | `bypassOnAfterInsertWhen`   |
-| Before Update  | `BeforeUpdate.Bypassable`  | `bypassOnBeforeUpdateWhen`  |
-| After Update   | `AfterUpdate.Bypassable`   | `bypassOnAfterUpdateWhen`   |
-| Before Delete  | `BeforeDelete.Bypassable`  | `bypassOnBeforeDeleteWhen`  |
-| After Delete   | `AfterDelete.Bypassable`   | `bypassOnAfterDeleteWhen`   |
-| After Undelete | `AfterUndelete.Bypassable` | `bypassOnAfterUndeleteWhen` |
+::: warning `handler(X.class)` and `orchestrator(X.class)` match top-level classes only
+They store the name that `X.class` reports, which is `Outer.Inner` for an inner class, and compare it with the running class's simple name, `Inner`. An inner class therefore never matches, and the call switches nothing off. For an inner handler class, use its [`TriggerHandler__mdt` record](#metadata) or its [Bypassable](#bypassable); for an inner orchestrator class, use `sObject(…)`. Matching in a namespaced installation has not been verified.
+:::
 
-A class that runs in several contexts implements one `Bypassable` per context, and each is answered separately.
+## From Custom Metadata {#metadata}
 
-## Bypass Sources
+Two custom metadata types ship with the library. Records of either type only ever switch things off: with no records, every handler runs, and reading them costs nothing.
 
-The bypass method is plain Apex, so any condition works:
+| Type | Field | Meaning |
+|---|---|---|
+| `TriggerObject__mdt` (Trigger Object) | `ObjectAPIName__c` | API name of the object, such as `Account` or `Invoice__c`; trimmed and compared ignoring case |
+| | `Bypass__c` | checked: no Trigger Lib handler runs on this object, in any context |
+| `TriggerHandler__mdt` (Trigger Handler) | `TriggerObject__c` | the Trigger Object record it belongs to (required) |
+| | `ApexClassName__c` | the handler's class name: `Inner` or `Outer.Inner` for an inner class; trimmed and compared ignoring case |
+| | `Bypass__c` | checked: this handler class is skipped on that object, in every context |
 
-- A static flag set by a data migration or a test.
-- A custom permission checked with `FeatureManagement.checkPermission`.
-- A custom setting, when you want per-user or per-profile control.
-- Execution context, such as `System.isBatch()` or `System.isFuture()`.
+- **Handler records work only under their object's record.** A Trigger Handler record under the Account record does nothing on Contact, even for a class that also runs there.
+- **Read once per transaction.** The library reads both types the first time it is used in a transaction and keeps them in a static. A change applies from the next transaction. Custom metadata queries do not count against the SOQL limit.
+- **Every user, every context.** There is no per-context or per-user field. For those, see [one context](#one-context) and [per user](#per-user).
+- **Same simple name, same switch.** The class name is matched by simple name, so inner classes named alike in different outer classes are switched off together. See [the `ApexClassName__c` format](/api/custom-metadata#class-name-format).
+- **They apply in tests too.** Deployed records are visible to test methods. Mock them when you run the orchestrator in a test: [Testing](/guide/testing#mock-metadata).
 
-```apex
-public Boolean bypassOnBeforeInsertWhen() {
-    return FeatureManagement.checkPermission('Bypass_Account_Defaults');
-}
-```
+Create the records in Setup, under **Custom Metadata Types**, **Manage Records**, or deploy them as source. The file names are `<Type>.<DeveloperName>.md-meta.xml` in a `customMetadata` folder:
 
-## Metadata Bypass
+::: code-group
 
-`TriggerObject__mdt` names an object. `TriggerHandler__mdt` names an Apex class and points at its `TriggerObject__mdt` parent.
-
-**TriggerObject\_\_mdt**
-
-| Field              | Type     | Meaning                                       |
-| ------------------ | -------- | --------------------------------------------- |
-| `ObjectAPIName__c` | Text     | API name of the object, for example `Account` |
-| `Bypass__c`        | Checkbox | When checked, no handler runs for this object |
-
-**TriggerHandler\_\_mdt**
-
-| Field              | Type                  | Meaning                                         |
-| ------------------ | --------------------- | ----------------------------------------------- |
-| `ApexClassName__c` | Text                  | Name of the handler class                       |
-| `TriggerObject__c` | Metadata Relationship | The `TriggerObject__mdt` record this belongs to |
-| `Bypass__c`        | Checkbox              | When checked, this handler is skipped           |
-
-### Bypassing One Handler
-
-Create a `TriggerObject__mdt` record for the object with `Bypass__c` unchecked, then a `TriggerHandler__mdt` child for the class with `Bypass__c` checked. Handler records are only read through their parent, so the object record has to exist even when you are only switching off one class.
-
-```xml
-<!-- force-app/main/default/customMetadata/TriggerObject.Account.md-meta.xml -->
+```xml [TriggerObject.Account.md-meta.xml]
 <?xml version="1.0" encoding="UTF-8"?>
-<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
     <label>Account</label>
     <protected>false</protected>
     <values>
@@ -104,19 +83,18 @@ Create a `TriggerObject__mdt` record for the object with `Bypass__c` unchecked, 
 </CustomMetadata>
 ```
 
-```xml
-<!-- force-app/main/default/customMetadata/TriggerHandler.AccountScoringHandler.md-meta.xml -->
+```xml [TriggerHandler.AccountOwnerTransferWriter.md-meta.xml]
 <?xml version="1.0" encoding="UTF-8"?>
-<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <label>Account Scoring Handler</label>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>Account Owner Transfer Writer</label>
     <protected>false</protected>
     <values>
-        <field>ApexClassName__c</field>
-        <value xsi:type="xsd:string">AccountScoringHandler</value>
+        <field>TriggerObject__c</field>
+        <value xsi:type="xsd:string">Account</value>
     </values>
     <values>
-        <field>TriggerObject__c</field>
-        <value xsi:type="xsd:string">TriggerObject.Account</value>
+        <field>ApexClassName__c</field>
+        <value xsi:type="xsd:string">AccountOwnerTransferWriter</value>
     </values>
     <values>
         <field>Bypass__c</field>
@@ -125,68 +103,128 @@ Create a `TriggerObject__mdt` record for the object with `Bypass__c` unchecked, 
 </CustomMetadata>
 ```
 
-The `TriggerObject__c` value is the parent record's full name, `TriggerObject.` followed by its developer name.
-
-The other handlers of the object keep running, and the DML succeeds as usual.
-
-### Bypassing a Whole Object
-
-Check `Bypass__c` on the `TriggerObject__mdt` record. No handler of that object runs, in any context, and the DML succeeds. The check happens before the orchestrator is asked for its handler list, so nothing else is evaluated at all.
-
-### Inner Class Names
-
-Handlers are often inner classes of a larger class. Both spellings work in `ApexClassName__c`:
-
-```
-Outer.Inner
-Inner
-```
-
-Matching is case-insensitive and surrounding whitespace is ignored, so `outer.inner` and `Inner` match too.
-
-::: warning Simple names collide
-The name the framework compares against at runtime is the handler's simple class name, which is why the bare `Inner` spelling works at all. The consequence is that **two inner classes sharing a simple name are bypassed together**, even when they live in different outer classes. `AccountRules.Scoring` and `ContactRules.Scoring` cannot be bypassed independently through metadata. Give them distinct names, or bypass one of them in code with `Bypassable`.
 :::
 
-### Query Cost
+- **`TriggerObject__c` holds the parent's developer name alone**, `Account`, not `TriggerObject.Account`.
+- **Declare `xmlns:xsd`** on `<CustomMetadata>`. Without it the deployment fails with an `UNKNOWN_EXCEPTION` that names no component.
 
-The metadata is read once per transaction, through a query on `TriggerObject__mdt` with its `TriggerHandler__mdt` children. Custom metadata queries do not count against the SOQL governor limit, so reading it costs **zero SOQL** no matter how many objects and handlers are configured. With no records at all, the read still costs nothing and changes nothing.
+To switch off one handler, keep the object record's `Bypass__c` unchecked and check it on the handler record. To switch off the whole object, check it on the object record; handler records under it no longer matter.
 
-## Order of Checks
+## From the Handler: Bypassable {#bypassable}
 
-For each invocation:
+Every context has a `Bypassable` add-on with one method, `bypassOn<Ctx>When()`. When it returns true, the handler is skipped for that run. This Validator switches itself off through a static flag and in batch Apex:
 
-1. The object bypass is checked. If `TriggerObject__mdt.Bypass__c` is true for the object, the invocation ends here.
-2. The orchestrator returns its handler list for the context, and the handlers are validated. A before insert or before update class that implements neither or both of `Populator` and `Validator` is rejected with a `TriggerOrchestratorException` at this point, whether or not it is about to be bypassed.
-3. Each handler is checked for a bypass. Metadata first: a handler bypassed in metadata never has its `bypassOn...When()` called. Otherwise, `Bypassable` decides.
-4. [Parent enrichment](/guide/enrichment) runs for the surviving handlers only.
-5. The surviving handlers run in list order.
+<<< @/../examples/main/default/classes/contact/before-insert/validator/ContactReachabilityValidator.cls
 
-A bypassed handler is out before enrichment, so it contributes no parent fields to the queries and never sees a record. If another handler was relying on a relationship that only the bypassed handler declared, `getNewParent` starts returning `null` for it.
+<!--@include: @/_parts/add-ons/bypassable.md-->
 
-## Bypassing a Whole Context
+Each context's page has the signature, an example and the context's own details:
 
-An orchestrator can return an empty list for a context. Nothing runs and the DML succeeds.
+<!--@include: @/_parts/generated/chips/bypassable.md-->
+
+## Order of Checks {#order}
+
+Every run checks the switches in this order. The first one that applies wins, and the later checks for that run or handler are not made:
+
+| # | Check | When it applies |
+|---|---|---|
+| 1 | Called outside a trigger | `run()` throws; nothing else happens |
+| 2 | `TriggerOrchestrator.bypass()`: `all()`, `sObject(…)` or `orchestrator(…)` | the run ends before any of your code, `<ctx>Handlers()` included |
+| 3 | `TriggerObject__mdt.Bypass__c` on the object's record | the run ends the same way |
+| 4 | The orchestrator does not implement `TriggerOrchestrator.<Ctx>` | the run ends silently |
+| 5 | `<ctx>Handlers()` is called and each handler is adapted | the getters `ownUnitOfWorkOn<Ctx>()` and `maxRecursionDepthOn<Ctx>()` run here, bypassed or not |
+| 6 | `TriggerOrchestrator.bypass().handler(…)` | that handler is skipped |
+| 7 | `TriggerHandler__mdt.Bypass__c` on the handler's record under this object | that handler is skipped |
+| 8 | `bypassOn<Ctx>When()` | that handler is skipped |
+
+Checks 6 to 8 run for every handler in the list before the first handler starts. Only then do parents load and the remaining handlers run, in list order. A skipped handler contributes no parent declarations: another handler that reads a parent only the skipped handler declared now gets `null`. Its instance is still built by `<ctx>Handlers()`, so its constructor runs.
+
+The complete sequence of a run, with parents, providers and commits, is on [Execution Order & Cost](/guide/execution-order).
+
+## Only One Context {#one-context}
+
+No switch works per context. A metadata record and `handler(X.class)` switch a class off in every context it serves, and `sObject(…)` and `orchestrator(…)` switch off every context of the object or the orchestrator. To skip a class in one context:
+
+- implement that context's Bypassable and return true, or
+- leave the class out of that context's `<ctx>Handlers()` list.
+
+## Per User or Permission {#per-user}
+
+There is no per-user, per-profile or per-permission switch: metadata applies to the whole org, and `TriggerOrchestrator.bypass()` to one transaction. Check a custom permission yourself.
+
+For one handler, in its Bypassable method:
 
 ```apex
-public List<AfterInsert.Handler> afterInsertHandlers() {
-    return new List<AfterInsert.Handler>();
+public Boolean bypassOnAfterUpdateWhen() {
+    return FeatureManagement.checkPermission('Bypass_Account_Automation');
 }
 ```
 
-Leaving the `TriggerOrchestrator.AfterInsert` interface off the orchestrator entirely has the same effect: the event is a silent no-op.
-
-## Bypasses in Tests
-
-Static flags make it easy to isolate a handler under test:
+For every handler of a context, in the orchestrator:
 
 ```apex
-@IsTest
-static void createsTaskWhenPriorityChanges() {
-    AccountScoringHandler.isDisabled = true;
+public List<AfterUpdate.Handler> afterUpdateHandlers() {
+    if (FeatureManagement.checkPermission('Bypass_Account_Automation')) {
+        return new List<AfterUpdate.Handler>();
+    }
 
-    // insert and update records, assert on the handler under test
+    return new List<AfterUpdate.Handler>{ new AccountAddressCascadeWriter(), new AccountOwnerTransferWriter() };
 }
 ```
 
-Custom metadata records deployed to the org apply in tests as well, since they are visible without `@IsTest(SeeAllData=true)`. A handler switched off in metadata stays off in every test that exercises it.
+Both methods run outside every handler's error handling: an exception there is not logged, and it fails the save.
+
+## During a Data Migration {#data-migration}
+
+**Data Loader, Bulk API or an import wizard.** None of your Apex runs before the load, so use metadata:
+
+1. Open the object's Trigger Object record, or create one with `ObjectAPIName__c` set to the object's API name, and check `Bypass__c`. Every Trigger Lib handler on the object is now skipped, in every context, for every user.
+2. Run the load.
+3. Uncheck `Bypass__c`.
+4. Backfill what the handlers would have done, such as derived fields or related records. Nothing re-runs a skipped handler later.
+
+To skip only some handlers, leave the object record unchecked and check `Bypass__c` on their Trigger Handler records instead. While the switch is on, other users' saves skip the handlers too. If the org stays in use during the load, switch the handlers off for the migration user only, with a custom permission [as above](#per-user).
+
+**Apex script, anonymous Apex or a batch.** Switch the object off in the same transaction as the DML:
+
+```apex
+TriggerOrchestrator.bypass().sObject(Account.SObjectType);
+try {
+    update accounts;
+} finally {
+    TriggerOrchestrator.bypass().clear();
+}
+```
+
+In a batch, set the switch inside `execute`. Every `execute` call runs in its own transaction, and a switch set in `start` does not carry over.
+
+## Scope {#scope}
+
+Every switch skips only handlers that run through Trigger Lib. Flows, validation rules, duplicate rules, workflow rules and triggers not built on Trigger Lib still run, so a migration that must skip them switches them off separately.
+
+## Testing Bypasses {#testing}
+
+**A Bypassable method.**
+
+<!--@include: @/_parts/add-ons/test-techniques.md#bypass-->
+
+**Test data without handlers.** In an integration test that inserts real records, switch the object off while you build the data:
+
+```apex
+@TestSetup
+static void setup() {
+    TriggerOrchestrator.bypass().sObject(Account.SObjectType);
+    insert new Account(Name = 'Acme');
+}
+```
+
+Each test method starts with fresh static values, so the switch set in `@TestSetup` does not reach the test methods, and a switch set in one test method does not leak into the next.
+
+**Metadata records.** Deployed Trigger Object and Trigger Handler records apply in tests. When you run the orchestrator in a test, mock them, or return a record to test a metadata bypass: [Testing](/guide/testing#mock-metadata).
+
+## See Also {#see-also}
+
+- [Custom Metadata](/api/custom-metadata): both types field by field
+- [TriggerOrchestrator](/api/trigger-orchestrator): `bypass()` and the `Bypassable` builder
+- [Execution Order & Cost](/guide/execution-order): the whole run, step by step
+- [Errors & Logging](/guide/error-handling#never-logged): what happens when a bypass method throws

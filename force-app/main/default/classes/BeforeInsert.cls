@@ -1,5 +1,5 @@
 public class BeforeInsert {
-    // main interfaces
+    // Main interfaces - pick one
 
     public interface Populator extends Handler {
         Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record);
@@ -11,7 +11,7 @@ public class BeforeInsert {
         String beforeInsertValidationMessage(TriggerHandler.InsertRecord record);
     }
 
-    // additional interfaces
+    // Additional interfaces - pick as many as you need
 
     public interface ParentQuery {
         Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert();
@@ -37,7 +37,7 @@ public class BeforeInsert {
     public interface ContinueOnError {
     }
 
-    // internal
+    // For internal use only
 
     public interface Handler {
     }

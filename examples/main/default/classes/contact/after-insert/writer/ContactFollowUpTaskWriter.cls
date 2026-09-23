@@ -1,19 +1,17 @@
-public with sharing class ContactFollowUpTaskHandler implements AfterInsert.Handler, AfterInsert.ParentQuery, AfterInsert.Finalizer, AfterInsert.ContinueOnError {
-    private List<Task> followUps = new List<Task>();
-
+public with sharing class ContactFollowUpTaskWriter implements AfterInsert.Writer, AfterInsert.ParentQuery, AfterInsert.ContinueOnError {
     public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert() {
         return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
     }
 
-    public Boolean qualifiesForAfterInsertWhen(TriggerHandler.InsertRecord record) {
+    public Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record) {
         return record.equals(Contact.LeadSource, 'Web') && record.isNotBlank(Contact.Email);
     }
 
-    public void onAfterInsert(TriggerHandler.InsertRecord record) {
+    public void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
         Contact contactRecord = (Contact) record.getNewSObject();
         Account accountRecord = (Account) record.getNewParent('Account');
 
-        this.followUps.add(
+        unitOfWork.toInsert(
             new Task(
                 WhoId = record.getId(),
                 WhatId = contactRecord.AccountId,
@@ -24,9 +22,5 @@ public with sharing class ContactFollowUpTaskHandler implements AfterInsert.Hand
                 Status = 'Not Started'
             )
         );
-    }
-
-    public void finalizeAfterInsert() {
-        insert this.followUps;
     }
 }

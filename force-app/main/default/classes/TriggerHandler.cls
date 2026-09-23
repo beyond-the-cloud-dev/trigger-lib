@@ -319,6 +319,20 @@ public with sharing class TriggerHandler {
         Boolean isEmpty();
     }
 
+    public interface UnitOfWork {
+        UnitOfWork toInsert(SObject record);
+        UnitOfWork toInsert(DML.Record record);
+
+        UnitOfWork toUpdate(SObject record);
+        UnitOfWork toUpdate(DML.Record record);
+
+        UnitOfWork toUpsert(SObject record, SObjectField externalIdField);
+
+        UnitOfWork toDelete(SObject record);
+
+        UnitOfWork toPublish(SObject event);
+    }
+
     public interface InsertRecords {
         Set<Id> getIds();
 
@@ -494,63 +508,11 @@ public with sharing class TriggerHandler {
         private List<SObject> records = new List<SObject>();
         private Map<String, List<SObject>> recordsByKey = new Map<String, List<SObject>>();
 
-        public ProvidedRecords(BeforeInsert.RecordsProvider provider, InsertRecords records) {
-            this.records = provider.query(records) ?? new List<SObject>();
-
-            for (SObject record : this.records) {
-                this.index(provider.keyOf(record), record);
-            }
+        public ProvidedRecords(List<SObject> records) {
+            this.records = records ?? new List<SObject>();
         }
 
-        public ProvidedRecords(AfterInsert.RecordsProvider provider, InsertRecords records) {
-            this.records = provider.query(records) ?? new List<SObject>();
-
-            for (SObject record : this.records) {
-                this.index(provider.keyOf(record), record);
-            }
-        }
-
-        public ProvidedRecords(BeforeUpdate.RecordsProvider provider, UpdateRecords records) {
-            this.records = provider.query(records) ?? new List<SObject>();
-
-            for (SObject record : this.records) {
-                this.index(provider.keyOf(record), record);
-            }
-        }
-
-        public ProvidedRecords(AfterUpdate.RecordsProvider provider, UpdateRecords records) {
-            this.records = provider.query(records) ?? new List<SObject>();
-
-            for (SObject record : this.records) {
-                this.index(provider.keyOf(record), record);
-            }
-        }
-
-        public ProvidedRecords(BeforeDelete.RecordsProvider provider, DeleteRecords records) {
-            this.records = provider.query(records) ?? new List<SObject>();
-
-            for (SObject record : this.records) {
-                this.index(provider.keyOf(record), record);
-            }
-        }
-
-        public ProvidedRecords(AfterDelete.RecordsProvider provider, DeleteRecords records) {
-            this.records = provider.query(records) ?? new List<SObject>();
-
-            for (SObject record : this.records) {
-                this.index(provider.keyOf(record), record);
-            }
-        }
-
-        public ProvidedRecords(AfterUndelete.RecordsProvider provider, UndeleteRecords records) {
-            this.records = provider.query(records) ?? new List<SObject>();
-
-            for (SObject record : this.records) {
-                this.index(provider.keyOf(record), record);
-            }
-        }
-
-        private void index(String key, SObject record) {
+        public void groupUnderKey(String key, SObject record) {
             if (key == null) {
                 return;
             }

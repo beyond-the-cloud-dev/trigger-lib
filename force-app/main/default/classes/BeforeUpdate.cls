@@ -1,5 +1,5 @@
 public class BeforeUpdate {
-    // main interfaces - use one main interface per handler class
+    // Main interfaces - pick one
 
     public interface Populator extends Handler {
         Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record);
@@ -11,7 +11,7 @@ public class BeforeUpdate {
         String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record);
     }
 
-    // additional interfaces - use as needed
+    // Additional interfaces - pick as many as you need
 
     public interface ParentQuery {
         Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate();
@@ -39,13 +39,13 @@ public class BeforeUpdate {
     }
 
     public interface Finalizer {
-        void finalizeBeforeUpdate();
+        void finalizeBeforeUpdate(TriggerHandler.UpdateRecords records);
     }
 
     public interface ContinueOnError {
     }
 
-    // internal
+    // For internal use only
 
     public interface Handler {
     }

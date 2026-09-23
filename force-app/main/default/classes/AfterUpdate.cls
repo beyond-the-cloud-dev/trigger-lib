@@ -1,8 +1,17 @@
 public class AfterUpdate {
-    public interface Handler {
-        Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record);
-        void onAfterUpdate(TriggerHandler.UpdateRecord record);
+    // Main interfaces - pick one
+
+    public interface Writer extends Handler {
+        Boolean writeOnAfterUpdateWhen(TriggerHandler.UpdateRecord record);
+        void writeOnAfterUpdate(TriggerHandler.UpdateRecord record, TriggerHandler.UnitOfWork unitOfWork);
     }
+
+    public interface Dispatcher extends Handler {
+        Boolean dispatchOnAfterUpdateWhen(TriggerHandler.UpdateRecord record);
+        void dispatchOnAfterUpdate(TriggerHandler.UpdateRecords records);
+    }
+
+    // Additional interfaces - pick as many as you need
 
     public interface ParentQuery {
         Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate();
@@ -21,6 +30,10 @@ public class AfterUpdate {
         String keyOf(SObject record);
     }
 
+    public interface OwnUnitOfWork {
+        DML.Committable ownUnitOfWorkOnAfterUpdate();
+    }
+
     public interface Bypassable {
         Boolean bypassOnAfterUpdateWhen();
     }
@@ -30,9 +43,14 @@ public class AfterUpdate {
     }
 
     public interface Finalizer {
-        void finalizeAfterUpdate();
+        void finalizeAfterUpdate(TriggerHandler.UpdateRecords records);
     }
 
     public interface ContinueOnError {
+    }
+
+    // For internal use only
+
+    public interface Handler {
     }
 }

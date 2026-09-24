@@ -4,7 +4,7 @@ description: RelatedQuery recipes for Trigger Lib - RecordsProvider classes that
 
 # RelatedQuery Recipes
 
-A RelatedQuery provider loads children, siblings or any other records with one query per handler per run. Read them from memory in every predicate, action and Finalizer. For parents, use a ParentQuery instead.
+A RelatedQuery provider loads children, siblings or any other records with one query per handler per run, and every predicate, action and Finalizer reads them from memory. For parents, use a ParentQuery instead.
 
 ## A Complete Example {#example}
 
@@ -42,16 +42,7 @@ public with sharing class AccountColdRatingValidator implements BeforeUpdate.Val
 
 :::
 
-| Method | Returns |
-|---|---|
-| `getAllWhereKeyEquals(key)` | every row under the key, in query order, or an empty list |
-| `getFirstWhereKeyEquals(key)` | the first of them, or null |
-| `getRecords()` | every row the query returned |
-| `isEmpty()` | true when the query returned no rows |
-
 ## Recipes {#recipes}
-
-Each recipe names its context. In another context, implement that context's `RecordsProvider`.
 
 ### Siblings {#siblings}
 
@@ -183,11 +174,6 @@ public without sharing class AccountOpenOpportunitiesProvider implements BeforeU
 }
 ```
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
-- **Providers run before the first predicate,** over every record, even when none qualifies. Two handlers with the same provider query twice.
-- **Declare sharing on every provider class.** An inner class does not inherit it. Use `without sharing` for a check that must see every record.
-- **Before insert has no Ids.** Key by field values or lookups. Two new records in one chunk never find each other in SOQL.
-- **After delete hides the deleted rows.** Key by the old lookups, such as `records.getIdsOf(Contact.AccountId)`.
-- **An unknown name throws.** `getRelated` with a name the handler did not return throws `TriggerHandler.TriggerHandlerException`.
 - **Only the qualified records need it?** Query once in the Finalizer instead.

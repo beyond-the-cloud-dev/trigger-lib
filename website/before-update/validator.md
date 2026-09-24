@@ -7,13 +7,13 @@ description: Reject an update with a record-level or field-level error before it
 
 # BeforeUpdate.Validator
 
-Rejects an update with an error message before it is saved. Use it to block a transition or to keep a value from being cleared.
+Reject an update before it is saved, like a validation rule written in Apex.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/before-update/validator/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -25,13 +25,16 @@ Rejects an update with an error message before it is saved. Use it to block a tr
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
 - **Gate on a change.** A Validator runs on every update, nested ones included, with no recursion limit. Without `isChanged`, a record that fails the check cannot be updated at all, not even by automation.
 - **Name and address fields lose the field.** On them, `record.addError(field, message)` shows the message at record level. To keep it on the field, call `((Account) record.getNewSObject()).BillingCountry.addError(message)`.
 - **Never call `addError` on `getOldSObject()`.** It throws a `FinalException` that nothing in the trigger can catch.
-- **No DML.** If the handler runs DML or publishes an event, the library throws.
-- **Populator wins.** A class that also implements `BeforeUpdate.Populator` runs only as a Populator. Its Validator methods never run.
+- **Populator wins.** A class that also implements `BeforeUpdate.Populator` runs only as a Populator.
+
+::: warning
+No DML. If the handler runs DML or publishes an event, the library throws.
+:::
 
 ## Test {#test}
 

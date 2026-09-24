@@ -8,9 +8,13 @@ The class your trigger calls. It runs your handlers, switches them off from Apex
 
 ## run {#run}
 
+**Signature**
+
 ```apex
 public static void run(Object orchestrator)
 ```
+
+**Example**
 
 <<< @/../examples/main/default/triggers/ContactTrigger.trigger
 
@@ -21,7 +25,9 @@ public static void run(Object orchestrator)
 
 ## Registration Interfaces {#registration}
 
-Your orchestrator implements one interface per context. Each method returns the handlers of that context in run order.
+Your orchestrator implements one interface per context. Its method returns that context's handlers in run order.
+
+**Signature**
 
 ```apex
 public interface BeforeInsert {
@@ -53,6 +59,8 @@ public interface AfterUndelete {
 }
 ```
 
+**Example**
+
 <<< @/../examples/main/default/classes/contact/ContactTriggerOrchestrator.cls
 
 - **Two types per context name.** `TriggerOrchestrator.BeforeInsert` is the registration interface. `BeforeInsert` alone holds the role and add-on interfaces for handlers.
@@ -61,6 +69,8 @@ public interface AfterUndelete {
 - **The marker alone never runs.** Outside BeforeDelete, a class that implements only `Handler` compiles and does nothing.
 
 ## bypass {#bypass}
+
+**Signature**
 
 ```apex
 public static TriggerOrchestrator.Bypassable bypass()
@@ -81,6 +91,8 @@ public interface Bypassable {
 | `handler(X.class)` | that handler in every context |
 | `all()` | every run |
 
+**Example**
+
 ```apex
 TriggerOrchestrator.bypass().sObject(Account.SObjectType).handler(ContactFollowUpTaskWriter.class);
 try {
@@ -96,6 +108,8 @@ try {
 
 ## Logger {#logger}
 
+**Signature**
+
 ```apex
 public interface Logger {
     void log(TriggerOrchestrator.Error error);
@@ -106,11 +120,13 @@ public interface Logger {
 - **`log(error)`** runs for every exception in a handler's turn, before the library rethrows it or ContinueOnError swallows it.
 - **`finalize()`** runs once when the outermost run ends, also when it failed.
 - **Found automatically.** Implement it in one class and register nothing. With two implementations, the first call to `run` or `bypass()` throws.
-- **Not logged:** exceptions outside a handler's turn, such as in `<ctx>Handlers()`, `bypassOn<Ctx>When()`, the parent queries and the default unit of work's commit.
+- **Not logged:** exceptions outside a handler's turn, listed in [Errors & Logging](/guide/error-handling#never-logged).
 
 ## Error {#error}
 
 `Logger.log` receives one `Error` per exception.
+
+**Signature**
 
 ```apex
 public interface Error {

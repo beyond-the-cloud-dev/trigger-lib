@@ -4,8 +4,6 @@ description: The rules behind Trigger Lib's API - one handler per concern, one r
 
 # Design Principles
 
-These rules explain why the API looks the way it does.
-
 ## One Handler per Concern {#one-handler-per-concern}
 
 Each object has one trigger and one orchestrator. Each handler does one thing, so it is easy to name, test and switch off.
@@ -36,7 +34,7 @@ ContinueOnError swallows a handler's own exception. It never swallows a `Trigger
 
 ## Safe by Default {#safe-by-default}
 
-In the update contexts, a Populator, Writer or Dispatcher acts on the same record at most three times per transaction by default. Parents are read in system mode, without sharing.
+In the update contexts, a Populator, Writer or Dispatcher acts on the same record at most three times per transaction by default.
 
 ## No Required Metadata {#no-required-metadata}
 

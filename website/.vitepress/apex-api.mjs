@@ -616,26 +616,21 @@ export function parseAdapterHonours() {
   return honours;
 }
 
-const gettingStarted = {
-  text: 'Getting Started',
-  collapsed: false,
+const docs = {
+  text: 'Docs',
   items: [
     { text: 'Introduction', link: '/introduction' },
     { text: 'Installation', link: '/installation' },
     { text: 'Your First Handler', link: '/guide/first-handler' },
-    { text: 'Trigger & Orchestrator', link: '/guide/orchestrator' }
+    { text: 'Trigger & Orchestrator', link: '/guide/orchestrator' },
+    { text: 'Contexts at a Glance', link: '/contexts' },
+    { text: 'Design Principles', link: '/introduction/design-principles' }
   ]
 };
 
-const findItFast = {
-  text: 'Find It Fast',
-  collapsed: false,
-  items: [{ text: 'Contexts at a Glance', link: '/contexts' }]
-};
-
-const acrossContexts = {
-  text: 'Across Contexts',
-  collapsed: false,
+const advanced = {
+  text: 'Advanced',
+  collapsed: true,
   items: [
     { text: 'Execution Order & Cost', link: '/guide/execution-order' },
     { text: 'Bypassing', link: '/guide/bypasses' },
@@ -646,9 +641,9 @@ const acrossContexts = {
   ]
 };
 
-const reference = {
-  text: 'Reference',
-  collapsed: false,
+const api = {
+  text: 'API',
+  collapsed: true,
   items: [
     { text: 'TriggerOrchestrator', link: '/api/trigger-orchestrator' },
     { text: 'Record API', link: '/api/record' },
@@ -657,14 +652,6 @@ const reference = {
     { text: 'RelatedRecords & RecordsProvider', link: '/api/related-records' },
     { text: 'TriggerHandler.UnitOfWork', link: '/api/unit-of-work' },
     { text: 'Custom Metadata', link: '/api/custom-metadata' }
-  ]
-};
-
-const about = {
-  text: 'About',
-  collapsed: false,
-  items: [
-    { text: 'Design Principles', link: '/introduction/design-principles' }
   ]
 };
 
@@ -702,14 +689,7 @@ function contextGroup(context) {
 function buildSidebar() {
   const contextItems = model.contexts.map(context => contextGroup(context));
 
-  return [
-    gettingStarted,
-    findItFast,
-    ...contextItems,
-    acrossContexts,
-    reference,
-    about
-  ];
+  return [docs, ...contextItems, advanced, api];
 }
 
 function buildNav() {

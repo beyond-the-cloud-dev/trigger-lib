@@ -7,13 +7,13 @@ description: The single before delete role - block a delete with addError, or cl
 
 # BeforeDelete.Handler
 
-The only role in before delete. It checks each record about to be deleted, then blocks the delete or cleans up the records that point at it.
+Check each record before it is deleted, then block the delete or clean up the records that point at it.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/before-delete/handler/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -71,13 +71,16 @@ public with sharing class ContactReportsReassignHandler implements BeforeDelete.
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
 - **Block with `addError`.** Call `record.getOldSObject().addError('…')`. Writing a field on the old row throws. Nothing checks that a qualified record got an error.
 - **DML is allowed.** It runs at once, one statement per call. Collect in `onBeforeDelete` and write once in a [Finalizer](/before-delete/add-ons/finalizer). To write another record, build a fresh instance, such as `new Contact(Id = contactId)`.
 - **Leave the records being deleted alone.** DML on a `Trigger.old` row throws. Deleting a fresh instance of one fails with `SELF_REFERENCE_FROM_TRIGGER`.
 - **An error does not stop later handlers.** A record with an error still reaches every later handler in the list.
-- **A guard must see every row.** A `with sharing` provider misses rows the user cannot see, and a missed row lets the delete through. Never add [ContinueOnError](/before-delete/add-ons/continue-on-error) to a guard: a swallowed exception lets the delete through too.
+
+::: warning
+A guard must see every row. A `with sharing` provider misses rows the user cannot see, and a missed row lets the delete through. Never add [ContinueOnError](/before-delete/add-ons/continue-on-error) to a guard: a swallowed exception lets the delete through too.
+:::
 
 ## Test {#test}
 

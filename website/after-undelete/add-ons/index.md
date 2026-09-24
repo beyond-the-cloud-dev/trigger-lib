@@ -6,7 +6,7 @@ description: Add-ons for after undelete handlers - parent fields, related record
 
 # Add-ons in AfterUndelete
 
-Add-ons are optional interfaces. Implement as many as you need next to your role interface.
+Implement as many as you need next to your role interface.
 
 ## Available {#available}
 

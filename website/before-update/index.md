@@ -6,25 +6,24 @@ description: Before update in Trigger Lib - set fields with a Populator or rejec
 
 # BeforeUpdate
 
-Runs in **before update**, after the user's changes and before they are saved. Compare the old and new values, then set fields with a Populator or reject the change with a Validator.
+Runs in **before update**, before the changes are saved, with the old and new values side by side.
 
 ## Roles {#roles}
 
 - [Populator](/before-update/populator): set, derive or clear fields, usually when another field changed.
 - [Validator](/before-update/validator): reject a change with an error message.
 
-## Add-ons {#add-ons}
-
-<!--@include: @/_parts/generated/before-update/add-ons-list.md-->
-
 ## Register {#register}
 
 <!--@include: @/_parts/generated/before-update/register.md-->
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
 - **The old row is read-only.** Writing to `getOldSObject()` or calling `addError` on it throws a `FinalException` that no `catch` stops. The update fails.
-- **No DML.** If a handler runs DML or publishes an event, the library throws. Set fields with `record.put`, and change other records from an [AfterUpdate.Writer](/after-update/writer).
 - **Updates re-enter.** A later update of the same records in the transaction runs BeforeUpdate again. A Populator acts on a record at most 3 times per transaction by default. A Validator runs on every pass.
 - **Lookups hold only the Id.** `((Contact) record.getNewSObject()).Account` is null. Declare a [ParentQuery](/before-update/add-ons/parent-query) and read `record.getNewParent('Account')`.
 - **One role per class.** A class that implements both roles runs only as a Populator. List Populators first, so Validators see the values they set.
+
+::: warning
+No DML. If a handler runs DML or publishes an event, the library throws. Set fields with `record.put`, and change other records from an [AfterUpdate.Writer](/after-update/writer).
+:::

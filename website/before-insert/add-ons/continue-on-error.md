@@ -7,13 +7,13 @@ description: Let a before insert handler fail without failing the insert - its e
 
 # BeforeInsert.ContinueOnError
 
-Lets a handler fail without failing the insert. Its exception is logged and swallowed, later handlers still run, and the save goes on.
+Log and swallow the handler's exceptions, so later handlers still run and the insert goes on.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/before-insert/continue-on-error/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -21,10 +21,12 @@ Lets a handler fail without failing the insert. Its exception is logged and swal
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
 - **The handler stops for the chunk.** Its remaining records and its Finalizer are skipped. Values it already set and errors it already attached stay.
 - **On a Validator, the rest goes unchecked.** Records after the failing one are saved unless another handler rejects them.
-- **Some exceptions still fail the insert.** DML in the handler, a Validator that attaches no error, `TriggerHandler.TriggerHandlerException` and `System.LimitException` are never swallowed.
-- **Only the handler's own code is covered.** An exception in `bypassOnBeforeInsertWhen()`, `queryParentsOnBeforeInsert()` or the parent query fails the insert and is not logged.
-- **Implement a Logger to see failures.** The library finds your `TriggerOrchestrator.Logger` class and passes it each swallowed error. Without one, nothing records it. See [Errors & Logging](/guide/error-handling).
+- **Add a [Logger](/guide/error-handling#logger).** Without one, a swallowed exception leaves no trace.
+
+::: warning
+Some exceptions still fail the insert: DML in the handler, a Validator that attaches no error, `TriggerHandler.TriggerHandlerException`, `System.LimitException`, and exceptions in `bypassOnBeforeInsertWhen()` or while parents load.
+:::

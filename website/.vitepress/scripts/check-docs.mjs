@@ -21,9 +21,15 @@ import {
 } from '../apex-api.mjs';
 import { honourTable as defaultHonourTable } from '../context-facts.mjs';
 import {
-  GOOD_TO_KNOW_MAX_BULLETS,
+  ADMONITION_MAX_SENTENCES,
+  ADMONITION_TYPES,
+  LABELS,
+  RULES_MAX_BULLETS,
   TEST_MAX_LINES,
   headingText,
+  leadPatterns,
+  leadRegExp,
+  retiredHeadings,
   templates
 } from '../page-templates.mjs';
 
@@ -58,6 +64,10 @@ const FENCE_CLOSE_PATTERN = /^ {0,3}(`{3,}|~{3,})[ \t]*$/;
 const ATX_PATTERN = /^ {0,3}(#{1,6})(?:[ \t]+(.*?))?[ \t]*$/;
 const SETEXT_PATTERN = /^ {0,3}(=+|-+)[ \t]*$/;
 const EXPLICIT_ID_PATTERN = /[ \t]*\{#([^\s{}]+)\}[ \t]*$/;
+const CONTAINER_OPEN_PATTERN = /^ {0,3}:{3,}[ \t]*([\w-]+)(.*)$/;
+const LABEL_PATTERN = /^\*\*[^*]+\*\*$/;
+const RULES_BULLET_PATTERN = /^[-*+] \*\*[^*]+\*\*/;
+const API_LABELS = [LABELS.signature, LABELS.example];
 const EXTERNAL_PATTERN = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
 const SKIPPED_DIRECTORIES = new Set([
   '.vitepress',
@@ -150,23 +160,31 @@ export function requiredIncludes(template, contextName, interfaceName) {
   const own = item ? `${generated}/${item.slug}` : null;
 
   if (template === 'context') {
-    return [
-      { section: 'add-ons', include: `${generated}/add-ons-list.md` },
-      { section: 'register', include: `${generated}/register.md` }
-    ];
+    return [{ section: 'register', include: `${generated}/register.md` }];
   }
 
   if ((template === 'role' || template === 'add-on') && own) {
-    const required = [{ section: 'interface', include: `${own}/signature.md` }];
+    const required = [
+      {
+        section: 'lead',
+        include: `${own}/signature.md`,
+        label: LABELS.signature
+      },
+      {
+        section: 'lead',
+        include: `${own}/skeleton.md`,
+        firstInCodeGroup: true,
+        label: LABELS.example
+      }
+    ];
     for (const support of item.supports) {
       const slug = getInterface(contextName, support).slug;
-      required.push({ section: slug, include: `${own}/${slug}.md` });
+      required.push({
+        section: slug,
+        include: `${own}/${slug}.md`,
+        label: LABELS.signature
+      });
     }
-    required.push({
-      section: 'example',
-      include: `${own}/skeleton.md`,
-      firstInCodeGroup: true
-    });
     return required;
   }
 
@@ -188,7 +206,10 @@ export function templateHeadings(template, contextName, interfaceName) {
   const definition = templates[template];
   if (!definition) return null;
   return {
-    h2: definition.h2.map(entry => ({
+    h2: [
+      ...(definition.h2ByInterface?.[interfaceName] ?? []),
+      ...definition.h2
+    ].map(entry => ({
       id: entry.id,
       text: headingText(entry, contextName)
     })),
@@ -1070,6 +1091,63 @@ function sectionRanges(doc) {
   return ranges;
 }
 
+export function containerBlocks(doc) {
+  const blocks = [];
+  const open = [];
+  doc.lines.forEach((line, index) => {
+    if (doc.kinds[index] !== 'container') return;
+    const opening = line.match(CONTAINER_OPEN_PATTERN);
+    if (opening) {
+      const block = {
+        type: opening[1],
+        title: opening[2].trim(),
+        start: index,
+        end: doc.lines.length,
+        depth: open.length
+      };
+      open.push(block);
+      blocks.push(block);
+    } else if (open.length > 0) {
+      open.pop().end = index;
+    }
+  });
+  return blocks;
+}
+
+function insideContainer(containers, index) {
+  return containers.some(block => block.start < index && index < block.end);
+}
+
+function isLabel(line) {
+  return LABEL_PATTERN.test(line.trim());
+}
+
+function previousContentLine(doc, index) {
+  let previous = index - 1;
+  while (
+    previous >= doc.bodyStart &&
+    (doc.kinds[previous] === 'blank' || doc.kinds[previous] === 'comment')
+  )
+    previous--;
+  return previous;
+}
+
+export function sentenceCount(text) {
+  const plain = blankCode(text)
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (plain === '') return 0;
+  return plain.split(/(?<=[.!?][*_)"'”’]*)\s+(?=\S)/).length;
+}
+
+function paragraphText(paragraph) {
+  return paragraph.lines
+    .map(line => line.trim())
+    .join(' ')
+    .replace(/\s+/g, ' ');
+}
+
 function includeTarget(state, record, include) {
   const parsed = parseIncludeSpec(include.spec);
   return {
@@ -1137,6 +1215,127 @@ function checkHeadingIds(state, record) {
   }
 }
 
+function topLevelBlocks(doc, from, to, containers) {
+  const blocks = [];
+  for (let index = from; index < to; index++) {
+    const kind = doc.kinds[index];
+    if (kind === 'blank' || kind === 'comment' || kind === 'heading') continue;
+    if (insideContainer(containers, index)) continue;
+    const block = { kind, start: index, line: index + 1 };
+    const container = containers.find(candidate => candidate.start === index);
+    const fence = doc.fences.find(candidate => candidate.start === index);
+    const paragraph = doc.paragraphs.find(
+      candidate => candidate.start === index
+    );
+    if (container) {
+      block.container = container;
+      index = container.end;
+    } else if (fence) {
+      block.kind = 'fence';
+      index = fence.end;
+    } else if (paragraph) {
+      block.paragraph = paragraph;
+      if (
+        kind === 'text' &&
+        paragraph.lines.length === 1 &&
+        isLabel(paragraph.lines[0])
+      )
+        block.kind = 'label';
+      index = paragraph.end;
+    }
+    blocks.push(block);
+  }
+  return blocks;
+}
+
+function checkLead(state, record, h1, containers) {
+  const doc = record.doc;
+  const template = record.template;
+  const strict = template === 'role' || template === 'add-on';
+  const lead = sectionRanges(doc).get('lead');
+  const blocks = topLevelBlocks(doc, h1.index + 1, lead.end, containers);
+  const sentences = blocks.filter(block => block.kind === 'text');
+
+  if (sentences.length === 0) {
+    if (templates[template].lead) {
+      report(
+        state,
+        2,
+        record,
+        h1.line,
+        `missing lead under the H1: ${strict ? 'one sentence' : 'one or two sentences'} (a bold label alone is not a lead)`
+      );
+    }
+    return;
+  }
+  if (!strict) return;
+
+  const first = sentences[0];
+  if (blocks[0] !== first) {
+    report(
+      state,
+      2,
+      record,
+      blocks[0].line,
+      `the lead sentence comes first, right under the H1, before **${LABELS.signature}**`
+    );
+  }
+  const text = paragraphText(first.paragraph);
+  const pattern = leadPatterns[record.interfaceName];
+  if (pattern && !leadRegExp(pattern).test(text)) {
+    report(
+      state,
+      2,
+      record,
+      first.line,
+      `the lead must read "${pattern}": one imperative sentence, the same in every context; fill each {…} for ${record.contextName} and keep the rest word for word`
+    );
+  } else if (!pattern && sentenceCount(text) > 1) {
+    report(state, 2, record, first.line, 'the lead is one sentence');
+  }
+
+  let codeGroups = 0;
+  for (const block of blocks) {
+    if (block === first || block.kind === 'include') continue;
+    if (block.kind === 'label') {
+      const label = block.paragraph.lines[0].trim().slice(2, -2);
+      if (label !== LABELS.signature && label !== LABELS.example) {
+        report(
+          state,
+          2,
+          record,
+          block.line,
+          `label **${label}** is not part of the lead; it uses **${LABELS.signature}** and **${LABELS.example}** only`
+        );
+      }
+      continue;
+    }
+    if (block.container && block.container.type !== 'code-group') continue;
+    if (block.container && ++codeGroups === 1) continue;
+    report(state, 2, record, block.line, strayLeadBlock(block));
+  }
+}
+
+function strayLeadBlock(block) {
+  if (block.kind === 'text')
+    return 'extra paragraph in the lead: the page opens with one sentence, then **Signature** and **Example**; move it to "## Rules" or delete it';
+  const what =
+    {
+      container: block.container ? 'a second code-group' : 'a stray ":::"',
+      fence: 'a code block',
+      snippet: 'a <<< import',
+      table: 'a table'
+    }[block.kind] ?? `a ${block.kind} line`;
+  return `${what} outside the Example code-group: the lead holds only the sentence, **Signature** with its include and **Example** with one code-group`;
+}
+
+function unexpectedH2(expectedHeadings, template, heading) {
+  const shown = `## ${heading.text}${heading.explicitId ? ` {#${heading.explicitId}}` : ''}`;
+  const retired = retiredHeadings.h2[heading.explicitId ?? heading.id];
+  if (retired) return `"${shown}" is retired: ${retired}`;
+  return `unexpected H2 "${shown}"; ${template} pages have exactly: ${expectedHeadings.h2.map(item => `## ${item.text} {#${item.id}}`).join(', ')}`;
+}
+
 function checkTemplatePage(state, record) {
   const doc = record.doc;
   const template = record.template;
@@ -1147,6 +1346,7 @@ function checkTemplatePage(state, record) {
     contextName,
     interfaceName
   );
+  const containers = containerBlocks(doc);
 
   const h1s = doc.headings.filter(heading => heading.level === 1);
   const allowedH1 = expectedH1(template, contextName, interfaceName);
@@ -1180,27 +1380,18 @@ function checkTemplatePage(state, record) {
     for (const extra of h1s.slice(1)) {
       report(state, 2, record, extra.line, 'only one H1 per page');
     }
-    const lead = sectionRanges(doc).get('lead');
-    const hasLead = doc.paragraphs.some(
-      paragraph =>
-        paragraph.start > h1s[0].index &&
-        paragraph.start < lead.end &&
-        doc.kinds[paragraph.start] === 'text'
-    );
-    if (!hasLead && templates[template].lead) {
-      report(
-        state,
-        2,
-        record,
-        h1s[0].line,
-        'missing lead under the H1: one or two sentences'
-      );
-    }
+    checkLead(state, record, h1s[0], containers);
   }
 
   const h2s = doc.headings.filter(heading => heading.level === 2);
   const templateIds = expectedHeadings.h2.map(entry => entry.id);
   const seen = new Map();
+  const retired = new Set(
+    doc.headings
+      .filter(heading => heading.level <= 3)
+      .map(heading => heading.explicitId ?? heading.id)
+      .filter(id => retiredHeadings.h2[id] || retiredHeadings.h3[id])
+  );
   let lastPosition = -1;
   let lastHeading = null;
 
@@ -1227,7 +1418,7 @@ function checkTemplatePage(state, record) {
           2,
           record,
           heading.line,
-          `unexpected H2 "## ${heading.text}"; ${template} pages have exactly: ${expectedHeadings.h2.map(item => `## ${item.text} {#${item.id}}`).join(', ')}`
+          unexpectedH2(expectedHeadings, template, heading)
         );
       }
       continue;
@@ -1238,7 +1429,7 @@ function checkTemplatePage(state, record) {
         2,
         record,
         heading.line,
-        `unexpected H2 "## ${heading.text} {#${heading.explicitId}}"; ${template} pages have exactly: ${expectedHeadings.h2.map(item => `## ${item.text} {#${item.id}}`).join(', ')}`
+        unexpectedH2(expectedHeadings, template, heading)
       );
       continue;
     }
@@ -1279,6 +1470,9 @@ function checkTemplatePage(state, record) {
 
   for (const [position, entry] of expectedHeadings.h2.entries()) {
     if (seen.has(entry.id)) continue;
+    if (entry.id === 'rules' && retired.has('good-to-know')) continue;
+    if (entry.id === 'records-provider' && retired.has('records-provider'))
+      continue;
     const following = expectedHeadings.h2
       .slice(position + 1)
       .map(item => seen.get(item.id))
@@ -1302,9 +1496,12 @@ function checkTemplatePage(state, record) {
       candidate => candidate.id === heading.explicitId
     );
     if (!entry) {
-      const allowed = expectedHeadings.h3.length
-        ? `allowed here: ${expectedHeadings.h3.map(item => `### ${item.text} {#${item.id}}`).join(', ')}`
-        : `${template} pages${interfaceName ? ` for ${interfaceName}` : ''} have no H3s`;
+      const retired = retiredHeadings.h3[heading.explicitId ?? heading.id];
+      const allowed = retired
+        ? retired
+        : expectedHeadings.h3.length
+          ? `allowed here: ${expectedHeadings.h3.map(item => `### ${item.text} {#${item.id}}`).join(', ')}`
+          : `${template} pages${interfaceName ? ` for ${interfaceName}` : ''} have no H3s`;
       report(
         state,
         2,
@@ -1379,6 +1576,7 @@ function checkTemplatePage(state, record) {
   }
 
   const ranges = sectionRanges(doc);
+  const lastInSection = new Map();
   for (const requirement of requiredIncludes(
     template,
     contextName,
@@ -1391,6 +1589,7 @@ function checkTemplatePage(state, record) {
       record.abs,
       state.websiteDir
     );
+    const shown = `<!--@include: ${requirement.include}-->`;
     const match = doc.includes.find(
       include =>
         include.index > range.start &&
@@ -1398,19 +1597,28 @@ function checkTemplatePage(state, record) {
         resolve(includeTarget(state, record, include).abs) === resolve(wanted)
     );
     if (!match) {
+      const elsewhere = doc.includes.some(
+        include =>
+          resolve(includeTarget(state, record, include).abs) === resolve(wanted)
+      );
+      if (elsewhere && retired.size > 0) continue;
       report(
         state,
         2,
         record,
-        range.heading.line,
-        `"${'#'.repeat(range.heading.level)} ${range.heading.text}" must include <!--@include: ${requirement.include}-->`
+        range.heading?.line ?? doc.bodyStart + 1,
+        requirement.section === 'lead'
+          ? `the lead, above the first H2, must include ${shown}${requirement.label ? ` under the label **${requirement.label}**` : ''}`
+          : `"${'#'.repeat(range.heading.level)} ${range.heading.text}" must include ${shown}${requirement.label ? ` under the label **${requirement.label}**` : ''}`
       );
       continue;
     }
+    let anchor = match.index;
     if (requirement.firstInCodeGroup) {
-      let previous = match.index - 1;
-      while (previous >= 0 && doc.kinds[previous] === 'blank') previous--;
-      if (!/^\s*:::\s*code-group\b/.test(doc.lines[previous] ?? '')) {
+      const previous = previousContentLine(doc, match.index);
+      if (/^\s*:::\s*code-group\b/.test(doc.lines[previous] ?? '')) {
+        anchor = previous;
+      } else {
         report(
           state,
           2,
@@ -1420,8 +1628,39 @@ function checkTemplatePage(state, record) {
         );
       }
     }
+    if (
+      requirement.label &&
+      !(range.heading?.level === 3 && retired.has(requirement.section))
+    ) {
+      const previous = previousContentLine(doc, anchor);
+      if ((doc.lines[previous] ?? '').trim() !== `**${requirement.label}**`) {
+        report(
+          state,
+          2,
+          record,
+          anchor + 1,
+          `put the label **${requirement.label}** on its own line right above ${anchor === match.index ? shown : '"::: code-group"'}`
+        );
+      }
+    }
+    const earlier = lastInSection.get(requirement.section);
+    if (earlier && match.index < earlier.index) {
+      report(
+        state,
+        2,
+        record,
+        match.line,
+        `${shown} must come after <!--@include: ${earlier.include}-->${earlier.label && requirement.label ? ` (**${earlier.label}** before **${requirement.label}**)` : ''}`
+      );
+    }
+    lastInSection.set(requirement.section, {
+      index: match.index,
+      include: requirement.include,
+      label: requirement.label
+    });
   }
 
+  checkAdmonitions(state, record, ranges, containers);
   checkSectionSizes(state, record, ranges);
 
   doc.lines.forEach((line, index) => {
@@ -1437,29 +1676,167 @@ function checkTemplatePage(state, record) {
   });
 }
 
+function checkAdmonitions(state, record, ranges, containers) {
+  const doc = record.doc;
+  const max = templates[record.template].maxAdmonitions ?? 0;
+  const rules = ranges.get('rules');
+  const boxes = containers.filter(
+    block => block.depth === 0 && block.type !== 'code-group'
+  );
+
+  boxes.forEach((box, position) => {
+    const line = box.start + 1;
+    const say = message => report(state, 2, record, line, message);
+    if (!ADMONITION_TYPES.includes(box.type)) {
+      say(
+        `"::: ${box.type}": use ::: warning (an exception, a failed save, data seen without sharing), ::: tip (a better alternative) or ::: info (a neutral fact)`
+      );
+    }
+    if (box.title) {
+      say(
+        `boxes are untitled: write "::: ${box.type}" and drop "${box.title}"`
+      );
+    }
+    if (max === 0) {
+      say(`${record.template} pages have no boxes`);
+      return;
+    }
+    if (position >= max) {
+      say(
+        `at most ${max} box per page: turn this one back into a Rules bullet`
+      );
+      return;
+    }
+    if (!rules || box.start < rules.start || box.end > rules.end) {
+      say(
+        'a box goes at the end of "## Rules": move one Rules bullet into it, never new text'
+      );
+      return;
+    }
+    const bulletAfter = doc.lines.some(
+      (text, index) =>
+        index > box.end &&
+        index < rules.end &&
+        doc.kinds[index] === 'text' &&
+        /^[-*+] /.test(text)
+    );
+    if (bulletAfter) {
+      say('the box goes after the last Rules bullet');
+    }
+    const body = doc.lines
+      .slice(box.start + 1, box.end)
+      .filter((text, offset) => doc.kinds[box.start + 1 + offset] === 'text')
+      .join(' ');
+    const sentences = sentenceCount(body);
+    if (sentences > ADMONITION_MAX_SENTENCES) {
+      say(
+        `the box has ${sentences} sentences; keep it at ${ADMONITION_MAX_SENTENCES} or fewer`
+      );
+    }
+  });
+}
+
+function checkPageStyle(state, record) {
+  const doc = record.doc;
+  for (const heading of doc.headings) {
+    if (heading.level === 2 && heading.plain === 'Good to Know') {
+      report(
+        state,
+        2,
+        record,
+        heading.line,
+        'rename "## Good to Know" to "## Rules {#rules}"'
+      );
+    }
+  }
+
+  if (!record.rel.startsWith('api/')) return;
+  const containers = containerBlocks(doc);
+  const targets = [
+    ...doc.fences.map(fence => ({ index: fence.start, what: 'code block' })),
+    ...doc.snippets.map(snippet => ({
+      index: snippet.index,
+      what: '<<< import'
+    })),
+    ...containers
+      .filter(block => block.type === 'code-group')
+      .map(block => ({ index: block.start, what: 'code-group' })),
+    ...doc.includes
+      .filter(
+        include =>
+          include.alone && includeStartsWithCode(state, record, include)
+      )
+      .map(include => ({ index: include.index, what: 'included signature' }))
+  ].filter(target => !insideContainer(containers, target.index));
+
+  for (const target of targets.sort(
+    (left, right) => left.index - right.index
+  )) {
+    const previous = previousContentLine(doc, target.index);
+    const label = (doc.lines[previous] ?? '').trim();
+    if (API_LABELS.some(name => label === `**${name}**`)) continue;
+    report(
+      state,
+      2,
+      record,
+      target.index + 1,
+      `label the ${target.what}: put **${LABELS.signature}** (a declaration) or **${LABELS.example}** (usage) on its own line right above it`
+    );
+  }
+}
+
+function includeStartsWithCode(state, record, include) {
+  const target = includeTarget(state, record, include);
+  if (!existsSync(target.abs) || !statSync(target.abs).isFile()) return false;
+  const first = readFileSync(target.abs, 'utf8')
+    .split(/\r?\n/)
+    .find(line => line.trim() !== '');
+  return FENCE_OPEN_PATTERN.test(first ?? '');
+}
+
 function checkSectionSizes(state, record, ranges) {
   const doc = record.doc;
 
-  const goodToKnow = ranges.get('good-to-know');
-  if (goodToKnow) {
+  const rules = ranges.get('rules');
+  if (rules) {
     const section = doc.lines
-      .slice(goodToKnow.start + 1, goodToKnow.end)
+      .slice(rules.start + 1, rules.end)
       .map((line, offset) =>
-        doc.kinds[goodToKnow.start + 1 + offset] === 'fence' ? '' : line
+        doc.kinds[rules.start + 1 + offset] === 'fence' ? '' : line
       )
       .join('\n');
     const expanded = expandIncludes(section, record.abs, state.websiteDir);
     const bullets = parseMarkdown(expanded).lines.filter(line =>
       /^[-*+] \S/.test(line)
     ).length;
-    if (bullets > GOOD_TO_KNOW_MAX_BULLETS) {
+    const boxes = containerBlocks(doc).filter(
+      block =>
+        block.depth === 0 &&
+        block.type !== 'code-group' &&
+        block.start > rules.start &&
+        block.start < rules.end
+    ).length;
+    if (bullets + boxes > RULES_MAX_BULLETS) {
       report(
         state,
         2,
         record,
-        goodToKnow.heading.line,
-        `"## Good to Know" has ${bullets} bullets (includes counted); keep at most ${GOOD_TO_KNOW_MAX_BULLETS}`
+        rules.heading.line,
+        `"## Rules" has ${bullets} bullet${bullets === 1 ? '' : 's'}${boxes ? ` and ${boxes} box${boxes === 1 ? '' : 'es'}` : ''} (includes counted); keep at most ${RULES_MAX_BULLETS} in total, a box counts as a bullet`
       );
+    }
+    for (let index = rules.start + 1; index < rules.end; index++) {
+      if (doc.kinds[index] !== 'text' || !/^[-*+] /.test(doc.lines[index]))
+        continue;
+      if (!RULES_BULLET_PATTERN.test(doc.lines[index])) {
+        report(
+          state,
+          2,
+          record,
+          index + 1,
+          'a Rules bullet opens with a bold sentence: "- **Short rule.** Detail."'
+        );
+      }
     }
   }
 
@@ -1497,6 +1874,7 @@ function checkSectionSizes(state, record, ranges) {
 function checkTemplates(state) {
   for (const record of state.pages.values()) {
     checkHeadingIds(state, record);
+    if (!isTemplatePage(record)) checkPageStyle(state, record);
     if (isTemplatePage(record)) {
       const expected = state.expectedByPath.get(record.rel);
       if (

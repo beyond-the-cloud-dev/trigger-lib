@@ -14,9 +14,8 @@ description: What an after insert handler receives - InsertRecord and InsertReco
 
 <!--@include: @/_parts/generated/after-insert/collection-methods.md-->
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
 - **Ids are set.** Key maps by `getId()`, and pass `records.getIds()` to async work.
 - **`put` fails the insert.** Nothing catches the exception, not even ContinueOnError. Register `toUpdate` with the record Id in a Writer instead.
 - **Reject with the row.** `record.getNewSObject().addError(…)` fails that record like a validation error.
-- **`getRecords()` is the library's list.** Removing items changes what the Finalizer receives.

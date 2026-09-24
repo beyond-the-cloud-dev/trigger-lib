@@ -7,13 +7,13 @@ description: Give an after update Writer its own DML Lib unit of work, for user 
 
 # AfterUpdate.OwnUnitOfWork
 
-Gives an after update Writer its own DML Lib unit of work: user mode, sharing, partial success, a commit hook or your own statement order. It commits right after this Writer.
+Give a Writer its own DML Lib unit of work, for user mode, sharing, partial success or your own statement order.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/after-update/own-unit-of-work/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -48,10 +48,13 @@ public with sharing class OpportunityLossReviewTaskWriter implements AfterUpdate
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
-- **Later handlers see its rows.** The unit commits before the next handler runs, and only when a record qualified.
+- **It commits right after this Writer, if a record qualified.** Later handlers see its rows.
 - **`new DML()` runs in user mode.** The running user's object permissions, field-level security and sharing apply.
 - **Failed rows are not logged.** With `allowPartialSuccess()`, read the failures in a `commitHook`, as the example does, or with `DML.retrieveResultFor('<identifier>')`.
-- **Duplicates throw.** Without `combineOnDuplicate()`, a second `toUpdate` or `toDelete` of the same Id throws at registration.
 - **Failed commits fail the update.** The error is logged under the Writer's name. Add [ContinueOnError](/after-update/add-ons/continue-on-error) to swallow it; the Writer still uses this unit.
+
+::: warning
+Without `combineOnDuplicate()`, a second `toUpdate` or `toDelete` of the same Id throws at registration.
+:::

@@ -9,7 +9,7 @@ import { generate } from './scripts/generate.mjs';
 const siteUrl = 'https://trigger.beyondthecloud.dev';
 const siteTitle = 'Trigger Lib';
 const siteDescription =
-  'Apex trigger framework for Salesforce with record filtering, automatic parent enrichment, bypasses, and recursion control';
+  'Open-source Apex trigger framework for Salesforce. One small class per concern in each trigger context, with record filtering, declared parent and related queries, a unit of work, bypasses and recursion control. Free, MIT licensed, part of Apex Fluently by Beyond The Cloud.';
 
 generate();
 
@@ -158,6 +158,7 @@ export default defineConfig({
     // https://vitepress.dev/reference/default-theme-config
     nav,
     sidebar,
+    footer: false,
     socialLinks: [
       {
         icon: 'github',

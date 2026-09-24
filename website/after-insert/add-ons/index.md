@@ -6,7 +6,7 @@ description: Add-ons for after insert handlers - parent fields, related records,
 
 # Add-ons in AfterInsert
 
-Add-ons are optional interfaces. Implement as many as you need next to your role interface.
+Implement as many as you need next to your role interface.
 
 ## Available {#available}
 

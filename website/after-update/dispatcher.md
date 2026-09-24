@@ -7,13 +7,13 @@ description: After update, collect the qualifying records and make one bulk call
 
 # AfterUpdate.Dispatcher
 
-Collects the records that qualify and makes one bulk call per chunk with them: enqueue a Queueable, publish events or send email.
+Make one bulk call per chunk with the records that qualify, such as enqueueing a Queueable or publishing events.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/after-update/dispatcher/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -49,13 +49,16 @@ public with sharing class OpportunityWonSyncDispatcher implements AfterUpdate.Di
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
 - **One dispatch per chunk.** An update of 1,000 records dispatches 5 times, so the example enqueues 5 jobs. A synchronous transaction can enqueue at most 50 Queueable jobs.
-- **No callouts from the trigger.** A callout here throws `System.CalloutException`. Call out from a Queueable that implements `Database.AllowsCallouts`, and pass it `records.getIds()`.
 - **No unit of work.** DML here runs at once and is not merged with the Writers' changes. Use a [Writer](/after-update/writer) for record changes that commit with the save.
 - **Writers' changes may not be saved yet.** By default, their registrations commit after the last handler, so a query here does not see them.
-- **Writer wins.** A class that also implements `AfterUpdate.Writer` runs only as a Writer. Its Dispatcher methods never run.
+- **Writer wins.** A class that also implements `AfterUpdate.Writer` runs only as a Writer.
+
+::: warning
+A callout here throws `System.CalloutException`. Call out from a Queueable that implements `Database.AllowsCallouts`, and pass it `records.getIds()`.
+:::
 
 ## Test {#test}
 

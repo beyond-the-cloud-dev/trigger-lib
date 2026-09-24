@@ -58,7 +58,7 @@ export const roleCalls = {
       'right after its predicate returns true, with this Writer’s unit of work'
   },
   Dispatcher: {
-    predicate: 'once per record in the chunk; it only selects records',
+    predicate: 'once per record in the chunk',
     action:
       'once, after every record was checked, with the qualified records; not called when none qualified'
   },
@@ -71,21 +71,21 @@ export const roleCalls = {
 export const addOnFacts = {
   ParentQuery: {
     summary:
-      'Load parent (lookup) fields before the first handler runs; read them with `getNewParent`.',
+      'Load lookup parent fields; read them with `getNewParent`.',
     called:
-      'once per chunk, before the first handler runs; not called for a bypassed handler',
+      'once per chunk, before the first handler runs',
     returns: 'lookup field → the parent fields to load'
   },
   PriorParentQuery: {
     summary:
       'Load the parent the old row pointed to; read it with `getOldParent`.',
     called:
-      'once per chunk, before the first handler runs; not called for a bypassed handler',
+      'once per chunk, before the first handler runs',
     returns: 'lookup field → the parent fields to load'
   },
   RelatedQuery: {
     summary:
-      'Query children, siblings or any other records once per chunk; read them with `getRelated`.',
+      'Query children, siblings or other records once per chunk; read them with `getRelated`.',
     called:
       'once per chunk, at this handler’s turn, before its first predicate',
     returns: 'provider name → `RecordsProvider`'
@@ -93,31 +93,31 @@ export const addOnFacts = {
   OwnUnitOfWork: {
     summary: 'Give the handler its own unit of work, committed right after it.',
     called:
-      'once per chunk, when the handler list is built, even for a handler that is then bypassed',
+      'once per chunk, when the handler list is built',
     returns: 'the unit this Writer registers into'
   },
   Bypassable: {
-    summary: 'Skip this handler for the whole chunk when a condition holds.',
+    summary: 'Skip this handler for the chunk when a condition holds.',
     called:
-      'once per chunk, before parents load; not called when metadata or `TriggerOrchestrator.bypass()` already skips the handler',
+      'once per chunk, before parents load',
     returns: '`true` to skip this handler for this chunk'
   },
   RecursionGuard: {
-    summary: `Cap how many times this handler acts on the same record in one transaction (default ${recursionDefault}).`,
+    summary: `Cap how often this handler acts on one record per transaction (default ${recursionDefault}).`,
     called:
-      'once per chunk, when the handler list is built, even for a handler that is then bypassed',
+      'once per chunk, when the handler list is built',
     returns:
       'how many times one record may qualify for this handler in the transaction'
   },
   Finalizer: {
     summary:
-      'Run once after this handler’s records, with the records that qualified.',
+      'Run once per chunk with the qualified records.',
     called:
       'once per chunk, after this handler’s records, only if at least one record qualified',
     returns: null
   },
   ContinueOnError: {
-    summary: 'Log and swallow this handler’s exceptions, so the save goes on.',
+    summary: 'Log and swallow this handler’s exceptions.',
     called: null,
     returns: null
   }

@@ -7,13 +7,13 @@ description: Make one bulk call per chunk after insert - enqueue a Queueable, pu
 
 # AfterInsert.Dispatcher
 
-Selects new records with a predicate, then acts once per chunk with the ones that qualified. Use it to enqueue a Queueable, publish events or send email.
+Make one bulk call per chunk with the records that qualify, such as enqueueing a Queueable or publishing events.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/after-insert/dispatcher/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -21,13 +21,16 @@ Selects new records with a predicate, then acts once per chunk with the ones tha
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
-- **Pass Ids to async work.** Enqueue one job with `records.getIds()` and let the job query what it needs.
+- **Pass Ids to async work.** Let the job query what it needs.
 - **No unit of work.** A Dispatcher never gets one, and OwnUnitOfWork is ignored. DML here runs at once and is not merged. Use a [Writer](/after-insert/writer) for record writes.
-- **Runs before the shared commit.** The Writers' registrations are not saved yet, even from Writers listed earlier. A Publish Immediately event goes out even if that commit fails.
-- **No synchronous callouts.** A callout from a trigger throws. Enqueue a Queueable that implements `Database.AllowsCallouts`.
+- **Publish with `EventBus.publish(events)`.** It runs at once, before the default unit of work commits.
 - **Writer wins.** A class that also implements `AfterInsert.Writer` runs only as a Writer.
+
+::: warning
+No synchronous callouts. A callout from a trigger throws, so enqueue a Queueable that implements `Database.AllowsCallouts`.
+:::
 
 ## Test {#test}
 

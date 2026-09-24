@@ -7,13 +7,13 @@ description: Let a before delete Handler fail without failing the delete - its e
 
 # BeforeDelete.ContinueOnError
 
-Logs and swallows the handler's exceptions, so the other handlers and the delete go on. Use it for cleanup that must not block a delete.
+Log and swallow the handler's exceptions, so later handlers still run and the delete goes on.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/before-delete/continue-on-error/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -21,10 +21,13 @@ Logs and swallows the handler's exceptions, so the other handlers and the delete
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
-- **Never on a guard.** A swallowed exception means no error is attached, so the record is deleted.
-- **The rest of the handler is skipped.** After an exception, this handler's remaining records and its Finalizer are skipped. An exception in a provider skips every record. Later handlers still run.
+- **The rest of the handler is skipped.** After an exception, this handler's remaining records and its Finalizer are skipped. An exception in a provider skips every record.
 - **No rollback.** Errors already attached and DML statements that already ran stay. The library sets no savepoint.
-- **Some exceptions always throw.** `TriggerHandler.TriggerHandlerException` and `TriggerOrchestratorException` are rethrown. `System.LimitException` cannot be caught. Exceptions in `bypassOnBeforeDeleteWhen()` and `queryParentsOnBeforeDelete()` fail the delete.
-- **Add a Logger.** The exception goes to the org's `TriggerOrchestrator.Logger`. Without one it leaves no trace. See [Errors & Logging](/guide/error-handling).
+- **Some errors still fail the delete.** [Library exceptions](/api/record#triggerhandlerexception), `System.LimitException` and exceptions outside the handler's own methods, such as `bypassOnBeforeDeleteWhen()` or `queryParentsOnBeforeDelete()`, are never swallowed.
+- **Add a [Logger](/guide/error-handling#logger).** Without one, a swallowed exception leaves no trace.
+
+::: warning
+Never add it to a guard. A swallowed exception means no error is attached, so the record is deleted.
+:::

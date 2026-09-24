@@ -14,8 +14,6 @@ description: What an after update handler receives - UpdateRecord and UpdateReco
 
 <!--@include: @/_parts/generated/after-update/collection-methods.md-->
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
-- **Both rows are read-only.** Any write throws `System.FinalException`, which no `catch` stops.
 - **Parents are not on the row.** `getNewSObject().Account` is null. Read `getNewParent` or `getOldParent`.
-- **`getRecords()` is not a copy.** Removing items also removes them from what the Finalizer receives.

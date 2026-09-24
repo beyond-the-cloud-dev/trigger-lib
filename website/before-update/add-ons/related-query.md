@@ -7,17 +7,13 @@ description: Load children, siblings or other records once per before update chu
 
 # BeforeUpdate.RelatedQuery
 
-Loads children, siblings or any other records once per chunk, keyed for fast reads. It replaces a query per record.
+Query children, siblings or other records once per chunk, and read them per record with `record.getRelated(name)`.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/before-update/related-query/signature.md-->
 
-### RecordsProvider {#records-provider}
-
-<!--@include: @/_parts/generated/before-update/related-query/records-provider.md-->
-
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -25,10 +21,19 @@ Loads children, siblings or any other records once per chunk, keyed for fast rea
 
 :::
 
-## Good to Know {#good-to-know}
+## RecordsProvider {#records-provider}
+
+**Signature**
+
+<!--@include: @/_parts/generated/before-update/related-query/records-provider.md-->
+
+## Rules {#rules}
 
 - **SOQL sees the saved values.** A query on the records being updated returns their values from before this update. Two records in one chunk that change to the same email do not find each other; compare them in a [Finalizer](/before-update/add-ons/finalizer).
 - **Exclude the records themselves.** To look at other records of the same object, add `Id NOT IN :records.getIds()`.
 - **Keys match exactly.** Key lookups are case-sensitive. Normalize text keys the same way in `keyOf` and in the lookup.
-- **The provider sets the sharing.** Its SOQL runs under the provider class's own sharing keyword. Use `without sharing` when a check must see every record.
 - **Runs on every pass.** Providers query for every chunk and every nested update, even when no record qualifies.
+
+::: warning
+The provider sets the sharing. Its SOQL runs under the provider class's own sharing keyword. Use `without sharing` when a check must see every record.
+:::

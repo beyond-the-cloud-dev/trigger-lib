@@ -1,41 +1,44 @@
 ---
-description: What Trigger Lib is, how the trigger, orchestrator and handlers fit together, and which roles each Salesforce trigger context has.
+description: What Trigger Lib is, why to use it, a quick example, and the roles of each Salesforce trigger context.
 ---
 
 # Introduction
 
-Trigger Lib is an Apex trigger framework for Salesforce. You write one small class per concern and give it a role in a trigger context. The library runs it only for the records that qualify.
+Trigger Lib is an Apex trigger framework for Salesforce. You write one small class per concern and give it a role in a trigger context.
 
-Trigger Lib is part of [Apex Fluently](https://apexfluently.beyondthecloud.dev/), a suite of Salesforce libraries by [Beyond the Cloud](https://beyondthecloud.dev).
+## Why Trigger Lib? {#why}
 
-## How It Fits Together {#how-it-fits}
+- **One-Line Triggers** - The trigger passes an orchestrator that lists each context's handlers in run order
+- **Record Filtering** - Each handler acts only on the records its predicate picks
+- **Declared Queries** - Declare parent fields and related records, with no SOQL in your handler
+- **Unit of Work** - Writers register DML, committed once after the last handler by default
+- **Bypasses and Recursion Control** - Switch handlers off in Apex or custom metadata, and cap recursion in the update contexts
+- **Testability** - Test handlers with in-memory records, no trigger and no DML
 
-<<< @/../examples/main/default/triggers/AccountTrigger.trigger
+## Quick Example {#quick-example}
 
-1. **The trigger** passes an orchestrator to `TriggerOrchestrator.run(…)`. Nothing else goes in it.
-2. **The orchestrator** returns each context's handlers in run order.
-3. **Each handler** implements one role, such as `BeforeInsert.Populator`, plus any add-ons, such as `BeforeInsert.ParentQuery`.
-4. **The library** loads the declared parents and runs the handlers in list order. Each handler acts only on the records its predicate accepts.
+::: code-group
 
-## Roles per Context {#roles}
+<<< @/../examples/main/default/triggers/ContactTrigger.trigger [ContactTrigger.trigger]
 
-| Context | Roles |
-|---|---|
-| [BeforeInsert](/before-insert/) | [Populator](/before-insert/populator), [Validator](/before-insert/validator) |
-| [AfterInsert](/after-insert/) | [Writer](/after-insert/writer), [Dispatcher](/after-insert/dispatcher) |
-| [BeforeUpdate](/before-update/) | [Populator](/before-update/populator), [Validator](/before-update/validator) |
-| [AfterUpdate](/after-update/) | [Writer](/after-update/writer), [Dispatcher](/after-update/dispatcher) |
-| [BeforeDelete](/before-delete/) | [Handler](/before-delete/handler) |
-| [AfterDelete](/after-delete/) | [Writer](/after-delete/writer), [Dispatcher](/after-delete/dispatcher) |
-| [AfterUndelete](/after-undelete/) | [Writer](/after-undelete/writer), [Dispatcher](/after-undelete/dispatcher) |
+```apex [ContactTriggerOrchestrator.cls]
+public with sharing class ContactTriggerOrchestrator implements TriggerOrchestrator.BeforeInsert {
+    public List<BeforeInsert.Handler> beforeInsertHandlers() {
+        return new List<BeforeInsert.Handler>{ new ContactEmailNormalizationPopulator() };
+    }
+}
+```
 
-- **Populator** sets fields on the record being saved. **Validator** attaches an error to it. Neither may run DML.
-- **Writer** registers DML on a unit of work. By default it commits once, after the last handler.
-- **Dispatcher** gets all qualified records at once, to start async work, publish an event or send an email.
-- **Handler** runs per record before delete, and can block the delete with `addError`.
+<<< @/../examples/main/default/classes/contact/before-insert/populator/ContactEmailNormalizationPopulator.cls [ContactEmailNormalizationPopulator.cls]
 
-## Next Steps {#next-steps}
+:::
 
-- [Installation](/installation)
-- [Your First Handler](/guide/first-handler)
-- [Trigger & Orchestrator](/guide/orchestrator)
+## Roles {#roles}
+
+| Role | What it does | Contexts |
+|---|---|---|
+| Populator | Sets fields on the record being saved. No DML. | [BeforeInsert](/before-insert/populator), [BeforeUpdate](/before-update/populator) |
+| Validator | Attaches an error to the record being saved. No DML. | [BeforeInsert](/before-insert/validator), [BeforeUpdate](/before-update/validator) |
+| Writer | Registers DML on a unit of work. | [AfterInsert](/after-insert/writer), [AfterUpdate](/after-update/writer), [AfterDelete](/after-delete/writer), [AfterUndelete](/after-undelete/writer) |
+| Dispatcher | Gets all qualified records at once, for async work, events or emails. | [AfterInsert](/after-insert/dispatcher), [AfterUpdate](/after-update/dispatcher), [AfterDelete](/after-delete/dispatcher), [AfterUndelete](/after-undelete/dispatcher) |
+| Handler | Runs per record before delete, and can block the delete with `addError`. | [BeforeDelete](/before-delete/handler) |

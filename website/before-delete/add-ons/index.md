@@ -6,7 +6,7 @@ description: Add-ons for before delete handlers - parent fields, related records
 
 # Add-ons in BeforeDelete
 
-Add-ons are optional interfaces. Implement as many as you need next to `BeforeDelete.Handler`.
+Implement as many as you need next to `BeforeDelete.Handler`.
 
 ## Available {#available}
 

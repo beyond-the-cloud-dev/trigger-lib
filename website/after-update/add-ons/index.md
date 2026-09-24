@@ -6,7 +6,7 @@ description: Add-ons for after update handlers - parent fields, previous parents
 
 # Add-ons in AfterUpdate
 
-Add-ons are optional interfaces: implement as many as you need next to your role interface.
+Implement as many as you need next to your role interface.
 
 ## Available {#available}
 

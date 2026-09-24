@@ -4,9 +4,7 @@ description: Tutorial that wires a Contact trigger and orchestrator, adds a befo
 
 # Your First Handler
 
-In this tutorial you lowercase Contact emails and reject impossible birthdates on insert. You add a trigger, an orchestrator, a Populator and a Validator, then test them without DML.
-
-First, [install Trigger Lib](/installation) in a scratch org or sandbox.
+In this tutorial you lowercase Contact emails and reject impossible birthdates on insert, then test both without DML. First, [install Trigger Lib](/installation) in a scratch org or sandbox.
 
 ## 1. Add the Trigger {#trigger}
 
@@ -39,8 +37,6 @@ A Populator changes the record being saved. Its predicate picks the records, and
 - `populateOnBeforeInsertWhen` runs for each record. When it returns true, `populateOnBeforeInsert` runs for that record.
 - `record.put(field, value)` sets the field on the row being saved. No DML is needed.
 
-See [BeforeInsert.Populator](/before-insert/populator) and the [Record API](/before-insert/record-api).
-
 ## 4. Write a Validator {#validator}
 
 A Validator rejects records. Its predicate finds the invalid records, and its error method attaches the error:
@@ -49,8 +45,6 @@ A Validator rejects records. Its predicate finds the invalid records, and its er
 
 - `record.addError(message)` attaches a record error. `record.addError(field, message)` attaches it to a field.
 - When the predicate returns true, `addErrorOnBeforeInsert` must attach an error. Otherwise the library throws and the save fails.
-
-See [BeforeInsert.Validator](/before-insert/validator).
 
 ## 5. Try It {#try-it}
 

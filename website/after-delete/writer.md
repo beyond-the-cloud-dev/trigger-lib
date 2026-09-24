@@ -7,13 +7,13 @@ description: Create, update or delete other records after a delete - remove orph
 
 # AfterDelete.Writer
 
-Registers writes to other records on a unit of work after records are deleted. Remove orphans, leave a task on the former parent or recompute a parent from the records that remain.
+Change other records or publish platform events after the delete, through a unit of work.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/after-delete/writer/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -40,13 +40,16 @@ public with sharing class ContactRemovalTaskWriter implements AfterDelete.Writer
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
-- **Never register the deleted row.** An update of it fails the commit with `ENTITY_IS_DELETED`, and a delete with `SELF_REFERENCE_FROM_TRIGGER`.
 - **Read the old row, not SOQL.** SOQL no longer finds the deleted row. Read its values from `getOldSObject()`, which is read-only.
-- **Merge losers qualify.** Skip them with `record.isNull(Contact.MasterRecordId)`, as the second tab does.
-- **When writes commit.** By default all Writers share one unit that commits once, after the last handler. With [OwnUnitOfWork](/after-delete/add-ons/own-unit-of-work) or [ContinueOnError](/after-delete/add-ons/continue-on-error), the Writer's unit commits right after it.
+- **Merge losers qualify.** Skip them as `[Skip merge losers]` does.
+- **Register with `toInsert`, `toUpdate`, `toUpsert`, `toDelete` or `toPublish` (platform events).** They commit after the last handler, or right after this Writer with [OwnUnitOfWork](/after-delete/add-ons/own-unit-of-work) or [ContinueOnError](/after-delete/add-ons/continue-on-error).
 - **Writer wins.** A class that also implements `AfterDelete.Dispatcher` runs only as a Writer.
+
+::: warning
+Never register the deleted row. An update of it fails the commit with `ENTITY_IS_DELETED`, and a delete with `SELF_REFERENCE_FROM_TRIGGER`.
+:::
 
 ## Test {#test}
 

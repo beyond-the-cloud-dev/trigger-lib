@@ -7,13 +7,13 @@ description: Skip an after insert Writer or Dispatcher for the whole chunk when 
 
 # AfterInsert.Bypassable
 
-Skips a Writer or Dispatcher for the whole chunk when a condition holds, such as a static flag or a custom permission. The handler's other contexts are not affected.
+Skip a handler for the whole chunk when a condition holds, such as a static flag, a batch job or a custom permission.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/after-insert/bypassable/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -23,10 +23,13 @@ Skips a Writer or Dispatcher for the whole chunk when a condition holds, such as
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
-- **Skip single records in the predicate.** Bypassable switches off the whole handler.
+- **To skip single records, return false from the predicate.**
 - **Checked before the first handler runs.** A flag that an earlier handler sets takes effect from the next chunk.
-- **Outside the error handling.** An exception from `bypassOnAfterInsertWhen()` is not logged, ContinueOnError does not apply, and the insert fails.
 - **Static flags last the transaction.** `ContactOwnerAlignmentWriter.isDisabled = true` stays set for every later chunk and nested save until you reset it.
-- **Class switches miss inner classes.** `TriggerOrchestrator.bypass().handler(X.class)` and `.orchestrator(X.class)` do not match an inner class. Use a `TriggerHandler__mdt` record or this interface. See [Bypassing](/guide/bypasses).
+- **Only this context.** [Other switches](/guide/bypasses) cover every context, and `bypass().handler(X.class)` never matches an inner class.
+
+::: warning
+An exception from `bypassOnAfterInsertWhen()` is not logged, ContinueOnError does not apply, and the insert fails.
+:::

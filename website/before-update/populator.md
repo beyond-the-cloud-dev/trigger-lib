@@ -7,13 +7,13 @@ description: Set, derive or clear fields on records being updated, usually when 
 
 # BeforeUpdate.Populator
 
-Sets fields on records being updated, usually because another field changed. The values save with the record: no DML and no second save.
+Set fields on records being updated before they are saved.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/before-update/populator/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -25,13 +25,16 @@ Sets fields on records being updated, usually because another field changed. The
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
 - **`put` counts as a change.** Handlers listed later see the value, and `isChanged` is true for them. Putting the old value back makes the field unchanged.
 - **Gate on a change.** The Populator runs again when the same records are updated again in the transaction. There, `isChanged` compares with the values the previous update saved. The default limit is 3 passes per record; change it with a [RecursionGuard](/before-update/add-ons/recursion-guard).
 - **Never write to `getOldSObject()`.** The `FinalException` cannot be caught and fails the update.
-- **No DML.** If the handler runs DML or publishes an event, the library throws. Change other records from an [AfterUpdate.Writer](/after-update/writer).
 - **Populator wins.** A class that also implements `BeforeUpdate.Validator` runs only as a Populator.
+
+::: warning
+No DML. If the handler runs DML or publishes an event, the library throws. Change other records from an [AfterUpdate.Writer](/after-update/writer).
+:::
 
 ## Test {#test}
 

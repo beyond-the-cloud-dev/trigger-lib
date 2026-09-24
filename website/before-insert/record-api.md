@@ -14,10 +14,8 @@ description: What a before insert handler receives - InsertRecord, RejectableIns
 
 <!--@include: @/_parts/generated/before-insert/collection-methods.md-->
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
 - **No Id yet.** Key maps by a lookup or a field value, never by `getId()`.
 - **Predicates see earlier changes.** They count a value that an earlier handler set with `put`.
-- **Only the Validator gets `addError`.** Elsewhere, call `record.getNewSObject().addError(…)`.
 - **`0` and `false` are values.** They are not null, empty or blank.
-- **Record types.** `isRecordTypeEqual` throws on an object without record types. An unknown name never matches.

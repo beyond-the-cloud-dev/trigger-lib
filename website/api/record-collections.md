@@ -4,7 +4,7 @@ description: 'Record Collections reference: InsertRecords, UpdateRecords, Delete
 
 # Record Collections
 
-The bulk view of the chunk's records. Use it to collect Ids and values for one bulk query.
+The bulk view of the chunk's records, to collect Ids and values for one bulk query.
 
 ## Where You Get One {#where}
 
@@ -15,6 +15,8 @@ The bulk view of the chunk's records. Use it to collect Ids and values for one b
 The type follows the context: `InsertRecords` in the insert contexts, `UpdateRecords` in the update contexts, `DeleteRecords` in the delete contexts and `UndeleteRecords` in after undelete.
 
 ## Interfaces {#interfaces}
+
+**Signature**
 
 ```apex
 public interface InsertRecords {
@@ -69,6 +71,8 @@ public interface UpdateRecords {
 - **Parents by relationship name.** Pass the name `getNewParent` takes, such as `'Account'`. A record without a loaded parent adds nothing.
 - **Ids only from Id fields.** `getIdsOf` throws on a field that does not hold Ids, such as `Contact.Email`. Use `getValuesOf` there.
 - **Do not change `getRecords()`.** It is the library's own list, not a copy. Call `.clone()` before you add or remove elements.
+
+**Example**
 
 ```apex
 private without sharing class ExistingEmailsProvider implements BeforeInsert.RecordsProvider {

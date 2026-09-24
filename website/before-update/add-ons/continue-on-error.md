@@ -7,13 +7,13 @@ description: Let a non-critical before update handler fail without failing the u
 
 # BeforeUpdate.ContinueOnError
 
-Lets a handler fail without failing the update. The library logs and swallows the exception, and the save goes on.
+Log and swallow the handler's exceptions, so later handlers still run and the update goes on.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/before-update/continue-on-error/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -21,10 +21,12 @@ Lets a handler fail without failing the update. The library logs and swallows th
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
-- **One failure stops the handler for the chunk.** Its remaining records and its Finalizer are skipped. Values it already set stay, and later handlers still run. To skip only one record, catch the exception in the action.
-- **Keep it off Validators that protect data.** When such a Validator throws, the records it has not checked yet save unchecked.
-- **Some exceptions still fail the update.** These are the library's `TriggerOrchestratorException` and `TriggerHandler.TriggerHandlerException`, `LimitException`, and the `FinalException` from touching the old row. The DML guard and a Validator that attaches no error throw a `TriggerOrchestratorException`.
-- **Setup code is not covered.** Exceptions in `beforeUpdateHandlers()`, `bypassOnBeforeUpdateWhen()`, `maxRecursionDepthOnBeforeUpdate()` and the parent queries are never logged and fail the update.
-- **Logging needs a Logger.** The swallowed exception goes to your `TriggerOrchestrator.Logger` implementation, if the org has one. See [Errors & Logging](/guide/error-handling).
+- **One failure stops the handler for the chunk.** Its remaining records and its Finalizer are skipped. Values it already set stay. To skip only one record, catch the exception in the action.
+- **Some exceptions still fail the update.** DML in the handler, a Validator that attaches no error, `TriggerHandler.TriggerHandlerException`, `System.LimitException`, the `FinalException` from touching the old row and exceptions from methods that run before the handler's turn, such as `bypassOnBeforeUpdateWhen()`, are never swallowed.
+- **Add a [Logger](/guide/error-handling#logger).** Without one, a swallowed exception leaves no trace.
+
+::: warning
+Keep it off Validators that protect data. When such a Validator throws, the records it has not checked yet save unchecked.
+:::

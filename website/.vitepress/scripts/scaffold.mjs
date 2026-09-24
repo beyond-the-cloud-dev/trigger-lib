@@ -3,8 +3,9 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { WEBSITE_DIR, expectedPages } from '../apex-api.mjs';
 import {
-  GOOD_TO_KNOW_MAX_BULLETS,
-  TEST_MAX_LINES
+  RULES_MAX_BULLETS,
+  TEST_MAX_LINES,
+  leadPatterns
 } from '../page-templates.mjs';
 import {
   SCAFFOLD_MARKER,
@@ -13,32 +14,33 @@ import {
   templateHeadings
 } from './check-docs.mjs';
 
-const GOOD_TO_KNOW = `at most ${GOOD_TO_KNOW_MAX_BULLETS} bullets: the facts a developer must not miss here`;
+const RULES = `at most ${RULES_MAX_BULLETS} bullets, each "- **Short rule.** Detail."; at most one untitled ::: warning, ::: tip or ::: info box at the end, made by moving one bullet into it`;
+const RULES_NO_BOX = `at most ${RULES_MAX_BULLETS} bullets, each "- **Short rule.** Detail."; no boxes`;
+const EXAMPLE =
+  'add at most two <<< imports of existing example classes inside the code-group above, or delete this marker';
 
 const HAND_WRITTEN = {
   context: {
     lead: 'one or two sentences: when <Ctx> runs and what you do here',
     roles: 'one bullet per role: a link to the role page and one line',
-    'good-to-know': GOOD_TO_KNOW
+    rules: RULES
   },
   role: {
-    lead: 'one or two sentences: what this role does in <Ctx>',
-    example:
-      'add at most two <<< imports of existing example classes inside the code-group above, or delete this marker',
-    'good-to-know': GOOD_TO_KNOW,
+    lead: 'one sentence: <Lead>',
+    leadEnd: EXAMPLE,
+    rules: RULES,
     test: `one test in a code block of ${TEST_MAX_LINES} lines or fewer: API-shaped name, // Setup // Test // Verify, one assertion, zero DML`
   },
   'add-ons': {
     lead: 'one sentence: implement as many add-ons as you need next to your role interface'
   },
   'add-on': {
-    lead: 'one or two sentences: what this add-on does in <Ctx>',
-    example:
-      'add at most two <<< imports of existing example classes inside the code-group above, or delete this marker',
-    'good-to-know': GOOD_TO_KNOW
+    lead: 'one sentence: <Lead>',
+    leadEnd: EXAMPLE,
+    rules: RULES
   },
   'record-api': {
-    'good-to-know': GOOD_TO_KNOW
+    rules: RULES_NO_BOX
   }
 };
 
@@ -50,21 +52,37 @@ function includeLine(requirement) {
   return `<!--@include: ${requirement.include}-->`;
 }
 
+function handWritten(page, key) {
+  const text = HAND_WRITTEN[page.template]?.[key];
+  if (!text) return [];
+  return [
+    placeholder(
+      text
+        .replace(/<Ctx>/g, page.context)
+        .replace(
+          /<Lead>/g,
+          leadPatterns[page.interface] ??
+            `what ${page.context}.${page.interface} does`
+        )
+    )
+  ];
+}
+
 function sectionBody(page, sectionId, required) {
-  const blocks = [];
+  const blocks = sectionId === 'lead' ? handWritten(page, 'lead') : [];
   for (const requirement of required.filter(
     item => item.section === sectionId
   )) {
+    if (requirement.label) blocks.push(`**${requirement.label}**`);
     if (requirement.firstInCodeGroup) {
       blocks.push('::: code-group', includeLine(requirement), ':::');
     } else {
       blocks.push(includeLine(requirement));
     }
   }
-  const hand = HAND_WRITTEN[page.template]?.[sectionId];
-  if (hand) {
-    blocks.push(placeholder(hand.replace(/<Ctx>/g, page.context)));
-  }
+  blocks.push(
+    ...handWritten(page, sectionId === 'lead' ? 'leadEnd' : sectionId)
+  );
   return blocks;
 }
 

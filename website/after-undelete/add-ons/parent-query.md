@@ -7,13 +7,13 @@ description: Read parent (lookup) fields of restored records in an after undelet
 
 # AfterUndelete.ParentQuery
 
-Reads fields of the record a lookup points to, such as a restored contact's account, without SOQL in your handler. The restored row holds only the lookup Id.
+Read fields of the record a lookup points to, such as a restored contact's account, without SOQL in your handler.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/after-undelete/parent-query/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -21,10 +21,13 @@ Reads fields of the record a lookup points to, such as a restored contact's acco
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
 - **Read by relationship name.** Use `getNewParent('Account')` for `AccountId` and `getNewParent('Owner')` for `OwnerId`. The name is case-sensitive.
 - **Check for null.** The parent is null when the lookup is empty or no record has that Id.
 - **Declare every field you read.** Reading a field that no handler declared throws an `SObjectException`. Add grandparent fields with `.with('Owner', User.IsActive)`.
-- **One query per chunk.** One SOQL query on the restored records reads every declared parent, even when no record qualifies. A parent that query misses costs one more query per lookup.
-- **No sharing.** Parents are read in system mode, so a handler can see records the user cannot.
+- **One query per chunk.** One SOQL query on the restored records reads every declared parent, even when no record qualifies.
+
+::: warning
+Parents are read in system mode without sharing, so a handler can see records the user cannot.
+:::

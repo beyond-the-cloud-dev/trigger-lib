@@ -4,6 +4,6 @@ description: Every Trigger Lib context side by side, with the exact interface an
 
 # Contexts at a Glance {#method-names}
 
-Every interface you can implement, by context. Empty means not available.
+Every interface you can implement, by context.
 
 <!--@include: @/_parts/generated/matrix-methods.md-->

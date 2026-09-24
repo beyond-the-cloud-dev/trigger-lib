@@ -7,13 +7,13 @@ description: Hand deleted records to a Queueable, callout, platform event or ema
 
 # AfterDelete.Dispatcher
 
-Collects the deleted records its predicate accepts and hands them over once per chunk. Enqueue a job, send one email or publish events.
+Make one bulk call per chunk with the records that qualify, such as enqueueing a Queueable or publishing events.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/after-delete/dispatcher/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -44,13 +44,16 @@ public with sharing class ContactRemovalSyncDispatcher implements AfterDelete.Di
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
-- **Pass values, not the deleted Ids.** The job runs after the commit, when the deleted rows can no longer be queried. Pass the values it needs, or the Ids of records that still exist.
 - **No synchronous callouts.** A callout from a trigger throws a `System.CalloutException`. Call out from a Queueable that implements `Database.AllowsCallouts`.
 - **No unit of work.** DML here runs at once and is not merged with the Writers' unit. Use a [Writer](/after-delete/writer) for record writes.
 - **Merge losers arrive here too.** Skip them with `record.isNull(Contact.MasterRecordId)` when a merge should not count as a removal.
 - **Writer wins.** A class that also implements `AfterDelete.Writer` runs only as a Writer.
+
+::: warning
+Pass values, not the deleted Ids. The job runs after the commit, when the deleted rows can no longer be queried. Pass the values it needs, or the Ids of records that still exist.
+:::
 
 ## Test {#test}
 

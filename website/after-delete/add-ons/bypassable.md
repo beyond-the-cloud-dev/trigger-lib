@@ -7,13 +7,13 @@ description: Skip an after delete Writer or Dispatcher for a chunk when a condit
 
 # AfterDelete.Bypassable
 
-Skips a Writer or Dispatcher when a condition holds, for example during a batch purge. Read a static flag, a custom permission or `System.isBatch()`.
+Skip a handler for the whole chunk when a condition holds, such as a static flag, a batch job or a custom permission.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/after-delete/bypassable/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -21,10 +21,12 @@ Skips a Writer or Dispatcher when a condition holds, for example during a batch 
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
 - **To skip single records, use the predicate.** Return false from `writeOnAfterDeleteWhen` or `dispatchOnAfterDeleteWhen`.
-- **Outside the error handling.** An exception here is not logged, ContinueOnError does not apply, and the delete fails.
 - **Static flags last the whole transaction.** Later chunks and nested saves see them too. Reset a flag in a `finally` block.
-- **Other switches apply in every context.** `TriggerOrchestrator.bypass().handler(ContactWriter.class)` works for one transaction; a `TriggerHandler__mdt` record works org-wide. See [Bypassing](/guide/bypasses).
-- **Inner classes never match by class.** `bypass().handler(X.class)` and `.orchestrator(X.class)` ignore inner classes. Use a `TriggerHandler__mdt` record or this add-on.
+- **Only this context.** [Other switches](/guide/bypasses) cover every context, and `bypass().handler(X.class)` never matches an inner class.
+
+::: warning
+Outside the error handling. An exception here is not logged, ContinueOnError does not apply, and the delete fails.
+:::

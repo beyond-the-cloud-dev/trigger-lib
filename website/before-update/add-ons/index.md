@@ -6,7 +6,7 @@ description: Add-ons for before update handlers - current and previous parents, 
 
 # Add-ons in BeforeUpdate
 
-Implement any you need next to your role.
+Implement as many as you need next to your role interface.
 
 ## Available {#available}
 

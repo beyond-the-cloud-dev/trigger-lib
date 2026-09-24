@@ -161,18 +161,14 @@ function validate() {
   }
 }
 
+function qualified(context, typeName) {
+  return typeName.includes('.') ? typeName : `${context.name}.${typeName}`;
+}
+
 function signature(context, item) {
-  const members = item.methods.map(method => `        ${method.signature};`);
-  const header = `    public interface ${item.name}${item.extends ? ` extends ${item.extends}` : ''} {`;
-  const body =
-    members.length > 0 ? [header, ...members, '    }'] : [header, '    }'];
-  const block = [
-    '```apex',
-    `public class ${context.name} {`,
-    ...body,
-    '}',
-    '```'
-  ].join('\n');
+  const members = item.methods.map(method => `    ${method.signature};`);
+  const header = `public interface ${item.name}${item.extends ? ` extends ${qualified(context, item.extends)}` : ''} {`;
+  const block = ['```apex', header, ...members, '}', '```'].join('\n');
 
   const lines = [block];
 
@@ -221,10 +217,8 @@ function methodLine(context, item, method) {
     let called = isPredicate
       ? roleCalls[item.name].predicate
       : roleCalls[item.name].action;
-    if (isPredicate && honours(context, item.name).includes('RecursionGuard')) {
-      called +=
-        '; a record that has used up its recursion budget is skipped without a call';
-    }
+    if (isPredicate && honours(context, item.name).includes('RecursionGuard'))
+      called += '; a record past its recursion limit is skipped without a call';
     parts.push(`called ${called}.`);
     if (isPredicate)
       parts.push(`Return ${code('true')} ${predicateReturns[item.name]}.`);
@@ -234,8 +228,6 @@ function methodLine(context, item, method) {
       called += '; after the dispatch for a Dispatcher';
     }
     parts.push(`called ${called}.`);
-    if (item.name === 'Finalizer')
-      parts.push('It receives only the qualified records.');
     if (addOnFacts[item.name].returns)
       parts.push(sentence(`returns ${addOnFacts[item.name].returns}`));
   } else if (item.kind === 'support') {
@@ -637,7 +629,7 @@ const recordMethodGroups = [
   {
     names: ['getOldParent'],
     note: () =>
-      `the parent the old row pointed to, loaded by PriorParentQuery, or ${code('null')}`
+      `the old row's parent, loaded by PriorParentQuery, or ${code('null')}`
   },
   {
     names: ['getRelated'],
@@ -781,12 +773,19 @@ function collectionReceivers(context) {
     ...uses.filter(use => use.kind === 'support'),
     ...uses.filter(use => use.kind !== 'support')
   ];
-  return ordered.map(use => {
-    const item = getInterface(context.name, use.interfaceName);
-    return item.kind === 'support'
-      ? `${code(`${item.name}.${use.method}`)} (every record in the chunk)`
-      : `${code(use.method)} (the qualified records)`;
-  });
+  const support = ordered
+    .filter(use => getInterface(context.name, use.interfaceName).kind === 'support')
+    .map(use => code(`${getInterface(context.name, use.interfaceName).name}.${use.method}`));
+  const qualified = ordered
+    .filter(use => getInterface(context.name, use.interfaceName).kind !== 'support')
+    .map(use => code(use.method));
+  const verb = items => (items.length > 1 ? 'get' : 'gets');
+  return [
+    support.length ? `${list(support)} ${verb(support)} the whole chunk.` : '',
+    qualified.length ? `${list(qualified)} ${verb(qualified)} the qualified records.` : ''
+  ]
+    .filter(Boolean)
+    .join(' ');
 }
 
 function collectionMethodNote(context, method) {
@@ -824,18 +823,48 @@ function collectionMethodNote(context, method) {
   }
 }
 
+function collectionMethodRows(context, declared) {
+  if (!declared.methodNames.some(name => name.startsWith('getOld'))) {
+    return declared.methods.map(method => [
+      code(callForm(method)),
+      collectionMethodNote(context, method)
+    ]);
+  }
+
+  const grouped = {
+    getIdsOf: [
+      `${code('getIdsOf(field)')}, ${code('getOldIdsOf(field)')}`,
+      'non-null Ids in a lookup or Id field of the new / old row'
+    ],
+    getValuesOf: [
+      `${code('getValuesOf(field)')}, ${code('getOldValuesOf(field)')}`,
+      'non-null values of a field of the new / old row, as text'
+    ]
+  };
+  const rows = [];
+  for (const method of declared.methods) {
+    if (grouped[method.name]) {
+      rows.push(grouped[method.name]);
+      delete grouped[method.name];
+    } else if (
+      !['getIdsOf', 'getOldIdsOf', 'getValuesOf', 'getOldValuesOf'].includes(method.name)
+    ) {
+      rows.push([code(callForm(method)), collectionMethodNote(context, method)]);
+    }
+  }
+  return rows;
+}
+
 function collectionMethods(context) {
   const declared = collectionInterface(context);
+  const grouped = declared.methodNames.some(name => name.startsWith('getOld'));
   return [
-    `Type: ${code(declared.qualifiedName)}, passed to ${list(collectionReceivers(context))}.`,
-    table(
-      ['Method', `In ${context.name}`],
-      declared.methods.map(method => [
-        code(callForm(method)),
-        collectionMethodNote(context, method)
-      ])
-    )
-  ].join('\n\n');
+    `Type: ${code(declared.qualifiedName)}. ${collectionReceivers(context)}`,
+    table(['Method', `In ${context.name}`], collectionMethodRows(context, declared)),
+    grouped ? 'Pass `relationshipName` first to read a parent’s field.' : ''
+  ]
+    .filter(Boolean)
+    .join('\n\n');
 }
 
 function matrixCell(context, name) {

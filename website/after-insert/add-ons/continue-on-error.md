@@ -7,13 +7,13 @@ description: Log and swallow an after insert handler's exception so later handle
 
 # AfterInsert.ContinueOnError
 
-Logs and swallows a Writer's or Dispatcher's exception, so later handlers run and the insert goes on. A Writer also gets a private unit of work, so a failure discards only its own writes.
+Log and swallow the handler's exceptions, so later handlers still run and the insert goes on.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/after-insert/continue-on-error/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -23,10 +23,12 @@ Logs and swallows a Writer's or Dispatcher's exception, so later handlers run an
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
 - **The rest of the handler is skipped.** After an exception, its remaining records and its Finalizer do not run.
-- **Add a Logger.** Without a `TriggerOrchestrator.Logger`, a swallowed error leaves no trace. See [Errors & Logging](/guide/error-handling).
-- **Some errors still fail the insert.** `TriggerOrchestratorException` and `TriggerHandler.TriggerHandlerException` are logged and rethrown. `System.LimitException` and the `FinalException` from writing to the row cannot be caught.
-- **Only the handler's own work.** A failure in `bypassOnAfterInsertWhen()`, `queryParentsOnAfterInsert()` or the shared commit still fails the insert.
-- **The private unit costs its own statements.** It commits right after the Writer, before the shared unit, and is never merged with it.
+- **A Writer gets a separate unit.** It commits right after the Writer, so a failure never touches other Writers' writes.
+- **Add a [Logger](/guide/error-handling#logger).** Without one, a swallowed exception leaves no trace.
+
+::: warning
+Some errors still fail the insert. [Library exceptions](/api/record#triggerhandlerexception), `System.LimitException`, the `FinalException` from writing a trigger row and exceptions outside the handler's own methods, such as `bypassOnAfterInsertWhen()` or the final commit, are never swallowed.
+:::

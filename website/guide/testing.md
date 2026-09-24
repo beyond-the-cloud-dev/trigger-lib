@@ -4,7 +4,7 @@ description: Unit-test Trigger Lib handlers without DML - TriggerRecord, the rec
 
 # Testing
 
-Test a handler without DML: build records in memory, call its methods and assert the result. Every example uses one assertion and the comments `// Setup`, `// Test` and `// Verify`.
+Test a handler without DML: build records in memory, call its methods and assert the result.
 
 ## Test API {#test-api}
 
@@ -162,8 +162,8 @@ static void afterInsertHandlersContainsWelcomeTaskWriter() {
 
 ## Run the Orchestrator in a Test {#orchestrator}
 
-::: warning Same namespace only
-These seams are `@TestVisible` private members. They work only when your tests share the library's namespace, as in a source install, and they may change.
+::: warning Private API
+`new TriggerOrchestrator(…)`, `context` and `run()` are `@TestVisible` private members and may change.
 :::
 
 Set the trigger context on a `new TriggerOrchestrator(…)` and call `run()`. Use typed lists, and give every row an Id in after and delete contexts:
@@ -204,32 +204,12 @@ Call `mockFramework()` first, before anything refers to `TriggerOrchestrator`. O
 - **An Apex bypass.** Call `TriggerOrchestrator.bypass()` after the mocks and before `run()`.
 - **A Logger.** Set `TriggerOrchestrator.triggerLogger.logger` to a class of your own that collects the errors. Use it to test ContinueOnError.
 
-A `TriggerHandler__mdt` row is a child of the object row, so build the object row from JSON. Build every key from a token:
-
-```apex
-static TriggerObject__mdt objectRowWithBypassedHandler(String objectName, String className) {
-    String prefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-    Map<String, Object> handlerRow = new Map<String, Object>{
-        'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-        String.valueOf(TriggerHandler__mdt.ApexClassName__c) => className,
-        String.valueOf(TriggerHandler__mdt.Bypass__c) => true
-    };
-    Map<String, Object> objectRow = new Map<String, Object>{
-        'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-        String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => objectName,
-        String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-        prefix + 'TriggerHandlers__r' => new Map<String, Object>{ 'totalSize' => 1, 'done' => true, 'records' => new List<Object>{ handlerRow } }
-    };
-    return (TriggerObject__mdt) JSON.deserialize(JSON.serialize(objectRow), TriggerObject__mdt.class);
-}
-```
-
 ### Mock Queries and DML {#mock-queries-dml}
 
 - **Parents.** `SOQL.mock(Account.SObjectType).thenReturn(rows)` serves the parent queries on Account. In after insert, update and undelete, mock the trigger object instead and return its rows with the parent attached.
 - **Providers.** Only a provider written with SOQL Lib can be mocked. An inline `[SELECT …]` cannot.
-- **The shared unit.** `DML.mock('triggerUow').allDmls()` replaces the shared commit. Read it with `DML.retrieveResultFor('triggerUow')`.
-- **An own unit or a Dispatcher's DML.** Mock the identifier the handler gives its `DML` instance.
+- **The default unit of work.** `DML.mock('triggerUow').allDmls()` replaces its commit. Read it with `DML.retrieveResultFor('triggerUow')`.
+- **OwnUnitOfWork or a Dispatcher's DML.** Mock the identifier the handler gives its `DML` instance.
 
 ## Integration Tests {#integration}
 

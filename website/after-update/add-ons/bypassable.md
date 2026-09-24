@@ -7,13 +7,13 @@ description: Skip an after update Writer or Dispatcher for a whole chunk when a 
 
 # AfterUpdate.Bypassable
 
-Skips an after update Writer or Dispatcher for the whole chunk when a condition holds, such as a static flag, a batch job or a custom permission.
+Skip a handler for the whole chunk when a condition holds, such as a static flag, a batch job or a custom permission.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/after-update/bypassable/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -23,10 +23,12 @@ Skips an after update Writer or Dispatcher for the whole chunk when a condition 
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
-- **Whole chunk, not single records.** To skip single records, return false from the predicate.
 - **Reset static flags in `finally`.** A static flag lasts for the whole transaction, nested saves included.
 - **Outside the error handling.** An exception here is not logged, ContinueOnError does not apply, and the update fails.
-- **Other switches work in every context.** `TriggerOrchestrator.bypass().handler(X.class)` and a `TriggerHandler__mdt` row switch a handler off wherever it runs. See [Bypassing](/guide/bypasses).
-- **Inner classes.** `TriggerOrchestrator.bypass().handler(X.class)` never matches an inner class. Use a `TriggerHandler__mdt` row or this add-on.
+- **Only this context.** [Other switches](/guide/bypasses) cover every context, and `bypass().handler(X.class)` never matches an inner class.
+
+::: tip
+To skip single records, return false from the predicate.
+:::

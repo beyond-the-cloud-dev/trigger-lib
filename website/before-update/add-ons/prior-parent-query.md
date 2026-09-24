@@ -7,13 +7,13 @@ description: Read fields of the parent a lookup pointed to before this update, t
 
 # BeforeUpdate.PriorParentQuery
 
-Reads fields of the parent a lookup pointed to before this update. Use it to compare the old and the new parent, or to name the previous one.
+Read fields of the parent the old row pointed to, such as a contact's previous account, without SOQL in your handler.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/before-update/prior-parent-query/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -25,10 +25,12 @@ Reads fields of the parent a lookup pointed to before this update. Use it to com
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
 - **Read with `getOldParent`.** `record.getOldParent('Account')` is null when the old lookup was empty or the parent has been deleted since.
 - **Current field values.** The previous parent is queried when the trigger runs, so its fields show their values now, not when the record pointed to it.
-- **Never refreshed.** A Populator that changes the lookup changes the current parent, never the previous one.
 - **One query for both sides.** With a [ParentQuery](/before-update/add-ons/parent-query) on the same lookup, both parents load in one query, and each gets every field either side declared.
-- **Only need the old Id?** Read `getOldSObject()`. No add-on is needed.
+
+::: tip
+Only need the old Id? Read `getOldSObject()`. No add-on is needed.
+:::

@@ -1,43 +1,59 @@
 ---
-description: Deploy Trigger Lib and its bundled SOQL Lib and DML Lib dependencies to a Salesforce org, and optionally the example triggers and handlers.
+description: Install Trigger Lib in a Salesforce org - deploy via button, or copy the Apex classes and custom metadata types together with the SOQL Lib and DML Lib dependencies.
 ---
 
 # Installation
 
-Trigger Lib is Apex source that you deploy to your org. It ships with its two dependencies, SOQL Lib and DML Lib.
+## Deploy via Button {#deploy-via-button}
 
-## Deploy via Button {#deploy-button}
+Click the button below to deploy Trigger Lib to your environment.
 
 <a href="https://githubsfdeploy.herokuapp.com?owner=beyond-the-cloud-dev&repo=trigger-lib&ref=main">
-  <img alt="Deploy to Salesforce" src="https://raw.githubusercontent.com/afawcett/githubsfdeploy/master/deploy.png">
+  <img alt="Deploy to Salesforce"
+       src="https://raw.githubusercontent.com/afawcett/githubsfdeploy/master/deploy.png">
 </a>
 
-## Deploy with the Salesforce CLI {#deploy-cli}
-
-```bash
-git clone https://github.com/beyond-the-cloud-dev/trigger-lib.git
-cd trigger-lib
-sf project deploy start -d force-app -o your-org-alias
-```
-
-## What Gets Deployed {#what-gets-deployed}
-
-- **Library classes:** `TriggerOrchestrator`, `TriggerHandler`, one class per context (`BeforeInsert`, `AfterUpdate` and the others) and their tests.
-- **Custom metadata types:** `TriggerObject__mdt` and `TriggerHandler__mdt`. They switch an object or a handler off without a deploy. No records are required. See [Custom Metadata](/api/custom-metadata).
-- **Dependencies** in `force-app/main/default/dependencies`: [SOQL Lib](https://soql.beyondthecloud.dev) 6.11.0 and [DML Lib](https://github.com/beyond-the-cloud-dev/dml-lib) 3.2.0. Both are required.
-
-::: warning SOQL Lib or DML Lib already in your org?
-Deploying `force-app` replaces the org's `SOQL` and `DML` classes. If your org already has the same or a newer version, leave that `dependencies` folder out.
+::: warning
+The button also deploys [SOQL Lib](https://soql.beyondthecloud.dev) 6.11.0 and [DML Lib](https://dml.beyondthecloud.dev) 3.2.0, replacing the org's `SOQL` and `DML` classes. If the org has the same or a newer version, use [Copy and Deploy](#copy-and-deploy) and skip them.
 :::
 
-## Visibility {#visibility}
+## Copy and Deploy {#copy-and-deploy}
 
-Every Trigger Lib class is `public`, and none is `global`. Deploy the source into your own org. No package is published.
+### Trigger Lib {#trigger-lib}
 
-## Examples {#examples}
+**Apex**
 
-The `examples` folder holds 3 orchestrators and 38 handlers for Account, Contact and Opportunity. It is not part of `force-app`. Deploy it only to a scratch org or sandbox, because its triggers run on every save of those objects:
+- [`TriggerOrchestrator.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/TriggerOrchestrator.cls)
+- [`TriggerOrchestratorTest.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/TriggerOrchestratorTest.cls)
+- [`TriggerHandler.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/TriggerHandler.cls)
+- [`TriggerHandlerTest.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/TriggerHandlerTest.cls)
+- [`BeforeInsert.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/BeforeInsert.cls)
+- [`AfterInsert.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/AfterInsert.cls)
+- [`BeforeUpdate.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/BeforeUpdate.cls)
+- [`AfterUpdate.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/AfterUpdate.cls)
+- [`BeforeDelete.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/BeforeDelete.cls)
+- [`AfterDelete.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/AfterDelete.cls)
+- [`AfterUndelete.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/AfterUndelete.cls)
 
-```bash
-sf project deploy start -d examples -o your-org-alias
-```
+**Custom Metadata Types**
+
+- [`TriggerObject__mdt`](https://github.com/beyond-the-cloud-dev/trigger-lib/tree/main/force-app/main/default/objects/TriggerObject__mdt)
+- [`TriggerHandler__mdt`](https://github.com/beyond-the-cloud-dev/trigger-lib/tree/main/force-app/main/default/objects/TriggerHandler__mdt)
+
+### SOQL Lib _(required)_ {#soql-lib}
+
+**Apex**
+
+- [`SOQL.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/dependencies/soql-lib/SOQL.cls)
+- [`SOQL_Test.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/dependencies/soql-lib/SOQL_Test.cls)
+
+### DML Lib _(required)_ {#dml-lib}
+
+**Apex**
+
+- [`DML.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/dependencies/dml-lib/DML.cls)
+- [`DML_Test.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/dependencies/dml-lib/DML_Test.cls)
+
+::: tip
+The button skips the examples. To add them to a scratch org or sandbox, run `sf project deploy start -d examples -o your-org-alias` in a clone of the repo.
+:::

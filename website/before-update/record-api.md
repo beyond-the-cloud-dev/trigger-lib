@@ -14,8 +14,6 @@ description: What a before update handler receives - UpdateRecord, RejectableUpd
 
 <!--@include: @/_parts/generated/before-update/collection-methods.md-->
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
-- **Changes include earlier `put`s.** A value that an earlier handler set counts as a change.
 - **Text changes ignore case.** `'Doe'` to `'DOE'` is not a change.
-- **Only the Validator gets `addError`.** Elsewhere, call `record.getNewSObject().addError(…)`.

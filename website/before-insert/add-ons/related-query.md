@@ -7,17 +7,13 @@ description: Query children, siblings, duplicates or configuration once per befo
 
 # BeforeInsert.RelatedQuery
 
-Queries other records once per chunk, such as existing duplicates, contacts on the same account or configuration rows. Read them per record with `record.getRelated(name)`.
+Query children, siblings or other records once per chunk, and read them per record with `record.getRelated(name)`.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/before-insert/related-query/signature.md-->
 
-### RecordsProvider {#records-provider}
-
-<!--@include: @/_parts/generated/before-insert/related-query/records-provider.md-->
-
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -53,10 +49,19 @@ public with sharing class ContactDuplicateEmailValidator implements BeforeInsert
 
 :::
 
-## Good to Know {#good-to-know}
+## RecordsProvider {#records-provider}
+
+**Signature**
+
+<!--@include: @/_parts/generated/before-insert/related-query/records-provider.md-->
+
+## Rules {#rules}
 
 - **No Ids yet.** `records.getIds()` is empty. Filter by field values with `records.getValuesOf(…)` or by lookups with `records.getIdsOf(…)`.
 - **SOQL cannot see this save.** The new records are not in the database yet. Compare them with each other in a Populator's [Finalizer](/before-insert/add-ons/finalizer).
 - **Keys match exactly, case included.** Normalize text keys the same way in `keyOf` and in the lookup, as `[Duplicate email]` does with `toLowerCase()`.
-- **Providers query even when nothing qualifies.** They run before the first predicate. Return an empty list from `query` when no record can qualify, to skip the SOQL.
-- **Each provider has its own sharing.** Declare a keyword on every provider class; an inner class does not inherit it. A `with sharing` duplicate check misses records the user cannot see.
+- **Providers query even when nothing qualifies.** Return an empty list from `query` when no record can qualify.
+
+::: warning
+Each provider has its own sharing. Declare a keyword on every provider class; an inner class does not inherit it. A `with sharing` duplicate check misses records the user cannot see.
+:::

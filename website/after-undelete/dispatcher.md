@@ -7,13 +7,13 @@ description: After undelete, make one bulk call per chunk with the restored reco
 
 # AfterUndelete.Dispatcher
 
-Makes one bulk call per chunk with the restored records that qualify: enqueue a Queueable, publish platform events or send email.
+Make one bulk call per chunk with the records that qualify, such as enqueueing a Queueable or publishing events.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/after-undelete/dispatcher/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -21,13 +21,16 @@ Makes one bulk call per chunk with the restored records that qualify: enqueue a 
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
 - **Pass Ids, not rows.** Hand `records.getIds()` to async work and query the records there.
 - **Call out from a Queueable.** Give the job `Database.AllowsCallouts` and make the callout in `execute`.
 - **No unit of work.** DML here runs at once and is not merged. Change records from a [Writer](/after-undelete/writer).
-- **Runs before the commit.** A Publish Immediately event sent here reaches subscribers even if the restore fails later.
 - **Writer wins.** A class that also implements `AfterUndelete.Writer` runs only as a Writer.
+
+::: warning
+The Dispatcher runs before the commit. A Publish Immediately event sent here reaches subscribers even if the restore fails later.
+:::
 
 ## Test {#test}
 

@@ -7,17 +7,13 @@ description: Query children, siblings or any other records once per chunk in an 
 
 # AfterUpdate.RelatedQuery
 
-Queries children, siblings or any other records once per chunk, and reads them per record by key. No SOQL in the predicate or the action.
+Query children, siblings or other records once per chunk, and read them per record with `record.getRelated(name)`.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/after-update/related-query/signature.md-->
 
-### RecordsProvider {#records-provider}
-
-<!--@include: @/_parts/generated/after-update/related-query/records-provider.md-->
-
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -29,10 +25,19 @@ Queries children, siblings or any other records once per chunk, and reads them p
 
 :::
 
-## Good to Know {#good-to-know}
+## RecordsProvider {#records-provider}
+
+**Signature**
+
+<!--@include: @/_parts/generated/after-update/related-query/records-provider.md-->
+
+## Rules {#rules}
 
 - **Read your own providers by name.** Call `record.getRelated('contacts').getAllWhereKeyEquals(record.getId())`. An unknown name throws `TriggerHandler.TriggerHandlerException`, even with ContinueOnError.
-- **Keys match exactly.** Keys compare as text, case included. Normalize text keys the same way in `keyOf` and in the lookup.
-- **Providers run even when nothing qualifies.** They run before the first predicate, with every record in the chunk. Return an empty list from `query` when no record can qualify.
+- **Keys match exactly, case included.** Normalize text keys the same way in `keyOf` and in the lookup.
+- **Providers run even when nothing qualifies.** Return an empty list from `query` when no record can qualify.
 - **Both rows.** `records.getIdsOf(…)` reads the new rows and `records.getOldIdsOf(…)` the old ones. SOQL sees the saved new values. Add `Id NOT IN :records.getIds()` to leave out the trigger records.
-- **Declare sharing on every provider class.** A provider's query runs under its own class's sharing keyword. An inner class does not take its outer class's keyword.
+
+::: warning
+Declare sharing on every provider class. An inner class does not take its outer class's keyword.
+:::

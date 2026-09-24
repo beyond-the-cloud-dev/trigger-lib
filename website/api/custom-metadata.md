@@ -4,7 +4,7 @@ description: 'TriggerObject__mdt and TriggerHandler__mdt reference: switch off e
 
 # Custom Metadata
 
-Two custom metadata types switch handlers off for the whole org, without code changes. A `TriggerObject__mdt` record covers every handler on one object. A `TriggerHandler__mdt` record under it covers one handler class. Create the records in Setup under **Custom Metadata Types → Manage Records**, or deploy them.
+Two custom metadata types switch handlers off for the whole org, without code changes. Create the records in Setup under **Custom Metadata Types → Manage Records**, or deploy them.
 
 ## TriggerObject__mdt {#trigger-object}
 
@@ -40,18 +40,19 @@ The value is matched against the class name without its outer class. Case does n
 | top-level `AccountRatingPopulator` | `AccountRatingPopulator` |
 | inner `AccountRules.RatingPopulator` | `RatingPopulator` or `AccountRules.RatingPopulator` |
 
-- **Same inner name, same switch.** `AccountRules.RatingPopulator` and `ContactRules.RatingPopulator` are both switched off by either value, on that object.
 - **A misspelled name** matches nothing, and nothing warns you.
 
 ## When They Are Read {#reading}
 
 - **Once per transaction.** The first `run` or `bypass()` call reads all records with one query. Changes apply from the next transaction.
 - **No SOQL limit cost.** Custom metadata queries do not count toward the limit.
-- **Tests see the org's records.** Tests that run the orchestrator can mock the query. See [Testing](/guide/testing).
+- **Tests see the org's records.** Tests that run the orchestrator can [mock the query](/guide/testing#mock-metadata).
 
 ## Deploy Records {#deploy}
 
 The file name is `<Type>.<DeveloperName>.md-meta.xml`, for example in `force-app/main/default/customMetadata/`.
+
+**Example**
 
 ::: code-group
 
@@ -95,4 +96,3 @@ The file name is `<Type>.<DeveloperName>.md-meta.xml`, for example in `force-app
 
 - **Declare `xmlns:xsd`.** Without it, the deployment fails with an `UNKNOWN_EXCEPTION` that names no component.
 - **`TriggerObject__c` holds the DeveloperName alone,** such as `Account`, not `TriggerObject.Account`.
-- **`Bypass__c = true` takes effect on deploy.** Keep such records out of production packages unless you mean it.

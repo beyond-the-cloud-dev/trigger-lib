@@ -7,13 +7,13 @@ description: Log and swallow an after undelete Writer's or Dispatcher's exceptio
 
 # AfterUndelete.ContinueOnError
 
-Logs and swallows a Writer's or Dispatcher's exceptions. Later handlers still run, and the records are still restored.
+Log and swallow the handler's exceptions, so later handlers still run and the restore goes on.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/after-undelete/continue-on-error/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -21,10 +21,12 @@ Logs and swallows a Writer's or Dispatcher's exceptions. Later handlers still ru
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
 - **The handler stops for the chunk.** After an exception, it skips its remaining records and its Finalizer.
-- **A Writer gets a private unit.** Unless it implements OwnUnitOfWork, its writes commit right after it. When it throws, its registrations are discarded.
-- **Some errors still fail the restore.** `TriggerOrchestratorException` and `TriggerHandler.TriggerHandlerException` are logged and rethrown. A `FinalException` or `LimitException` cannot be caught.
-- **Not everything is covered.** Exceptions in `afterUndeleteHandlers()`, `bypassOnAfterUndeleteWhen()`, `ownUnitOfWorkOnAfterUndelete()`, `queryParentsOnAfterUndelete()` and the shared commit fail the restore.
-- **Logged only with a Logger.** A swallowed exception goes to the org's `TriggerOrchestrator.Logger` implementation. Without one it leaves no trace. See [Errors & Logging](/guide/error-handling).
+- **A Writer gets a separate unit.** Unless it implements OwnUnitOfWork, its writes commit right after it. When it throws, its registrations are discarded.
+- **Add a [Logger](/guide/error-handling#logger).** Without one, a swallowed exception leaves no trace.
+
+::: warning
+Some errors still fail the restore. [Library exceptions](/api/record#triggerhandlerexception), `System.LimitException`, the `FinalException` from writing a trigger row and exceptions outside the handler's own methods, such as `bypassOnAfterUndeleteWhen()` or the final commit, are never swallowed.
+:::

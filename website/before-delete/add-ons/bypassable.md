@@ -7,13 +7,13 @@ description: Skip a before delete Handler for the chunk when a condition holds, 
 
 # BeforeDelete.Bypassable
 
-Skips a before delete handler when a condition holds, such as a static flag during a batch purge.
+Skip a handler for the whole chunk when a condition holds, such as a static flag, a batch job or a custom permission.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/before-delete/bypassable/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -21,10 +21,12 @@ Skips a before delete handler when a condition holds, such as a static flag duri
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
-- **No records.** The method decides for the whole chunk. To skip only some records, return false from `qualifiesForBeforeDeleteWhen`.
-- **Outside the error handling.** An exception in `bypassOnBeforeDeleteWhen()` is not logged, ContinueOnError does not apply, and the delete fails.
+- **To skip single records, return false from `qualifiesForBeforeDeleteWhen`.**
 - **Reset static flags.** A static flag lasts the whole transaction, nested saves included. Reset it in a `finally` block after the DML it was meant for.
-- **A bypassed guard blocks nothing.** While a handler that blocks deletes is switched off, those deletes go through. An object-wide switch has the same effect.
-- **Inner classes need metadata.** `TriggerOrchestrator.bypass().handler(X.class)` never matches an inner class. Use a `TriggerHandler__mdt` record or this add-on instead. See [Bypassing](/guide/bypasses).
+- **Only this context.** [Other switches](/guide/bypasses) cover every context, and `bypass().handler(X.class)` never matches an inner class.
+
+::: warning
+The method runs outside the error handling. An exception in `bypassOnBeforeDeleteWhen()` is not logged, ContinueOnError does not apply, and the delete fails.
+:::

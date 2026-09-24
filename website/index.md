@@ -5,35 +5,41 @@ description: Apex trigger framework for Salesforce with one role per trigger con
 
 hero:
   name: 'Trigger Lib'
-  text: 'Salesforce Apex Trigger Framework'
+  text: 'Apex Trigger Framework'
   tagline: One small class per concern, run only for the records that qualify.
   actions:
     - theme: brand
       text: Get Started
-      link: /guide/first-handler
+      link: /introduction
     - theme: alt
       text: Contexts at a Glance
       link: /contexts
+    - theme: alt
+      text: Unit of Work
+      link: /guide/unit-of-work
+    - theme: alt
+      text: Testing
+      link: /guide/testing
 
 features:
   - title: One Orchestrator per Object
-    details: List each context's handlers in plain Apex. List order is run order.
+    details: List each context's handlers in plain Apex, in run order.
     link: /guide/orchestrator
   - title: One Role per Context
-    details: Populator, Validator, Writer, Dispatcher or Handler. Every method name carries its context.
+    details: Populator, Validator, Writer, Dispatcher or Handler, each acting only on the records its predicate picks.
     link: /contexts
-  - title: Record Filtering
-    details: A predicate picks the records each handler acts on.
-    link: /api/record
   - title: Declared Queries
-    details: Declare parent fields and related records. No SOQL in your handler.
+    details: Declare parent fields and related records, with no SOQL in your handler.
     link: /api/field-selection
   - title: Unit of Work
-    details: Writers register DML. By default it commits once, after the last handler.
+    details: Writers register DML, committed once after the last handler by default.
     link: /guide/unit-of-work
   - title: Bypasses and Recursion Control
-    details: Switch handlers off in Apex or custom metadata. Update contexts cap recursion.
+    details: Switch handlers off in Apex or custom metadata, and cap recursion on update.
     link: /guide/bypasses
+  - title: Unit Tests Without DML
+    details: Test handlers with in-memory records, with no trigger and no DML.
+    link: /guide/testing
 ---
 
 <BTCFooter context="trigger-lib" />

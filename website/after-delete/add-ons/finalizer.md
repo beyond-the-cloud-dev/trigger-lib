@@ -7,13 +7,13 @@ description: Run one step per chunk after an after delete Writer or Dispatcher -
 
 # AfterDelete.Finalizer
 
-Runs once after a Writer or Dispatcher has seen every record in the chunk, with the records that qualified. Use it for one aggregate query or one write per former parent.
+Run code once per chunk with the records that qualified, such as one aggregate query or one write per former parent.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/after-delete/finalizer/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -21,10 +21,12 @@ Runs once after a Writer or Dispatcher has seen every record in the chunk, with 
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
-- **Not an end-of-statement hook.** A delete of 1,000 records runs it once per chunk of up to 200.
 - **Keep the unit in a field.** The Finalizer gets no unit of work. Store the one from `writeOnAfterDelete`, as the Skeleton does. Its writes commit with the rest.
 - **Aggregate over what remains.** The deleted rows are gone from SOQL, so a query over the former parents' children counts only the survivors.
-- **A throw discards a ContinueOnError Writer's writes.** Its private unit commits after the Finalizer, so a swallowed exception skips that commit.
-- **A Dispatcher's job is already enqueued.** Its Finalizer runs after the dispatch, so a throw here does not undo the job.
+- **A swallowed throw skips the commit, not the dispatch.** With ContinueOnError, a Writer's separate unit commits after the Finalizer, so its writes are lost. A Dispatcher's call already ran.
+
+::: info
+Not an end-of-statement hook. A delete of 1,000 records runs it once per chunk of up to 200.
+:::

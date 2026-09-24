@@ -2,18 +2,18 @@
 template: add-on
 context: AfterDelete
 interface: ContinueOnError
-description: Keep a delete going when an after delete Writer or Dispatcher fails - log and swallow its exception and discard a Writer's writes together.
+description: Keep a delete going when an after delete Writer or Dispatcher fails - log and swallow its exception so later handlers still run.
 ---
 
 # AfterDelete.ContinueOnError
 
-Logs and swallows a Writer's or Dispatcher's exception, so the delete goes on. The rest of that handler's records and its Finalizer are skipped.
+Log and swallow the handler's exceptions, so later handlers still run and the delete goes on.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/after-delete/continue-on-error/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -21,10 +21,12 @@ Logs and swallows a Writer's or Dispatcher's exception, so the delete goes on. T
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
-- **Add a Logger.** The exception goes to the org's `TriggerOrchestrator.Logger` implementation. Without one it leaves no trace. See [Errors & Logging](/guide/error-handling).
-- **A Writer gets a private unit.** Unless it implements OwnUnitOfWork, its writes go to a unit that commits right after it. A failed Writer loses only its own writes.
-- **Some errors still throw.** `TriggerHandler.TriggerHandlerException` and `TriggerOrchestratorException` are logged, then rethrown. A `System.LimitException` cannot be caught at all.
-- **The old row stays read-only.** Writing a field on `getOldSObject()` throws a `FinalException` that nothing can catch.
-- **Code outside the handler is not covered.** An exception in `afterDeleteHandlers()`, `bypassOnAfterDeleteWhen()`, `ownUnitOfWorkOnAfterDelete()`, `queryParentsOnAfterDelete()` or the shared commit fails the delete.
+- **The handler stops for the chunk.** Its other records and its Finalizer are skipped.
+- **Add a [Logger](/guide/error-handling#logger).** Without one, a swallowed exception leaves no trace.
+- **A Writer gets a separate unit.** Unless it implements OwnUnitOfWork, its writes commit right after it, so a failure never touches other Writers' writes.
+
+::: warning
+Some errors still fail the delete. [Library exceptions](/api/record#triggerhandlerexception), `System.LimitException`, the `FinalException` from writing a trigger row and exceptions outside the handler's own methods, such as `bypassOnAfterDeleteWhen()` or the final commit, are never swallowed.
+:::

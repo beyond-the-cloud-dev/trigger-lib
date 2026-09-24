@@ -23,7 +23,6 @@ Implement one registration interface per context, such as `TriggerOrchestrator.B
 
 - **List classes that implement a role.** A class that implements only the context's `Handler` interface compiles and never runs. `BeforeDelete.Handler` is the exception: it is the role.
 - **One role per class.** A class that implements both roles of a context runs only as the first: Populator over Validator, Writer over Dispatcher.
-- **Test the registration.** A handler missing from the list never runs. See [Testing](/guide/testing).
 
 ## Handler Order {#order}
 
@@ -62,7 +61,7 @@ public with sharing class ContactBirthdateRangeValidator implements BeforeInsert
 - **Method names carry the context**, so they never clash.
 - **Register the class in each context's list.**
 - **Add-ons are per context too**, such as `BeforeInsert.ParentQuery` and `BeforeUpdate.ParentQuery`.
-- **Switches cover every context.** A `TriggerHandler__mdt` record switches the class off everywhere. To skip one context, use that context's Bypassable.
+- **Switches cover every context.** A `TriggerHandler__mdt` record switches the class off in every context of its object. To skip one context, use that context's Bypassable.
 
 ## Instances per Chunk {#instances-per-chunk}
 
@@ -107,4 +106,3 @@ public with sharing class AccountHotRatingTaskWriter implements AfterUpdate.Writ
 
 - **The stamp is saved with the record**, so `isChangedTo` sees it after the save.
 - **Manual edits count too.** When only the Populator's decision should count, stamp a field users cannot edit.
-- **Instance fields do not carry over** from before to after. A static `Set<Id>` does. Remove each Id once it is handled.

@@ -6,7 +6,7 @@ description: Add-ons for after delete handlers - former parent fields, related r
 
 # Add-ons in AfterDelete
 
-Add-ons are optional interfaces. Implement as many as you need next to your role interface.
+Implement as many as you need next to your role interface.
 
 ## Available {#available}
 

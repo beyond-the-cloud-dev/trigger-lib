@@ -7,13 +7,13 @@ description: After undelete, create, update or delete other records, or publish 
 
 # AfterUndelete.Writer
 
-Creates, updates or deletes other records, or publishes platform events, when records are restored. Register the changes on the unit of work; they commit with the restore.
+Change other records or publish platform events after the restore, through a unit of work.
 
-## Interface {#interface}
+**Signature**
 
 <!--@include: @/_parts/generated/after-undelete/writer/signature.md-->
 
-## Example {#example}
+**Example**
 
 ::: code-group
 
@@ -33,13 +33,16 @@ public with sharing class AccountRestoreGuardWriter implements AfterUndelete.Wri
 
 :::
 
-## Good to Know {#good-to-know}
+## Rules {#rules}
 
-- **Register, don't run DML.** The library commits what you register on `unitOfWork` after the last handler. Direct DML is not blocked here, but it runs at once, outside the unit of work.
+- **Register, don't run DML.** Call `toInsert`, `toUpdate`, `toUpsert`, `toDelete` or `toPublish` (platform events) on `unitOfWork`. Direct DML runs at once, outside the unit.
 - **A self-update is a second save.** `unitOfWork.toUpdate(new Account(Id = record.getId(), …))` fires BeforeUpdate and AfterUpdate for the restored record.
-- **A self-delete fails.** A `toDelete` of a record being restored throws a `DmlException` with `SELF_REFERENCE_FROM_TRIGGER`. Block the restore with `addError` instead.
-- **Block a restore with `addError`.** There is no Validator here. Call `record.getNewSObject().addError(…)`, as in the second tab, and list this Writer first. The record stays in the Recycle Bin.
+- **Block a restore with `addError`.** There is no Validator here. List the blocking Writer first. The record stays in the Recycle Bin.
 - **Writer wins.** A class that also implements `AfterUndelete.Dispatcher` runs only as a Writer.
+
+::: warning
+A self-delete fails. A `toDelete` of a record being restored throws a `DmlException` with `SELF_REFERENCE_FROM_TRIGGER`.
+:::
 
 ## Test {#test}
 

@@ -7391,6 +7391,506 @@ private class TriggerOrchestratorTest {
         );
     }
 
+    @IsTest
+    static void mockBeforeInsertForWith() {
+        // Setup
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeInsertFor(OperationStamper.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new OperationStamper());
+
+        // Verify
+        Assert.areEqual('BEFORE_INSERT', doe.Description, 'The mocked context should run.');
+    }
+
+    @IsTest
+    static void mockBeforeInsertForWithList() {
+        // Setup
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeInsertFor(OperationStamper.class).with(new List<Contact>{ doe });
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new OperationStamper());
+
+        // Verify
+        Assert.areEqual('BEFORE_INSERT', doe.Description, 'The mocked context should run.');
+    }
+
+    @IsTest
+    static void mockBeforeInsertForWithTwice() {
+        // Setup
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeInsertFor(OperationStamper.class).with(doe).with(new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new OperationStamper());
+
+        // Verify
+        Assert.areEqual('BEFORE_INSERT', doe.Description, 'The first row should still run.');
+    }
+
+    @IsTest
+    static void mockBeforeInsertForWithParent() {
+        // Setup
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
+
+        TriggerOrchestrator.mock().beforeInsertFor(AccountNamePopulator.class).with(doe).withParent(Contact.AccountId, acme);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new AccountNamePopulator());
+
+        // Verify
+        Assert.areEqual('Acme', doe.Department, 'The mocked parent should be served.');
+    }
+
+    @IsTest
+    static void mockBeforeInsertForWithParentList() {
+        // Setup
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
+
+        TriggerOrchestrator.mock().beforeInsertFor(AccountNamePopulator.class).with(doe).withParent(Contact.AccountId, new List<Account>{ acme });
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new AccountNamePopulator());
+
+        // Verify
+        Assert.areEqual('Acme', doe.Department, 'The mocked parent should be served.');
+    }
+
+    @IsTest
+    static void mockBeforeInsertForWithoutId() {
+        // Setup
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeInsertFor(OperationStamper.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new OperationStamper());
+
+        // Verify
+        Assert.isNull(doe.Id, 'The row should keep no Id.');
+    }
+
+    @IsTest
+    static void mockBeforeInsertForOrchestrator() {
+        // Setup
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeInsertFor(TitleOrchestrator.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new TitleOrchestrator());
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The mocked orchestrator should run.');
+    }
+
+    @IsTest
+    static void mockAfterInsertForWith() {
+        // Setup
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterInsertFor(OperationStamper.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new OperationStamper());
+
+        // Verify
+        Assert.areEqual('AFTER_INSERT', doe.Description, 'The mocked context should run.');
+    }
+
+    @IsTest
+    static void mockAfterInsertForWithParent() {
+        // Setup
+        DML.mock('triggerUow').allDmls();
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
+
+        TriggerOrchestrator.mock().afterInsertFor(AccountNameWriter.class).with(doe).withParent(Contact.AccountId, acme);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new AccountNameWriter());
+
+        // Verify
+        Assert.areEqual('Acme', DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()[0].get(Task.Subject), 'The mocked parent should be served.');
+    }
+
+    @IsTest
+    static void mockAfterInsertForWithFakeId() {
+        // Setup
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterInsertFor(OperationStamper.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new OperationStamper());
+
+        // Verify
+        Assert.isNotNull(doe.Id, 'The row should get a fake Id.');
+    }
+
+    @IsTest
+    static void mockBeforeUpdateForWithPair() {
+        // Setup
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeUpdateFor(OperationStamper.class).with(doe, new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new OperationStamper());
+
+        // Verify
+        Assert.areEqual('BEFORE_UPDATE', doe.Description, 'The mocked context should run.');
+    }
+
+    @IsTest
+    static void mockBeforeUpdateForWithPairLists() {
+        // Setup
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeUpdateFor(OperationStamper.class).with(new List<Contact>{ doe }, new List<Contact>{ new Contact(LastName = 'Doe') });
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new OperationStamper());
+
+        // Verify
+        Assert.areEqual('BEFORE_UPDATE', doe.Description, 'The mocked context should run.');
+    }
+
+    @IsTest
+    static void mockBeforeUpdateForWithPairTwice() {
+        // Setup
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock()
+            .beforeUpdateFor(OperationStamper.class)
+            .with(doe, new Contact(LastName = 'Doe'))
+            .with(new Contact(LastName = 'Doe'), new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new OperationStamper());
+
+        // Verify
+        Assert.areEqual('BEFORE_UPDATE', doe.Description, 'The first pair should still run.');
+    }
+
+    @IsTest
+    static void mockBeforeUpdateForWithParent() {
+        // Setup
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
+
+        TriggerOrchestrator.mock().beforeUpdateFor(AccountNamePopulator.class).with(doe, new Contact(LastName = 'Doe')).withParent(Contact.AccountId, acme);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new AccountNamePopulator());
+
+        // Verify
+        Assert.areEqual('Acme', doe.Department, 'The mocked parent should be served.');
+    }
+
+    @IsTest
+    static void mockBeforeUpdateForWithPairSharingOldId() {
+        // Setup
+        Id doeId = TriggerHandler.IdGenerator.get(Contact.SObjectType);
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeUpdateFor(OperationStamper.class).with(doe, new Contact(Id = doeId, LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new OperationStamper());
+
+        // Verify
+        Assert.areEqual(doeId, doe.Id, 'The pair should share the old Id.');
+    }
+
+    @IsTest
+    static void mockAfterUpdateForWithPair() {
+        // Setup
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterUpdateFor(OperationStamper.class).with(doe, new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new OperationStamper());
+
+        // Verify
+        Assert.areEqual('AFTER_UPDATE', doe.Description, 'The mocked context should run.');
+    }
+
+    @IsTest
+    static void mockAfterUpdateForWithParent() {
+        // Setup
+        DML.mock('triggerUow').allDmls();
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
+
+        TriggerOrchestrator.mock().afterUpdateFor(AccountNameWriter.class).with(doe, new Contact(LastName = 'Doe')).withParent(Contact.AccountId, acme);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new AccountNameWriter());
+
+        // Verify
+        Assert.areEqual('Acme', DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()[0].get(Task.Subject), 'The mocked parent should be served.');
+    }
+
+    @IsTest
+    static void mockBeforeDeleteForWith() {
+        // Setup
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeDeleteFor(OperationStamper.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new OperationStamper());
+
+        // Verify
+        Assert.areEqual('BEFORE_DELETE', doe.Description, 'The mocked context should run.');
+    }
+
+    @IsTest
+    static void mockBeforeDeleteForWithParent() {
+        // Setup
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
+
+        TriggerOrchestrator.mock().beforeDeleteFor(PriorAccountDeletionBlocker.class).with(doe).withParent(Contact.AccountId, acme);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new PriorAccountDeletionBlocker());
+
+        // Verify
+        Assert.areEqual('Contacts of Acme cannot be deleted.', doe.getErrors()[0].getMessage(), 'The mocked parent should be served.');
+    }
+
+    @IsTest
+    static void mockBeforeDeleteForWithFakeId() {
+        // Setup
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeDeleteFor(OperationStamper.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new OperationStamper());
+
+        // Verify
+        Assert.isNotNull(doe.Id, 'The row should get a fake Id.');
+    }
+
+    @IsTest
+    static void mockAfterDeleteForWith() {
+        // Setup
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterDeleteFor(OperationStamper.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new OperationStamper());
+
+        // Verify
+        Assert.areEqual('AFTER_DELETE', doe.Description, 'The mocked context should run.');
+    }
+
+    @IsTest
+    static void mockAfterDeleteForWithParent() {
+        // Setup
+        DML.mock('triggerUow').allDmls();
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
+
+        TriggerOrchestrator.mock().afterDeleteFor(PriorAccountNameWriter.class).with(doe).withParent(Contact.AccountId, acme);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new PriorAccountNameWriter());
+
+        // Verify
+        Assert.areEqual('Acme', DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()[0].get(Task.Subject), 'The mocked parent should be served.');
+    }
+
+    @IsTest
+    static void mockAfterUndeleteForWith() {
+        // Setup
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterUndeleteFor(OperationStamper.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new OperationStamper());
+
+        // Verify
+        Assert.areEqual('AFTER_UNDELETE', doe.Description, 'The mocked context should run.');
+    }
+
+    @IsTest
+    static void mockAfterUndeleteForWithParent() {
+        // Setup
+        DML.mock('triggerUow').allDmls();
+
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
+
+        TriggerOrchestrator.mock().afterUndeleteFor(AccountNameWriter.class).with(doe).withParent(Contact.AccountId, acme);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new AccountNameWriter());
+
+        // Verify
+        Assert.areEqual('Acme', DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()[0].get(Task.Subject), 'The mocked parent should be served.');
+    }
+
+    @IsTest
+    static void mockQueueTakesFirstContext() {
+        // Setup
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeInsertFor(OperationStamper.class).with(doe);
+        TriggerOrchestrator.mock().afterInsertFor(OperationStamper.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new OperationStamper());
+
+        // Verify
+        Assert.areEqual('BEFORE_INSERT', doe.Description, 'The first mocked context should run.');
+    }
+
+    @IsTest
+    static void mockQueueTakesNextContext() {
+        // Setup
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeInsertFor(OperationStamper.class).with(doe);
+        TriggerOrchestrator.mock().afterInsertFor(OperationStamper.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new OperationStamper());
+        TriggerOrchestrator.executeTestFor(new OperationStamper());
+
+        // Verify
+        Assert.areEqual('AFTER_INSERT', doe.Description, 'The next mocked context should run.');
+    }
+
+    @IsTest
+    static void mockQueueReplaysLastContext() {
+        // Setup
+        Account acme = new Account(Name = 'Acme', NumberOfEmployees = 0);
+
+        TriggerOrchestrator.mock().beforeInsertFor(EmployeeCounter.class).with(acme);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new EmployeeCounter());
+        TriggerOrchestrator.executeTestFor(new EmployeeCounter());
+
+        // Verify
+        Assert.areEqual(2, acme.NumberOfEmployees, 'The last mocked context should run again.');
+    }
+
+    @IsTest
+    static void mockForOtherClass() {
+        // Setup
+        TriggerOrchestrator.mock().beforeInsertFor(TitlePopulator.class).with(new Contact(LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.executeTestFor(new OperationStamper());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual('No trigger context is mocked for OperationStamper.', expectedException?.getMessage(), 'The exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void mockWithParentWithUndeclaredField() {
+        // Setup
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme', Industry = 'Banking');
+        Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
+
+        TriggerOrchestrator.mock().beforeInsertFor(UndeclaredIndustryPopulator.class).with(doe).withParent(Contact.AccountId, acme);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new UndeclaredIndustryPopulator());
+
+        // Verify
+        Assert.isNull(doe.Description, 'Only the declared parent fields should be served.');
+    }
+
+    @IsTest
+    static void mockWithParentWithNestedField() {
+        // Setup
+        Account acme = new Account(Id = TriggerHandler.IdGenerator.get(Account.SObjectType), Name = 'Acme', Owner = new User(LastName = 'Smith'));
+        Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
+
+        TriggerOrchestrator.mock().beforeInsertFor(AccountOwnerPopulator.class).with(doe).withParent(Contact.AccountId, acme);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new AccountOwnerPopulator());
+
+        // Verify
+        Assert.areEqual('Smith', doe.Description, 'The nested parent field should be served.');
+    }
+
+    @IsTest
+    static void mockWithoutParent() {
+        // Setup
+        Contact doe = new Contact(LastName = 'Doe', AccountId = TriggerHandler.IdGenerator.get(Account.SObjectType));
+
+        TriggerOrchestrator.mock().beforeInsertFor(AccountNamePopulator.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.executeTestFor(new AccountNamePopulator());
+
+        // Verify
+        Assert.isNull(doe.Department, 'No parent should be served.');
+    }
+
+    @IsTest
+    static void mockBeforeUpdateForUnimplementedContext() {
+        // Setup
+        TriggerOrchestrator.mock().beforeUpdateFor(CeoDepartmentPopulator.class).with(new Contact(LastName = 'Doe'), new Contact(LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.executeTestFor(new CeoDepartmentPopulator());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.isInstanceOfType(expectedException, System.TypeException.class, 'The unimplemented context should fail.');
+    }
+
+    @IsTest
+    static void mockAfterInsertForUnimplementedOrchestratorContext() {
+        // Setup
+        TriggerOrchestrator.mock().afterInsertFor(BeforeInsertOnlyOrchestrator.class).with(new Contact(LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.executeTestFor(new BeforeInsertOnlyOrchestrator());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.isInstanceOfType(expectedException, System.TypeException.class, 'The unimplemented context should fail.');
+    }
+
     private class OperationStamper implements BeforeInsert.Populator, AfterInsert.Writer, BeforeUpdate.Populator, AfterUpdate.Writer, BeforeDelete.Handler, AfterDelete.Writer, AfterUndelete.Writer {
         public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
             return record.equals(Contact.LastName, 'Doe');
@@ -8701,6 +9201,50 @@ private class TriggerOrchestratorTest {
 
         public void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
             unitOfWork.toPublish(this.eventToPublish);
+        }
+    }
+
+    private class UndeclaredIndustryPopulator implements BeforeInsert.Populator, BeforeInsert.ParentQuery {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert() {
+            return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
+        }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            record.put(Contact.Description, record.getNewParent('Account')?.get(Account.Industry));
+        }
+    }
+
+    private class AccountOwnerPopulator implements BeforeInsert.Populator, BeforeInsert.ParentQuery {
+        public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert() {
+            return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with('Owner', User.LastName) };
+        }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            record.put(Contact.Description, record.getNewParent('Account')?.getSObject('Owner')?.get(User.LastName));
+        }
+    }
+
+    private class EmployeeCounter implements BeforeInsert.Populator {
+        public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+            return true;
+        }
+
+        public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+            record.put(Account.NumberOfEmployees, ((Account) record.getNewSObject()).NumberOfEmployees + 1);
+        }
+    }
+
+    private class TitleOrchestrator implements TriggerOrchestrator.BeforeInsert {
+        public List<BeforeInsert.Handler> beforeInsertHandlers() {
+            return new List<BeforeInsert.Handler>{ new TitlePopulator() };
         }
     }
 

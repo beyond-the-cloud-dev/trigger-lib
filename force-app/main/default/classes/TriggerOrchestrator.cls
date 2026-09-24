@@ -75,6 +75,83 @@ public with sharing class TriggerOrchestrator {
         void clear();
     }
 
+    @TestVisible
+    private static Mockable mock() {
+        return TriggerOrchestrator.triggerMock;
+    }
+
+    @TestVisible
+    private static void executeTestFor(Object handlerOrOrchestrator) {
+        TriggerOrchestrator.triggerMock.nextContextFor(handlerOrOrchestrator).execute(handlerOrOrchestrator);
+    }
+
+    @TestVisible
+    private interface Mockable {
+        BeforeInsertMockable beforeInsertFor(System.Type handlerOrOrchestratorType);
+        AfterInsertMockable afterInsertFor(System.Type handlerOrOrchestratorType);
+        BeforeUpdateMockable beforeUpdateFor(System.Type handlerOrOrchestratorType);
+        AfterUpdateMockable afterUpdateFor(System.Type handlerOrOrchestratorType);
+        BeforeDeleteMockable beforeDeleteFor(System.Type handlerOrOrchestratorType);
+        AfterDeleteMockable afterDeleteFor(System.Type handlerOrOrchestratorType);
+        AfterUndeleteMockable afterUndeleteFor(System.Type handlerOrOrchestratorType);
+    }
+
+    @TestVisible
+    private interface BeforeInsertMockable {
+        BeforeInsertMockable with(SObject record);
+        BeforeInsertMockable with(List<SObject> records);
+        BeforeInsertMockable withParent(SObjectField lookupField, SObject parent);
+        BeforeInsertMockable withParent(SObjectField lookupField, List<SObject> parents);
+    }
+
+    @TestVisible
+    private interface AfterInsertMockable {
+        AfterInsertMockable with(SObject record);
+        AfterInsertMockable with(List<SObject> records);
+        AfterInsertMockable withParent(SObjectField lookupField, SObject parent);
+        AfterInsertMockable withParent(SObjectField lookupField, List<SObject> parents);
+    }
+
+    @TestVisible
+    private interface BeforeUpdateMockable {
+        BeforeUpdateMockable with(SObject newRecord, SObject oldRecord);
+        BeforeUpdateMockable with(List<SObject> newRecords, List<SObject> oldRecords);
+        BeforeUpdateMockable withParent(SObjectField lookupField, SObject parent);
+        BeforeUpdateMockable withParent(SObjectField lookupField, List<SObject> parents);
+    }
+
+    @TestVisible
+    private interface AfterUpdateMockable {
+        AfterUpdateMockable with(SObject newRecord, SObject oldRecord);
+        AfterUpdateMockable with(List<SObject> newRecords, List<SObject> oldRecords);
+        AfterUpdateMockable withParent(SObjectField lookupField, SObject parent);
+        AfterUpdateMockable withParent(SObjectField lookupField, List<SObject> parents);
+    }
+
+    @TestVisible
+    private interface BeforeDeleteMockable {
+        BeforeDeleteMockable with(SObject record);
+        BeforeDeleteMockable with(List<SObject> records);
+        BeforeDeleteMockable withParent(SObjectField lookupField, SObject parent);
+        BeforeDeleteMockable withParent(SObjectField lookupField, List<SObject> parents);
+    }
+
+    @TestVisible
+    private interface AfterDeleteMockable {
+        AfterDeleteMockable with(SObject record);
+        AfterDeleteMockable with(List<SObject> records);
+        AfterDeleteMockable withParent(SObjectField lookupField, SObject parent);
+        AfterDeleteMockable withParent(SObjectField lookupField, List<SObject> parents);
+    }
+
+    @TestVisible
+    private interface AfterUndeleteMockable {
+        AfterUndeleteMockable with(SObject record);
+        AfterUndeleteMockable with(List<SObject> records);
+        AfterUndeleteMockable withParent(SObjectField lookupField, SObject parent);
+        AfterUndeleteMockable withParent(SObjectField lookupField, List<SObject> parents);
+    }
+
     // Implementations
 
     @TestVisible
@@ -83,6 +160,7 @@ public with sharing class TriggerOrchestrator {
     private static TriggerBypass triggerBypass = new TriggerBypass();
     private static TriggerStack triggerStack = new TriggerStack();
     private static TriggerDepth triggerDepth = new TriggerDepth();
+    private static TriggerMock triggerMock = new TriggerMock();
 
     @TestVisible
     private TriggerContext context;
@@ -2173,6 +2251,347 @@ public with sharing class TriggerOrchestrator {
 
                 this.fieldsToQueryByParentLookup.get(parentField).addAll(fieldsToEnrich.get(parentField).getFields());
             }
+        }
+    }
+
+    private class TriggerMock implements Mockable {
+        private Map<String, List<MockedContext>> mockedContextsByClassName = new Map<String, List<MockedContext>>();
+
+        public BeforeInsertMockable beforeInsertFor(System.Type handlerOrOrchestratorType) {
+            BeforeInsertMockedContext mockedContext = new BeforeInsertMockedContext();
+            this.register(handlerOrOrchestratorType, mockedContext);
+            return mockedContext;
+        }
+
+        public AfterInsertMockable afterInsertFor(System.Type handlerOrOrchestratorType) {
+            AfterInsertMockedContext mockedContext = new AfterInsertMockedContext();
+            this.register(handlerOrOrchestratorType, mockedContext);
+            return mockedContext;
+        }
+
+        public BeforeUpdateMockable beforeUpdateFor(System.Type handlerOrOrchestratorType) {
+            BeforeUpdateMockedContext mockedContext = new BeforeUpdateMockedContext();
+            this.register(handlerOrOrchestratorType, mockedContext);
+            return mockedContext;
+        }
+
+        public AfterUpdateMockable afterUpdateFor(System.Type handlerOrOrchestratorType) {
+            AfterUpdateMockedContext mockedContext = new AfterUpdateMockedContext();
+            this.register(handlerOrOrchestratorType, mockedContext);
+            return mockedContext;
+        }
+
+        public BeforeDeleteMockable beforeDeleteFor(System.Type handlerOrOrchestratorType) {
+            BeforeDeleteMockedContext mockedContext = new BeforeDeleteMockedContext();
+            this.register(handlerOrOrchestratorType, mockedContext);
+            return mockedContext;
+        }
+
+        public AfterDeleteMockable afterDeleteFor(System.Type handlerOrOrchestratorType) {
+            AfterDeleteMockedContext mockedContext = new AfterDeleteMockedContext();
+            this.register(handlerOrOrchestratorType, mockedContext);
+            return mockedContext;
+        }
+
+        public AfterUndeleteMockable afterUndeleteFor(System.Type handlerOrOrchestratorType) {
+            AfterUndeleteMockedContext mockedContext = new AfterUndeleteMockedContext();
+            this.register(handlerOrOrchestratorType, mockedContext);
+            return mockedContext;
+        }
+
+        public MockedContext nextContextFor(Object handlerOrOrchestrator) {
+            String className = String.valueOf(handlerOrOrchestrator).substringBefore(':');
+            List<MockedContext> mockedContexts = this.mockedContextsByClassName.get(className);
+
+            if (mockedContexts == null) {
+                throw new TriggerOrchestratorException('No trigger context is mocked for ' + className + '.');
+            }
+
+            return mockedContexts.size() > 1 ? mockedContexts.remove(0) : mockedContexts[0];
+        }
+
+        private void register(System.Type handlerOrOrchestratorType, MockedContext mockedContext) {
+            String className = ('.' + handlerOrOrchestratorType.getName()).substringAfterLast('.');
+            List<MockedContext> mockedContexts = this.mockedContextsByClassName.get(className) ?? new List<MockedContext>();
+
+            mockedContexts.add(mockedContext);
+            this.mockedContextsByClassName.put(className, mockedContexts);
+        }
+    }
+
+    private abstract class MockedContext {
+        protected System.TriggerOperation operation;
+        protected List<SObject> newRecords = new List<SObject>();
+        protected List<SObject> oldRecords = new List<SObject>();
+        protected Map<SObjectType, List<SObject>> parentsByType = new Map<SObjectType, List<SObject>>();
+        protected Object handlerOrOrchestrator;
+
+        public MockedContext(System.TriggerOperation operation) {
+            this.operation = operation;
+        }
+
+        public void execute(Object handlerOrOrchestrator) {
+            this.handlerOrOrchestrator = handlerOrOrchestrator;
+
+            for (SObjectType parentType : this.parentsByType.keySet()) {
+                SOQL.mock(parentType).thenReturn(this.typed(this.parentsByType.get(parentType)));
+            }
+
+            TriggerOrchestrator orchestrator = new TriggerOrchestrator(this);
+            orchestrator.context.triggerOperation = this.operation;
+            orchestrator.context.newRecords = this.typed(this.newRecords);
+            orchestrator.context.oldRecords = this.typed(this.oldRecords);
+            orchestrator.run();
+        }
+
+        protected void addParents(SObjectField lookupField, List<SObject> parents) {
+            SObjectType parentType = lookupField.getDescribe().getReferenceTo()[0];
+            List<SObject> parentsOfType = this.parentsByType.get(parentType) ?? new List<SObject>();
+
+            parentsOfType.addAll(parents);
+            this.parentsByType.put(parentType, parentsOfType);
+        }
+
+        protected List<SObject> assignIds(List<SObject> records) {
+            for (SObject record : records) {
+                record.put('Id', record.Id ?? new TriggerHandler.RandomIdGenerator().get(record.getSObjectType()));
+            }
+
+            return records;
+        }
+
+        protected void shareIds(List<SObject> newRecords, List<SObject> oldRecords) {
+            for (Integer i = 0; i < newRecords.size(); i++) {
+                Id recordId = newRecords[i].Id ?? oldRecords[i].Id ?? new TriggerHandler.RandomIdGenerator().get(newRecords[i].getSObjectType());
+
+                newRecords[i].put('Id', recordId);
+                oldRecords[i].put('Id', recordId);
+            }
+        }
+
+        private List<SObject> typed(List<SObject> records) {
+            if (records.isEmpty()) {
+                return null;
+            }
+
+            List<SObject> typedRecords = (List<SObject>) Type.forName('List<Schema.' + String.valueOf(records[0].getSObjectType()) + '>').newInstance();
+            typedRecords.addAll(records);
+
+            return typedRecords;
+        }
+    }
+
+    private class BeforeInsertMockedContext extends MockedContext implements BeforeInsertMockable, TriggerOrchestrator.BeforeInsert {
+        public BeforeInsertMockedContext() {
+            super(System.TriggerOperation.BEFORE_INSERT);
+        }
+
+        public BeforeInsertMockable with(SObject record) {
+            return this.with(new List<SObject>{ record });
+        }
+
+        public BeforeInsertMockable with(List<SObject> records) {
+            this.newRecords.addAll(records);
+            return this;
+        }
+
+        public BeforeInsertMockable withParent(SObjectField lookupField, SObject parent) {
+            return this.withParent(lookupField, new List<SObject>{ parent });
+        }
+
+        public BeforeInsertMockable withParent(SObjectField lookupField, List<SObject> parents) {
+            this.addParents(lookupField, parents);
+            return this;
+        }
+
+        public List<BeforeInsert.Handler> beforeInsertHandlers() {
+            return this.handlerOrOrchestrator instanceof TriggerOrchestrator.BeforeInsert
+                ? ((TriggerOrchestrator.BeforeInsert) this.handlerOrOrchestrator).beforeInsertHandlers()
+                : new List<BeforeInsert.Handler>{ (BeforeInsert.Handler) this.handlerOrOrchestrator };
+        }
+    }
+
+    private class AfterInsertMockedContext extends MockedContext implements AfterInsertMockable, TriggerOrchestrator.AfterInsert {
+        public AfterInsertMockedContext() {
+            super(System.TriggerOperation.AFTER_INSERT);
+        }
+
+        public AfterInsertMockable with(SObject record) {
+            return this.with(new List<SObject>{ record });
+        }
+
+        public AfterInsertMockable with(List<SObject> records) {
+            this.newRecords.addAll(this.assignIds(records));
+            return this;
+        }
+
+        public AfterInsertMockable withParent(SObjectField lookupField, SObject parent) {
+            return this.withParent(lookupField, new List<SObject>{ parent });
+        }
+
+        public AfterInsertMockable withParent(SObjectField lookupField, List<SObject> parents) {
+            this.addParents(lookupField, parents);
+            return this;
+        }
+
+        public List<AfterInsert.Handler> afterInsertHandlers() {
+            return this.handlerOrOrchestrator instanceof TriggerOrchestrator.AfterInsert
+                ? ((TriggerOrchestrator.AfterInsert) this.handlerOrOrchestrator).afterInsertHandlers()
+                : new List<AfterInsert.Handler>{ (AfterInsert.Handler) this.handlerOrOrchestrator };
+        }
+    }
+
+    private class BeforeUpdateMockedContext extends MockedContext implements BeforeUpdateMockable, TriggerOrchestrator.BeforeUpdate {
+        public BeforeUpdateMockedContext() {
+            super(System.TriggerOperation.BEFORE_UPDATE);
+        }
+
+        public BeforeUpdateMockable with(SObject newRecord, SObject oldRecord) {
+            return this.with(new List<SObject>{ newRecord }, new List<SObject>{ oldRecord });
+        }
+
+        public BeforeUpdateMockable with(List<SObject> newRecords, List<SObject> oldRecords) {
+            this.shareIds(newRecords, oldRecords);
+            this.newRecords.addAll(newRecords);
+            this.oldRecords.addAll(oldRecords);
+            return this;
+        }
+
+        public BeforeUpdateMockable withParent(SObjectField lookupField, SObject parent) {
+            return this.withParent(lookupField, new List<SObject>{ parent });
+        }
+
+        public BeforeUpdateMockable withParent(SObjectField lookupField, List<SObject> parents) {
+            this.addParents(lookupField, parents);
+            return this;
+        }
+
+        public List<BeforeUpdate.Handler> beforeUpdateHandlers() {
+            return this.handlerOrOrchestrator instanceof TriggerOrchestrator.BeforeUpdate
+                ? ((TriggerOrchestrator.BeforeUpdate) this.handlerOrOrchestrator).beforeUpdateHandlers()
+                : new List<BeforeUpdate.Handler>{ (BeforeUpdate.Handler) this.handlerOrOrchestrator };
+        }
+    }
+
+    private class AfterUpdateMockedContext extends MockedContext implements AfterUpdateMockable, TriggerOrchestrator.AfterUpdate {
+        public AfterUpdateMockedContext() {
+            super(System.TriggerOperation.AFTER_UPDATE);
+        }
+
+        public AfterUpdateMockable with(SObject newRecord, SObject oldRecord) {
+            return this.with(new List<SObject>{ newRecord }, new List<SObject>{ oldRecord });
+        }
+
+        public AfterUpdateMockable with(List<SObject> newRecords, List<SObject> oldRecords) {
+            this.shareIds(newRecords, oldRecords);
+            this.newRecords.addAll(newRecords);
+            this.oldRecords.addAll(oldRecords);
+            return this;
+        }
+
+        public AfterUpdateMockable withParent(SObjectField lookupField, SObject parent) {
+            return this.withParent(lookupField, new List<SObject>{ parent });
+        }
+
+        public AfterUpdateMockable withParent(SObjectField lookupField, List<SObject> parents) {
+            this.addParents(lookupField, parents);
+            return this;
+        }
+
+        public List<AfterUpdate.Handler> afterUpdateHandlers() {
+            return this.handlerOrOrchestrator instanceof TriggerOrchestrator.AfterUpdate
+                ? ((TriggerOrchestrator.AfterUpdate) this.handlerOrOrchestrator).afterUpdateHandlers()
+                : new List<AfterUpdate.Handler>{ (AfterUpdate.Handler) this.handlerOrOrchestrator };
+        }
+    }
+
+    private class BeforeDeleteMockedContext extends MockedContext implements BeforeDeleteMockable, TriggerOrchestrator.BeforeDelete {
+        public BeforeDeleteMockedContext() {
+            super(System.TriggerOperation.BEFORE_DELETE);
+        }
+
+        public BeforeDeleteMockable with(SObject record) {
+            return this.with(new List<SObject>{ record });
+        }
+
+        public BeforeDeleteMockable with(List<SObject> records) {
+            this.oldRecords.addAll(this.assignIds(records));
+            return this;
+        }
+
+        public BeforeDeleteMockable withParent(SObjectField lookupField, SObject parent) {
+            return this.withParent(lookupField, new List<SObject>{ parent });
+        }
+
+        public BeforeDeleteMockable withParent(SObjectField lookupField, List<SObject> parents) {
+            this.addParents(lookupField, parents);
+            return this;
+        }
+
+        public List<BeforeDelete.Handler> beforeDeleteHandlers() {
+            return this.handlerOrOrchestrator instanceof TriggerOrchestrator.BeforeDelete
+                ? ((TriggerOrchestrator.BeforeDelete) this.handlerOrOrchestrator).beforeDeleteHandlers()
+                : new List<BeforeDelete.Handler>{ (BeforeDelete.Handler) this.handlerOrOrchestrator };
+        }
+    }
+
+    private class AfterDeleteMockedContext extends MockedContext implements AfterDeleteMockable, TriggerOrchestrator.AfterDelete {
+        public AfterDeleteMockedContext() {
+            super(System.TriggerOperation.AFTER_DELETE);
+        }
+
+        public AfterDeleteMockable with(SObject record) {
+            return this.with(new List<SObject>{ record });
+        }
+
+        public AfterDeleteMockable with(List<SObject> records) {
+            this.oldRecords.addAll(this.assignIds(records));
+            return this;
+        }
+
+        public AfterDeleteMockable withParent(SObjectField lookupField, SObject parent) {
+            return this.withParent(lookupField, new List<SObject>{ parent });
+        }
+
+        public AfterDeleteMockable withParent(SObjectField lookupField, List<SObject> parents) {
+            this.addParents(lookupField, parents);
+            return this;
+        }
+
+        public List<AfterDelete.Handler> afterDeleteHandlers() {
+            return this.handlerOrOrchestrator instanceof TriggerOrchestrator.AfterDelete
+                ? ((TriggerOrchestrator.AfterDelete) this.handlerOrOrchestrator).afterDeleteHandlers()
+                : new List<AfterDelete.Handler>{ (AfterDelete.Handler) this.handlerOrOrchestrator };
+        }
+    }
+
+    private class AfterUndeleteMockedContext extends MockedContext implements AfterUndeleteMockable, TriggerOrchestrator.AfterUndelete {
+        public AfterUndeleteMockedContext() {
+            super(System.TriggerOperation.AFTER_UNDELETE);
+        }
+
+        public AfterUndeleteMockable with(SObject record) {
+            return this.with(new List<SObject>{ record });
+        }
+
+        public AfterUndeleteMockable with(List<SObject> records) {
+            this.newRecords.addAll(this.assignIds(records));
+            return this;
+        }
+
+        public AfterUndeleteMockable withParent(SObjectField lookupField, SObject parent) {
+            return this.withParent(lookupField, new List<SObject>{ parent });
+        }
+
+        public AfterUndeleteMockable withParent(SObjectField lookupField, List<SObject> parents) {
+            this.addParents(lookupField, parents);
+            return this;
+        }
+
+        public List<AfterUndelete.Handler> afterUndeleteHandlers() {
+            return this.handlerOrOrchestrator instanceof TriggerOrchestrator.AfterUndelete
+                ? ((TriggerOrchestrator.AfterUndelete) this.handlerOrOrchestrator).afterUndeleteHandlers()
+                : new List<AfterUndelete.Handler>{ (AfterUndelete.Handler) this.handlerOrOrchestrator };
         }
     }
 

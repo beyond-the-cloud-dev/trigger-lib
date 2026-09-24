@@ -2156,7 +2156,7 @@ public with sharing class TriggerOrchestrator {
 
         public void load(List<HandlerAdapter> handlers) {
             this.collectDeclarations(handlers);
-            this.cacheNewParentsFromSavedRecords();
+            this.queryNewParentsFromSavedRecords();
             this.queryAndAttachParents();
         }
 
@@ -2167,21 +2167,15 @@ public with sharing class TriggerOrchestrator {
             }
         }
 
-        private void cacheNewParentsFromSavedRecords() {
-            if (this.lookupsForNewParents.isEmpty() || !this.areNewRecordsSaved()) {
+        private void queryNewParentsFromSavedRecords() {
+            if (this.lookupsForNewParents.isEmpty() || !this.haveTriggeredRecordsIds()) {
                 return;
             }
 
             Set<String> fieldsToQuery = new Set<String>();
 
             for (SObjectField lookupField : this.lookupsForNewParents) {
-                String relationshipName = lookupField.getDescribe().getRelationshipName();
-
-                fieldsToQuery.add(relationshipName + '.Id');
-
-                for (String field : this.fieldPathsByLookup.get(lookupField)) {
-                    fieldsToQuery.add(relationshipName + '.' + field);
-                }
+                fieldsToQuery.addAll(this.getFieldPathsForLookup(lookupField));
             }
 
             List<SObject> savedRecords = SOQL.of(this.context.sObjectType).with(fieldsToQuery).byIds(this.context.newRecords).systemMode().withoutSharing().toList();
@@ -2200,7 +2194,18 @@ public with sharing class TriggerOrchestrator {
             }
         }
 
-        private Boolean areNewRecordsSaved() {
+        private Set<String> getFieldPathsForLookup(SObjectField lookupField) {
+            String relationshipName = lookupField.getDescribe().getRelationshipName();
+            Set<String> fieldPaths = new Set<String>{ relationshipName + '.Id' };
+
+            for (String field : this.fieldPathsByLookup.get(lookupField)) {
+                fieldPaths.add(relationshipName + '.' + field);
+            }
+
+            return fieldPaths;
+        }
+
+        private Boolean haveTriggeredRecordsIds() {
             return this.context.triggerOperation == System.TriggerOperation.AFTER_INSERT ||
                 this.context.triggerOperation == System.TriggerOperation.AFTER_UPDATE ||
                 this.context.triggerOperation == System.TriggerOperation.AFTER_UNDELETE;
@@ -2227,7 +2232,6 @@ public with sharing class TriggerOrchestrator {
 
             for (SObjectField lookupField : this.fieldPathsByLookup.keySet()) {
                 this.queryParents(lookupField, this.notQueriedNewParentIds(lookupField, records));
-
                 this.attachNewParents(lookupField, records);
             }
         }
@@ -2408,9 +2412,12 @@ public with sharing class TriggerOrchestrator {
 
     private abstract class MockedContext {
         protected System.TriggerOperation triggerOperation;
+
         protected List<SObject> newRecords = new List<SObject>();
         protected List<SObject> oldRecords = new List<SObject>();
+
         protected Map<SObjectType, List<SObject>> parentsByType = new Map<SObjectType, List<SObject>>();
+
         protected Object handlerOrOrchestrator;
 
         public MockedContext(System.TriggerOperation triggerOperation) {
@@ -2425,9 +2432,11 @@ public with sharing class TriggerOrchestrator {
             }
 
             TriggerOrchestrator orchestrator = new TriggerOrchestrator(this);
+
             orchestrator.context.triggerOperation = this.triggerOperation;
             orchestrator.context.newRecords = this.typed(this.newRecords);
             orchestrator.context.oldRecords = this.typed(this.oldRecords);
+
             orchestrator.run();
         }
 

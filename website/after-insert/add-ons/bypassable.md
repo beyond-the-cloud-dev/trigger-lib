@@ -27,8 +27,8 @@ Skip a handler for the whole chunk when a condition holds, such as a static flag
 
 - **To skip single records, return false from the predicate.**
 - **Checked before the first handler runs.** A flag that an earlier handler sets takes effect from the next chunk.
-- **Static flags last the transaction.** `ContactOwnerAlignmentWriter.isDisabled = true` stays set for every later chunk and nested save until you reset it.
-- **Only this context.** [Other switches](/guide/bypasses) cover every context, and `bypass().handler(X.class)` never matches an inner class.
+- **Static flags last the transaction.** `ContactOwnerAlignmentWriter.isBypassed = true` stays set for every later chunk and nested save until you reset it.
+- **Only this context.** [Other bypasses](/guide/bypasses) cover every context, and `bypass().handler(X.class)` never matches an inner class.
 
 ::: warning
 An exception from `bypassOnAfterInsertWhen()` is not logged, ContinueOnError does not apply, and the insert fails.

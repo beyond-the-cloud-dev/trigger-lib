@@ -2,12 +2,12 @@
 template: add-on
 context: AfterUpdate
 interface: RelatedQuery
-description: Query children, siblings or any other records once per chunk in an after update Writer or Dispatcher, and read them per record by key.
+description: Query children, siblings or any other records once per handler per run in an after update Writer or Dispatcher, and read them per record by key.
 ---
 
 # AfterUpdate.RelatedQuery
 
-Query children, siblings or other records once per chunk, and read them per record with `record.getRelated(name)`.
+Query children, siblings or other records once per handler per run, and read them per record with `record.getRelated(name)`.
 
 **Signature**
 
@@ -33,7 +33,7 @@ Query children, siblings or other records once per chunk, and read them per reco
 
 ## Rules {#rules}
 
-- **Read your own providers by name.** Call `record.getRelated('contacts').getAllWhereKeyEquals(record.getId())`. An unknown name throws `TriggerHandler.TriggerHandlerException`, even with ContinueOnError.
+- **Read your own providers by name.** Call `record.getRelated('contacts').getAllWhereKeyEquals(record.getId())`. An unknown name throws `TriggerTypes.TriggerLibException`, even with ContinueOnError.
 - **Keys match exactly, case included.** Normalize text keys the same way in `keyOf` and in the lookup.
 - **Providers run even when nothing qualifies.** Return an empty list from `query` when no record can qualify.
 - **Both rows.** `records.getIdsOf(…)` reads the new rows and `records.getOldIdsOf(…)` the old ones. SOQL sees the saved new values. Add `Id NOT IN :records.getIds()` to leave out the trigger records.

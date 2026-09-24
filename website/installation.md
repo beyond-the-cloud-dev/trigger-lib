@@ -25,8 +25,8 @@ The button also deploys [SOQL Lib](https://soql.beyondthecloud.dev) 6.11.0 and [
 
 - [`TriggerOrchestrator.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/TriggerOrchestrator.cls)
 - [`TriggerOrchestratorTest.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/TriggerOrchestratorTest.cls)
-- [`TriggerHandler.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/TriggerHandler.cls)
-- [`TriggerHandlerTest.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/TriggerHandlerTest.cls)
+- [`TriggerTypes.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/TriggerTypes.cls)
+- [`TriggerTypesTest.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/TriggerTypesTest.cls)
 - [`BeforeInsert.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/BeforeInsert.cls)
 - [`AfterInsert.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/AfterInsert.cls)
 - [`BeforeUpdate.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/BeforeUpdate.cls)

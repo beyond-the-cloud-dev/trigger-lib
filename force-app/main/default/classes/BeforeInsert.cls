@@ -1,20 +1,20 @@
 public class BeforeInsert {
-    // Main interfaces - pick one
+    // Roles - pick one
 
     public interface Populator extends Handler {
-        Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record);
-        void populateOnBeforeInsert(TriggerHandler.InsertRecord record);
+        Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record);
+        void populateOnBeforeInsert(TriggerTypes.InsertRecord record);
     }
 
     public interface Validator extends Handler {
-        Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record);
-        void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record);
+        Boolean addErrorOnBeforeInsertWhen(TriggerTypes.InsertRecord record);
+        void addErrorOnBeforeInsert(TriggerTypes.RejectableInsertRecord record);
     }
 
-    // Additional interfaces - pick as many as you need
+    // Add-ons - pick as many as you need
 
     public interface ParentQuery {
-        Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert();
+        Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnBeforeInsert();
     }
 
     public interface RelatedQuery {
@@ -22,8 +22,8 @@ public class BeforeInsert {
     }
 
     public interface RecordsProvider {
-        List<SObject> query(TriggerHandler.InsertRecords records);
-        String keyOf(SObject record);
+        List<SObject> query(TriggerTypes.InsertRecords records);
+        String keyOf(SObject row);
     }
 
     public interface Bypassable {
@@ -31,13 +31,13 @@ public class BeforeInsert {
     }
 
     public interface Finalizer {
-        void finalizeBeforeInsert(TriggerHandler.InsertRecords records);
+        void finalizeOnBeforeInsert(TriggerTypes.InsertRecords records);
     }
 
     public interface ContinueOnError {
     }
 
-    // For internal use only
+    // Marker
 
     public interface Handler {
     }

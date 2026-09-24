@@ -21,7 +21,7 @@ Runs in **after delete**, after records are deleted and before the transaction c
 
 - **The rows are gone.** `getId()` returns the deleted Id, but SOQL no longer finds the row. Key queries by the old lookups: `records.getIdsOf(Contact.AccountId)`.
 - **Merge losers arrive here.** The records that lose a merge fire the delete triggers with `MasterRecordId` set. Skip them with `record.isNull(Contact.MasterRecordId)`.
-- **Stop deletes in BeforeDelete.** `getOldSObject().addError(…)` here rolls the delete back, but only after earlier handlers did their work. Use a [BeforeDelete.Handler](/before-delete/handler).
+- **Stop deletes in BeforeDelete.** `getOldSObject().addError(…)` here rolls the delete back, but only after earlier handlers did their work. Use a [BeforeDelete.Validator](/before-delete/validator).
 - **One role per class.** A class that implements both roles runs only as a Writer.
 
 ::: warning

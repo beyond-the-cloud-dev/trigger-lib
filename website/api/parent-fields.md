@@ -1,8 +1,8 @@
 ---
-description: 'TriggerHandler.ParentFields reference: choose the parent (lookup) and grandparent fields that ParentQuery and PriorParentQuery load, the lookup map key, how declarations merge, and what the parent queries cost.'
+description: 'TriggerTypes.ParentFields reference: choose the parent (lookup) and grandparent fields that ParentQuery and PriorParentQuery load, the lookup map key, how declarations merge, and what the parent queries cost.'
 ---
 
-# TriggerHandler.ParentFields
+# TriggerTypes.ParentFields
 
 Lists the parent (lookup) fields a ParentQuery or PriorParentQuery add-on loads. Read the parents with `record.getNewParent(…)` or `record.getOldParent(…)`.
 
@@ -12,7 +12,7 @@ Lists the parent (lookup) fields a ParentQuery or PriorParentQuery add-on loads.
 
 ## The Map Key {#map-key}
 
-The add-on method returns a `Map<SObjectField, TriggerHandler.ParentFields>`. The key is a lookup field on the trigger object, and the fields belong to the object it points to.
+The add-on method returns a `Map<SObjectField, TriggerTypes.ParentFields>`. The key is a lookup field on the trigger object, and the fields belong to the object it points to.
 
 | Key | Read back with |
 |---|---|
@@ -36,10 +36,10 @@ Both take up to five fields, or an `Iterable<SObjectField>`.
 **Example**
 
 ```apex
-Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name).with('Owner', User.Email)
+Contact.AccountId => TriggerTypes.ParentFields.with(Account.Name).with('Owner', User.Email)
 ```
 
-- **Start from `TriggerHandler.ParentFields`.** Every `with` returns the selection, so calls chain.
+- **Start from `TriggerTypes.ParentFields`.** Every `with` returns the selection, so calls chain.
 - **Grandparents.** `with('Owner', User.Email)` loads the parent's owner. Read it as `parentAccount.Owner.Email`.
 
 ## What Is Loaded {#what-is-loaded}

@@ -1,8 +1,8 @@
 ---
-description: 'TriggerHandler.UnitOfWork reference: the seven registration methods a Writer uses to insert, update, upsert, delete and publish in after contexts, and DML.Record lookups to records inserted in the same unit.'
+description: 'TriggerTypes.UnitOfWork reference: the seven registration methods a Writer uses to insert, update, upsert, delete and publish in before delete and the after contexts, and DML.Record lookups to records inserted in the same unit.'
 ---
 
-# TriggerHandler.UnitOfWork
+# TriggerTypes.UnitOfWork
 
 A Writer registers its DML here, in `writeOn<Ctx>(record, unitOfWork)`. The library commits it later, in bulk: [Unit of Work](/guide/unit-of-work#which-unit).
 

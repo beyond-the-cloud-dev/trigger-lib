@@ -13,7 +13,7 @@ The trigger passes an orchestrator to `TriggerOrchestrator.run(…)`. The orches
 - **List all seven events.** A context the orchestrator does not implement does nothing. Add handlers later without touching the trigger.
 - **Put nothing else in the body.** Code next to `run(…)` ignores bypasses, and its errors never reach the Logger.
 - **One trigger per object.** Salesforce does not guarantee the order of several triggers on one object.
-- **Only inside a trigger.** Called anywhere else, `run(…)` throws a `TriggerOrchestratorException`.
+- **Only inside a trigger.** Called anywhere else, `run(…)` throws a `TriggerTypes.TriggerLibException`.
 
 ## Orchestrator {#orchestrator}
 
@@ -21,8 +21,8 @@ Implement one registration interface per context, such as `TriggerOrchestrator.B
 
 <<< @/../examples/main/default/classes/account/AccountTriggerOrchestrator.cls
 
-- **List classes that implement a role.** A class that implements only the context's `Handler` interface compiles and never runs. `BeforeDelete.Handler` is the exception: it is the role.
-- **One role per class.** A class that implements both roles of a context runs only as the first: Populator over Validator, Writer over Dispatcher.
+- **List classes that implement a role.** A class that implements only the context's `Handler` interface compiles and never runs.
+- **One role per class.** A class that implements both roles of a context runs only as the first: Populator over Validator, Validator over Writer, Writer over Dispatcher.
 
 ## Handler Order {#order}
 
@@ -36,19 +36,19 @@ Implement one registration interface per context, such as `TriggerOrchestrator.B
 public with sharing class ContactBirthdateRangeValidator implements BeforeInsert.Validator, BeforeUpdate.Validator {
     private static final String MESSAGE = 'Birthdate must be in the past.';
 
-    public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+    public Boolean addErrorOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
         return this.isInFuture((Contact) record.getNewSObject());
     }
 
-    public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
+    public void addErrorOnBeforeInsert(TriggerTypes.RejectableInsertRecord record) {
         record.addError(Contact.Birthdate, ContactBirthdateRangeValidator.MESSAGE);
     }
 
-    public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+    public Boolean addErrorOnBeforeUpdateWhen(TriggerTypes.UpdateRecord record) {
         return record.isChanged(Contact.Birthdate) && this.isInFuture((Contact) record.getNewSObject());
     }
 
-    public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
+    public void addErrorOnBeforeUpdate(TriggerTypes.RejectableUpdateRecord record) {
         record.addError(Contact.Birthdate, ContactBirthdateRangeValidator.MESSAGE);
     }
 
@@ -61,7 +61,7 @@ public with sharing class ContactBirthdateRangeValidator implements BeforeInsert
 - **Method names carry the context**, so they never clash.
 - **Register the class in each context's list.**
 - **Add-ons are per context too**, such as `BeforeInsert.ParentQuery` and `BeforeUpdate.ParentQuery`.
-- **Switches cover every context.** A `TriggerHandler__mdt` record switches the class off in every context of its object. To skip one context, use that context's Bypassable.
+- **Bypasses cover every context.** A `TriggerHandler__mdt` record switches the class off in every context of its object. To skip one context, use that context's Bypassable.
 
 ## Instances per Chunk {#instances-per-chunk}
 
@@ -80,11 +80,11 @@ Stamp a decision on the record in a BeforeUpdate Populator. Let an AfterUpdate W
 
 ```apex [AccountHotRatingUpdatePopulator.cls]
 public with sharing class AccountHotRatingUpdatePopulator implements BeforeUpdate.Populator {
-    public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+    public Boolean populateOnBeforeUpdateWhen(TriggerTypes.UpdateRecord record) {
         return record.isChanged(Account.AnnualRevenue) && record.greaterThanOrEqualTo(Account.AnnualRevenue, 1000000);
     }
 
-    public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
+    public void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record) {
         record.put(Account.Rating, 'Hot');
     }
 }
@@ -92,11 +92,11 @@ public with sharing class AccountHotRatingUpdatePopulator implements BeforeUpdat
 
 ```apex [AccountHotRatingTaskWriter.cls]
 public with sharing class AccountHotRatingTaskWriter implements AfterUpdate.Writer {
-    public Boolean writeOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+    public Boolean writeOnAfterUpdateWhen(TriggerTypes.UpdateRecord record) {
         return record.isChangedTo(Account.Rating, 'Hot');
     }
 
-    public void writeOnAfterUpdate(TriggerHandler.UpdateRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+    public void writeOnAfterUpdate(TriggerTypes.UpdateRecord record, TriggerTypes.UnitOfWork unitOfWork) {
         unitOfWork.toInsert(new Task(WhatId = record.getId(), Subject = 'Call the account: its rating is now Hot'));
     }
 }

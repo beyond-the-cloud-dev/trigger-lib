@@ -21,11 +21,11 @@ Make one bulk call per chunk with the records that qualify, such as enqueueing a
 
 ```apex [Pass the values]
 public with sharing class ContactRemovalSyncDispatcher implements AfterDelete.Dispatcher {
-    public Boolean dispatchOnAfterDeleteWhen(TriggerHandler.DeleteRecord record) {
+    public Boolean dispatchOnAfterDeleteWhen(TriggerTypes.DeleteRecord record) {
         return record.isNotBlank(Contact.Email) && record.isNull(Contact.MasterRecordId);
     }
 
-    public void dispatchOnAfterDelete(TriggerHandler.DeleteRecords records) {
+    public void dispatchOnAfterDelete(TriggerTypes.DeleteRecords records) {
         System.enqueueJob(new RemovalSyncJob(records.getValuesOf(Contact.Email)));
     }
 
@@ -62,7 +62,7 @@ Pass values, not the deleted Ids. The job runs after the commit, when the delete
 static void dispatchOnAfterDeleteEnqueuesOneJob() {
     // Setup
     Contact oldContact = new Contact(LastName = 'Doe', Email = 'jane@acme.com');
-    TriggerHandler.DeleteRecords records = new TriggerHandler.DeleteTriggerRecords(new List<TriggerHandler.TriggerRecord>{ new TriggerHandler.TriggerRecord(null, oldContact) });
+    TriggerTypes.DeleteRecords records = new TriggerTypes.DeleteTriggerRecords(new List<TriggerTypes.TriggerRecord>{ new TriggerTypes.TriggerRecord(null, oldContact) });
 
     // Test
     new ContactDispatcher().dispatchOnAfterDelete(records);

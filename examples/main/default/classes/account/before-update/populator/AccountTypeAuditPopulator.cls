@@ -1,14 +1,14 @@
 public with sharing class AccountTypeAuditPopulator implements BeforeUpdate.Populator, BeforeUpdate.RecursionGuard {
-    public Integer maxRecursionDepthOnBeforeUpdate() {
+    public Integer maxRunsPerRecordOnBeforeUpdate() {
         return 1;
     }
 
-    public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+    public Boolean populateOnBeforeUpdateWhen(TriggerTypes.UpdateRecord record) {
         return record.isChanged(Account.Type);
     }
 
-    public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
-        Account accountRecord = (Account) record.getNewSObject();
+    public void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record) {
+        Account newAccount = (Account) record.getNewSObject();
         Account oldAccount = (Account) record.getOldSObject();
 
         String auditLine =
@@ -16,11 +16,11 @@ public with sharing class AccountTypeAuditPopulator implements BeforeUpdate.Popu
             ' - Type ' +
             (oldAccount.Type ?? 'none') +
             ' -> ' +
-            (accountRecord.Type ?? 'none') +
+            (newAccount.Type ?? 'none') +
             ' by ' +
             UserInfo.getName();
 
-        record.put(Account.Description, this.stampedDescription(auditLine, accountRecord.Description));
+        record.put(Account.Description, this.stampedDescription(auditLine, newAccount.Description));
     }
 
     private String stampedDescription(String auditLine, String description) {

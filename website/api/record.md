@@ -1,12 +1,12 @@
 ---
-description: 'Record API reference: InsertRecord, UpdateRecord, DeleteRecord, UndeleteRecord and the Rejectable records of Validators, with accessors, put and addError, value predicates, change detection, record type checks and TriggerHandlerException.'
+description: 'Record API reference: InsertRecord, UpdateRecord, DeleteRecord, UndeleteRecord and the Rejectable records of Validators, with accessors, put and addError, value checks, change detection and record type checks.'
 ---
 
 # Record API
 
-Every handler method that takes one record gets a `TriggerHandler` record type. It wraps the new and old rows, the declared parents and the related records.
+Every handler method that takes one record gets a `TriggerTypes` record interface. It wraps the new and old rows, the declared parents and the related records.
 
-## Record Types {#record-types}
+## Record Interfaces {#record-interfaces}
 
 | Context | Record | Validator error method gets | Collection |
 |---|---|---|---|
@@ -14,33 +14,34 @@ Every handler method that takes one record gets a `TriggerHandler` record type. 
 | AfterInsert | `InsertRecord` | | `InsertRecords` |
 | BeforeUpdate | `UpdateRecord` | `RejectableUpdateRecord` | `UpdateRecords` |
 | AfterUpdate | `UpdateRecord` | | `UpdateRecords` |
-| BeforeDelete, AfterDelete | `DeleteRecord` | | `DeleteRecords` |
+| BeforeDelete | `DeleteRecord` | `RejectableDeleteRecord` | `DeleteRecords` |
+| AfterDelete | `DeleteRecord` | | `DeleteRecords` |
 | AfterUndelete | `UndeleteRecord` | | `UndeleteRecords` |
 
-All types are nested in `TriggerHandler`.
+All interfaces are nested in `TriggerTypes`.
 
 ## Methods {#methods}
 
-| Member | Insert | Rejectable Insert | Update | Rejectable Update | Delete | Undelete |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|
-| `getId()`, `getRelated(providerName)` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| `getNewSObject()`, `getNewParent(relationshipName)` | ✓ | ✓ | ✓ | ✓ | | ✓ |
-| `getOldSObject()`, `getOldParent(relationshipName)` | | | ✓ | ✓ | ✓ | |
-| `put(field, value)` | ✓ | | ✓ | | | |
-| `addError(error)`, `addError(field, error)` | | ✓ | | ✓ | | |
-| value predicates and record type checks | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| change detection | | | ✓ | ✓ | | |
+| Member | Insert | Rejectable Insert | Update | Rejectable Update | Delete | Rejectable Delete | Undelete |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| `getId()`, `getRelated(providerName)` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `getNewSObject()`, `getNewParent(relationshipName)` | ✓ | ✓ | ✓ | ✓ | | | ✓ |
+| `getOldSObject()`, `getOldParent(relationshipName)` | | | ✓ | ✓ | ✓ | ✓ | |
+| `put(field, value)` | ✓ | | ✓ | | | | |
+| `addError(error)`, `addError(field, error)` | | ✓ | | ✓ | | ✓ | |
+| value checks and record type checks | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| change detection | | | ✓ | ✓ | | | |
 
 A missing member is a compile error, such as `isChanged` in an insert handler.
 
 - **`getId()`** is null in before insert.
 - **`getNewSObject()`** is the live row in before insert and before update. In the after contexts it is read-only.
-- **`getOldSObject()`** is read-only. Stop a delete with `getOldSObject().addError(…)` in [BeforeDelete](/before-delete/handler).
-- **`getNewParent('Account')`** returns the parent a [ParentQuery](/api/field-selection) loaded, or null. `getOldParent` reads PriorParentQuery. The name is case-sensitive. The row itself holds only the lookup Id: `getNewSObject().Account` is null.
+- **`getOldSObject()`** is read-only. Stop a delete with `record.addError(…)` in a [BeforeDelete.Validator](/before-delete/validator).
+- **`getNewParent('Account')`** returns the parent a [ParentQuery](/api/parent-fields) loaded, or null. `getOldParent` reads PriorParentQuery. The name is case-sensitive. The row itself holds only the lookup Id: `getNewSObject().Account` is null.
 - **`put`** works only in before insert and before update. In after insert and after update it compiles but throws a `FinalException` that nothing can catch. Change saved records with a [Writer](/api/unit-of-work).
-- **`addError(field, error)`** shows the error at record level on `Name` and address fields. The save is still blocked.
+- **`addError(field, error)`** shows the error at record level on `Name` and address fields. The record is still rejected.
 
-## Value Predicates {#value-predicates}
+## Value Checks {#value-checks}
 
 `equals`, `doesNotEqual`, `contains`, `doesNotContain`, `startsWith`, `endsWith`, `isNull`, `isNotNull`, `isEmpty`, `isNotEmpty`, `isBlank`, `isNotBlank`, `isTrue`, `isFalse`, `greaterThan`, `greaterThanOrEqualTo`, `lessThan`, `lessThanOrEqualTo`.
 
@@ -59,16 +60,7 @@ Update contexts only: `isChanged`, `isAnyChanged`, `areAllChanged`, `isChangedTo
 
 ## Record Type {#record-type}
 
-`isRecordTypeEqual(developerName)` and `isRecordTypeNotEqual(developerName)` compare by developer name, not label. They cost no SOQL.
+`isRecordType(developerName)` and `isNotRecordType(developerName)` compare by developer name, not label. They cost no SOQL.
 
-- **Objects without record types throw** a `TriggerHandlerException`.
-- **A misspelled name is not caught.** An unknown name resolves to no Id, so `isRecordTypeEqual` is true for rows without a `RecordTypeId`, such as in-memory test rows, and false for all others.
-
-## TriggerHandlerException {#triggerhandlerexception}
-
-`TriggerHandler.TriggerHandlerException` is public, so you can catch it by type. The library rethrows it even with ContinueOnError.
-
-| Message | Thrown by |
-|---|---|
-| `<Object> has no record types, so isRecordTypeEqual cannot be used on it.` | the record type checks on an object without record types |
-| `No related records provider is registered under <name>. …` | `getRelated` with a name the handler's RelatedQuery did not return |
+- **Objects without record types throw** a [`TriggerLibException`](/api/trigger-orchestrator#triggerlibexception).
+- **A misspelled name is not caught.** An unknown name resolves to no Id, so `isRecordType` is true for rows without a `RecordTypeId`, such as in-memory test rows, and false for all others.

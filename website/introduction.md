@@ -38,7 +38,6 @@ public with sharing class ContactTriggerOrchestrator implements TriggerOrchestra
 | Role | What it does | Contexts |
 |---|---|---|
 | Populator | Sets fields on the record being saved. No DML. | [BeforeInsert](/before-insert/populator), [BeforeUpdate](/before-update/populator) |
-| Validator | Attaches an error to the record being saved. No DML. | [BeforeInsert](/before-insert/validator), [BeforeUpdate](/before-update/validator) |
-| Writer | Registers DML on a unit of work. | [AfterInsert](/after-insert/writer), [AfterUpdate](/after-update/writer), [AfterDelete](/after-delete/writer), [AfterUndelete](/after-undelete/writer) |
+| Validator | Attaches an error to the record being saved or deleted, which rejects it. | [BeforeInsert](/before-insert/validator), [BeforeUpdate](/before-update/validator), [BeforeDelete](/before-delete/validator) |
+| Writer | Registers DML on a unit of work. | [AfterInsert](/after-insert/writer), [AfterUpdate](/after-update/writer), [BeforeDelete](/before-delete/writer), [AfterDelete](/after-delete/writer), [AfterUndelete](/after-undelete/writer) |
 | Dispatcher | Gets all qualified records at once, for async work, events or emails. | [AfterInsert](/after-insert/dispatcher), [AfterUpdate](/after-update/dispatcher), [AfterDelete](/after-delete/dispatcher), [AfterUndelete](/after-undelete/dispatcher) |
-| Handler | Runs per record before delete, and can block the delete with `addError`. | [BeforeDelete](/before-delete/handler) |

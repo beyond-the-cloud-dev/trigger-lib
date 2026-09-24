@@ -45,7 +45,7 @@ static void populateOnBeforeUpdateOmitsForecast() {
     Opportunity newOpportunity = new Opportunity(Amount = 4000, StageName = 'Prospecting');
 
     // Test
-    new OpportunityForecastPopulator().populateOnBeforeUpdate(new TriggerHandler.TriggerRecord(newOpportunity, new Opportunity(Amount = 9000)));
+    new OpportunityForecastPopulator().populateOnBeforeUpdate(new TriggerTypes.TriggerRecord(newOpportunity, new Opportunity(Amount = 9000)));
 
     // Verify
     Assert.areEqual('Omitted', newOpportunity.ForecastCategoryName, 'The forecast category should be Omitted.');

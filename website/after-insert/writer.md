@@ -28,7 +28,7 @@ Change other records or publish platform events after the insert, through a unit
 ## Rules {#rules}
 
 - **Register, don't run DML.** Call `toInsert`, `toUpdate`, `toUpsert`, `toDelete` or `toPublish` (platform events) on `unitOfWork`. Direct DML runs at once and skips the unit.
-- **By default, later handlers don't see your writes.** The default unit of work commits after the last handler. With [OwnUnitOfWork](/after-insert/add-ons/own-unit-of-work) or [ContinueOnError](/after-insert/add-ons/continue-on-error), it commits right after this Writer.
+- **By default, later handlers don't see your writes.** The shared unit of work commits after the last handler. With [OwnUnitOfWork](/after-insert/add-ons/own-unit-of-work) or [ContinueOnError](/after-insert/add-ons/continue-on-error), it commits right after this Writer.
 - **Inserting the same object runs after insert again.** Insert contexts have no RecursionGuard. Only your predicate stops the chain.
 - **Writer wins.** A class that also implements `AfterInsert.Dispatcher` runs only as a Writer.
 
@@ -42,8 +42,8 @@ The row is read-only. `record.put(…)` throws, and the insert fails. To change 
 @IsTest
 static void writeOnAfterInsertRegistersOnboardingTask() {
     // Setup
-    Id accountId = new TriggerHandler.RandomIdGenerator().get(Account.SObjectType);
-    TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Account(Id = accountId, Name = 'Acme', Type = 'Customer - Direct'), null);
+    Id accountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType);
+    TriggerTypes.InsertRecord record = new TriggerTypes.TriggerRecord(new Account(Id = accountId, Name = 'Acme', Type = 'Customer - Direct'), null);
     RecordingUnitOfWork unitOfWork = new RecordingUnitOfWork();
 
     // Test
@@ -54,4 +54,4 @@ static void writeOnAfterInsertRegistersOnboardingTask() {
 }
 ```
 
-`RecordingUnitOfWork` is a small [test class](/guide/testing#writers) that implements `TriggerHandler.UnitOfWork` and keeps what it receives.
+`RecordingUnitOfWork` is a small [test class](/guide/testing#writers) that implements `TriggerTypes.UnitOfWork` and keeps what it receives.

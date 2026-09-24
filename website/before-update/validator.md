@@ -40,15 +40,15 @@ No DML. If the handler runs DML or publishes an event, the library throws.
 
 ```apex
 @IsTest
-static void errorShouldBeAttachedOnBeforeUpdateWhenWonWithZeroAmount() {
+static void addErrorOnBeforeUpdateWhenWonWithZeroAmount() {
     // Setup
-    TriggerHandler.UpdateRecord record = new TriggerHandler.TriggerRecord(
+    TriggerTypes.UpdateRecord record = new TriggerTypes.TriggerRecord(
         new Opportunity(StageName = 'Closed Won', Amount = 0),
         new Opportunity(StageName = 'Negotiation/Review')
     );
 
     // Test
-    Boolean result = new OpportunityWinAmountValidator().errorShouldBeAttachedOnBeforeUpdateWhen(record);
+    Boolean result = new OpportunityWinAmountValidator().addErrorOnBeforeUpdateWhen(record);
 
     // Verify
     Assert.isTrue(result, 'The record should be rejected.');

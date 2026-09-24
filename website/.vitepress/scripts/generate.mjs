@@ -13,13 +13,12 @@ import { pathToFileURL } from 'node:url';
 import {
   WEBSITE_DIR,
   getInterface,
-  getTriggerHandlerInterface,
+  getTriggerTypesInterface,
   model
 } from '../apex-api.mjs';
 import {
   addOnFacts,
   contextFacts,
-  deletePriorParentNote,
   honourTable,
   putFact,
   roleCalls,
@@ -46,7 +45,7 @@ function list(items, conjunction = 'and') {
 }
 
 function shortType(type) {
-  return type.replace(/^TriggerHandler\./, '');
+  return type.replace(/^TriggerTypes\./, '');
 }
 
 function paramNames(method) {
@@ -86,40 +85,15 @@ function ignoringRoles(context, addOn) {
 }
 
 function recordInterface(context) {
-  return getTriggerHandlerInterface(context.recordType);
+  return getTriggerTypesInterface(context.recordType);
 }
 
 function collectionInterface(context) {
-  return getTriggerHandlerInterface(context.collectionType);
+  return getTriggerTypesInterface(context.collectionType);
 }
 
 function hasMethod(declared, name) {
   return declared.methodNames.includes(name);
-}
-
-function priorParentMismatches() {
-  const mismatches = [];
-  for (const context of model.contexts) {
-    const prior = getInterface(context.name, 'PriorParentQuery');
-    if (prior && !prior.methods[0].name.startsWith('queryPriorParentsOn')) {
-      mismatches.push({ context, method: prior.methods[0].name });
-    }
-  }
-  return mismatches;
-}
-
-function priorParentNote() {
-  const mismatches = priorParentMismatches();
-  if (mismatches.length === 0) return null;
-  if (mismatches.every(({ context }) => context.operation === 'Delete'))
-    return deletePriorParentNote;
-  return `In ${list(mismatches.map(({ context }) => context.name))} the PriorParentQuery method is named ${list(mismatches.map(({ method }) => code(`${method}()`)))}.`;
-}
-
-function priorParentNoteFor(context) {
-  return priorParentMismatches().some(mismatch => mismatch.context === context)
-    ? priorParentNote()
-    : null;
 }
 
 function validate() {
@@ -197,10 +171,6 @@ function signature(context, item) {
     }
   }
 
-  if (item.name === 'PriorParentQuery' && priorParentNoteFor(context)) {
-    lines.push(priorParentNoteFor(context));
-  }
-
   return lines.join('\n\n');
 }
 
@@ -243,16 +213,14 @@ const predicateReturns = {
   Populator: 'to populate the record',
   Validator: 'to reject the record',
   Writer: 'to write for the record',
-  Dispatcher: 'to include the record in the dispatch',
-  Handler: 'to handle the record'
+  Dispatcher: 'to include the record in the dispatch'
 };
 
 const skeletonClassNames = {
   Populator: 'ContactPopulator',
   Validator: 'ContactValidator',
   Writer: 'ContactWriter',
-  Dispatcher: 'ContactDispatcher',
-  Handler: 'ContactHandler'
+  Dispatcher: 'ContactDispatcher'
 };
 
 function apexMethod(method, bodyLines) {
@@ -277,6 +245,7 @@ function skeletonBody(context, roleName, addOnName) {
   const accountChanged = changes
     ? 'record.isChanged(Contact.AccountId) && '
     : '';
+  const deletes = context.operation === 'Delete';
   const reviewTask = (whatId, subject) =>
     `unitOfWork.toInsert(new Task(WhatId = ${whatId}, Subject = ${subject}));`;
 
@@ -289,9 +258,11 @@ function skeletonBody(context, roleName, addOnName) {
           : 'return record.isBlank(Contact.LeadSource);'
       ],
       Validator: [
-        changes
-          ? 'return record.isChangedTo(Contact.Email, null);'
-          : 'return record.isBlank(Contact.Email);'
+        deletes
+          ? 'return record.isTrue(Contact.DoNotCall);'
+          : changes
+            ? 'return record.isChangedTo(Contact.Email, null);'
+            : 'return record.isBlank(Contact.Email);'
       ],
       Writer: [
         changes
@@ -302,8 +273,7 @@ function skeletonBody(context, roleName, addOnName) {
         changes
           ? 'return record.isChanged(Contact.Email);'
           : 'return record.isNotNull(Contact.Email);'
-      ],
-      Handler: ['return record.isTrue(Contact.DoNotCall);']
+      ]
     }[roleName],
     action: {
       Populator: [
@@ -312,17 +282,16 @@ function skeletonBody(context, roleName, addOnName) {
           : "record.put(Contact.LeadSource, 'Web');"
       ],
       Validator: [
-        changes
-          ? "record.addError(Contact.Email, 'Email cannot be removed.');"
-          : "record.addError(Contact.Email, 'Email is required.');"
+        deletes
+          ? "record.addError('A Do Not Call contact cannot be deleted.');"
+          : changes
+            ? "record.addError(Contact.Email, 'Email cannot be removed.');"
+            : "record.addError(Contact.Email, 'Email is required.');"
       ],
       Writer: [
         reviewTask(`((Contact) record.${side}()).AccountId`, "'Review contact'")
       ],
-      Dispatcher: [`System.enqueueJob(new ContactSyncJob(${collection}));`],
-      Handler: [
-        "record.getOldSObject().addError('A Do Not Call contact cannot be deleted.');"
-      ]
+      Dispatcher: [`System.enqueueJob(new ContactSyncJob(${collection}));`]
     }[roleName],
     finalizer: []
   };
@@ -363,9 +332,9 @@ function skeletonBody(context, roleName, addOnName) {
           "'Contact left ' + previousAccount.Name"
         )
       ];
-    if (roleName === 'Handler')
+    if (roleName === 'Validator')
       body.action = [
-        "record.getOldSObject().addError('Remove the contact from ' + ((Account) record.getOldParent('Account')).Name + ' before you delete it.');"
+        "record.addError('Remove the contact from ' + ((Account) record.getOldParent('Account')).Name + ' first.');"
       ];
   }
 
@@ -391,13 +360,14 @@ function skeletonBody(context, roleName, addOnName) {
         '',
         reviewTask('accountId', "'Contacts on the account: ' + contactCount")
       ];
-    if (roleName === 'Handler') {
-      body.action = [
+    if (roleName === 'Validator') {
+      body.predicate = [
         accountId,
         '',
-        `if (${contacts}.size() == 1) {`,
-        "    record.getOldSObject().addError('The last contact of an account cannot be deleted.');",
-        '}'
+        `return accountId != null && ${contacts}.size() == 1;`
+      ];
+      body.action = [
+        "record.addError('The last contact of an account cannot be deleted.');"
       ];
     }
   }
@@ -425,29 +395,12 @@ function skeletonBody(context, roleName, addOnName) {
   }
 
   if (addOnName === 'Finalizer' && roleName === 'Writer') {
-    body.fields = ['private TriggerHandler.UnitOfWork unitOfWork;'];
+    body.fields = ['private TriggerTypes.UnitOfWork unitOfWork;'];
     body.action = ['this.unitOfWork = unitOfWork;', ...body.action];
     body.finalizer = [
       'for (Id accountId : records.getIdsOf(Contact.AccountId)) {',
       "    this.unitOfWork.toUpdate(new Account(Id = accountId, Description = 'Contacts changed'));",
       '}'
-    ];
-  }
-
-  if (addOnName === 'Finalizer' && roleName === 'Handler') {
-    body.fields = ['private Set<Id> accountIds = new Set<Id>();'];
-    body.predicate = ['return record.isNotNull(Contact.AccountId);'];
-    body.action = [
-      'this.accountIds.add(((Contact) record.getOldSObject()).AccountId);'
-    ];
-    body.finalizer = [
-      'List<Account> accounts = new List<Account>();',
-      '',
-      'for (Id accountId : this.accountIds) {',
-      "    accounts.add(new Account(Id = accountId, Description = 'Contacts deleted'));",
-      '}',
-      '',
-      'update accounts;'
     ];
   }
 
@@ -465,14 +418,14 @@ function skeleton(context, roleName, addOnName) {
   const innerClasses = [];
 
   if (addOnName === 'Bypassable')
-    fields.unshift('    public static Boolean isDisabled = false;');
+    fields.unshift('    public static Boolean isBypassed = false;');
 
   if (addOn && addOnName !== 'Finalizer') {
     for (const method of addOn.methods) {
       if (addOnName === 'ParentQuery' || addOnName === 'PriorParentQuery') {
         members.push(
           apexMethod(method, [
-            `return new ${method.returnType}{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };`
+            `return new ${method.returnType}{ Contact.AccountId => TriggerTypes.ParentFields.with(Account.Name) };`
           ])
         );
       } else if (addOnName === 'RelatedQuery') {
@@ -488,7 +441,7 @@ function skeleton(context, roleName, addOnName) {
           ])
         );
       } else if (addOnName === 'Bypassable') {
-        members.push(apexMethod(method, [`return ${className}.isDisabled;`]));
+        members.push(apexMethod(method, [`return ${className}.isBypassed;`]));
       } else if (addOnName === 'RecursionGuard') {
         members.push(apexMethod(method, ['return 1;']));
       }
@@ -557,9 +510,15 @@ function skeleton(context, roleName, addOnName) {
   ].join('\n');
 }
 
+const finalizerRoles = ['Populator', 'Writer'];
+
 function skeletonFor(context, item) {
   if (item.kind === 'role') return skeleton(context, item.name, null);
-  const role = honouringRoles(context, item.name)[0];
+  const honouring = honouringRoles(context, item.name);
+  const role =
+    item.name === 'Finalizer'
+      ? (honouring.find(name => finalizerRoles.includes(name)) ?? honouring[0])
+      : honouring[0];
   return skeleton(context, role, item.name);
 }
 
@@ -647,7 +606,7 @@ const recordMethodGroups = [
     note: () => 'rejects the record, with a record-level or a field error'
   },
   {
-    names: ['isRecordTypeEqual', 'isRecordTypeNotEqual'],
+    names: ['isRecordType', 'isNotRecordType'],
     note: () => 'record type developer name matches / differs'
   },
   {
@@ -745,7 +704,7 @@ function recordMethods(context) {
   ];
 
   for (const extra of context.extraRecordTypes) {
-    const extraDeclared = getTriggerHandlerInterface(extra.type);
+    const extraDeclared = getTriggerTypesInterface(extra.type);
     const added = extraDeclared.methods.filter(
       method => !hasMethod(declared, method.name)
     );

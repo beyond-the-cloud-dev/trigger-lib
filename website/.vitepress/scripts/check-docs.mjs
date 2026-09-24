@@ -78,25 +78,16 @@ const SKIPPED_DIRECTORIES = new Set([
 ]);
 
 const TESTING_PAGE = 'guide/testing.md';
+const README_FILE = 'README.md';
 const CONTEXTS_PAGE = 'contexts.md';
 const ROUTER_PAGES = [CONTEXTS_PAGE];
 
 export const STALE_FENCE_PATTERNS = [
   {
     pattern:
-      /\bimplements\b[^{;]*?\b(?:BeforeInsert|BeforeUpdate|AfterInsert|AfterUpdate|AfterDelete|AfterUndelete)\.Handler\b/g,
+      /\bimplements\b[^{;]*?\b(?:BeforeInsert|BeforeUpdate|BeforeDelete|AfterInsert|AfterUpdate|AfterDelete|AfterUndelete)\.Handler\b/g,
     message:
-      'implements a context Handler marker: only BeforeDelete.Handler is a role; the class compiles and never runs. Implement a role (Populator, Validator, Writer, Dispatcher) instead'
-  },
-  {
-    pattern: /qualifiesForAfter/g,
-    message:
-      'qualifiesForAfter… belongs to no interface; after contexts use writeOnAfter<Op>When or dispatchOnAfter<Op>When'
-  },
-  {
-    pattern: /\bonAfter(?:Insert|Update|Delete|Undelete)\(/g,
-    message:
-      'onAfter…() belongs to no interface; after contexts use writeOnAfter<Op> or dispatchOnAfter<Op>'
+      'implements a context Handler marker: the class compiles and never runs. Implement a role (Populator, Validator, Writer, Dispatcher) instead'
   },
   {
     pattern: /TriggerOrchestrator\.RecursionGuard/g,
@@ -104,24 +95,19 @@ export const STALE_FENCE_PATTERNS = [
       'TriggerOrchestrator.RecursionGuard does not exist; use BeforeUpdate.RecursionGuard or AfterUpdate.RecursionGuard'
   },
   {
-    pattern: /getNewRelated/g,
-    message: 'getNewRelated does not exist; use getNewParent'
-  },
-  {
-    pattern: /\bfinalize(?:Before|After)\w+\(\s*\)/g,
+    pattern: /\bfinalizeOn(?:Before|After)\w+\(\s*\)/g,
     message:
-      'a Finalizer method takes the qualified records: finalize<Ctx>(TriggerHandler.<X>Records records)'
+      'a Finalizer method takes the qualified records: finalizeOn<Ctx>(TriggerTypes.<X>Records records)'
   },
   {
     pattern: /ValidationMessage/g,
     message:
-      'the Validator message method was removed; implement void addErrorOn<Ctx>(TriggerHandler.Rejectable<X>Record record)'
+      'the Validator message method was removed; implement void addErrorOn<Ctx>(TriggerTypes.Rejectable<X>Record record)'
   },
   {
-    pattern: /\bIdGenerator\.get/g,
-    testingOnly: true,
+    pattern: /\bkeyOf\(\s*SObject\s+record\s*\)/g,
     message:
-      'TriggerHandler.IdGenerator is a @TestVisible seam, documented on /guide/testing only; use new TriggerHandler.RandomIdGenerator().get(…)'
+      'keyOf takes a raw row: String keyOf(SObject row); "record" names the TriggerTypes record, "row" a raw SObject'
   },
   {
     pattern: /\bnew\s+TriggerOrchestrator\s*\(/g,
@@ -134,6 +120,81 @@ export const STALE_FENCE_PATTERNS = [
     testingOnly: true,
     message:
       'triggerLogger is a @TestVisible seam, documented on /guide/testing only'
+  }
+];
+
+export const STALE_NAME_PATTERNS = [
+  {
+    pattern: /\bTriggerHandler\.(?![A-Za-z_]\w*\.md-meta\.xml)/g,
+    message:
+      'TriggerHandler was renamed to TriggerTypes; only TriggerHandler__mdt and its record files keep the name'
+  },
+  {
+    pattern: /\bTriggerHandlerTest\b/g,
+    message: 'TriggerHandlerTest was renamed to TriggerTypesTest'
+  },
+  {
+    pattern: /\b(?:TriggerHandlerException|TriggerOrchestratorException)\b/g,
+    message:
+      'the library throws one public exception: TriggerTypes.TriggerLibException'
+  },
+  {
+    pattern: /\berrorShouldBeAttached/g,
+    message: 'the Validator predicate is addErrorOn<Ctx>When'
+  },
+  {
+    pattern: /\bqualifiesFor(?:Before|After)/g,
+    message:
+      'qualifiesFor… belongs to no interface; use the role predicate, such as addErrorOnBeforeDeleteWhen or writeOnBeforeDeleteWhen'
+  },
+  {
+    pattern: /\bon(?:Before|After)(?:Insert|Update|Delete|Undelete)\b/g,
+    message:
+      'on<Ctx>() belongs to no interface; use the role action, such as addErrorOnBeforeDelete or writeOnBeforeDelete'
+  },
+  {
+    pattern:
+      /\bfinalize(?:<Ctx>|(?:Before|After)(?:Insert|Update|Delete|Undelete))/g,
+    message: 'the Finalizer method is finalizeOn<Ctx>(records)'
+  },
+  {
+    pattern: /\bfinalize\(\s*\)/g,
+    message: 'TriggerOrchestrator.Logger has no finalize(); it is flush()'
+  },
+  {
+    pattern: /\bmaxRecursionDepth/g,
+    message: 'the RecursionGuard method is maxRunsPerRecordOn<Ctx>()'
+  },
+  {
+    pattern: /\bqueryParentsOn(?:Before|After)Delete\b/g,
+    message:
+      'the delete contexts declare parents with PriorParentQuery: queryPriorParentsOn<Ctx>()'
+  },
+  {
+    pattern: /\b(?:enrichNew|enrichOld|setProvidedRecords)\b/g,
+    message:
+      'the test setters are setNewParent, setOldParent and setRelated'
+  },
+  {
+    pattern: /\bexecuteTestFor\b/g,
+    message: 'the test seam is runTestFor'
+  },
+  {
+    pattern: /\bisRecordType(?:Not)?Equal\b/g,
+    message: 'the record type checks are isRecordType and isNotRecordType'
+  },
+  {
+    pattern: /\bgetTriggerRecordsFrom\b/g,
+    message: 'the factory is TriggerTypes.toTriggerRecords'
+  },
+  {
+    pattern: /\bgetNewRelated\b/g,
+    message: 'getNewRelated does not exist; use getNewParent'
+  },
+  {
+    pattern: /\bIdGenerator\.get\b/g,
+    message:
+      'there is no IdGenerator.get; build a fake Id with new TriggerTypes.RandomIdGenerator().get(…)'
   }
 ];
 
@@ -764,6 +825,17 @@ export function staleFenceProblems(content, { testingPage = false } = {}) {
   return problems;
 }
 
+export function staleNameProblems(line) {
+  const problems = [];
+  for (const entry of STALE_NAME_PATTERNS) {
+    entry.pattern.lastIndex = 0;
+    for (const match of line.matchAll(entry.pattern)) {
+      problems.push({ text: match[0], message: entry.message });
+    }
+  }
+  return problems;
+}
+
 export function staleProseProblems(text) {
   const problems = [];
   const sentences = text.split(/(?<=[.!?][*_)"'”’]*)\s+/);
@@ -832,6 +904,7 @@ function createState(options) {
     expected,
     expectedByPath: new Map(expected.map(page => [page.path, page])),
     pages: new Map(),
+    readme: null,
     handPartials: new Map(),
     generatedPartials: new Map(),
     ids: new Map(),
@@ -895,6 +968,9 @@ function loadFiles(state) {
     record.context = record.contextName ? getContext(record.contextName) : null;
     state.pages.set(record.rel, record);
   }
+
+  const readme = join(state.repoRoot, README_FILE);
+  if (existsSync(readme)) state.readme = loadRecord(readme, 'readme', state);
 
   for (const abs of walk(state.partsDir)) {
     const generated = toPosix(relative(state.generatedDir, abs));
@@ -2122,7 +2198,10 @@ function checkPartials(state) {
 }
 
 function checkMethodTokens(state) {
-  for (const record of state.pages.values()) {
+  for (const record of [
+    ...state.pages.values(),
+    ...(state.readme ? [state.readme] : [])
+  ]) {
     const doc = record.doc;
     const flag = (text, line) => {
       for (const problem of methodTokenProblems(text, state.methodNames)) {
@@ -2149,11 +2228,28 @@ function checkMethodTokens(state) {
 }
 
 function checkStaleApi(state) {
-  const records = [...state.pages.values(), ...state.handPartials.values()];
+  const records = [
+    ...state.pages.values(),
+    ...state.handPartials.values(),
+    ...(state.readme ? [state.readme] : [])
+  ];
 
   for (const record of records) {
     const doc = record.doc;
     const testingPage = record.kind === 'page' && record.rel === TESTING_PAGE;
+
+    doc.lines.forEach((line, index) => {
+      if (doc.allowed.has(index)) return;
+      for (const problem of staleNameProblems(line)) {
+        report(
+          state,
+          6,
+          record,
+          index + 1,
+          `retired name "${problem.text}": ${problem.message}`
+        );
+      }
+    });
 
     for (const fence of doc.fences) {
       if (doc.allowed.has(fence.start)) continue;

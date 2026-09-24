@@ -10,7 +10,7 @@ The bulk view of the chunk's records, to collect Ids and values for one bulk que
 
 - **`query(records)`** of a RecordsProvider gets every record in the chunk.
 - **`dispatchOn<Ctx>(records)`** of a Dispatcher gets the records its predicate qualified.
-- **`finalize<Ctx>(records)`** of a Finalizer gets the records its predicate qualified.
+- **`finalizeOn<Ctx>(records)`** of a Finalizer gets the records its predicate qualified.
 
 The type follows the context: `InsertRecords` in the insert contexts, `UpdateRecords` in the update contexts, `DeleteRecords` in the delete contexts and `UndeleteRecords` in after undelete.
 
@@ -28,7 +28,7 @@ public interface InsertRecords {
     Set<String> getValuesOf(SObjectField field);
     Set<String> getValuesOf(String relationshipName, SObjectField field);
 
-    List<TriggerHandler.InsertRecord> getRecords();
+    List<TriggerTypes.InsertRecord> getRecords();
 
     Integer size();
 }
@@ -46,7 +46,7 @@ public interface UpdateRecords {
     Set<String> getOldValuesOf(SObjectField field);
     Set<String> getOldValuesOf(String relationshipName, SObjectField field);
 
-    List<TriggerHandler.UpdateRecord> getRecords();
+    List<TriggerTypes.UpdateRecord> getRecords();
 
     Integer size();
 }
@@ -76,12 +76,12 @@ public interface UpdateRecords {
 
 ```apex
 private without sharing class ExistingEmailsProvider implements BeforeInsert.RecordsProvider {
-    public List<SObject> query(TriggerHandler.InsertRecords records) {
+    public List<SObject> query(TriggerTypes.InsertRecords records) {
         return [SELECT Id, Email FROM Contact WHERE Email IN :records.getValuesOf(Contact.Email)];
     }
 
-    public String keyOf(SObject record) {
-        return ((Contact) record).Email?.toLowerCase();
+    public String keyOf(SObject row) {
+        return ((Contact) row).Email?.toLowerCase();
     }
 }
 ```

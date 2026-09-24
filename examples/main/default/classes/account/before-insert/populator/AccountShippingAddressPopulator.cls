@@ -1,24 +1,24 @@
 public with sharing class AccountShippingAddressPopulator implements BeforeInsert.Populator, BeforeInsert.Bypassable {
-    public static Boolean isDisabled = false;
+    public static Boolean isBypassed = false;
 
     public Boolean bypassOnBeforeInsertWhen() {
-        return isDisabled || System.isBatch();
+        return AccountShippingAddressPopulator.isBypassed || System.isBatch();
     }
 
-    public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+    public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
         return record.isNotBlank(Account.BillingCountry) &&
             record.isBlank(Account.ShippingStreet) &&
             record.isBlank(Account.ShippingCity) &&
             record.isBlank(Account.ShippingCountry);
     }
 
-    public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
-        Account accountRecord = (Account) record.getNewSObject();
+    public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
+        Account newAccount = (Account) record.getNewSObject();
 
-        record.put(Account.ShippingStreet, accountRecord.BillingStreet);
-        record.put(Account.ShippingCity, accountRecord.BillingCity);
-        record.put(Account.ShippingState, accountRecord.BillingState);
-        record.put(Account.ShippingPostalCode, accountRecord.BillingPostalCode);
-        record.put(Account.ShippingCountry, accountRecord.BillingCountry);
+        record.put(Account.ShippingStreet, newAccount.BillingStreet);
+        record.put(Account.ShippingCity, newAccount.BillingCity);
+        record.put(Account.ShippingState, newAccount.BillingState);
+        record.put(Account.ShippingPostalCode, newAccount.BillingPostalCode);
+        record.put(Account.ShippingCountry, newAccount.BillingCountry);
     }
 }

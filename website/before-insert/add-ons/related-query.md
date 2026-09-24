@@ -2,12 +2,12 @@
 template: add-on
 context: BeforeInsert
 interface: RelatedQuery
-description: Query children, siblings, duplicates or configuration once per before insert chunk and read them per record, without SOQL in the loop.
+description: Query children, siblings, duplicates or configuration once per handler per run in before insert and read them per record, without SOQL in the loop.
 ---
 
 # BeforeInsert.RelatedQuery
 
-Query children, siblings or other records once per chunk, and read them per record with `record.getRelated(name)`.
+Query children, siblings or other records once per handler per run, and read them per record with `record.getRelated(name)`.
 
 **Signature**
 
@@ -25,23 +25,23 @@ public with sharing class ContactDuplicateEmailValidator implements BeforeInsert
         return new Map<String, BeforeInsert.RecordsProvider>{ 'existingContacts' => new ExistingContactsProvider() };
     }
 
-    public Boolean errorShouldBeAttachedOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+    public Boolean addErrorOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
         Contact newContact = (Contact) record.getNewSObject();
 
         return record.isNotBlank(Contact.Email) && record.getRelated('existingContacts').getFirstWhereKeyEquals(newContact.Email.toLowerCase()) != null;
     }
 
-    public void addErrorOnBeforeInsert(TriggerHandler.RejectableInsertRecord record) {
+    public void addErrorOnBeforeInsert(TriggerTypes.RejectableInsertRecord record) {
         record.addError(Contact.Email, 'A contact with this email already exists.');
     }
 
     private without sharing class ExistingContactsProvider implements BeforeInsert.RecordsProvider {
-        public List<SObject> query(TriggerHandler.InsertRecords records) {
+        public List<SObject> query(TriggerTypes.InsertRecords records) {
             return [SELECT Id, Email FROM Contact WHERE Email IN :records.getValuesOf(Contact.Email)];
         }
 
-        public String keyOf(SObject record) {
-            return ((Contact) record).Email?.toLowerCase();
+        public String keyOf(SObject row) {
+            return ((Contact) row).Email?.toLowerCase();
         }
     }
 }

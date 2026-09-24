@@ -1,10 +1,10 @@
 ---
-description: 'RelatedRecords and RecordsProvider reference: the provider a RelatedQuery add-on returns to query children, siblings or unrelated records once per chunk, its query and keyOf methods, and the RelatedRecords index a handler reads with getRelated.'
+description: 'RelatedRecords and RecordsProvider reference: the provider a RelatedQuery add-on returns to query children, siblings or unrelated records once per handler per run, its query and keyOf methods, and the RelatedRecords index a handler reads with getRelated.'
 ---
 
 # RelatedRecords & RecordsProvider
 
-A RecordsProvider queries related records once per chunk: children, siblings, configuration or unrelated records. A handler returns its providers by name from its context's RelatedQuery add-on and reads them per record with `record.getRelated('<provider name>')`.
+A RecordsProvider queries related records once per handler per run: children, siblings, configuration or unrelated records. A handler returns its providers by name from its context's RelatedQuery add-on and reads them per record with `record.getRelated('<provider name>')`.
 
 ## RecordsProvider {#records-provider}
 
@@ -46,4 +46,4 @@ public interface RelatedRecords {
 
 - **Keys compare as text.** An Id matches the same Id returned as a `String` from `keyOf`.
 - **One index per provider, shared by the chunk.** Look up by the current record, for example `getAllWhereKeyEquals(record.getId())`.
-- **Only your own providers.** `getRelated` with a name the handler did not return throws a [`TriggerHandlerException`](/api/record#triggerhandlerexception).
+- **Only your own providers.** `getRelated` with a name the handler did not return throws a [`TriggerLibException`](/api/trigger-orchestrator#triggerlibexception).

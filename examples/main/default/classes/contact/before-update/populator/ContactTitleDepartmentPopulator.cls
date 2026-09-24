@@ -15,19 +15,19 @@ public with sharing class ContactTitleDepartmentPopulator implements BeforeUpdat
         'office manager' => 'Administration'
     };
 
-    public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+    public Boolean populateOnBeforeUpdateWhen(TriggerTypes.UpdateRecord record) {
         if (!record.isChanged(Contact.Title) || record.isBlank(Contact.Title)) {
             return false;
         }
 
-        Contact contactRecord = (Contact) record.getNewSObject();
+        Contact newContact = (Contact) record.getNewSObject();
 
-        return ContactTitleDepartmentPopulator.DEPARTMENT_BY_TITLE.containsKey(contactRecord.Title.trim().toLowerCase());
+        return ContactTitleDepartmentPopulator.DEPARTMENT_BY_TITLE.containsKey(newContact.Title.trim().toLowerCase());
     }
 
-    public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
-        Contact contactRecord = (Contact) record.getNewSObject();
+    public void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record) {
+        Contact newContact = (Contact) record.getNewSObject();
 
-        record.put(Contact.Department, ContactTitleDepartmentPopulator.DEPARTMENT_BY_TITLE.get(contactRecord.Title.trim().toLowerCase()));
+        record.put(Contact.Department, ContactTitleDepartmentPopulator.DEPARTMENT_BY_TITLE.get(newContact.Title.trim().toLowerCase()));
     }
 }

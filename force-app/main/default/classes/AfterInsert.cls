@@ -1,20 +1,20 @@
 public class AfterInsert {
-    // Main interfaces - pick one
+    // Roles - pick one
 
     public interface Writer extends Handler {
-        Boolean writeOnAfterInsertWhen(TriggerHandler.InsertRecord record);
-        void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork);
+        Boolean writeOnAfterInsertWhen(TriggerTypes.InsertRecord record);
+        void writeOnAfterInsert(TriggerTypes.InsertRecord record, TriggerTypes.UnitOfWork unitOfWork);
     }
 
     public interface Dispatcher extends Handler {
-        Boolean dispatchOnAfterInsertWhen(TriggerHandler.InsertRecord record);
-        void dispatchOnAfterInsert(TriggerHandler.InsertRecords records);
+        Boolean dispatchOnAfterInsertWhen(TriggerTypes.InsertRecord record);
+        void dispatchOnAfterInsert(TriggerTypes.InsertRecords records);
     }
 
-    // Additional interfaces - pick as many as you need
+    // Add-ons - pick as many as you need
 
     public interface ParentQuery {
-        Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterInsert();
+        Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnAfterInsert();
     }
 
     public interface RelatedQuery {
@@ -22,8 +22,8 @@ public class AfterInsert {
     }
 
     public interface RecordsProvider {
-        List<SObject> query(TriggerHandler.InsertRecords records);
-        String keyOf(SObject record);
+        List<SObject> query(TriggerTypes.InsertRecords records);
+        String keyOf(SObject row);
     }
 
     public interface OwnUnitOfWork {
@@ -35,13 +35,13 @@ public class AfterInsert {
     }
 
     public interface Finalizer {
-        void finalizeAfterInsert(TriggerHandler.InsertRecords records);
+        void finalizeOnAfterInsert(TriggerTypes.InsertRecords records);
     }
 
     public interface ContinueOnError {
     }
 
-    // For internal use only
+    // Marker
 
     public interface Handler {
     }

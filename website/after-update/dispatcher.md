@@ -21,11 +21,11 @@ Make one bulk call per chunk with the records that qualify, such as enqueueing a
 
 ```apex [Enqueue a callout]
 public with sharing class OpportunityWonSyncDispatcher implements AfterUpdate.Dispatcher {
-    public Boolean dispatchOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+    public Boolean dispatchOnAfterUpdateWhen(TriggerTypes.UpdateRecord record) {
         return record.isChangedTo(Opportunity.StageName, 'Closed Won');
     }
 
-    public void dispatchOnAfterUpdate(TriggerHandler.UpdateRecords records) {
+    public void dispatchOnAfterUpdate(TriggerTypes.UpdateRecords records) {
         System.enqueueJob(new SyncJob(records.getIds()));
     }
 
@@ -66,7 +66,7 @@ A callout here throws `System.CalloutException`. Call out from a Queueable that 
 @IsTest
 static void dispatchOnAfterUpdateWhenStageChangedToClosedWon() {
     // Setup
-    TriggerHandler.UpdateRecord record = new TriggerHandler.TriggerRecord(new Opportunity(StageName = 'Closed Won'), new Opportunity(StageName = 'Negotiation/Review'));
+    TriggerTypes.UpdateRecord record = new TriggerTypes.TriggerRecord(new Opportunity(StageName = 'Closed Won'), new Opportunity(StageName = 'Negotiation/Review'));
 
     // Test
     Boolean result = new OpportunityWonSyncDispatcher().dispatchOnAfterUpdateWhen(record);

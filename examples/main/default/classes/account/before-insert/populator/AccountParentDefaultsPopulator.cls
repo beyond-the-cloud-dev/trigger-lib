@@ -1,13 +1,13 @@
 public with sharing class AccountParentDefaultsPopulator implements BeforeInsert.Populator, BeforeInsert.ParentQuery {
-    public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert() {
-        return new Map<SObjectField, TriggerHandler.ParentFields>{ Account.ParentId => TriggerHandler.ParentFields.with(Account.Industry, Account.AccountSource) };
+    public Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnBeforeInsert() {
+        return new Map<SObjectField, TriggerTypes.ParentFields>{ Account.ParentId => TriggerTypes.ParentFields.with(Account.Industry, Account.AccountSource) };
     }
 
-    public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+    public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
         return record.isNotNull(Account.ParentId) && (record.isBlank(Account.Industry) || record.isBlank(Account.AccountSource));
     }
 
-    public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+    public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
         Account parent = (Account) record.getNewParent('Parent');
 
         if (parent == null) {

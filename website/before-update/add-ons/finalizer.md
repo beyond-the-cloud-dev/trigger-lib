@@ -2,7 +2,7 @@
 template: add-on
 context: BeforeUpdate
 interface: Finalizer
-description: Run once after a before update handler has processed the chunk, with the qualified records, for checks across records.
+description: Run once per chunk after a before update handler, with the qualified records, for checks across records.
 ---
 
 # BeforeUpdate.Finalizer

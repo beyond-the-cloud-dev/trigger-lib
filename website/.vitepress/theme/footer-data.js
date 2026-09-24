@@ -22,9 +22,11 @@ export const footerData = {
             { label: 'DML Lib', href: 'https://dml.beyondthecloud.dev' },
             { label: 'Async Lib', href: 'https://async.beyondthecloud.dev' },
             { label: 'HTTP Mock', href: 'https://httpmock.beyondthecloud.dev' },
-            { label: 'Cache Manager', href: 'https://cachemanager.beyondthecloud.dev' },
             { label: 'Apex Consts', href: 'https://apexconsts.beyondthecloud.dev' },
-            { label: 'Trigger Lib', href: 'https://trigger.beyondthecloud.dev' }
+            { label: 'Cache Manager', href: 'https://cachemanager.beyondthecloud.dev' },
+            { label: 'Test Lib', href: 'https://testlib.beyondthecloud.dev' },
+            { label: 'Trigger Lib', href: 'https://trigger.beyondthecloud.dev' },
+            { label: 'Callout Lib', href: 'https://callout.beyondthecloud.dev' }
         ],
         more: { label: 'More on GitHub', href: 'https://github.com/beyond-the-cloud-dev' }
     },
@@ -73,21 +75,29 @@ export const contextLinks = {
         { label: 'Get Started', href: '/getting-started' },
         { label: 'Installation', href: '/installation' }
     ],
+    'apex-consts': [
+        { label: 'Get Started', href: '/getting-started' },
+        { label: 'Installation', href: '/installation' }
+    ],
     'cache-manager': [
         { label: 'Get Started', href: '/getting-started' },
         { label: 'Installation', href: '/installation' }
     ],
-    'apex-consts': [
-        { label: 'Get Started', href: '/getting-started' },
+    'test-lib': [
+        { label: 'Get Started', href: '/introduction' },
         { label: 'Installation', href: '/installation' }
+    ],
+    'trigger-lib': [
+        { label: 'Get Started', href: '/introduction' },
+        { label: 'Installation', href: '/installation' }
+    ],
+    'callout-lib': [
+        { label: 'Get Started', href: '/introduction' },
+        { label: 'Quick Start', href: '/guide/getting-started' }
     ],
     'isv-analytics': [
         { label: 'Features', href: '/features' },
         { label: 'Pricing', href: '/pricing' }
     ],
-    'release-notifier': [{ label: 'Documentation', href: '/docs/intro' }],
-    'trigger-lib': [
-        { label: 'Get Started', href: '/introduction' },
-        { label: 'Installation', href: '/installation' }
-    ]
+    'release-notifier': [{ label: 'Documentation', href: '/docs/intro' }]
 };

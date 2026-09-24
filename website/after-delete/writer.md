@@ -21,15 +21,15 @@ Change other records or publish platform events after the delete, through a unit
 
 ```apex [Skip merge losers]
 public with sharing class ContactRemovalTaskWriter implements AfterDelete.Writer, AfterDelete.PriorParentQuery {
-    public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterDelete() {
-        return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.OwnerId) };
+    public Map<SObjectField, TriggerTypes.ParentFields> queryPriorParentsOnAfterDelete() {
+        return new Map<SObjectField, TriggerTypes.ParentFields>{ Contact.AccountId => TriggerTypes.ParentFields.with(Account.OwnerId) };
     }
 
-    public Boolean writeOnAfterDeleteWhen(TriggerHandler.DeleteRecord record) {
+    public Boolean writeOnAfterDeleteWhen(TriggerTypes.DeleteRecord record) {
         return record.isNull(Contact.MasterRecordId) && record.getOldParent('Account') != null;
     }
 
-    public void writeOnAfterDelete(TriggerHandler.DeleteRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+    public void writeOnAfterDelete(TriggerTypes.DeleteRecord record, TriggerTypes.UnitOfWork unitOfWork) {
         Contact contactRecord = (Contact) record.getOldSObject();
         Account accountRecord = (Account) record.getOldParent('Account');
 
@@ -57,10 +57,10 @@ Never register the deleted row. An update of it fails the commit with `ENTITY_IS
 @IsTest
 static void writeOnAfterDeleteWhenQualifiesContactWithAccount() {
     // Setup
-    Contact oldContact = new Contact(AccountId = new TriggerHandler.RandomIdGenerator().get(Account.SObjectType));
+    Contact oldContact = new Contact(AccountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType));
 
     // Test
-    Boolean qualifies = new ContactWriter().writeOnAfterDeleteWhen(new TriggerHandler.TriggerRecord(null, oldContact));
+    Boolean qualifies = new ContactWriter().writeOnAfterDeleteWhen(new TriggerTypes.TriggerRecord(null, oldContact));
 
     // Verify
     Assert.isTrue(qualifies, 'A contact with a former account should qualify.');

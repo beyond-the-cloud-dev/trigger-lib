@@ -18,16 +18,16 @@ public with sharing class AccountColdRatingValidator implements BeforeUpdate.Val
         return new Map<String, BeforeUpdate.RecordsProvider>{ 'openOpportunities' => new OpenOpportunities() };
     }
 
-    public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+    public Boolean addErrorOnBeforeUpdateWhen(TriggerTypes.UpdateRecord record) {
         return record.isChangedTo(Account.Rating, 'Cold') && !record.getRelated('openOpportunities').getAllWhereKeyEquals(record.getId()).isEmpty();
     }
 
-    public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
+    public void addErrorOnBeforeUpdate(TriggerTypes.RejectableUpdateRecord record) {
         record.addError(Account.Rating, 'This account has open opportunities and cannot be rated Cold.');
     }
 
     private without sharing class OpenOpportunities implements BeforeUpdate.RecordsProvider {
-        public List<SObject> query(TriggerHandler.UpdateRecords records) {
+        public List<SObject> query(TriggerTypes.UpdateRecords records) {
             return [SELECT Id, AccountId FROM Opportunity WHERE AccountId IN :records.getIds() AND IsClosed = FALSE];
         }
 
@@ -49,7 +49,7 @@ public with sharing class AccountColdRatingValidator implements BeforeUpdate.Val
 Other records under the same parent. Exclude the trigger records, so a record never finds itself:
 
 ```apex
-public List<SObject> query(TriggerHandler.UpdateRecords records) {
+public List<SObject> query(TriggerTypes.UpdateRecords records) {
     return [
         SELECT Id, AccountId, CloseDate
         FROM Opportunity
@@ -70,7 +70,7 @@ The `ORDER BY` decides which row `getFirstWhereKeyEquals` returns.
 In the update contexts, `getOldIdsOf` reads the lookup values from before the save:
 
 ```apex
-public List<SObject> query(TriggerHandler.UpdateRecords records) {
+public List<SObject> query(TriggerTypes.UpdateRecords records) {
     return [SELECT Id, AccountId FROM Contact WHERE AccountId IN :records.getOldIdsOf(Contact.AccountId) AND Id NOT IN :records.getIds()];
 }
 ```
@@ -80,7 +80,7 @@ public List<SObject> query(TriggerHandler.UpdateRecords records) {
 Keys match exactly, case included. Normalize both sides the same way:
 
 ```apex
-public List<SObject> query(TriggerHandler.InsertRecords records) {
+public List<SObject> query(TriggerTypes.InsertRecords records) {
     return [SELECT Id, Email FROM Contact WHERE Email IN :records.getValuesOf(Contact.Email)];
 }
 
@@ -115,7 +115,7 @@ public String keyOf(SObject row) {
 Rows that do not depend on the trigger records, such as custom metadata:
 
 ```apex
-public List<SObject> query(TriggerHandler.InsertRecords records) {
+public List<SObject> query(TriggerTypes.InsertRecords records) {
     return [SELECT Country__c, Region__c FROM RegionMapping__mdt];
 }
 
@@ -129,7 +129,7 @@ public String keyOf(SObject row) {
 Parents load before providers run. Declare `Account.OwnerId` with a ParentQuery, then collect it by the relationship name:
 
 ```apex
-public List<SObject> query(TriggerHandler.InsertRecords records) {
+public List<SObject> query(TriggerTypes.InsertRecords records) {
     return [SELECT Id, OwnerId FROM Account WHERE OwnerId IN :records.getIdsOf('Account', Account.OwnerId)];
 }
 ```
@@ -139,7 +139,7 @@ public List<SObject> query(TriggerHandler.InsertRecords records) {
 Formula, roll-up and system fields that the trigger rows do not carry:
 
 ```apex
-public List<SObject> query(TriggerHandler.UpdateRecords records) {
+public List<SObject> query(TriggerTypes.UpdateRecords records) {
     return [SELECT Id, ExpectedRevenue FROM Opportunity WHERE Id IN :records.getIds()];
 }
 
@@ -156,11 +156,11 @@ Implement each context's `RecordsProvider` and add one `query` overload per coll
 
 ```apex
 public without sharing class AccountOpenOpportunitiesProvider implements BeforeUpdate.RecordsProvider, BeforeDelete.RecordsProvider {
-    public List<SObject> query(TriggerHandler.UpdateRecords records) {
+    public List<SObject> query(TriggerTypes.UpdateRecords records) {
         return this.openOpportunitiesOf(records.getIds());
     }
 
-    public List<SObject> query(TriggerHandler.DeleteRecords records) {
+    public List<SObject> query(TriggerTypes.DeleteRecords records) {
         return this.openOpportunitiesOf(records.getIds());
     }
 

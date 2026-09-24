@@ -21,11 +21,11 @@ Change other records or publish platform events after the restore, through a uni
 
 ```apex [Block a restore]
 public with sharing class AccountRestoreGuardWriter implements AfterUndelete.Writer {
-    public Boolean writeOnAfterUndeleteWhen(TriggerHandler.UndeleteRecord record) {
+    public Boolean writeOnAfterUndeleteWhen(TriggerTypes.UndeleteRecord record) {
         return !FeatureManagement.checkPermission('Restore_Accounts');
     }
 
-    public void writeOnAfterUndelete(TriggerHandler.UndeleteRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+    public void writeOnAfterUndelete(TriggerTypes.UndeleteRecord record, TriggerTypes.UnitOfWork unitOfWork) {
         record.getNewSObject().addError('You are not allowed to restore accounts.');
     }
 }
@@ -53,7 +53,7 @@ static void writeOnAfterUndeleteRejectsRestore() {
     Account restoredAccount = new Account(Name = 'Acme');
 
     // Test
-    new AccountRestoreGuardWriter().writeOnAfterUndelete(new TriggerHandler.TriggerRecord(restoredAccount, null), null);
+    new AccountRestoreGuardWriter().writeOnAfterUndelete(new TriggerTypes.TriggerRecord(restoredAccount, null), null);
 
     // Verify
     Assert.areEqual('You are not allowed to restore accounts.', restoredAccount.getErrors()[0].getMessage(), 'The restore should be rejected.');

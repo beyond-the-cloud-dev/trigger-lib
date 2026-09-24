@@ -1,12 +1,12 @@
 ---
 template: add-ons
 context: BeforeDelete
-description: Add-ons for before delete handlers - parent fields, related records, bypass, finalizer and error handling.
+description: Add-ons for before delete handlers - former parent fields, related records, own unit of work, bypass, finalizer and error handling.
 ---
 
 # Add-ons in BeforeDelete
 
-Implement as many as you need next to `BeforeDelete.Handler`.
+Implement as many as you need next to your role interface.
 
 ## Available {#available}
 

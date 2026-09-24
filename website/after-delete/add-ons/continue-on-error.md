@@ -25,8 +25,8 @@ Log and swallow the handler's exceptions, so later handlers still run and the de
 
 - **The handler stops for the chunk.** Its other records and its Finalizer are skipped.
 - **Add a [Logger](/guide/error-handling#logger).** Without one, a swallowed exception leaves no trace.
-- **A Writer gets a separate unit.** Unless it implements OwnUnitOfWork, its writes commit right after it, so a failure never touches other Writers' writes.
+- **A Writer gets the automatic unit of work.** Unless it implements OwnUnitOfWork, its writes commit right after it, so a failure never touches other Writers' writes.
 
 ::: warning
-Some errors still fail the delete. [Library exceptions](/api/record#triggerhandlerexception), `System.LimitException`, the `FinalException` from writing a trigger row and exceptions outside the handler's own methods, such as `bypassOnAfterDeleteWhen()` or the final commit, are never swallowed.
+Some errors still fail the delete. [Library exceptions](/api/trigger-orchestrator#triggerlibexception), `System.LimitException`, the `FinalException` from writing a trigger row and exceptions outside the handler's own methods, such as `bypassOnAfterDeleteWhen()` or the final commit, are never swallowed.
 :::

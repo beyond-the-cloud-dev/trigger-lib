@@ -71,19 +71,17 @@ export const retiredHeadings = {
 export const leadPatterns = {
   Populator: 'Set fields on {…} before they are saved.',
   Validator:
-    'Reject {…} before {…} saved, like a validation rule written in Apex.',
+    'Reject {…} before {…}, like a validation rule written in Apex.',
   Writer:
-    'Change other records or publish platform events after the {…}, through a unit of work.',
+    'Change other records or publish platform events {…} the {…}, through a unit of work.',
   Dispatcher:
     'Make one bulk call per chunk with the records that qualify, such as enqueueing a Queueable or publishing events.',
-  Handler:
-    'Check each record before it is deleted, then block the delete or clean up the records that point at it.',
   ParentQuery:
     'Read fields of the record a lookup points to, such as {…}, without SOQL in your handler.',
   PriorParentQuery:
     'Read fields of the parent the old row pointed to, such as {…}, without SOQL in your handler.',
   RelatedQuery:
-    'Query children, siblings or other records once per chunk, and read them per record with `record.getRelated(name)`.',
+    'Query children, siblings or other records once per handler per run, and read them per record with `record.getRelated(name)`.',
   OwnUnitOfWork:
     'Give a Writer its own DML Lib unit of work, for user mode, sharing, partial success or your own statement order.',
   Bypassable:

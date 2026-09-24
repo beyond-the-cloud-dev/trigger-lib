@@ -1,9 +1,9 @@
 public with sharing class ContactDoNotCallValidator implements BeforeUpdate.Validator {
-    public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+    public Boolean addErrorOnBeforeUpdateWhen(TriggerTypes.UpdateRecord record) {
         return record.isChangedTo(Contact.DoNotCall, true) && record.isBlank(Contact.Description);
     }
 
-    public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
+    public void addErrorOnBeforeUpdate(TriggerTypes.RejectableUpdateRecord record) {
         record.addError(Contact.Description, 'Record who asked for Do Not Call, and when, in Description before ticking it.');
     }
 }

@@ -12,7 +12,7 @@ A handler's work is its providers, predicates, actions, dispatch, Finalizer and 
 
 1. **Is logged.** The org's Logger gets it under the handler's name.
 2. **Is rethrown,** unless the handler implements ContinueOnError. Every record in the chunk fails. With all-or-none DML, the whole statement fails.
-3. **Is always rethrown** when it is a library exception: a [TriggerOrchestratorException](/api/trigger-orchestrator#triggerorchestratorexception), such as DML in a before context, or a [TriggerHandlerException](/api/record#triggerhandlerexception).
+3. **Is always rethrown** when it is the library's own [`TriggerTypes.TriggerLibException`](/api/trigger-orchestrator#triggerlibexception), such as DML in a before insert handler.
 
 Platform exceptions such as `System.LimitException` cannot be caught. They fail the save, and the Logger never sees them.
 
@@ -37,7 +37,7 @@ public with sharing class TriggerErrorLogger implements TriggerOrchestrator.Logg
         );
     }
 
-    public void finalize() {
+    public void flush() {
         if (this.events.isEmpty()) {
             return;
         }
@@ -48,7 +48,7 @@ public with sharing class TriggerErrorLogger implements TriggerOrchestrator.Logg
 }
 ```
 
-- **One instance per transaction.** Clear your buffer in `finalize()`.
+- **One instance per transaction.** `flush()` runs at the end of each outermost run. Clear your buffer there.
 - **Exactly one class.** With two implementations, every Trigger Lib trigger in the org throws.
 - **Never throw from a Logger.** Its exception replaces the handler's and fails the save.
 
@@ -57,7 +57,7 @@ public with sharing class TriggerErrorLogger implements TriggerOrchestrator.Logg
 Implement the context's ContinueOnError to let the save go on when the handler fails.
 
 - **The failed handler stops.** Its remaining records and its Finalizer are skipped. Later handlers still run.
-- **A Writer that throws before its commit saves nothing.** Its registrations go to a separate unit of work, which is skipped after a failure. If the commit itself fails, statements that already ran stay: there is no savepoint.
+- **A Writer that throws before its commit saves nothing.** Its registrations go to the automatic unit of work, which is skipped after a failure. If the commit itself fails, statements that already ran stay: there is no savepoint.
 - **Use it for nice-to-have work,** such as a notification. Without a Logger, a swallowed failure leaves no trace.
 
 ## Never Logged {#never-logged}
@@ -65,16 +65,16 @@ Implement the context's ContinueOnError to let the save go on when the handler f
 This code runs outside every handler. An exception there is not logged, ContinueOnError does not apply, and the save fails:
 
 - `<ctx>Handlers()`;
-- `bypassOn<Ctx>When()`, `ownUnitOfWorkOn<Ctx>()` and `maxRecursionDepthOn<Ctx>()`;
+- `bypassOn<Ctx>When()`, `ownUnitOfWorkOn<Ctx>()` and `maxRunsPerRecordOn<Ctx>()`;
 - the ParentQuery and PriorParentQuery methods and their parent queries;
-- the default unit of work's commit.
+- the shared unit of work's commit.
 
 ## Fail One Record, Not the Whole Save {#one-record}
 
 Catch the exception and add an error to the record that caused it:
 
 ```apex
-public void writeOnAfterInsert(TriggerHandler.InsertRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+public void writeOnAfterInsert(TriggerTypes.InsertRecord record, TriggerTypes.UnitOfWork unitOfWork) {
     try {
         unitOfWork.toInsert(this.onboardingTaskFor(record));
     } catch (Exception e) {

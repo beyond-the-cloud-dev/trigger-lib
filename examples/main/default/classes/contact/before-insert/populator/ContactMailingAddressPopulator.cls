@@ -1,27 +1,27 @@
 public with sharing class ContactMailingAddressPopulator implements BeforeInsert.Populator, BeforeInsert.ParentQuery {
-    public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeInsert() {
-        return new Map<SObjectField, TriggerHandler.ParentFields>{
-            Contact.AccountId => TriggerHandler.ParentFields
+    public Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnBeforeInsert() {
+        return new Map<SObjectField, TriggerTypes.ParentFields>{
+            Contact.AccountId => TriggerTypes.ParentFields
                 .with(Account.BillingStreet, Account.BillingCity, Account.BillingState, Account.BillingPostalCode)
                 .with(Account.BillingCountry)
         };
     }
 
-    public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+    public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
         return record.isNotNull(Contact.AccountId) && record.isBlank(Contact.MailingStreet) && record.isBlank(Contact.MailingCity);
     }
 
-    public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
-        Account accountRecord = (Account) record.getNewParent('Account');
+    public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
+        Account account = (Account) record.getNewParent('Account');
 
-        if (accountRecord == null) {
+        if (account == null) {
             return;
         }
 
-        record.put(Contact.MailingStreet, accountRecord.BillingStreet);
-        record.put(Contact.MailingCity, accountRecord.BillingCity);
-        record.put(Contact.MailingState, accountRecord.BillingState);
-        record.put(Contact.MailingPostalCode, accountRecord.BillingPostalCode);
-        record.put(Contact.MailingCountry, accountRecord.BillingCountry);
+        record.put(Contact.MailingStreet, account.BillingStreet);
+        record.put(Contact.MailingCity, account.BillingCity);
+        record.put(Contact.MailingState, account.BillingState);
+        record.put(Contact.MailingPostalCode, account.BillingPostalCode);
+        record.put(Contact.MailingCountry, account.BillingCountry);
     }
 }

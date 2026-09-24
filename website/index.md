@@ -26,11 +26,11 @@ features:
     details: List each context's handlers in plain Apex, in run order.
     link: /guide/orchestrator
   - title: One Role per Context
-    details: Populator, Validator, Writer, Dispatcher or Handler, each acting only on the records its predicate picks.
+    details: Populator, Validator, Writer or Dispatcher, each acting only on the records its predicate picks.
     link: /contexts
   - title: Declared Queries
     details: Declare parent fields and related records, with no SOQL in your handler.
-    link: /api/field-selection
+    link: /api/parent-fields
   - title: Unit of Work
     details: Writers register DML, committed once after the last handler by default.
     link: /guide/unit-of-work

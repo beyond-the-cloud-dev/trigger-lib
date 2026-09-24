@@ -25,7 +25,7 @@ Skip a handler for the whole chunk when a condition holds, such as a static flag
 
 - **To skip single records, return false from the predicate.**
 - **Reset static flags.** A flag lasts the whole transaction, nested saves and later chunks included. Reset it in a `finally` block.
-- **Only this context.** [Other switches](/guide/bypasses) cover every context, and `bypass().handler(X.class)` never matches an inner class.
+- **Only this context.** [Other bypasses](/guide/bypasses) cover every context, and `bypass().handler(X.class)` never matches an inner class.
 
 ::: warning
 An exception in `bypassOnAfterUndeleteWhen()` is not logged, ContinueOnError does not apply, and the restore fails.

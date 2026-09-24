@@ -2,7 +2,7 @@
 template: add-on
 context: BeforeInsert
 interface: Finalizer
-description: Run code once after a before insert handler has processed its records, with the records that qualified, for checks across records.
+description: Run code once per chunk after a before insert handler, with the qualified records, for checks across records.
 ---
 
 # BeforeInsert.Finalizer

@@ -25,11 +25,11 @@ public with sharing class OpportunityLossReviewTaskWriter implements AfterUpdate
         return new DML().userMode().allowPartialSuccess().commitHook(new FailedTasks()).identifier('OpportunityLossReviewTaskWriter');
     }
 
-    public Boolean writeOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+    public Boolean writeOnAfterUpdateWhen(TriggerTypes.UpdateRecord record) {
         return record.isChangedTo(Opportunity.StageName, 'Closed Lost');
     }
 
-    public void writeOnAfterUpdate(TriggerHandler.UpdateRecord record, TriggerHandler.UnitOfWork unitOfWork) {
+    public void writeOnAfterUpdate(TriggerTypes.UpdateRecord record, TriggerTypes.UnitOfWork unitOfWork) {
         unitOfWork.toInsert(new Task(WhatId = record.getId(), Subject = 'Loss review'));
     }
 

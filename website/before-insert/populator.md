@@ -45,7 +45,7 @@ static void populateOnBeforeInsertLowercasesEmail() {
     Contact newContact = new Contact(Email = ' Jane.Doe@Example.com ');
 
     // Test
-    new ContactEmailNormalizationPopulator().populateOnBeforeInsert(new TriggerHandler.TriggerRecord(newContact, null));
+    new ContactEmailNormalizationPopulator().populateOnBeforeInsert(new TriggerTypes.TriggerRecord(newContact, null));
 
     // Verify
     Assert.areEqual('jane.doe@example.com', newContact.Email, 'The email should be trimmed and lowercased.');

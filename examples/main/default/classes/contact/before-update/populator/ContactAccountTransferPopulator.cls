@@ -1,27 +1,27 @@
 public with sharing class ContactAccountTransferPopulator implements BeforeUpdate.Populator, BeforeUpdate.ParentQuery, BeforeUpdate.PriorParentQuery, BeforeUpdate.RecursionGuard {
-    public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate() {
-        return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
+    public Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnBeforeUpdate() {
+        return new Map<SObjectField, TriggerTypes.ParentFields>{ Contact.AccountId => TriggerTypes.ParentFields.with(Account.Name) };
     }
 
-    public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnBeforeUpdate() {
-        return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
+    public Map<SObjectField, TriggerTypes.ParentFields> queryPriorParentsOnBeforeUpdate() {
+        return new Map<SObjectField, TriggerTypes.ParentFields>{ Contact.AccountId => TriggerTypes.ParentFields.with(Account.Name) };
     }
 
-    public Integer maxRecursionDepthOnBeforeUpdate() {
+    public Integer maxRunsPerRecordOnBeforeUpdate() {
         return 1;
     }
 
-    public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+    public Boolean populateOnBeforeUpdateWhen(TriggerTypes.UpdateRecord record) {
         return record.isChanged(Contact.AccountId) && !record.isChangedFrom(Contact.AccountId, null);
     }
 
-    public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
-        Contact contactRecord = (Contact) record.getNewSObject();
-        Account previousAccount = (Account) record.getOldParent('Account');
-        Account currentAccount = (Account) record.getNewParent('Account');
+    public void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record) {
+        Contact newContact = (Contact) record.getNewSObject();
+        Account oldAccount = (Account) record.getOldParent('Account');
+        Account newAccount = (Account) record.getNewParent('Account');
 
-        String auditLine = Date.today().format() + ' - transferred from ' + (previousAccount?.Name ?? 'a deleted account') + ' to ' + (currentAccount?.Name ?? 'no account') + '.';
+        String auditLine = Date.today().format() + ' - transferred from ' + (oldAccount?.Name ?? 'a deleted account') + ' to ' + (newAccount?.Name ?? 'no account') + '.';
 
-        record.put(Contact.Description, String.isBlank(contactRecord.Description) ? auditLine : contactRecord.Description + '\n' + auditLine);
+        record.put(Contact.Description, String.isBlank(newContact.Description) ? auditLine : newContact.Description + '\n' + auditLine);
     }
 }

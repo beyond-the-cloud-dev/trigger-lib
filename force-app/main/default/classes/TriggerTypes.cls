@@ -16,16 +16,16 @@
 @SuppressWarnings(
     'PMD.ExcessivePublicCount,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ExcessiveParameterList,PMD.PropertyNamingConventions,PMD.FieldNamingConventions,PMD.FieldDeclarationsShouldBeAtStart'
 )
-public with sharing class TriggerHandler {
+public with sharing class TriggerTypes {
     public static ParentFields ParentFields {
         get {
-            return new LookupSelector();
+            return new TriggerParentFields();
         }
     }
 
     public interface InsertRecord {
-        Boolean isRecordTypeEqual(String recordTypeDeveloperName);
-        Boolean isRecordTypeNotEqual(String recordTypeDeveloperName);
+        Boolean isRecordType(String recordTypeDeveloperName);
+        Boolean isNotRecordType(String recordTypeDeveloperName);
 
         Boolean equals(SObjectField field, Object value);
         Boolean doesNotEqual(SObjectField field, Object value);
@@ -81,14 +81,14 @@ public with sharing class TriggerHandler {
 
         SObject getNewParent(String relationshipName);
 
-        TriggerHandler.RelatedRecords getRelated(String providerName);
+        TriggerTypes.RelatedRecords getRelated(String providerName);
 
         void put(SObjectField field, Object value);
     }
 
     public interface RejectableInsertRecord {
-        Boolean isRecordTypeEqual(String recordTypeDeveloperName);
-        Boolean isRecordTypeNotEqual(String recordTypeDeveloperName);
+        Boolean isRecordType(String recordTypeDeveloperName);
+        Boolean isNotRecordType(String recordTypeDeveloperName);
 
         Boolean equals(SObjectField field, Object value);
         Boolean doesNotEqual(SObjectField field, Object value);
@@ -144,15 +144,15 @@ public with sharing class TriggerHandler {
 
         SObject getNewParent(String relationshipName);
 
-        TriggerHandler.RelatedRecords getRelated(String providerName);
+        TriggerTypes.RelatedRecords getRelated(String providerName);
 
         void addError(String error);
         void addError(SObjectField field, String error);
     }
 
     public interface UpdateRecord {
-        Boolean isRecordTypeEqual(String recordTypeDeveloperName);
-        Boolean isRecordTypeNotEqual(String recordTypeDeveloperName);
+        Boolean isRecordType(String recordTypeDeveloperName);
+        Boolean isNotRecordType(String recordTypeDeveloperName);
 
         Boolean equals(SObjectField field, Object value);
         Boolean doesNotEqual(SObjectField field, Object value);
@@ -228,14 +228,14 @@ public with sharing class TriggerHandler {
         SObject getNewParent(String relationshipName);
         SObject getOldParent(String relationshipName);
 
-        TriggerHandler.RelatedRecords getRelated(String providerName);
+        TriggerTypes.RelatedRecords getRelated(String providerName);
 
         void put(SObjectField field, Object value);
     }
 
     public interface RejectableUpdateRecord {
-        Boolean isRecordTypeEqual(String recordTypeDeveloperName);
-        Boolean isRecordTypeNotEqual(String recordTypeDeveloperName);
+        Boolean isRecordType(String recordTypeDeveloperName);
+        Boolean isNotRecordType(String recordTypeDeveloperName);
 
         Boolean equals(SObjectField field, Object value);
         Boolean doesNotEqual(SObjectField field, Object value);
@@ -311,15 +311,15 @@ public with sharing class TriggerHandler {
         SObject getNewParent(String relationshipName);
         SObject getOldParent(String relationshipName);
 
-        TriggerHandler.RelatedRecords getRelated(String providerName);
+        TriggerTypes.RelatedRecords getRelated(String providerName);
 
         void addError(String error);
         void addError(SObjectField field, String error);
     }
 
     public interface DeleteRecord {
-        Boolean isRecordTypeEqual(String recordTypeDeveloperName);
-        Boolean isRecordTypeNotEqual(String recordTypeDeveloperName);
+        Boolean isRecordType(String recordTypeDeveloperName);
+        Boolean isNotRecordType(String recordTypeDeveloperName);
 
         Boolean equals(SObjectField field, Object value);
         Boolean doesNotEqual(SObjectField field, Object value);
@@ -375,12 +375,76 @@ public with sharing class TriggerHandler {
 
         SObject getOldParent(String relationshipName);
 
-        TriggerHandler.RelatedRecords getRelated(String providerName);
+        TriggerTypes.RelatedRecords getRelated(String providerName);
+    }
+
+    public interface RejectableDeleteRecord {
+        Boolean isRecordType(String recordTypeDeveloperName);
+        Boolean isNotRecordType(String recordTypeDeveloperName);
+
+        Boolean equals(SObjectField field, Object value);
+        Boolean doesNotEqual(SObjectField field, Object value);
+
+        Boolean contains(SObjectField field, String value);
+        Boolean doesNotContain(SObjectField field, String value);
+        Boolean startsWith(SObjectField field, String value);
+        Boolean endsWith(SObjectField field, String value);
+
+        Boolean isNull(SObjectField field);
+        Boolean isNotNull(SObjectField field);
+
+        Boolean isEmpty(SObjectField field);
+        Boolean isNotEmpty(SObjectField field);
+
+        Boolean isBlank(SObjectField field);
+        Boolean isNotBlank(SObjectField field);
+
+        Boolean isTrue(SObjectField field);
+        Boolean isFalse(SObjectField field);
+
+        Boolean greaterThan(SObjectField field, Integer value);
+        Boolean greaterThan(SObjectField field, DateTime value);
+        Boolean greaterThan(SObjectField field, Date value);
+        Boolean greaterThan(SObjectField field, Double value);
+        Boolean greaterThan(SObjectField field, Decimal value);
+        Boolean greaterThan(SObjectField field, Long value);
+
+        Boolean greaterThanOrEqualTo(SObjectField field, Integer value);
+        Boolean greaterThanOrEqualTo(SObjectField field, DateTime value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Date value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Double value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Decimal value);
+        Boolean greaterThanOrEqualTo(SObjectField field, Long value);
+
+        Boolean lessThan(SObjectField field, Integer value);
+        Boolean lessThan(SObjectField field, DateTime value);
+        Boolean lessThan(SObjectField field, Date value);
+        Boolean lessThan(SObjectField field, Double value);
+        Boolean lessThan(SObjectField field, Decimal value);
+        Boolean lessThan(SObjectField field, Long value);
+
+        Boolean lessThanOrEqualTo(SObjectField field, Integer value);
+        Boolean lessThanOrEqualTo(SObjectField field, DateTime value);
+        Boolean lessThanOrEqualTo(SObjectField field, Date value);
+        Boolean lessThanOrEqualTo(SObjectField field, Double value);
+        Boolean lessThanOrEqualTo(SObjectField field, Decimal value);
+        Boolean lessThanOrEqualTo(SObjectField field, Long value);
+
+        Id getId();
+
+        SObject getOldSObject();
+
+        SObject getOldParent(String relationshipName);
+
+        TriggerTypes.RelatedRecords getRelated(String providerName);
+
+        void addError(String error);
+        void addError(SObjectField field, String error);
     }
 
     public interface UndeleteRecord {
-        Boolean isRecordTypeEqual(String recordTypeDeveloperName);
-        Boolean isRecordTypeNotEqual(String recordTypeDeveloperName);
+        Boolean isRecordType(String recordTypeDeveloperName);
+        Boolean isNotRecordType(String recordTypeDeveloperName);
 
         Boolean equals(SObjectField field, Object value);
         Boolean doesNotEqual(SObjectField field, Object value);
@@ -436,7 +500,7 @@ public with sharing class TriggerHandler {
 
         SObject getNewParent(String relationshipName);
 
-        TriggerHandler.RelatedRecords getRelated(String providerName);
+        TriggerTypes.RelatedRecords getRelated(String providerName);
     }
 
     public interface ParentFields {
@@ -490,7 +554,7 @@ public with sharing class TriggerHandler {
         Set<String> getValuesOf(SObjectField field);
         Set<String> getValuesOf(String relationshipName, SObjectField field);
 
-        List<TriggerHandler.InsertRecord> getRecords();
+        List<TriggerTypes.InsertRecord> getRecords();
 
         Integer size();
     }
@@ -508,7 +572,7 @@ public with sharing class TriggerHandler {
         Set<String> getOldValuesOf(SObjectField field);
         Set<String> getOldValuesOf(String relationshipName, SObjectField field);
 
-        List<TriggerHandler.UpdateRecord> getRecords();
+        List<TriggerTypes.UpdateRecord> getRecords();
 
         Integer size();
     }
@@ -522,7 +586,7 @@ public with sharing class TriggerHandler {
         Set<String> getValuesOf(SObjectField field);
         Set<String> getValuesOf(String relationshipName, SObjectField field);
 
-        List<TriggerHandler.DeleteRecord> getRecords();
+        List<TriggerTypes.DeleteRecord> getRecords();
 
         Integer size();
     }
@@ -536,19 +600,17 @@ public with sharing class TriggerHandler {
         Set<String> getValuesOf(SObjectField field);
         Set<String> getValuesOf(String relationshipName, SObjectField field);
 
-        List<TriggerHandler.UndeleteRecord> getRecords();
+        List<TriggerTypes.UndeleteRecord> getRecords();
 
         Integer size();
     }
 
     // Implementation
 
-    @TestVisible
-    private static RandomIdGenerator IdGenerator = new RandomIdGenerator();
     private static RecordTypesInfo RecordTypesInfo = new RecordTypesInfo();
     private static RecordsAggregator RecordsAggregator = new RecordsAggregator();
 
-    public static List<TriggerRecord> getTriggerRecordsFrom(List<SObject> newRecords, List<SObject> oldRecords) {
+    public static List<TriggerRecord> toTriggerRecords(List<SObject> newRecords, List<SObject> oldRecords) {
         List<TriggerRecord> triggerRecords = new List<TriggerRecord>();
 
         Integer recordCount = (newRecords ?? oldRecords)?.size() ?? 0;
@@ -560,7 +622,7 @@ public with sharing class TriggerHandler {
         return triggerRecords;
     }
 
-    public class LookupSelector implements ParentFields {
+    private class TriggerParentFields implements ParentFields {
         private List<String> fields = new List<String>();
 
         public ParentFields with(SObjectField field) {
@@ -656,11 +718,11 @@ public with sharing class TriggerHandler {
         private List<SObject> records = new List<SObject>();
         private Map<String, List<SObject>> recordsByKey = new Map<String, List<SObject>>();
 
-        public ProvidedRecords(List<SObject> records) {
-            this.records = records ?? new List<SObject>();
+        public ProvidedRecords(List<SObject> rows) {
+            this.records = rows ?? new List<SObject>();
         }
 
-        public void groupUnderKey(String key, SObject record) {
+        public void groupUnderKey(String key, SObject row) {
             if (key == null) {
                 return;
             }
@@ -669,7 +731,7 @@ public with sharing class TriggerHandler {
                 this.recordsByKey.put(key, new List<SObject>());
             }
 
-            this.recordsByKey.get(key).add(record);
+            this.recordsByKey.get(key).add(row);
         }
 
         public SObject getFirstWhereKeyEquals(Object key) {
@@ -717,8 +779,8 @@ public with sharing class TriggerHandler {
             return RecordsAggregator.valuesOf(this.records, relationshipName, field);
         }
 
-        public List<TriggerHandler.InsertRecord> getRecords() {
-            return (List<TriggerHandler.InsertRecord>) this.records;
+        public List<TriggerTypes.InsertRecord> getRecords() {
+            return (List<TriggerTypes.InsertRecord>) this.records;
         }
 
         public Integer size() {
@@ -769,8 +831,8 @@ public with sharing class TriggerHandler {
             return RecordsAggregator.oldValuesOf(this.records, relationshipName, field);
         }
 
-        public List<TriggerHandler.UpdateRecord> getRecords() {
-            return (List<TriggerHandler.UpdateRecord>) this.records;
+        public List<TriggerTypes.UpdateRecord> getRecords() {
+            return (List<TriggerTypes.UpdateRecord>) this.records;
         }
 
         public Integer size() {
@@ -805,8 +867,8 @@ public with sharing class TriggerHandler {
             return RecordsAggregator.valuesOf(this.records, relationshipName, field);
         }
 
-        public List<TriggerHandler.DeleteRecord> getRecords() {
-            return (List<TriggerHandler.DeleteRecord>) this.records;
+        public List<TriggerTypes.DeleteRecord> getRecords() {
+            return (List<TriggerTypes.DeleteRecord>) this.records;
         }
 
         public Integer size() {
@@ -841,8 +903,8 @@ public with sharing class TriggerHandler {
             return RecordsAggregator.valuesOf(this.records, relationshipName, field);
         }
 
-        public List<TriggerHandler.UndeleteRecord> getRecords() {
-            return (List<TriggerHandler.UndeleteRecord>) this.records;
+        public List<TriggerTypes.UndeleteRecord> getRecords() {
+            return (List<TriggerTypes.UndeleteRecord>) this.records;
         }
 
         public Integer size() {
@@ -850,41 +912,41 @@ public with sharing class TriggerHandler {
         }
     }
 
-    public class TriggerRecord implements TriggerHandler.InsertRecord, TriggerHandler.RejectableInsertRecord, TriggerHandler.UpdateRecord, TriggerHandler.RejectableUpdateRecord, TriggerHandler.DeleteRecord, TriggerHandler.UndeleteRecord {
+    public class TriggerRecord implements TriggerTypes.InsertRecord, TriggerTypes.RejectableInsertRecord, TriggerTypes.UpdateRecord, TriggerTypes.RejectableUpdateRecord, TriggerTypes.DeleteRecord, TriggerTypes.RejectableDeleteRecord, TriggerTypes.UndeleteRecord {
         private SObject newRecord;
         private SObject oldRecord;
 
         private Map<String, SObject> newParents = new Map<String, SObject>();
         private Map<String, SObject> oldParents = new Map<String, SObject>();
 
-        private Map<String, RelatedRecords> providedRecords = new Map<String, RelatedRecords>();
+        private Map<String, RelatedRecords> relatedByProviderName = new Map<String, RelatedRecords>();
 
         private SObjectType sObjectType;
 
-        public TriggerRecord(SObject newRecord, SObject oldRecord) {
-            this.newRecord = newRecord;
-            this.oldRecord = oldRecord;
-            this.sObjectType = (newRecord ?? oldRecord).getSObjectType();
+        public TriggerRecord(SObject newRow, SObject oldRow) {
+            this.newRecord = newRow;
+            this.oldRecord = oldRow;
+            this.sObjectType = (newRow ?? oldRow).getSObjectType();
         }
 
-        public Boolean isRecordTypeEqual(String recordTypeDeveloperName) {
+        public Boolean isRecordType(String recordTypeDeveloperName) {
             if (!RecordTypesInfo.hasRecordTypes(this.sObjectType)) {
-                throw new TriggerHandlerException(this.sObjectType.toString() + ' has no record types, so isRecordTypeEqual cannot be used on it.');
+                throw new TriggerLibException(this.sObjectType.toString() + ' has no record types, so isRecordType cannot be used on it.');
             }
 
             return RecordTypesInfo.getId(this.sObjectType, recordTypeDeveloperName) == (this.newRecord ?? this.oldRecord).get('RecordTypeId');
         }
 
-        public Boolean isRecordTypeNotEqual(String recordTypeDeveloperName) {
+        public Boolean isNotRecordType(String recordTypeDeveloperName) {
             if (!RecordTypesInfo.hasRecordTypes(this.sObjectType)) {
-                throw new TriggerHandlerException(this.sObjectType.toString() + ' has no record types, so isRecordTypeNotEqual cannot be used on it.');
+                throw new TriggerLibException(this.sObjectType.toString() + ' has no record types, so isNotRecordType cannot be used on it.');
             }
 
             return RecordTypesInfo.getId(this.sObjectType, recordTypeDeveloperName) != (this.newRecord ?? this.oldRecord).get('RecordTypeId');
         }
 
         public Boolean equals(SObjectField field, Object value) {
-            return this.getNewFieldValue(field) == value;
+            return this.getFieldValue(field) == value;
         }
 
         public Boolean doesNotEqual(SObjectField field, Object value) {
@@ -892,23 +954,23 @@ public with sharing class TriggerHandler {
         }
 
         public Boolean contains(SObjectField field, String value) {
-            return this.isNotNull(field) && this.getNewFieldValue(field).toString().contains(value);
+            return this.isNotNull(field) && this.getFieldValue(field).toString().contains(value);
         }
 
         public Boolean doesNotContain(SObjectField field, String value) {
-            return this.getNewFieldValue(field) == null || !this.getNewFieldValue(field).toString().contains(value);
+            return this.getFieldValue(field) == null || !this.getFieldValue(field).toString().contains(value);
         }
 
         public Boolean startsWith(SObjectField field, String value) {
-            return this.isNotNull(field) && this.getNewFieldValue(field).toString().startsWith(value);
+            return this.isNotNull(field) && this.getFieldValue(field).toString().startsWith(value);
         }
 
         public Boolean endsWith(SObjectField field, String value) {
-            return this.isNotNull(field) && this.getNewFieldValue(field).toString().endsWith(value);
+            return this.isNotNull(field) && this.getFieldValue(field).toString().endsWith(value);
         }
 
         public Boolean isNull(SObjectField field) {
-            return this.getNewFieldValue(field) == null;
+            return this.getFieldValue(field) == null;
         }
 
         public Boolean isNotNull(SObjectField field) {
@@ -916,7 +978,7 @@ public with sharing class TriggerHandler {
         }
 
         public Boolean isEmpty(SObjectField field) {
-            return this.isNull(field) || String.isEmpty(this.getNewFieldValue(field).toString());
+            return this.isNull(field) || String.isEmpty(this.getFieldValue(field).toString());
         }
 
         public Boolean isNotEmpty(SObjectField field) {
@@ -924,7 +986,7 @@ public with sharing class TriggerHandler {
         }
 
         public Boolean isBlank(SObjectField field) {
-            return this.isNull(field) || String.isBlank(this.getNewFieldValue(field).toString());
+            return this.isNull(field) || String.isBlank(this.getFieldValue(field).toString());
         }
 
         public Boolean isNotBlank(SObjectField field) {
@@ -932,7 +994,7 @@ public with sharing class TriggerHandler {
         }
 
         public Boolean isChanged(SObjectField field) {
-            return this.getNewFieldValue(field) != this.getOldFieldValue(field);
+            return this.getFieldValue(field) != this.getOldFieldValue(field);
         }
 
         public Boolean isAnyChanged(SObjectField field1, SObjectField field2) {
@@ -988,23 +1050,23 @@ public with sharing class TriggerHandler {
         }
 
         public Boolean isChangedTo(SObjectField field, Object value) {
-            return this.getNewFieldValue(field) == value && this.getOldFieldValue(field) != value;
+            return this.getFieldValue(field) == value && this.getOldFieldValue(field) != value;
         }
 
         public Boolean isChangedFrom(SObjectField field, Object value) {
-            return this.getNewFieldValue(field) != value && this.getOldFieldValue(field) == value;
+            return this.getFieldValue(field) != value && this.getOldFieldValue(field) == value;
         }
 
         public Boolean isChangedFromTo(SObjectField field, Object fromValue, Object toValue) {
-            return this.getNewFieldValue(field) == toValue && this.getOldFieldValue(field) == fromValue;
+            return this.getFieldValue(field) == toValue && this.getOldFieldValue(field) == fromValue;
         }
 
         public Boolean isTrue(SObjectField field) {
-            return this.getNewFieldValue(field) == true;
+            return this.getFieldValue(field) == true;
         }
 
         public Boolean isFalse(SObjectField field) {
-            return this.getNewFieldValue(field) == false;
+            return this.getFieldValue(field) == false;
         }
 
         public Boolean greaterThan(SObjectField field, Integer value) {
@@ -1024,12 +1086,12 @@ public with sharing class TriggerHandler {
         }
 
         public Boolean greaterThan(SObjectField field, DateTime value) {
-            Object fieldValue = this.getNewFieldValue(field);
+            Object fieldValue = this.getFieldValue(field);
             return fieldValue != null && ((DateTime) fieldValue) > value;
         }
 
         public Boolean greaterThan(SObjectField field, Date value) {
-            Object fieldValue = this.getNewFieldValue(field);
+            Object fieldValue = this.getFieldValue(field);
             return fieldValue != null && ((Date) fieldValue) > value;
         }
 
@@ -1050,12 +1112,12 @@ public with sharing class TriggerHandler {
         }
 
         public Boolean greaterThanOrEqualTo(SObjectField field, DateTime value) {
-            Object fieldValue = this.getNewFieldValue(field);
+            Object fieldValue = this.getFieldValue(field);
             return fieldValue != null && ((DateTime) fieldValue) >= value;
         }
 
         public Boolean greaterThanOrEqualTo(SObjectField field, Date value) {
-            Object fieldValue = this.getNewFieldValue(field);
+            Object fieldValue = this.getFieldValue(field);
             return fieldValue != null && ((Date) fieldValue) >= value;
         }
 
@@ -1076,12 +1138,12 @@ public with sharing class TriggerHandler {
         }
 
         public Boolean lessThan(SObjectField field, DateTime value) {
-            Object fieldValue = this.getNewFieldValue(field);
+            Object fieldValue = this.getFieldValue(field);
             return fieldValue != null && ((DateTime) fieldValue) < value;
         }
 
         public Boolean lessThan(SObjectField field, Date value) {
-            Object fieldValue = this.getNewFieldValue(field);
+            Object fieldValue = this.getFieldValue(field);
             return fieldValue != null && ((Date) fieldValue) < value;
         }
 
@@ -1102,41 +1164,41 @@ public with sharing class TriggerHandler {
         }
 
         public Boolean lessThanOrEqualTo(SObjectField field, DateTime value) {
-            Object fieldValue = this.getNewFieldValue(field);
+            Object fieldValue = this.getFieldValue(field);
             return fieldValue != null && ((DateTime) fieldValue) <= value;
         }
 
         public Boolean lessThanOrEqualTo(SObjectField field, Date value) {
-            Object fieldValue = this.getNewFieldValue(field);
+            Object fieldValue = this.getFieldValue(field);
             return fieldValue != null && ((Date) fieldValue) <= value;
         }
 
         private Boolean isGreaterThan(SObjectField field, Decimal value) {
-            Decimal fieldValue = this.getNewFieldValueAsDecimal(field);
+            Decimal fieldValue = this.getFieldValueAsDecimal(field);
             return fieldValue != null && fieldValue > value;
         }
 
         private Boolean isGreaterThanOrEqualTo(SObjectField field, Decimal value) {
-            Decimal fieldValue = this.getNewFieldValueAsDecimal(field);
+            Decimal fieldValue = this.getFieldValueAsDecimal(field);
             return fieldValue != null && fieldValue >= value;
         }
 
         private Boolean isLessThan(SObjectField field, Decimal value) {
-            Decimal fieldValue = this.getNewFieldValueAsDecimal(field);
+            Decimal fieldValue = this.getFieldValueAsDecimal(field);
             return fieldValue != null && fieldValue < value;
         }
 
         private Boolean isLessThanOrEqualTo(SObjectField field, Decimal value) {
-            Decimal fieldValue = this.getNewFieldValueAsDecimal(field);
+            Decimal fieldValue = this.getFieldValueAsDecimal(field);
             return fieldValue != null && fieldValue <= value;
         }
 
-        private Decimal getNewFieldValueAsDecimal(SObjectField field) {
-            Object value = this.getNewFieldValue(field);
+        private Decimal getFieldValueAsDecimal(SObjectField field) {
+            Object value = this.getFieldValue(field);
             return value == null ? null : Decimal.valueOf(value.toString());
         }
 
-        private Object getNewFieldValue(SObjectField field) {
+        private Object getFieldValue(SObjectField field) {
             return (this.newRecord ?? this.oldRecord).get(field);
         }
 
@@ -1165,13 +1227,11 @@ public with sharing class TriggerHandler {
         }
 
         public RelatedRecords getRelated(String providerName) {
-            if (!this.providedRecords.containsKey(providerName)) {
-                throw new TriggerHandlerException(
-                    'No related records provider is registered under ' + providerName + '. Return it from the RelatedQuery method of the context first.'
-                );
+            if (!this.relatedByProviderName.containsKey(providerName)) {
+                throw new TriggerLibException('No related records provider named ' + providerName + ' is declared. Return it from the queryRelatedOn method of the handler first.');
             }
 
-            return this.providedRecords.get(providerName);
+            return this.relatedByProviderName.get(providerName);
         }
 
         public void put(SObjectField field, Object value) {
@@ -1179,11 +1239,11 @@ public with sharing class TriggerHandler {
         }
 
         public void addError(String error) {
-            this.newRecord.addError(error);
+            (this.newRecord ?? this.oldRecord).addError(error);
         }
 
         public void addError(SObjectField field, String error) {
-            this.newRecord.addError(field, error);
+            (this.newRecord ?? this.oldRecord).addError(field, error);
         }
 
         // Internal use only
@@ -1196,24 +1256,24 @@ public with sharing class TriggerHandler {
             return this.newRecord == null ? this.oldParents.get(relationshipName) : this.newParents.get(relationshipName);
         }
 
-        public void enrichNew(String relationshipName, SObject relatedRecord) {
-            this.newParents.put(relationshipName, relatedRecord);
+        public void setNewParent(String relationshipName, SObject parent) {
+            this.newParents.put(relationshipName, parent);
         }
 
-        public Id getNewParentId(SObjectField parentField) {
-            return this.newRecord?.isSet(parentField) == true ? (Id) this.newRecord.get(parentField) : null;
+        public Id getNewParentId(SObjectField lookupField) {
+            return this.newRecord?.isSet(lookupField) == true ? (Id) this.newRecord.get(lookupField) : null;
         }
 
-        public Id getOldParentId(SObjectField parentField) {
-            return this.oldRecord?.isSet(parentField) == true ? (Id) this.oldRecord.get(parentField) : null;
+        public Id getOldParentId(SObjectField lookupField) {
+            return this.oldRecord?.isSet(lookupField) == true ? (Id) this.oldRecord.get(lookupField) : null;
         }
 
-        public void enrichOld(String relationshipName, SObject relatedRecord) {
-            this.oldParents.put(relationshipName, relatedRecord);
+        public void setOldParent(String relationshipName, SObject parent) {
+            this.oldParents.put(relationshipName, parent);
         }
 
-        public void setProvidedRecords(Map<String, RelatedRecords> providedRecords) {
-            this.providedRecords = providedRecords;
+        public void setRelated(Map<String, RelatedRecords> relatedByProviderName) {
+            this.relatedByProviderName = relatedByProviderName;
         }
     }
 
@@ -1235,7 +1295,7 @@ public with sharing class TriggerHandler {
         }
 
         public Set<Id> idsOf(List<TriggerRecord> records, String relationshipName, SObjectField field) {
-            return this.idsFrom(this.relatedOf(records, relationshipName), field);
+            return this.idsFrom(this.parentsOf(records, relationshipName), field);
         }
 
         public Set<Id> oldIdsOf(List<TriggerRecord> records, SObjectField field) {
@@ -1243,7 +1303,7 @@ public with sharing class TriggerHandler {
         }
 
         public Set<Id> oldIdsOf(List<TriggerRecord> records, String relationshipName, SObjectField field) {
-            return this.idsFrom(this.oldRelatedOf(records, relationshipName), field);
+            return this.idsFrom(this.oldParentsOf(records, relationshipName), field);
         }
 
         public Set<String> valuesOf(List<TriggerRecord> records, SObjectField field) {
@@ -1251,7 +1311,7 @@ public with sharing class TriggerHandler {
         }
 
         public Set<String> valuesOf(List<TriggerRecord> records, String relationshipName, SObjectField field) {
-            return this.valuesFrom(this.relatedOf(records, relationshipName), field);
+            return this.valuesFrom(this.parentsOf(records, relationshipName), field);
         }
 
         public Set<String> oldValuesOf(List<TriggerRecord> records, SObjectField field) {
@@ -1259,7 +1319,7 @@ public with sharing class TriggerHandler {
         }
 
         public Set<String> oldValuesOf(List<TriggerRecord> records, String relationshipName, SObjectField field) {
-            return this.valuesFrom(this.oldRelatedOf(records, relationshipName), field);
+            return this.valuesFrom(this.oldParentsOf(records, relationshipName), field);
         }
 
         private List<SObject> rowsOf(List<TriggerRecord> records) {
@@ -1282,34 +1342,34 @@ public with sharing class TriggerHandler {
             return rows;
         }
 
-        private List<SObject> relatedOf(List<TriggerRecord> records, String relationshipName) {
-            List<SObject> related = new List<SObject>();
+        private List<SObject> parentsOf(List<TriggerRecord> records, String relationshipName) {
+            List<SObject> parents = new List<SObject>();
 
             for (TriggerRecord record : records) {
-                related.add(this.walk(record.getParent(relationshipName.substringBefore('.')), relationshipName));
+                parents.add(this.walk(record.getParent(relationshipName.substringBefore('.')), relationshipName));
             }
 
-            return related;
+            return parents;
         }
 
-        private List<SObject> oldRelatedOf(List<TriggerRecord> records, String relationshipName) {
-            List<SObject> related = new List<SObject>();
+        private List<SObject> oldParentsOf(List<TriggerRecord> records, String relationshipName) {
+            List<SObject> parents = new List<SObject>();
 
             for (TriggerRecord record : records) {
-                related.add(this.walk(record.getOldParent(relationshipName.substringBefore('.')), relationshipName));
+                parents.add(this.walk(record.getOldParent(relationshipName.substringBefore('.')), relationshipName));
             }
 
-            return related;
+            return parents;
         }
 
-        private SObject walk(SObject related, String relationshipName) {
+        private SObject walk(SObject parent, String relationshipName) {
             List<String> path = relationshipName.split('\\.');
 
-            for (Integer i = 1; i < path.size() && related != null; i++) {
-                related = related.getSObject(path[i]);
+            for (Integer i = 1; i < path.size() && parent != null; i++) {
+                parent = parent.getSObject(path[i]);
             }
 
-            return related;
+            return parent;
         }
 
         private Set<Id> idsFrom(List<SObject> sources, SObjectField field) {
@@ -1390,6 +1450,6 @@ public with sharing class TriggerHandler {
         }
     }
 
-    public class TriggerHandlerException extends Exception {
+    public class TriggerLibException extends Exception {
     }
 }

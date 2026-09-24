@@ -2,12 +2,12 @@
 template: add-on
 context: AfterDelete
 interface: RelatedQuery
-description: Query the records that remain after a delete, or records that still look up to the deleted rows, once per chunk in an after delete handler.
+description: Query the records that remain after a delete, or records that still look up to the deleted rows, once per handler per run in an after delete handler.
 ---
 
 # AfterDelete.RelatedQuery
 
-Query children, siblings or other records once per chunk, and read them per record with `record.getRelated(name)`.
+Query children, siblings or other records once per handler per run, and read them per record with `record.getRelated(name)`.
 
 **Signature**
 

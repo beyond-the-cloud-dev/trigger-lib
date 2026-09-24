@@ -3,8 +3,8 @@ private class OpportunityWinTaskWriterTest {
     @IsTest
     static void writeOnAfterUpdateWithWonOpportunity() {
         // Setup
-        User jane = new User(Id = SOQL.IdGenerator.get(User.SObjectType));
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        User jane = new User(Id = new TriggerTypes.RandomIdGenerator().get(User.SObjectType));
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
         Opportunity renewal = new Opportunity(Name = 'Acme Renewal', StageName = 'Closed Won', AccountId = acme.Id, OwnerId = jane.Id);
 
         DML.mock('triggerUow').allDmls();
@@ -15,7 +15,7 @@ private class OpportunityWinTaskWriterTest {
             .withParent(Opportunity.AccountId, acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityWinTaskWriter());
+        TriggerOrchestrator.runTestFor(new OpportunityWinTaskWriter());
 
         // Verify
         Task onboarding = (Task) DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()[0];
@@ -46,7 +46,7 @@ private class OpportunityWinTaskWriterTest {
         TriggerOrchestrator.mock().afterUpdateFor(OpportunityWinTaskWriter.class).with(renewal, new Opportunity(StageName = 'Negotiation/Review'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityWinTaskWriter());
+        TriggerOrchestrator.runTestFor(new OpportunityWinTaskWriter());
 
         // Verify
         Assert.areEqual(
@@ -66,7 +66,7 @@ private class OpportunityWinTaskWriterTest {
         TriggerOrchestrator.mock().afterUpdateFor(OpportunityWinTaskWriter.class).with(renewal, new Opportunity(StageName = 'Closed Won'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityWinTaskWriter());
+        TriggerOrchestrator.runTestFor(new OpportunityWinTaskWriter());
 
         // Verify
         Assert.isTrue(DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records().isEmpty(), 'No task should be created.');
@@ -82,7 +82,7 @@ private class OpportunityWinTaskWriterTest {
         TriggerOrchestrator.mock().afterUpdateFor(OpportunityWinTaskWriter.class).with(renewal, new Opportunity(StageName = 'Proposal/Price Quote'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityWinTaskWriter());
+        TriggerOrchestrator.runTestFor(new OpportunityWinTaskWriter());
 
         // Verify
         Assert.isTrue(DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records().isEmpty(), 'No task should be created.');
@@ -101,7 +101,7 @@ private class OpportunityWinTaskWriterTest {
 
         // Test
         try {
-            TriggerOrchestrator.executeTestFor(new OpportunityWinTaskWriter());
+            TriggerOrchestrator.runTestFor(new OpportunityWinTaskWriter());
         } catch (Exception e) {
             expectedException = e;
         }

@@ -2,7 +2,7 @@
 template: add-on
 context: BeforeDelete
 interface: PriorParentQuery
-description: Read parent (lookup) fields of the records being deleted in a before delete Handler, without SOQL in the handler.
+description: Read parent (lookup) fields of the records being deleted in a before delete Validator or Writer, without SOQL in the handler.
 ---
 
 # BeforeDelete.PriorParentQuery

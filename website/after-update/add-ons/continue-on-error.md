@@ -28,9 +28,9 @@ Log and swallow the handler's exceptions, so later handlers still run and the up
 ## Rules {#rules}
 
 - **The handler stops.** After an exception, its remaining records and its Finalizer are skipped.
-- **A Writer gets a separate unit of work.** Its failure never touches the other Writers' writes. The unit commits right after the Writer, before the default unit of work. A Writer that also implements [OwnUnitOfWork](/after-update/add-ons/own-unit-of-work) uses that unit instead.
+- **A Writer gets the automatic unit of work.** Its failure never touches the other Writers' writes. The unit commits right after the Writer, before the shared unit of work. A Writer that also implements [OwnUnitOfWork](/after-update/add-ons/own-unit-of-work) uses that unit instead.
 - **A Dispatcher keeps what it did.** A job already enqueued or an event already published stays.
-- **Some errors still fail the update.** [Library exceptions](/api/record#triggerhandlerexception), `System.LimitException`, the `FinalException` from writing a trigger row and exceptions outside the handler's own methods, such as `bypassOnAfterUpdateWhen()` or the final commit, are never swallowed.
+- **Some errors still fail the update.** [Library exceptions](/api/trigger-orchestrator#triggerlibexception), `System.LimitException`, the `FinalException` from writing a trigger row and exceptions outside the handler's own methods, such as `bypassOnAfterUpdateWhen()` or the final commit, are never swallowed.
 
 ::: tip
 Add a [Logger](/guide/error-handling#logger). Without one, a swallowed exception leaves no trace.

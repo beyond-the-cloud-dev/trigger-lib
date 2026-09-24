@@ -10,7 +10,7 @@ private class ContactEmailRemovalValidatorTest {
             .with(doe, new Contact(LastName = 'Doe', Email = 'jane.doe@acme.com', HasOptedOutOfEmail = false));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactEmailRemovalValidator());
+        TriggerOrchestrator.runTestFor(new ContactEmailRemovalValidator());
 
         // Verify
         Assert.areEqual(
@@ -30,7 +30,7 @@ private class ContactEmailRemovalValidatorTest {
             .with(doe, new Contact(LastName = 'Doe', Email = 'jane.doe@acme.com', HasOptedOutOfEmail = true));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactEmailRemovalValidator());
+        TriggerOrchestrator.runTestFor(new ContactEmailRemovalValidator());
 
         // Verify
         Assert.isFalse(doe.hasErrors(), 'The cleared email of an opted-out contact should be accepted.');
@@ -46,7 +46,7 @@ private class ContactEmailRemovalValidatorTest {
             .with(doe, new Contact(LastName = 'Doe', Email = 'jane.doe@acme.com', HasOptedOutOfEmail = false));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactEmailRemovalValidator());
+        TriggerOrchestrator.runTestFor(new ContactEmailRemovalValidator());
 
         // Verify
         Assert.isFalse(doe.hasErrors(), 'The changed email should be accepted.');
@@ -60,7 +60,7 @@ private class ContactEmailRemovalValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(ContactEmailRemovalValidator.class).with(doe, new Contact(LastName = 'Doe', HasOptedOutOfEmail = false));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactEmailRemovalValidator());
+        TriggerOrchestrator.runTestFor(new ContactEmailRemovalValidator());
 
         // Verify
         Assert.isFalse(doe.hasErrors(), 'The contact without an email should be accepted.');

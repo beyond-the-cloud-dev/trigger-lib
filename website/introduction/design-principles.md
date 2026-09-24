@@ -22,7 +22,7 @@ The library loops over the records. Handlers declare the parents and related rec
 
 ## Before Contexts Populate, After Contexts Act {#before-populates-after-acts}
 
-In before insert and before update, DML or an event publish fails the save. Change other records from a Writer in an after context.
+In before insert and before update, DML or an event publish fails the save. Change other records from a Writer in before delete or an after context.
 
 ## Qualification Is Explicit {#qualification-is-explicit}
 
@@ -30,7 +30,7 @@ Every role declares which records it wants. An action never runs for a record it
 
 ## Library Errors Always Surface {#library-errors}
 
-ContinueOnError swallows a handler's own exception. It never swallows a `TriggerOrchestratorException` or a `TriggerHandler.TriggerHandlerException`: a broken contract is a bug.
+ContinueOnError swallows a handler's own exception. It never swallows a `TriggerTypes.TriggerLibException`: a broken contract is a bug.
 
 ## Safe by Default {#safe-by-default}
 

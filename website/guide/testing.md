@@ -10,14 +10,14 @@ Test a handler without DML: build records in memory, call its methods and assert
 
 | Member | Gives you |
 |---|---|
-| `new TriggerHandler.TriggerRecord(newRow, oldRow)` | a record of any type; pass `null` for the side the context lacks |
-| `new TriggerHandler.InsertTriggerRecords(records)`, and the `Update`, `Delete` and `Undelete` variants | the collection a Finalizer, dispatch or `query` receives |
-| `new TriggerHandler.ProvidedRecords(rows)` with `groupUnderKey(key, row)` | provider results |
-| `new TriggerHandler.RandomIdGenerator().get(SObjectType)` | a fake Id |
-| `record.enrichNew(relationshipName, parent)`, `record.enrichOld(…)` | what `getNewParent` and `getOldParent` return |
-| `record.setProvidedRecords(providers)` | what `getRelated` returns |
+| `new TriggerTypes.TriggerRecord(newRow, oldRow)` | a record of any type; pass `null` for the side the context lacks |
+| `new TriggerTypes.InsertTriggerRecords(records)`, and the `Update`, `Delete` and `Undelete` variants | the collection a Finalizer, dispatch or `query` receives |
+| `new TriggerTypes.ProvidedRecords(rows)` with `groupUnderKey(key, row)` | provider results |
+| `new TriggerTypes.RandomIdGenerator().get(SObjectType)` | a fake Id |
+| `record.setNewParent(relationshipName, parent)`, `record.setOldParent(…)` | what `getNewParent` and `getOldParent` return |
+| `record.setRelated(providers)` | what `getRelated` returns |
 
-`enrichNew`, `enrichOld` and `setProvidedRecords` are marked internal use only and may change.
+`setNewParent`, `setOldParent` and `setRelated` are marked internal use only and may change.
 
 ## Predicates and Actions {#handler}
 
@@ -30,7 +30,7 @@ static void populateOnBeforeInsertCopiesBillingCity() {
     Account acme = new Account(Name = 'Acme', BillingCity = 'Berlin', BillingCountry = 'Germany');
 
     // Test
-    new AccountShippingAddressPopulator().populateOnBeforeInsert(new TriggerHandler.TriggerRecord(acme, null));
+    new AccountShippingAddressPopulator().populateOnBeforeInsert(new TriggerTypes.TriggerRecord(acme, null));
 
     // Verify
     Assert.areEqual('Berlin', acme.ShippingCity, 'The shipping city should be copied.');
@@ -44,7 +44,7 @@ static void addErrorOnBeforeInsertWhenUnreachable() {
     Contact doe = new Contact(LastName = 'Doe');
 
     // Test
-    new ContactReachabilityValidator().addErrorOnBeforeInsert(new TriggerHandler.TriggerRecord(doe, null));
+    new ContactReachabilityValidator().addErrorOnBeforeInsert(new TriggerTypes.TriggerRecord(doe, null));
 
     // Verify
     Assert.isTrue(doe.hasErrors(), 'The contact should be rejected.');
@@ -53,12 +53,12 @@ static void addErrorOnBeforeInsertWhenUnreachable() {
 
 ```apex [Predicate]
 @IsTest
-static void errorShouldBeAttachedOnBeforeInsertWhenNoPhoneOrEmail() {
+static void addErrorOnBeforeInsertWhenNoPhoneOrEmail() {
     // Setup
-    TriggerHandler.InsertRecord record = new TriggerHandler.TriggerRecord(new Contact(LastName = 'Doe'), null);
+    TriggerTypes.InsertRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'Doe'), null);
 
     // Test
-    Boolean result = new ContactReachabilityValidator().errorShouldBeAttachedOnBeforeInsertWhen(record);
+    Boolean result = new ContactReachabilityValidator().addErrorOnBeforeInsertWhen(record);
 
     // Verify
     Assert.isTrue(result, 'A contact without email or phone should qualify.');
@@ -71,15 +71,15 @@ In the update contexts, pass both rows so change detection has something to comp
 
 ## Writers {#writers}
 
-Pass the action a small class of your own that implements `TriggerHandler.UnitOfWork` and keeps what it receives. It never commits:
+Pass the action a small class of your own that implements `TriggerTypes.UnitOfWork` and keeps what it receives. It never commits:
 
 ```apex
 @IsTest
 static void writeOnAfterInsertAlignsOwner() {
     // Setup
-    Id ownerId = new TriggerHandler.RandomIdGenerator().get(User.SObjectType);
-    TriggerHandler.TriggerRecord record = new TriggerHandler.TriggerRecord(new Contact(Id = new TriggerHandler.RandomIdGenerator().get(Contact.SObjectType)), null);
-    record.enrichNew('Account', new Account(OwnerId = ownerId));
+    Id ownerId = new TriggerTypes.RandomIdGenerator().get(User.SObjectType);
+    TriggerTypes.TriggerRecord record = new TriggerTypes.TriggerRecord(new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType)), null);
+    record.setNewParent('Account', new Account(OwnerId = ownerId));
     RecordingUnitOfWork unitOfWork = new RecordingUnitOfWork();
 
     // Test
@@ -93,25 +93,25 @@ static void writeOnAfterInsertAlignsOwner() {
 ::: details The recording unit of work
 
 ```apex
-private class RecordingUnitOfWork implements TriggerHandler.UnitOfWork {
+private class RecordingUnitOfWork implements TriggerTypes.UnitOfWork {
     public List<SObject> inserted = new List<SObject>();
     public List<SObject> updated = new List<SObject>();
 
-    public TriggerHandler.UnitOfWork toInsert(SObject record) {
+    public TriggerTypes.UnitOfWork toInsert(SObject record) {
         this.inserted.add(record);
         return this;
     }
 
-    public TriggerHandler.UnitOfWork toUpdate(SObject record) {
+    public TriggerTypes.UnitOfWork toUpdate(SObject record) {
         this.updated.add(record);
         return this;
     }
 
-    public TriggerHandler.UnitOfWork toInsert(DML.Record record) { return this; }
-    public TriggerHandler.UnitOfWork toUpdate(DML.Record record) { return this; }
-    public TriggerHandler.UnitOfWork toUpsert(SObject record, SObjectField externalIdField) { return this; }
-    public TriggerHandler.UnitOfWork toDelete(SObject record) { return this; }
-    public TriggerHandler.UnitOfWork toPublish(SObject event) { return this; }
+    public TriggerTypes.UnitOfWork toInsert(DML.Record record) { return this; }
+    public TriggerTypes.UnitOfWork toUpdate(DML.Record record) { return this; }
+    public TriggerTypes.UnitOfWork toUpsert(SObject record, SObjectField externalIdField) { return this; }
+    public TriggerTypes.UnitOfWork toDelete(SObject record) { return this; }
+    public TriggerTypes.UnitOfWork toPublish(SObject event) { return this; }
 }
 ```
 
@@ -122,12 +122,12 @@ private class RecordingUnitOfWork implements TriggerHandler.UnitOfWork {
 Attach them yourself. Nothing is queried:
 
 ```apex
-record.enrichNew('Account', new Account(Name = 'Acme', Owner = new User(IsActive = true)));
+record.setNewParent('Account', new Account(Name = 'Acme', Owner = new User(IsActive = true)));
 
-Account existing = new Account(Id = new TriggerHandler.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
-TriggerHandler.ProvidedRecords provided = new TriggerHandler.ProvidedRecords(new List<SObject>{ existing });
+Account existing = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
+TriggerTypes.ProvidedRecords provided = new TriggerTypes.ProvidedRecords(new List<SObject>{ existing });
 provided.groupUnderKey('acme', existing);
-record.setProvidedRecords(new Map<String, TriggerHandler.RelatedRecords>{ '<provider name>' => provided });
+record.setRelated(new Map<String, TriggerTypes.RelatedRecords>{ '<provider name>' => provided });
 ```
 
 - **Nest a grandparent** inside the parent, as `Owner` above.
@@ -135,12 +135,12 @@ record.setProvidedRecords(new Map<String, TriggerHandler.RelatedRecords>{ '<prov
 
 ## Finalizers and Dispatchers {#finalizers}
 
-Call `finalize<Ctx>` or `dispatchOn<Ctx>` directly with the records your predicate would qualify:
+Call `finalizeOn<Ctx>` or `dispatchOn<Ctx>` directly with the records your predicate would qualify:
 
 ```apex
-List<TriggerHandler.TriggerRecord> qualified = new List<TriggerHandler.TriggerRecord>{ new TriggerHandler.TriggerRecord(newRow, oldRow) };
+List<TriggerTypes.TriggerRecord> qualified = new List<TriggerTypes.TriggerRecord>{ new TriggerTypes.TriggerRecord(newRow, oldRow) };
 
-new <YourHandler>().finalize<Ctx>(new TriggerHandler.<X>TriggerRecords(qualified));
+new <YourHandler>().finalizeOn<Ctx>(new TriggerTypes.<X>TriggerRecords(qualified));
 ```
 
 `<X>` is `Insert`, `Update`, `Delete` or `Undelete`. `Limits.getQueueableJobs()` counts the jobs a Dispatcher enqueued.
@@ -208,7 +208,7 @@ Call `mockFramework()` first, before anything refers to `TriggerOrchestrator`. O
 
 - **Parents.** `SOQL.mock(Account.SObjectType).thenReturn(rows)` serves the parent queries on Account. In after insert, update and undelete, mock the trigger object instead and return its rows with the parent attached.
 - **Providers.** Only a provider written with SOQL Lib can be mocked. An inline `[SELECT …]` cannot.
-- **The default unit of work.** `DML.mock('triggerUow').allDmls()` replaces its commit. Read it with `DML.retrieveResultFor('triggerUow')`.
+- **The shared unit of work.** `DML.mock('triggerUow').allDmls()` replaces its commit. Read it with `DML.retrieveResultFor('triggerUow')`.
 - **OwnUnitOfWork or a Dispatcher's DML.** Mock the identifier the handler gives its `DML` instance.
 
 ## Integration Tests {#integration}

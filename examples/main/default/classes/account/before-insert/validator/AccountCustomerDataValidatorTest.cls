@@ -8,7 +8,7 @@ private class AccountCustomerDataValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(AccountCustomerDataValidator.class).with(acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountCustomerDataValidator());
+        TriggerOrchestrator.runTestFor(new AccountCustomerDataValidator());
 
         // Verify
         Assert.areEqual('A customer account requires Industry.', acme.getErrors()[0].getMessage(), 'The error message should match the expected one.');
@@ -22,7 +22,7 @@ private class AccountCustomerDataValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(AccountCustomerDataValidator.class).with(acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountCustomerDataValidator());
+        TriggerOrchestrator.runTestFor(new AccountCustomerDataValidator());
 
         // Verify
         Assert.areEqual('A customer account requires Billing Country.', acme.getErrors()[0].getMessage(), 'The error message should match the expected one.');
@@ -36,7 +36,7 @@ private class AccountCustomerDataValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(AccountCustomerDataValidator.class).with(acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountCustomerDataValidator());
+        TriggerOrchestrator.runTestFor(new AccountCustomerDataValidator());
 
         // Verify
         Assert.areEqual(2, acme.getErrors().size(), 'Both missing fields should be rejected.');
@@ -50,7 +50,7 @@ private class AccountCustomerDataValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(AccountCustomerDataValidator.class).with(acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountCustomerDataValidator());
+        TriggerOrchestrator.runTestFor(new AccountCustomerDataValidator());
 
         // Verify
         Assert.isFalse(acme.hasErrors(), 'The complete customer should be accepted.');
@@ -64,7 +64,7 @@ private class AccountCustomerDataValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(AccountCustomerDataValidator.class).with(acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountCustomerDataValidator());
+        TriggerOrchestrator.runTestFor(new AccountCustomerDataValidator());
 
         // Verify
         Assert.isFalse(acme.hasErrors(), 'The prospect should be accepted.');

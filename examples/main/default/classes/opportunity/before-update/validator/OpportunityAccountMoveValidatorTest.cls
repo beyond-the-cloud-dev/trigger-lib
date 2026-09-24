@@ -3,8 +3,8 @@ private class OpportunityAccountMoveValidatorTest {
     @IsTest
     static void addErrorOnBeforeUpdateWithMovedWonOpportunity() {
         // Setup
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme');
-        Account globex = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Globex');
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
+        Account globex = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Globex');
         Opportunity renewal = new Opportunity(StageName = 'Closed Won', AccountId = globex.Id);
 
         TriggerOrchestrator.mock()
@@ -13,7 +13,7 @@ private class OpportunityAccountMoveValidatorTest {
             .withParent(Opportunity.AccountId, new List<Account>{ acme, globex });
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityAccountMoveValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityAccountMoveValidator());
 
         // Verify
         Assert.areEqual(
@@ -26,8 +26,8 @@ private class OpportunityAccountMoveValidatorTest {
     @IsTest
     static void addErrorOnBeforeUpdateWithMovedClosingOpportunity() {
         // Setup
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme');
-        Account globex = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Globex');
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
+        Account globex = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Globex');
         Opportunity renewal = new Opportunity(StageName = 'Closed Won', AccountId = globex.Id);
 
         TriggerOrchestrator.mock()
@@ -36,7 +36,7 @@ private class OpportunityAccountMoveValidatorTest {
             .withParent(Opportunity.AccountId, new List<Account>{ acme, globex });
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityAccountMoveValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityAccountMoveValidator());
 
         // Verify
         Assert.areEqual(
@@ -49,7 +49,7 @@ private class OpportunityAccountMoveValidatorTest {
     @IsTest
     static void addErrorOnBeforeUpdateWithRemovedAccount() {
         // Setup
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
         Opportunity renewal = new Opportunity(StageName = 'Closed Won');
 
         TriggerOrchestrator.mock()
@@ -58,7 +58,7 @@ private class OpportunityAccountMoveValidatorTest {
             .withParent(Opportunity.AccountId, acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityAccountMoveValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityAccountMoveValidator());
 
         // Verify
         Assert.areEqual(
@@ -71,14 +71,14 @@ private class OpportunityAccountMoveValidatorTest {
     @IsTest
     static void addErrorOnBeforeUpdateWithMissingAccounts() {
         // Setup
-        Opportunity renewal = new Opportunity(StageName = 'Closed Won', AccountId = SOQL.IdGenerator.get(Account.SObjectType));
+        Opportunity renewal = new Opportunity(StageName = 'Closed Won', AccountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType));
 
         TriggerOrchestrator.mock()
             .beforeUpdateFor(OpportunityAccountMoveValidator.class)
-            .with(renewal, new Opportunity(StageName = 'Closed Won', AccountId = SOQL.IdGenerator.get(Account.SObjectType)));
+            .with(renewal, new Opportunity(StageName = 'Closed Won', AccountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType)));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityAccountMoveValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityAccountMoveValidator());
 
         // Verify
         Assert.areEqual(
@@ -91,8 +91,8 @@ private class OpportunityAccountMoveValidatorTest {
     @IsTest
     static void addErrorOnBeforeUpdateWithMovedOpenOpportunity() {
         // Setup
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme');
-        Account globex = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Globex');
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
+        Account globex = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Globex');
         Opportunity renewal = new Opportunity(StageName = 'Negotiation/Review', AccountId = globex.Id);
 
         TriggerOrchestrator.mock()
@@ -101,7 +101,7 @@ private class OpportunityAccountMoveValidatorTest {
             .withParent(Opportunity.AccountId, new List<Account>{ acme, globex });
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityAccountMoveValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityAccountMoveValidator());
 
         // Verify
         Assert.isFalse(renewal.hasErrors(), 'Moving an open opportunity should be accepted.');
@@ -110,7 +110,7 @@ private class OpportunityAccountMoveValidatorTest {
     @IsTest
     static void addErrorOnBeforeUpdateWithUnmovedWonOpportunity() {
         // Setup
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
         Opportunity renewal = new Opportunity(StageName = 'Closed Won', AccountId = acme.Id);
 
         TriggerOrchestrator.mock()
@@ -119,7 +119,7 @@ private class OpportunityAccountMoveValidatorTest {
             .withParent(Opportunity.AccountId, acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityAccountMoveValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityAccountMoveValidator());
 
         // Verify
         Assert.isFalse(renewal.hasErrors(), 'Winning an opportunity on the same account should be accepted.');

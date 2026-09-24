@@ -2,7 +2,7 @@
 template: add-on
 context: AfterUpdate
 interface: Finalizer
-description: Run once after an after update Writer or Dispatcher has processed its records, with the qualified records, for one bulk query or registration per chunk.
+description: Run once per chunk after an after update Writer or Dispatcher, with the qualified records, for one bulk query or registration.
 ---
 
 # AfterUpdate.Finalizer

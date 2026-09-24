@@ -8,7 +8,7 @@ private class ContactEmailFormatValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(ContactEmailFormatValidator.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactEmailFormatValidator());
+        TriggerOrchestrator.runTestFor(new ContactEmailFormatValidator());
 
         // Verify
         Assert.areEqual('Email must be a full address, for example jane.doe@example.com.', doe.getErrors()[0].getMessage(), 'The incomplete email should be rejected.');
@@ -22,7 +22,7 @@ private class ContactEmailFormatValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(ContactEmailFormatValidator.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactEmailFormatValidator());
+        TriggerOrchestrator.runTestFor(new ContactEmailFormatValidator());
 
         // Verify
         Assert.areEqual(
@@ -40,7 +40,7 @@ private class ContactEmailFormatValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(ContactEmailFormatValidator.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactEmailFormatValidator());
+        TriggerOrchestrator.runTestFor(new ContactEmailFormatValidator());
 
         // Verify
         Assert.isFalse(doe.hasErrors(), 'The personal email should be accepted.');
@@ -54,7 +54,7 @@ private class ContactEmailFormatValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(ContactEmailFormatValidator.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactEmailFormatValidator());
+        TriggerOrchestrator.runTestFor(new ContactEmailFormatValidator());
 
         // Verify
         Assert.isFalse(doe.hasErrors(), 'The missing email should be accepted.');

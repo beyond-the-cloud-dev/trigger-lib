@@ -8,7 +8,7 @@ private class OpportunityReopenValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityReopenValidator.class).with(renewal, new Opportunity(StageName = 'Closed Won'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityReopenValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityReopenValidator());
 
         // Verify
         Assert.areEqual(
@@ -26,7 +26,7 @@ private class OpportunityReopenValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityReopenValidator.class).with(renewal, new Opportunity(StageName = 'Closed Won'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityReopenValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityReopenValidator());
 
         // Verify
         Assert.isFalse(renewal.hasErrors(), 'Editing a won deal should be accepted.');
@@ -40,7 +40,7 @@ private class OpportunityReopenValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityReopenValidator.class).with(renewal, new Opportunity(StageName = 'Closed Lost'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityReopenValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityReopenValidator());
 
         // Verify
         Assert.isFalse(renewal.hasErrors(), 'Reopening a lost deal should be accepted.');
@@ -56,7 +56,7 @@ private class OpportunityReopenValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityReopenValidator.class).with(renewal, new Opportunity(StageName = 'Closed Won'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityReopenValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityReopenValidator());
 
         // Verify
         Assert.isFalse(renewal.hasErrors(), 'Reopening a won deal should be accepted when bypassed.');

@@ -15,7 +15,7 @@ private class AccountShippingAddressPopulatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(AccountShippingAddressPopulator.class).with(acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountShippingAddressPopulator());
+        TriggerOrchestrator.runTestFor(new AccountShippingAddressPopulator());
 
         // Verify
         Assert.areEqual(
@@ -45,7 +45,7 @@ private class AccountShippingAddressPopulatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(AccountShippingAddressPopulator.class).with(acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountShippingAddressPopulator());
+        TriggerOrchestrator.runTestFor(new AccountShippingAddressPopulator());
 
         // Verify
         Assert.areEqual('5 Dock Rd', acme.ShippingStreet, 'The shipping street should be kept.');
@@ -59,7 +59,7 @@ private class AccountShippingAddressPopulatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(AccountShippingAddressPopulator.class).with(acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountShippingAddressPopulator());
+        TriggerOrchestrator.runTestFor(new AccountShippingAddressPopulator());
 
         // Verify
         Assert.areEqual('Oakland', acme.ShippingCity, 'The shipping city should be kept.');
@@ -73,7 +73,7 @@ private class AccountShippingAddressPopulatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(AccountShippingAddressPopulator.class).with(acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountShippingAddressPopulator());
+        TriggerOrchestrator.runTestFor(new AccountShippingAddressPopulator());
 
         // Verify
         Assert.areEqual('Canada', acme.ShippingCountry, 'The shipping country should be kept.');
@@ -87,25 +87,25 @@ private class AccountShippingAddressPopulatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(AccountShippingAddressPopulator.class).with(acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountShippingAddressPopulator());
+        TriggerOrchestrator.runTestFor(new AccountShippingAddressPopulator());
 
         // Verify
         Assert.isNull(acme.ShippingStreet, 'The shipping address should stay blank.');
     }
 
     @IsTest
-    static void bypassOnBeforeInsertWhenDisabled() {
+    static void bypassOnBeforeInsertWhenBypassed() {
         // Setup
         Account acme = new Account(Name = 'Acme', BillingStreet = '1 Market St', BillingCity = 'San Francisco', BillingCountry = 'United States');
 
-        AccountShippingAddressPopulator.isDisabled = true;
+        AccountShippingAddressPopulator.isBypassed = true;
 
         TriggerOrchestrator.mock().beforeInsertFor(AccountShippingAddressPopulator.class).with(acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountShippingAddressPopulator());
+        TriggerOrchestrator.runTestFor(new AccountShippingAddressPopulator());
 
         // Verify
-        Assert.isNull(acme.ShippingStreet, 'The disabled handler should not copy the address.');
+        Assert.isNull(acme.ShippingStreet, 'The bypassed handler should not copy the address.');
     }
 }

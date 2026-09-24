@@ -8,7 +8,7 @@ private class OpportunityForecastPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityForecastPopulator.class).with(renewal, new Opportunity(StageName = 'Prospecting', Amount = 10000));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityForecastPopulator());
+        TriggerOrchestrator.runTestFor(new OpportunityForecastPopulator());
 
         // Verify
         Assert.areEqual('Omitted', renewal.ForecastCategoryName, 'The forecast category should be omitted.');
@@ -22,7 +22,7 @@ private class OpportunityForecastPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityForecastPopulator.class).with(renewal, new Opportunity(StageName = 'Prospecting', Amount = 1000));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityForecastPopulator());
+        TriggerOrchestrator.runTestFor(new OpportunityForecastPopulator());
 
         // Verify
         Assert.areEqual('Omitted', renewal.ForecastCategoryName, 'The forecast category should be omitted.');
@@ -36,7 +36,7 @@ private class OpportunityForecastPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityForecastPopulator.class).with(renewal, new Opportunity(StageName = 'Prospecting', Amount = 10000));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityForecastPopulator());
+        TriggerOrchestrator.runTestFor(new OpportunityForecastPopulator());
 
         // Verify
         Assert.areEqual('Pipeline', renewal.ForecastCategoryName, 'The forecast category should be kept.');
@@ -50,7 +50,7 @@ private class OpportunityForecastPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityForecastPopulator.class).with(renewal, new Opportunity(StageName = 'Negotiation/Review', Amount = 1000));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityForecastPopulator());
+        TriggerOrchestrator.runTestFor(new OpportunityForecastPopulator());
 
         // Verify
         Assert.areEqual('Closed', renewal.ForecastCategoryName, 'The forecast category should be kept.');
@@ -64,7 +64,7 @@ private class OpportunityForecastPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityForecastPopulator.class).with(renewal, new Opportunity(StageName = 'Prospecting', Amount = 1000));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityForecastPopulator());
+        TriggerOrchestrator.runTestFor(new OpportunityForecastPopulator());
 
         // Verify
         Assert.areEqual('Pipeline', renewal.ForecastCategoryName, 'The forecast category should be kept.');

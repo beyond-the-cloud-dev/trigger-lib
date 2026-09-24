@@ -1,24 +1,24 @@
 public class BeforeUpdate {
-    // Main interfaces - pick one
+    // Roles - pick one
 
     public interface Populator extends Handler {
-        Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record);
-        void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record);
+        Boolean populateOnBeforeUpdateWhen(TriggerTypes.UpdateRecord record);
+        void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record);
     }
 
     public interface Validator extends Handler {
-        Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record);
-        void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record);
+        Boolean addErrorOnBeforeUpdateWhen(TriggerTypes.UpdateRecord record);
+        void addErrorOnBeforeUpdate(TriggerTypes.RejectableUpdateRecord record);
     }
 
-    // Additional interfaces - pick as many as you need
+    // Add-ons - pick as many as you need
 
     public interface ParentQuery {
-        Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate();
+        Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnBeforeUpdate();
     }
 
     public interface PriorParentQuery {
-        Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnBeforeUpdate();
+        Map<SObjectField, TriggerTypes.ParentFields> queryPriorParentsOnBeforeUpdate();
     }
 
     public interface RelatedQuery {
@@ -26,8 +26,8 @@ public class BeforeUpdate {
     }
 
     public interface RecordsProvider {
-        List<SObject> query(TriggerHandler.UpdateRecords records);
-        String keyOf(SObject record);
+        List<SObject> query(TriggerTypes.UpdateRecords records);
+        String keyOf(SObject row);
     }
 
     public interface Bypassable {
@@ -35,17 +35,17 @@ public class BeforeUpdate {
     }
 
     public interface RecursionGuard {
-        Integer maxRecursionDepthOnBeforeUpdate();
+        Integer maxRunsPerRecordOnBeforeUpdate();
     }
 
     public interface Finalizer {
-        void finalizeBeforeUpdate(TriggerHandler.UpdateRecords records);
+        void finalizeOnBeforeUpdate(TriggerTypes.UpdateRecords records);
     }
 
     public interface ContinueOnError {
     }
 
-    // For internal use only
+    // Marker
 
     public interface Handler {
     }

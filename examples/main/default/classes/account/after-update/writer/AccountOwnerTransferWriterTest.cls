@@ -3,8 +3,8 @@ private class AccountOwnerTransferWriterTest {
     @IsTest
     static void writeOnAfterUpdateWithoutOpenOpportunities() {
         // Setup
-        Id janeId = SOQL.IdGenerator.get(User.SObjectType);
-        Id johnId = SOQL.IdGenerator.get(User.SObjectType);
+        Id janeId = new TriggerTypes.RandomIdGenerator().get(User.SObjectType);
+        Id johnId = new TriggerTypes.RandomIdGenerator().get(User.SObjectType);
         User jane = (User) JSON.deserialize('{"attributes":{"type":"User"},"Id":"' + janeId + '","Name":"Jane Smith"}', User.class);
         User john = (User) JSON.deserialize('{"attributes":{"type":"User"},"Id":"' + johnId + '","Name":"John Doe"}', User.class);
         Account acme = new Account(Name = 'Acme', OwnerId = jane.Id);
@@ -17,7 +17,7 @@ private class AccountOwnerTransferWriterTest {
             .withParent(Account.OwnerId, new List<User>{ jane, john });
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountOwnerTransferWriter());
+        TriggerOrchestrator.runTestFor(new AccountOwnerTransferWriter());
 
         // Verify
         Assert.areEqual(0, DML.retrieveResultFor('triggerUow').updatesOf(Opportunity.SObjectType).records().size(), 'No opportunity should be updated.');
@@ -26,7 +26,7 @@ private class AccountOwnerTransferWriterTest {
     @IsTest
     static void writeOnAfterUpdateWithUnchangedOwner() {
         // Setup
-        Id janeId = SOQL.IdGenerator.get(User.SObjectType);
+        Id janeId = new TriggerTypes.RandomIdGenerator().get(User.SObjectType);
         User jane = (User) JSON.deserialize('{"attributes":{"type":"User"},"Id":"' + janeId + '","Name":"Jane Smith"}', User.class);
         Account acme = new Account(Name = 'Acme Corp', OwnerId = jane.Id);
 
@@ -35,28 +35,30 @@ private class AccountOwnerTransferWriterTest {
         TriggerOrchestrator.mock().afterUpdateFor(AccountOwnerTransferWriter.class).with(acme, new Account(Name = 'Acme', OwnerId = jane.Id)).withParent(Account.OwnerId, jane);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountOwnerTransferWriter());
+        TriggerOrchestrator.runTestFor(new AccountOwnerTransferWriter());
 
         // Verify
         Assert.areEqual(0, DML.retrieveResultFor('triggerUow').updatesOf(Opportunity.SObjectType).records().size(), 'No opportunity should be updated.');
     }
 
     @IsTest
-    static void bypassOnAfterUpdateWhenDisabled() {
+    static void bypassOnAfterUpdateWhenBypassed() {
         // Setup
-        Account acme = new Account(Name = 'Acme', OwnerId = SOQL.IdGenerator.get(User.SObjectType));
+        Account acme = new Account(Name = 'Acme', OwnerId = new TriggerTypes.RandomIdGenerator().get(User.SObjectType));
 
-        AccountOwnerTransferWriter.isDisabled = true;
+        AccountOwnerTransferWriter.isBypassed = true;
 
         DML.mock('triggerUow').allDmls();
 
-        TriggerOrchestrator.mock().afterUpdateFor(AccountOwnerTransferWriter.class).with(acme, new Account(Name = 'Acme', OwnerId = SOQL.IdGenerator.get(User.SObjectType)));
+        TriggerOrchestrator.mock()
+            .afterUpdateFor(AccountOwnerTransferWriter.class)
+            .with(acme, new Account(Name = 'Acme', OwnerId = new TriggerTypes.RandomIdGenerator().get(User.SObjectType)));
 
         // Test
         Test.startTest();
-        TriggerOrchestrator.executeTestFor(new AccountOwnerTransferWriter());
+        TriggerOrchestrator.runTestFor(new AccountOwnerTransferWriter());
 
         // Verify
-        Assert.areEqual(0, Limits.getQueries(), 'The disabled handler should not query.');
+        Assert.areEqual(0, Limits.getQueries(), 'The bypassed handler should not query.');
     }
 }

@@ -45,7 +45,7 @@ static void addErrorOnBeforeInsertAttachesErrorToAmount() {
     Opportunity newOpportunity = new Opportunity(Amount = -100);
 
     // Test
-    new OpportunityAmountValidator().addErrorOnBeforeInsert(new TriggerHandler.TriggerRecord(newOpportunity, null));
+    new OpportunityAmountValidator().addErrorOnBeforeInsert(new TriggerTypes.TriggerRecord(newOpportunity, null));
 
     // Verify
     Assert.areEqual(new List<String>{ 'Amount' }, newOpportunity.getErrors()[0].getFields(), 'The error should be attached to Amount.');

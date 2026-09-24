@@ -24,7 +24,7 @@ Log and swallow the handler's exceptions, so later handlers still run and the up
 ## Rules {#rules}
 
 - **One failure stops the handler for the chunk.** Its remaining records and its Finalizer are skipped. Values it already set stay. To skip only one record, catch the exception in the action.
-- **Some exceptions still fail the update.** DML in the handler, a Validator that attaches no error, `TriggerHandler.TriggerHandlerException`, `System.LimitException`, the `FinalException` from touching the old row and exceptions from methods that run before the handler's turn, such as `bypassOnBeforeUpdateWhen()`, are never swallowed.
+- **Some exceptions still fail the update.** DML in the handler, a Validator that attaches no error, `TriggerTypes.TriggerLibException`, `System.LimitException`, the `FinalException` from touching the old row and exceptions from methods that run before the handler's turn, such as `bypassOnBeforeUpdateWhen()`, are never swallowed.
 - **Add a [Logger](/guide/error-handling#logger).** Without one, a swallowed exception leaves no trace.
 
 ::: warning

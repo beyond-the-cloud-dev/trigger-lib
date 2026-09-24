@@ -3,7 +3,7 @@ private class OpportunityAccountTypeWriterTest {
     @IsTest
     static void writeOnAfterUpdateWithWonOpportunity() {
         // Setup
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Type = 'Prospect');
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Type = 'Prospect');
         Opportunity renewal = new Opportunity(StageName = 'Closed Won', AccountId = acme.Id);
 
         DML.mock('triggerUow').allDmls();
@@ -14,7 +14,7 @@ private class OpportunityAccountTypeWriterTest {
             .withParent(Opportunity.AccountId, acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityAccountTypeWriter());
+        TriggerOrchestrator.runTestFor(new OpportunityAccountTypeWriter());
 
         // Verify
         Assert.areEqual(
@@ -27,7 +27,7 @@ private class OpportunityAccountTypeWriterTest {
     @IsTest
     static void writeOnAfterUpdateWithDirectCustomerAccount() {
         // Setup
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Type = 'Customer - Direct');
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Type = 'Customer - Direct');
         Opportunity renewal = new Opportunity(StageName = 'Closed Won', AccountId = acme.Id);
 
         DML.mock('triggerUow').allDmls();
@@ -38,7 +38,7 @@ private class OpportunityAccountTypeWriterTest {
             .withParent(Opportunity.AccountId, acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityAccountTypeWriter());
+        TriggerOrchestrator.runTestFor(new OpportunityAccountTypeWriter());
 
         // Verify
         Assert.isTrue(DML.retrieveResultFor('triggerUow').updatesOf(Account.SObjectType).records().isEmpty(), 'The account should not be updated.');
@@ -54,7 +54,7 @@ private class OpportunityAccountTypeWriterTest {
         TriggerOrchestrator.mock().afterUpdateFor(OpportunityAccountTypeWriter.class).with(renewal, new Opportunity(StageName = 'Negotiation/Review'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityAccountTypeWriter());
+        TriggerOrchestrator.runTestFor(new OpportunityAccountTypeWriter());
 
         // Verify
         Assert.isTrue(DML.retrieveResultFor('triggerUow').updatesOf(Account.SObjectType).records().isEmpty(), 'No account should be updated.');
@@ -63,7 +63,7 @@ private class OpportunityAccountTypeWriterTest {
     @IsTest
     static void writeOnAfterUpdateWithAlreadyWonOpportunity() {
         // Setup
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Type = 'Prospect');
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Type = 'Prospect');
         Opportunity renewal = new Opportunity(StageName = 'Closed Won', AccountId = acme.Id);
 
         DML.mock('triggerUow').allDmls();
@@ -74,7 +74,7 @@ private class OpportunityAccountTypeWriterTest {
             .withParent(Opportunity.AccountId, acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityAccountTypeWriter());
+        TriggerOrchestrator.runTestFor(new OpportunityAccountTypeWriter());
 
         // Verify
         Assert.isTrue(DML.retrieveResultFor('triggerUow').updatesOf(Account.SObjectType).records().isEmpty(), 'The account should not be updated.');
@@ -83,7 +83,7 @@ private class OpportunityAccountTypeWriterTest {
     @IsTest
     static void writeOnAfterUpdateWithOpenOpportunity() {
         // Setup
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Type = 'Prospect');
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Type = 'Prospect');
         Opportunity renewal = new Opportunity(StageName = 'Negotiation/Review', AccountId = acme.Id);
 
         DML.mock('triggerUow').allDmls();
@@ -94,16 +94,16 @@ private class OpportunityAccountTypeWriterTest {
             .withParent(Opportunity.AccountId, acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityAccountTypeWriter());
+        TriggerOrchestrator.runTestFor(new OpportunityAccountTypeWriter());
 
         // Verify
         Assert.isTrue(DML.retrieveResultFor('triggerUow').updatesOf(Account.SObjectType).records().isEmpty(), 'The account should not be updated.');
     }
 
     @IsTest
-    static void maxRecursionDepthOnAfterUpdateWithRepeatedUpdate() {
+    static void maxRunsPerRecordOnAfterUpdateWithRepeatedUpdate() {
         // Setup
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Type = 'Prospect');
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Type = 'Prospect');
         Opportunity renewal = new Opportunity(StageName = 'Closed Won', AccountId = acme.Id);
 
         DML.mock('triggerUow').allDmls();
@@ -114,8 +114,8 @@ private class OpportunityAccountTypeWriterTest {
             .withParent(Opportunity.AccountId, acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityAccountTypeWriter());
-        TriggerOrchestrator.executeTestFor(new OpportunityAccountTypeWriter());
+        TriggerOrchestrator.runTestFor(new OpportunityAccountTypeWriter());
+        TriggerOrchestrator.runTestFor(new OpportunityAccountTypeWriter());
 
         // Verify
         Assert.areEqual(1, DML.retrieveResultFor('triggerUow').updatesOf(Account.SObjectType).records().size(), 'The account should be updated once.');

@@ -20,7 +20,7 @@ try {
 ```
 
 - **Set it before the DML.** It lasts until `clear()` or the end of the transaction, nested saves included.
-- **One transaction only.** A Queueable, a future method or the next batch `execute` starts without switches.
+- **One transaction only.** A Queueable, a future method or the next batch `execute` starts without bypasses.
 
 ## From Custom Metadata {#metadata}
 
@@ -32,14 +32,14 @@ Implement the context's Bypassable. `bypassOn<Ctx>When()` runs once per handler 
 
 <<< @/../examples/main/default/classes/contact/before-insert/validator/ContactReachabilityValidator.cls
 
-- **Checked last.** The Apex and metadata switches win.
+- **Checked last.** The Apex and metadata bypasses win.
 - **Checked before the first handler runs.** A flag set by an earlier handler in the same run applies from the next run.
-- **One context only.** The other switches cover every context. To skip a class in one context, use Bypassable or leave it out of that context's list.
+- **One context only.** The other bypasses cover every context. To skip a class in one context, use Bypassable or leave it out of that context's list.
 - **To skip only some records,** return false from the predicate instead.
 
 ## Per User {#per-user}
 
-There is no per-user switch. Check a custom permission yourself:
+There is no per-user bypass. Check a custom permission yourself:
 
 ```apex
 public Boolean bypassOnAfterUpdateWhen() {
@@ -58,4 +58,4 @@ For Data Loader, the Bulk API or an import wizard:
 3. Uncheck `Bypass__c`.
 4. Backfill what the handlers would have done. Nothing re-runs them later.
 
-The switch affects every user while it is on.
+The bypass affects every user while it is on.

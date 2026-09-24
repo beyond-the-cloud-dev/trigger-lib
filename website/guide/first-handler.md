@@ -66,7 +66,7 @@ The insert fails with a `DmlException` that carries the Validator's message.
 
 ## 6. Test It {#test}
 
-Handlers are plain classes. Call their methods with rows built in memory: no trigger, no DML. Wrap a row in `new TriggerHandler.TriggerRecord(newRow, oldRow)`, with `null` for the old row on insert.
+Handlers are plain classes. Call their methods with rows built in memory: no trigger, no DML. Wrap a row in `new TriggerTypes.TriggerRecord(newRow, oldRow)`, with `null` for the old row on insert.
 
 ::: code-group
 
@@ -79,7 +79,7 @@ private class ContactEmailNormalizationPopulatorTest {
         Contact newContact = new Contact(LastName = 'Doe', Email = 'Jane.Doe@Example.COM');
 
         // Test
-        new ContactEmailNormalizationPopulator().populateOnBeforeInsert(new TriggerHandler.TriggerRecord(newContact, null));
+        new ContactEmailNormalizationPopulator().populateOnBeforeInsert(new TriggerTypes.TriggerRecord(newContact, null));
 
         // Verify
         Assert.areEqual('jane.doe@example.com', newContact.Email, 'The email should be lowercase.');
@@ -96,7 +96,7 @@ private class ContactBirthdateValidatorTest {
         Contact newContact = new Contact(LastName = 'Doe', Birthdate = Date.today().addDays(1));
 
         // Test
-        new ContactBirthdateValidator().addErrorOnBeforeInsert(new TriggerHandler.TriggerRecord(newContact, null));
+        new ContactBirthdateValidator().addErrorOnBeforeInsert(new TriggerTypes.TriggerRecord(newContact, null));
 
         // Verify
         Assert.areEqual(new List<String>{ 'Birthdate' }, newContact.getErrors()[0].getFields(), 'The error should be on Birthdate.');

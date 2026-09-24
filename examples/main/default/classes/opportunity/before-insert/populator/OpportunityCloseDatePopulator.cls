@@ -1,9 +1,9 @@
 public with sharing class OpportunityCloseDatePopulator implements BeforeInsert.Populator {
-    public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
+    public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
         return record.isNull(Opportunity.CloseDate);
     }
 
-    public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
+    public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
         record.put(Opportunity.CloseDate, this.endOfCurrentQuarter());
     }
 

@@ -27,7 +27,7 @@ Skip a handler for the whole chunk when a condition holds, such as a static flag
 
 - **Reset static flags in `finally`.** A static flag lasts for the whole transaction, nested saves included.
 - **Outside the error handling.** An exception here is not logged, ContinueOnError does not apply, and the update fails.
-- **Only this context.** [Other switches](/guide/bypasses) cover every context, and `bypass().handler(X.class)` never matches an inner class.
+- **Only this context.** [Other bypasses](/guide/bypasses) cover every context, and `bypass().handler(X.class)` never matches an inner class.
 
 ::: tip
 To skip single records, return false from the predicate.

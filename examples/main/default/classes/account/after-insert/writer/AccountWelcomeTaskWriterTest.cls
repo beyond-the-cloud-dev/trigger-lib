@@ -3,7 +3,7 @@ private class AccountWelcomeTaskWriterTest {
     @IsTest
     static void writeOnAfterInsertWithCustomer() {
         // Setup
-        Id janeId = SOQL.IdGenerator.get(User.SObjectType);
+        Id janeId = new TriggerTypes.RandomIdGenerator().get(User.SObjectType);
         User jane = (User) JSON.deserialize('{"attributes":{"type":"User"},"Id":"' + janeId + '","Name":"Jane Smith","Email":"jane.smith@acme.com"}', User.class);
         Account acme = new Account(Name = 'Acme', Type = 'Customer - Direct', OwnerId = jane.Id);
 
@@ -12,7 +12,7 @@ private class AccountWelcomeTaskWriterTest {
         TriggerOrchestrator.mock().afterInsertFor(AccountWelcomeTaskWriter.class).with(acme).withParent(Account.OwnerId, jane);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountWelcomeTaskWriter());
+        TriggerOrchestrator.runTestFor(new AccountWelcomeTaskWriter());
 
         // Verify
         Task onboardingCall = (Task) DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()[0];
@@ -36,7 +36,7 @@ private class AccountWelcomeTaskWriterTest {
     @IsTest
     static void writeOnAfterInsertWithProspect() {
         // Setup
-        Id janeId = SOQL.IdGenerator.get(User.SObjectType);
+        Id janeId = new TriggerTypes.RandomIdGenerator().get(User.SObjectType);
         User jane = (User) JSON.deserialize('{"attributes":{"type":"User"},"Id":"' + janeId + '","Name":"Jane Smith","Email":"jane.smith@acme.com"}', User.class);
         Account acme = new Account(Name = 'Acme', Type = 'Prospect', OwnerId = jane.Id);
 
@@ -45,7 +45,7 @@ private class AccountWelcomeTaskWriterTest {
         TriggerOrchestrator.mock().afterInsertFor(AccountWelcomeTaskWriter.class).with(acme).withParent(Account.OwnerId, jane);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountWelcomeTaskWriter());
+        TriggerOrchestrator.runTestFor(new AccountWelcomeTaskWriter());
 
         // Verify
         Assert.areEqual(0, DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records().size(), 'No onboarding call should be created.');
@@ -54,14 +54,14 @@ private class AccountWelcomeTaskWriterTest {
     @IsTest
     static void writeOnAfterInsertWithoutOwner() {
         // Setup
-        Account acme = new Account(Name = 'Acme', Type = 'Customer - Direct', OwnerId = SOQL.IdGenerator.get(User.SObjectType));
+        Account acme = new Account(Name = 'Acme', Type = 'Customer - Direct', OwnerId = new TriggerTypes.RandomIdGenerator().get(User.SObjectType));
 
         DML.mock('triggerUow').allDmls();
 
         TriggerOrchestrator.mock().afterInsertFor(AccountWelcomeTaskWriter.class).with(acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountWelcomeTaskWriter());
+        TriggerOrchestrator.runTestFor(new AccountWelcomeTaskWriter());
 
         // Verify
         Assert.areEqual(1, DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records().size(), 'The onboarding call should be created without the owner.');

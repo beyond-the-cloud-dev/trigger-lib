@@ -8,7 +8,7 @@ private class ContactTitleDepartmentPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(ContactTitleDepartmentPopulator.class).with(doe, new Contact(LastName = 'Doe', Title = 'Analyst'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactTitleDepartmentPopulator());
+        TriggerOrchestrator.runTestFor(new ContactTitleDepartmentPopulator());
 
         // Verify
         Assert.areEqual('Finance', doe.Department, 'The department should follow the title.');
@@ -22,7 +22,7 @@ private class ContactTitleDepartmentPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(ContactTitleDepartmentPopulator.class).with(doe, new Contact(LastName = 'Doe', Title = 'Analyst'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactTitleDepartmentPopulator());
+        TriggerOrchestrator.runTestFor(new ContactTitleDepartmentPopulator());
 
         // Verify
         Assert.areEqual('Administration', doe.Department, 'The padded title should be matched.');
@@ -36,7 +36,7 @@ private class ContactTitleDepartmentPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(ContactTitleDepartmentPopulator.class).with(doe, new Contact(LastName = 'Doe', Title = 'Analyst', Department = 'R&D'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactTitleDepartmentPopulator());
+        TriggerOrchestrator.runTestFor(new ContactTitleDepartmentPopulator());
 
         // Verify
         Assert.areEqual('R&D', doe.Department, 'The department should be kept for an unknown title.');
@@ -50,7 +50,7 @@ private class ContactTitleDepartmentPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(ContactTitleDepartmentPopulator.class).with(doe, new Contact(LastName = 'Doe', Title = 'CFO', Department = 'Treasury'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactTitleDepartmentPopulator());
+        TriggerOrchestrator.runTestFor(new ContactTitleDepartmentPopulator());
 
         // Verify
         Assert.areEqual('Accounting', doe.Department, 'The department should be kept for an unchanged title.');
@@ -64,7 +64,7 @@ private class ContactTitleDepartmentPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(ContactTitleDepartmentPopulator.class).with(doe, new Contact(LastName = 'Doe', Title = 'CFO', Department = 'Finance'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactTitleDepartmentPopulator());
+        TriggerOrchestrator.runTestFor(new ContactTitleDepartmentPopulator());
 
         // Verify
         Assert.areEqual('Finance', doe.Department, 'The department should be kept for a cleared title.');

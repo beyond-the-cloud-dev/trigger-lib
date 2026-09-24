@@ -3,8 +3,8 @@ private class ContactFollowUpTaskWriterTest {
     @IsTest
     static void writeOnAfterInsertWithWebLeadSource() {
         // Setup
-        Id janeId = SOQL.IdGenerator.get(User.SObjectType);
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Id janeId = new TriggerTypes.RandomIdGenerator().get(User.SObjectType);
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
         Contact doe = new Contact(LastName = 'Doe', Email = 'jane.doe@acme.com', LeadSource = 'Web', AccountId = acme.Id, OwnerId = janeId);
 
         DML.mock('triggerUow').allDmls();
@@ -12,7 +12,7 @@ private class ContactFollowUpTaskWriterTest {
         TriggerOrchestrator.mock().afterInsertFor(ContactFollowUpTaskWriter.class).with(doe).withParent(Contact.AccountId, acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactFollowUpTaskWriter());
+        TriggerOrchestrator.runTestFor(new ContactFollowUpTaskWriter());
 
         // Verify
         Task followUp = (Task) DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()[0];
@@ -22,7 +22,7 @@ private class ContactFollowUpTaskWriterTest {
                 WhoId = doe.Id,
                 WhatId = acme.Id,
                 OwnerId = janeId,
-                Subject = 'Follow up with new web contactRecord from Acme',
+                Subject = 'Follow up with new web contact from Acme',
                 ActivityDate = Date.today().addDays(2),
                 Priority = 'High',
                 Status = 'Not Started'
@@ -42,11 +42,11 @@ private class ContactFollowUpTaskWriterTest {
         TriggerOrchestrator.mock().afterInsertFor(ContactFollowUpTaskWriter.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactFollowUpTaskWriter());
+        TriggerOrchestrator.runTestFor(new ContactFollowUpTaskWriter());
 
         // Verify
         Task followUp = (Task) DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()[0];
-        Assert.areEqual('Follow up with new web contactRecord', followUp.Subject, 'The subject should not name an account.');
+        Assert.areEqual('Follow up with new web contact', followUp.Subject, 'The subject should not name an account.');
     }
 
     @IsTest
@@ -59,7 +59,7 @@ private class ContactFollowUpTaskWriterTest {
         TriggerOrchestrator.mock().afterInsertFor(ContactFollowUpTaskWriter.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactFollowUpTaskWriter());
+        TriggerOrchestrator.runTestFor(new ContactFollowUpTaskWriter());
 
         // Verify
         Assert.areEqual(0, DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records().size(), 'No task should be inserted.');
@@ -75,7 +75,7 @@ private class ContactFollowUpTaskWriterTest {
         TriggerOrchestrator.mock().afterInsertFor(ContactFollowUpTaskWriter.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactFollowUpTaskWriter());
+        TriggerOrchestrator.runTestFor(new ContactFollowUpTaskWriter());
 
         // Verify
         Assert.areEqual(0, DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records().size(), 'No task should be inserted.');
@@ -94,7 +94,7 @@ private class ContactFollowUpTaskWriterTest {
 
         // Test
         try {
-            TriggerOrchestrator.executeTestFor(new ContactFollowUpTaskWriter());
+            TriggerOrchestrator.runTestFor(new ContactFollowUpTaskWriter());
         } catch (Exception e) {
             expectedException = e;
         }

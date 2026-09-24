@@ -8,7 +8,7 @@ private class OpportunityLargeDealValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityLargeDealValidator.class).with(renewal, new Opportunity(StageName = 'Negotiation/Review', Amount = 150000));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityLargeDealValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityLargeDealValidator());
 
         // Verify
         Assert.areEqual(
@@ -26,7 +26,7 @@ private class OpportunityLargeDealValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityLargeDealValidator.class).with(renewal, new Opportunity(StageName = 'Negotiation/Review', Amount = 150000));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityLargeDealValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityLargeDealValidator());
 
         // Verify
         Assert.isFalse(renewal.hasErrors(), 'A large deal with a next step should be accepted.');
@@ -40,7 +40,7 @@ private class OpportunityLargeDealValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityLargeDealValidator.class).with(renewal, new Opportunity(StageName = 'Negotiation/Review', Amount = 100000));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityLargeDealValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityLargeDealValidator());
 
         // Verify
         Assert.isFalse(renewal.hasErrors(), 'A deal of exactly 100,000 should be accepted.');
@@ -54,7 +54,7 @@ private class OpportunityLargeDealValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityLargeDealValidator.class).with(renewal, new Opportunity(StageName = 'Negotiation/Review', Amount = 150000));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityLargeDealValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityLargeDealValidator());
 
         // Verify
         Assert.isFalse(renewal.hasErrors(), 'A won large deal should be accepted.');
@@ -68,7 +68,7 @@ private class OpportunityLargeDealValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityLargeDealValidator.class).with(renewal, new Opportunity(StageName = 'Negotiation/Review', Amount = 150000));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityLargeDealValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityLargeDealValidator());
 
         // Verify
         Assert.isFalse(renewal.hasErrors(), 'A lost large deal should be accepted.');

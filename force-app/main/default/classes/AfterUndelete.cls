@@ -1,20 +1,20 @@
 public class AfterUndelete {
-    // Main interfaces - pick one
+    // Roles - pick one
 
     public interface Writer extends Handler {
-        Boolean writeOnAfterUndeleteWhen(TriggerHandler.UndeleteRecord record);
-        void writeOnAfterUndelete(TriggerHandler.UndeleteRecord record, TriggerHandler.UnitOfWork unitOfWork);
+        Boolean writeOnAfterUndeleteWhen(TriggerTypes.UndeleteRecord record);
+        void writeOnAfterUndelete(TriggerTypes.UndeleteRecord record, TriggerTypes.UnitOfWork unitOfWork);
     }
 
     public interface Dispatcher extends Handler {
-        Boolean dispatchOnAfterUndeleteWhen(TriggerHandler.UndeleteRecord record);
-        void dispatchOnAfterUndelete(TriggerHandler.UndeleteRecords records);
+        Boolean dispatchOnAfterUndeleteWhen(TriggerTypes.UndeleteRecord record);
+        void dispatchOnAfterUndelete(TriggerTypes.UndeleteRecords records);
     }
 
-    // Additional interfaces - pick as many as you need
+    // Add-ons - pick as many as you need
 
     public interface ParentQuery {
-        Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUndelete();
+        Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnAfterUndelete();
     }
 
     public interface RelatedQuery {
@@ -22,8 +22,8 @@ public class AfterUndelete {
     }
 
     public interface RecordsProvider {
-        List<SObject> query(TriggerHandler.UndeleteRecords records);
-        String keyOf(SObject record);
+        List<SObject> query(TriggerTypes.UndeleteRecords records);
+        String keyOf(SObject row);
     }
 
     public interface OwnUnitOfWork {
@@ -35,13 +35,13 @@ public class AfterUndelete {
     }
 
     public interface Finalizer {
-        void finalizeAfterUndelete(TriggerHandler.UndeleteRecords records);
+        void finalizeOnAfterUndelete(TriggerTypes.UndeleteRecords records);
     }
 
     public interface ContinueOnError {
     }
 
-    // For internal use only
+    // Marker
 
     public interface Handler {
     }

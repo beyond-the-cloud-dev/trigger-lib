@@ -2,12 +2,12 @@
 template: add-on
 context: BeforeUpdate
 interface: RelatedQuery
-description: Load children, siblings or other records once per before update chunk, keyed for fast reads, instead of a query per record.
+description: Load children, siblings or other records once per handler per run in before update, keyed for fast reads, instead of a query per record.
 ---
 
 # BeforeUpdate.RelatedQuery
 
-Query children, siblings or other records once per chunk, and read them per record with `record.getRelated(name)`.
+Query children, siblings or other records once per handler per run, and read them per record with `record.getRelated(name)`.
 
 **Signature**
 

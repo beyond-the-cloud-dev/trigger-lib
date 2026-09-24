@@ -8,7 +8,7 @@ private class OpportunityClosingPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityClosingPopulator.class).with(renewal, new Opportunity(StageName = 'Negotiation/Review'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityClosingPopulator());
+        TriggerOrchestrator.runTestFor(new OpportunityClosingPopulator());
 
         // Verify
         Assert.areEqual(
@@ -26,7 +26,7 @@ private class OpportunityClosingPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityClosingPopulator.class).with(renewal, new Opportunity(StageName = 'Proposal/Price Quote'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityClosingPopulator());
+        TriggerOrchestrator.runTestFor(new OpportunityClosingPopulator());
 
         // Verify
         Assert.areEqual(
@@ -46,7 +46,7 @@ private class OpportunityClosingPopulatorTest {
             .with(renewal, new Opportunity(StageName = 'Negotiation/Review', Description = 'Strategic account.'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityClosingPopulator());
+        TriggerOrchestrator.runTestFor(new OpportunityClosingPopulator());
 
         // Verify
         Assert.areEqual(
@@ -66,7 +66,7 @@ private class OpportunityClosingPopulatorTest {
             .with(renewal, new Opportunity(StageName = 'Negotiation/Review', NextStep = 'Send the contract'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityClosingPopulator());
+        TriggerOrchestrator.runTestFor(new OpportunityClosingPopulator());
 
         // Verify
         Assert.isNull(renewal.NextStep, 'The next step should be cleared.');
@@ -80,7 +80,7 @@ private class OpportunityClosingPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityClosingPopulator.class).with(renewal, new Opportunity(StageName = 'Prospecting', NextStep = 'Book a demo'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityClosingPopulator());
+        TriggerOrchestrator.runTestFor(new OpportunityClosingPopulator());
 
         // Verify
         Assert.areEqual('Book a demo', renewal.NextStep, 'The next step should be kept.');
@@ -94,22 +94,22 @@ private class OpportunityClosingPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityClosingPopulator.class).with(renewal, new Opportunity(StageName = 'Closed Won'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityClosingPopulator());
+        TriggerOrchestrator.runTestFor(new OpportunityClosingPopulator());
 
         // Verify
         Assert.areEqual('Send the invoice', renewal.NextStep, 'The next step should be kept.');
     }
 
     @IsTest
-    static void maxRecursionDepthOnBeforeUpdateWithRepeatedUpdate() {
+    static void maxRunsPerRecordOnBeforeUpdateWithRepeatedUpdate() {
         // Setup
         Opportunity renewal = new Opportunity(StageName = 'Closed Won');
 
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityClosingPopulator.class).with(renewal, new Opportunity(StageName = 'Negotiation/Review'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityClosingPopulator());
-        TriggerOrchestrator.executeTestFor(new OpportunityClosingPopulator());
+        TriggerOrchestrator.runTestFor(new OpportunityClosingPopulator());
+        TriggerOrchestrator.runTestFor(new OpportunityClosingPopulator());
 
         // Verify
         Assert.areEqual(

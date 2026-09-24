@@ -1,5 +1,5 @@
 ---
-description: 'TriggerOrchestrator reference: run() from the trigger, the seven registration interfaces, the bypass() builder, the Logger and Error interfaces, and TriggerOrchestratorException.'
+description: 'TriggerOrchestrator reference: run() from the trigger, the seven registration interfaces, the bypass() builder, the Logger and Error interfaces, and TriggerLibException.'
 ---
 
 # TriggerOrchestrator
@@ -65,8 +65,8 @@ public interface AfterUndelete {
 
 - **Two types per context name.** `TriggerOrchestrator.BeforeInsert` is the registration interface. `BeforeInsert` alone holds the role and add-on interfaces for handlers.
 - **Return an empty list, never `null`.** A `null` list throws before any handler runs, and the save fails.
-- **One role per class.** A class that implements two roles runs only as the first: Populator over Validator, Writer over Dispatcher.
-- **The marker alone never runs.** Outside BeforeDelete, a class that implements only `Handler` compiles and does nothing.
+- **One role per class.** A class that implements two roles runs only as the first: Populator over Validator, Validator over Writer, Writer over Dispatcher.
+- **The marker alone never runs.** A class that implements only `Handler` compiles and does nothing.
 
 ## bypass {#bypass}
 
@@ -84,7 +84,7 @@ public interface Bypassable {
 }
 ```
 
-| Method | Switches off |
+| Method | Bypasses |
 |---|---|
 | `sObject(Account.SObjectType)` | every run on that object |
 | `orchestrator(X.class)` | every run of that orchestrator |
@@ -102,7 +102,7 @@ try {
 }
 ```
 
-- **Lasts for the transaction.** A switch stays on until `clear()` removes every switch. Call it in a `finally` block.
+- **Lasts for the transaction.** A bypass stays on until `clear()` removes every bypass. Call it in a `finally` block.
 - **Top-level classes only.** `handler(X.class)` and `orchestrator(X.class)` never match an inner class. For an inner handler, use a [`TriggerHandler__mdt`](/api/custom-metadata#trigger-handler) record or the Bypassable add-on. For an inner orchestrator, use `sObject(…)`.
 - **Only Trigger Lib handlers.** Flows, validation rules and other triggers still run.
 
@@ -113,12 +113,12 @@ try {
 ```apex
 public interface Logger {
     void log(TriggerOrchestrator.Error error);
-    void finalize();
+    void flush();
 }
 ```
 
 - **`log(error)`** runs for every exception in a handler's turn, before the library rethrows it or ContinueOnError swallows it.
-- **`finalize()`** runs once when the outermost run ends, also when it failed.
+- **`flush()`** runs at the end of each outermost run, also when it failed.
 - **Found automatically.** Implement it in one class and register nothing. With two implementations, the first call to `run` or `bypass()` throws.
 - **Not logged:** exceptions outside a handler's turn, listed in [Errors & Logging](/guide/error-handling#never-logged).
 
@@ -141,15 +141,18 @@ public interface Error {
 - **`getHandlerName()`** is the handler's class name without the outer class.
 - **`getRecordIds()`** holds every record of the chunk, not only the qualified ones. It is empty in before insert.
 
-## TriggerOrchestratorException {#triggerorchestratorexception}
+## TriggerLibException {#triggerlibexception}
 
-The class is private, so catch `Exception` and match the message. The library rethrows it even with ContinueOnError.
+`TriggerTypes.TriggerLibException` is the one exception the library throws, from the record API and from the run. It is public, so you can catch it by type. The library rethrows it even with ContinueOnError.
 
 | Message | Thrown when |
 |---|---|
-| `Called outside of a trigger context, or the trigger operation is not supported.` | `run` is called outside a trigger |
+| `Called outside of a trigger context.` | `run` is called outside a trigger |
 | `Multiple implementations of TriggerOrchestrator.Logger found. Only one implementation is allowed.` | the org has two Logger classes |
-| `<Handler> performed DML in a before context. …` | a before insert or before update handler ran DML or published an immediate event |
-| `<Handler> qualified a record in errorShouldBeAttachedOn<Ctx>When but attached no error in addErrorOn<Ctx>.` | a Validator's predicate returned true and its error method attached no error |
+| `<Handler> performed DML in before insert. Move that work to an after insert Writer.` | a before insert Populator or Validator ran DML or published an immediate event |
+| `<Handler> performed DML in before update. Move that work to an after update Writer.` | the same in before update |
+| `<Handler> qualified a record in addErrorOn<Ctx>When but attached no error in addErrorOn<Ctx>.` | a Validator's predicate returned true and its error method attached no error |
+| `<Object> has no record types, so isRecordType cannot be used on it.` | `isRecordType` or `isNotRecordType` on an object without record types; the message names the method |
+| `No related records provider named <name> is declared. Return it from the queryRelatedOn method of the handler first.` | `getRelated` with a name the handler's RelatedQuery did not return |
 
 Code that fires the trigger through DML gets a `DmlException` that contains the original message.

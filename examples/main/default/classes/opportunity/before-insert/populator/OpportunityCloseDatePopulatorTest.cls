@@ -9,7 +9,7 @@ private class OpportunityCloseDatePopulatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(OpportunityCloseDatePopulator.class).with(renewal);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityCloseDatePopulator());
+        TriggerOrchestrator.runTestFor(new OpportunityCloseDatePopulator());
 
         // Verify
         Assert.areEqual(endOfQuarter, renewal.CloseDate, 'The close date should default to the end of the quarter.');
@@ -23,7 +23,7 @@ private class OpportunityCloseDatePopulatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(OpportunityCloseDatePopulator.class).with(renewal);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityCloseDatePopulator());
+        TriggerOrchestrator.runTestFor(new OpportunityCloseDatePopulator());
 
         // Verify
         Assert.areEqual(Date.newInstance(2030, 1, 15), renewal.CloseDate, 'The close date should be kept.');

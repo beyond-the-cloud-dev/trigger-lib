@@ -8,7 +8,7 @@ private class OpportunityWinAmountValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityWinAmountValidator.class).with(renewal, new Opportunity(StageName = 'Negotiation/Review'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityWinAmountValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityWinAmountValidator());
 
         // Verify
         Assert.areEqual(
@@ -26,7 +26,7 @@ private class OpportunityWinAmountValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityWinAmountValidator.class).with(renewal, new Opportunity(StageName = 'Negotiation/Review', Amount = 0));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityWinAmountValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityWinAmountValidator());
 
         // Verify
         Assert.areEqual(
@@ -44,7 +44,7 @@ private class OpportunityWinAmountValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityWinAmountValidator.class).with(renewal, new Opportunity(StageName = 'Negotiation/Review', Amount = 0.01));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityWinAmountValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityWinAmountValidator());
 
         // Verify
         Assert.isFalse(renewal.hasErrors(), 'Winning a deal with a positive amount should be accepted.');
@@ -58,7 +58,7 @@ private class OpportunityWinAmountValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityWinAmountValidator.class).with(renewal, new Opportunity(StageName = 'Closed Won'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityWinAmountValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityWinAmountValidator());
 
         // Verify
         Assert.isFalse(renewal.hasErrors(), 'Editing an already won deal should be accepted.');
@@ -72,7 +72,7 @@ private class OpportunityWinAmountValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityWinAmountValidator.class).with(renewal, new Opportunity(StageName = 'Prospecting'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityWinAmountValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityWinAmountValidator());
 
         // Verify
         Assert.isFalse(renewal.hasErrors(), 'Moving an open deal without an amount should be accepted.');

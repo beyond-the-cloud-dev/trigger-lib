@@ -25,7 +25,7 @@ export function kebab(name) {
 }
 
 export function simpleType(type) {
-  return type.replace(/\bTriggerHandler\./g, '');
+  return type.replace(/\bTriggerTypes\./g, '');
 }
 
 function stripComments(source) {
@@ -169,7 +169,7 @@ function parseRegistrations(source) {
     }));
 }
 
-function classifyTriggerHandlerInterface(declared) {
+function classifyTriggerTypesInterface(declared) {
   const methodNames = declared.methods.map(method => method.name);
   if (methodNames.includes('getRecords') && methodNames.includes('size'))
     return 'collection';
@@ -177,16 +177,16 @@ function classifyTriggerHandlerInterface(declared) {
   return 'service';
 }
 
-function parseTriggerHandler() {
+function parseTriggerTypes() {
   const interfaces = new Map();
-  for (const declared of parseInterfaces(readClass('TriggerHandler'))) {
-    const category = classifyTriggerHandlerInterface(declared);
+  for (const declared of parseInterfaces(readClass('TriggerTypes'))) {
+    const category = classifyTriggerTypesInterface(declared);
     const methodNames = [
       ...new Set(declared.methods.map(method => method.name))
     ];
-    interfaces.set(`TriggerHandler.${declared.name}`, {
+    interfaces.set(`TriggerTypes.${declared.name}`, {
       ...declared,
-      qualifiedName: `TriggerHandler.${declared.name}`,
+      qualifiedName: `TriggerTypes.${declared.name}`,
       category,
       methodNames
     });
@@ -194,7 +194,7 @@ function parseTriggerHandler() {
   return interfaces;
 }
 
-function buildContext(registration, triggerHandler) {
+function buildContext(registration, triggerTypes) {
   const name = registration.interfaceName;
   const [, phase, operation] = name.match(CONTEXT_NAME_PATTERN);
   const slug = kebab(name);
@@ -290,7 +290,7 @@ function buildContext(registration, triggerHandler) {
   for (const item of [...roles, ...addOns, ...supports]) {
     for (const method of item.methods) {
       for (const param of method.params) {
-        const declaredType = triggerHandler.get(param.type);
+        const declaredType = triggerTypes.get(param.type);
         if (declaredType) {
           typeUses.push({
             type: param.type,
@@ -321,7 +321,7 @@ function buildContext(registration, triggerHandler) {
   ];
   if (collectionTypes.length !== 1) {
     throw new Error(
-      `apex-api: ${name}.cls should use exactly one TriggerHandler collection type, found ${collectionTypes.join(', ') || 'none'}`
+      `apex-api: ${name}.cls should use exactly one TriggerTypes collection type, found ${collectionTypes.join(', ') || 'none'}`
     );
   }
 
@@ -394,7 +394,7 @@ function mergeOrder(sequences) {
 }
 
 function buildModel() {
-  const triggerHandler = parseTriggerHandler();
+  const triggerTypes = parseTriggerTypes();
   const registrations = parseRegistrations(readClass('TriggerOrchestrator'));
 
   if (registrations.length === 0) {
@@ -404,7 +404,7 @@ function buildModel() {
   }
 
   const contexts = registrations.map(registration =>
-    buildContext(registration, triggerHandler)
+    buildContext(registration, triggerTypes)
   );
   const canonicalAddOns = mergeOrder(contexts.map(context => context.addOns));
 
@@ -460,7 +460,7 @@ function buildModel() {
     roleNames,
     matrixRows,
     methodNames,
-    triggerHandler
+    triggerTypes
   };
 }
 
@@ -476,9 +476,9 @@ export function getInterface(contextName, interfaceName) {
   );
 }
 
-export function getTriggerHandlerInterface(type) {
-  return model.triggerHandler.get(
-    type.startsWith('TriggerHandler.') ? type : `TriggerHandler.${type}`
+export function getTriggerTypesInterface(type) {
+  return model.triggerTypes.get(
+    type.startsWith('TriggerTypes.') ? type : `TriggerTypes.${type}`
   );
 }
 
@@ -636,7 +636,7 @@ const advanced = {
     { text: 'Bypassing', link: '/guide/bypasses' },
     { text: 'Unit of Work', link: '/guide/unit-of-work' },
     { text: 'Errors & Logging', link: '/guide/error-handling' },
-    { text: 'RelatedQuery Recipes', link: '/guide/related-records' },
+    { text: 'RelatedQuery Recipes', link: '/guide/related-query' },
     { text: 'Testing', link: '/guide/testing' }
   ]
 };
@@ -648,9 +648,9 @@ const api = {
     { text: 'TriggerOrchestrator', link: '/api/trigger-orchestrator' },
     { text: 'Record API', link: '/api/record' },
     { text: 'Record Collections', link: '/api/record-collections' },
-    { text: 'TriggerHandler.ParentFields', link: '/api/field-selection' },
+    { text: 'TriggerTypes.ParentFields', link: '/api/parent-fields' },
     { text: 'RelatedRecords & RecordsProvider', link: '/api/related-records' },
-    { text: 'TriggerHandler.UnitOfWork', link: '/api/unit-of-work' },
+    { text: 'TriggerTypes.UnitOfWork', link: '/api/unit-of-work' },
     { text: 'Custom Metadata', link: '/api/custom-metadata' }
   ]
 };

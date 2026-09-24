@@ -1,38 +1,36 @@
 public with sharing class AccountOwnerTransferWriter implements AfterUpdate.Writer, AfterUpdate.ParentQuery, AfterUpdate.PriorParentQuery, AfterUpdate.RelatedQuery, AfterUpdate.Bypassable {
-    public static Boolean isDisabled = false;
+    public static Boolean isBypassed = false;
 
     public Boolean bypassOnAfterUpdateWhen() {
-        return isDisabled || System.isBatch();
+        return AccountOwnerTransferWriter.isBypassed || System.isBatch();
     }
 
-    public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
-        return new Map<SObjectField, TriggerHandler.ParentFields>{ Account.OwnerId => TriggerHandler.ParentFields.with(User.Name) };
+    public Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnAfterUpdate() {
+        return new Map<SObjectField, TriggerTypes.ParentFields>{ Account.OwnerId => TriggerTypes.ParentFields.with(User.Name) };
     }
 
-    public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnAfterUpdate() {
-        return new Map<SObjectField, TriggerHandler.ParentFields>{ Account.OwnerId => TriggerHandler.ParentFields.with(User.Name) };
+    public Map<SObjectField, TriggerTypes.ParentFields> queryPriorParentsOnAfterUpdate() {
+        return new Map<SObjectField, TriggerTypes.ParentFields>{ Account.OwnerId => TriggerTypes.ParentFields.with(User.Name) };
     }
 
     public Map<String, AfterUpdate.RecordsProvider> queryRelatedOnAfterUpdate() {
         return new Map<String, AfterUpdate.RecordsProvider>{ 'openOpportunities' => new AccountOpenOpportunitiesProvider() };
     }
 
-    public Boolean writeOnAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
+    public Boolean writeOnAfterUpdateWhen(TriggerTypes.UpdateRecord record) {
         return record.isChanged(Account.OwnerId);
     }
 
-    public void writeOnAfterUpdate(TriggerHandler.UpdateRecord record, TriggerHandler.UnitOfWork unitOfWork) {
-        Account accountRecord = (Account) record.getNewSObject();
-        User previousOwner = (User) record.getOldParent('Owner');
+    public void writeOnAfterUpdate(TriggerTypes.UpdateRecord record, TriggerTypes.UnitOfWork unitOfWork) {
+        Account newAccount = (Account) record.getNewSObject();
+        User oldOwner = (User) record.getOldParent('Owner');
         User newOwner = (User) record.getNewParent('Owner');
-        String handoverNote = Date.today().format() + ' - accountRecord handed over from ' + previousOwner?.Name + ' to ' + newOwner?.Name;
+        String handoverNote = Date.today().format() + ' - account handed over from ' + oldOwner?.Name + ' to ' + newOwner?.Name;
 
-        for (SObject relatedRecord : record.getRelated('openOpportunities').getAllWhereKeyEquals(record.getId())) {
-            Opportunity opportunityRecord = (Opportunity) relatedRecord;
+        for (SObject row : record.getRelated('openOpportunities').getAllWhereKeyEquals(record.getId())) {
+            Opportunity opportunity = (Opportunity) row;
 
-            unitOfWork.toUpdate(
-                new Opportunity(Id = opportunityRecord.Id, OwnerId = accountRecord.OwnerId, Description = this.notedDescription(handoverNote, opportunityRecord.Description))
-            );
+            unitOfWork.toUpdate(new Opportunity(Id = opportunity.Id, OwnerId = newAccount.OwnerId, Description = this.notedDescription(handoverNote, opportunity.Description)));
         }
     }
 
@@ -41,7 +39,7 @@ public with sharing class AccountOwnerTransferWriter implements AfterUpdate.Writ
     }
 
     private with sharing class AccountOpenOpportunitiesProvider implements AfterUpdate.RecordsProvider {
-        public List<SObject> query(TriggerHandler.UpdateRecords records) {
+        public List<SObject> query(TriggerTypes.UpdateRecords records) {
             return [
                 SELECT Id, AccountId, Description
                 FROM Opportunity
@@ -49,8 +47,8 @@ public with sharing class AccountOwnerTransferWriter implements AfterUpdate.Writ
             ];
         }
 
-        public String keyOf(SObject record) {
-            return ((Opportunity) record).AccountId;
+        public String keyOf(SObject row) {
+            return ((Opportunity) row).AccountId;
         }
     }
 }

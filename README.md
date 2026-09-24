@@ -18,32 +18,28 @@
 
 # Getting Started
 
-The Trigger Lib provides an orchestrator and per-record handlers for Apex triggers, with record qualification, parent enrichment, bypasses and recursion control.
+The Trigger Lib provides an orchestrator and small role-based handlers for Apex triggers, with record qualification, declared parent queries, a unit of work, bypasses and recursion control.
 
 Trigger Lib is part of [Apex Fluently](https://apexfluently.beyondthecloud.dev/), a suite of production-ready Salesforce libraries by [Beyond the Cloud](https://blog.beyondthecloud.dev/blog).
 
 **Trigger**
 
 ```apex
-trigger ContactTrigger on Contact(before insert, after insert, before update, after update, before delete, after delete, after undelete) {
-    TriggerOrchestrator.run(new ContactTriggerOrchestrator());
+trigger AccountTrigger on Account(before insert, after insert, before update, after update, before delete, after delete, after undelete) {
+    TriggerOrchestrator.run(new AccountTriggerOrchestrator());
 }
 ```
 
 **Orchestrator**
 
 ```apex
-public with sharing class ContactTriggerOrchestrator implements TriggerOrchestrator.BeforeInsert, TriggerOrchestrator.BeforeUpdate, TriggerOrchestrator.AfterUpdate {
+public with sharing class AccountTriggerOrchestrator implements TriggerOrchestrator.BeforeInsert, TriggerOrchestrator.AfterInsert {
     public List<BeforeInsert.Handler> beforeInsertHandlers() {
-        return new List<BeforeInsert.Handler>{ new ContactMailingCountryPopulator() };
+        return new List<BeforeInsert.Handler>{ new AccountRatingPopulator(), new AccountCustomerDataValidator() };
     }
 
-    public List<BeforeUpdate.Handler> beforeUpdateHandlers() {
-        return new List<BeforeUpdate.Handler>{ new ContactEmailValidator() };
-    }
-
-    public List<AfterUpdate.Handler> afterUpdateHandlers() {
-        return new List<AfterUpdate.Handler>{ new ContactAccountSyncHandler() };
+    public List<AfterInsert.Handler> afterInsertHandlers() {
+        return new List<AfterInsert.Handler>{ new AccountWelcomeTaskWriter() };
     }
 }
 ```
@@ -51,13 +47,13 @@ public with sharing class ContactTriggerOrchestrator implements TriggerOrchestra
 ## Populator
 
 ```apex
-public with sharing class ContactMailingCountryPopulator implements BeforeInsert.Populator {
-    public Boolean populateOnBeforeInsertWhen(TriggerHandler.InsertRecord record) {
-        return record.isBlank(Contact.MailingCountry);
+public with sharing class AccountRatingPopulator implements BeforeInsert.Populator {
+    public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
+        return record.isBlank(Account.Rating) && record.isNotNull(Account.AnnualRevenue);
     }
 
-    public void populateOnBeforeInsert(TriggerHandler.InsertRecord record) {
-        record.put(Contact.MailingCountry, 'Poland');
+    public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
+        record.put(Account.Rating, record.greaterThanOrEqualTo(Account.AnnualRevenue, 5000000) ? 'Hot' : 'Warm');
     }
 }
 ```
@@ -65,39 +61,34 @@ public with sharing class ContactMailingCountryPopulator implements BeforeInsert
 ## Validator
 
 ```apex
-public with sharing class ContactEmailValidator implements BeforeUpdate.Validator {
-    public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
-        return record.isChangedTo(Contact.Email, null);
+public with sharing class AccountCustomerDataValidator implements BeforeInsert.Validator {
+    public Boolean addErrorOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
+        return record.startsWith(Account.Type, 'Customer') && record.isBlank(Account.Industry);
     }
 
-    public String beforeUpdateValidationMessage(TriggerHandler.UpdateRecord record) {
-        return 'Email cannot be removed.';
+    public void addErrorOnBeforeInsert(TriggerTypes.RejectableInsertRecord record) {
+        record.addError(Account.Industry, 'A customer account requires Industry.');
     }
 }
 ```
 
-## Handler
+## Writer
 
 ```apex
-public with sharing class ContactAccountSyncHandler implements AfterUpdate.Handler, AfterUpdate.ParentQuery, AfterUpdate.Finalizer {
-    private List<Account> accountsToUpdate = new List<Account>();
-
-    public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate() {
-        return new Map<SObjectField, TriggerHandler.ParentFields>{ Contact.AccountId => TriggerHandler.ParentFields.with(Account.Name) };
+public with sharing class AccountWelcomeTaskWriter implements AfterInsert.Writer, AfterInsert.ParentQuery, AfterInsert.ContinueOnError {
+    public Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnAfterInsert() {
+        return new Map<SObjectField, TriggerTypes.ParentFields>{ Account.OwnerId => TriggerTypes.ParentFields.with(User.Name) };
     }
 
-    public Boolean qualifiesForAfterUpdateWhen(TriggerHandler.UpdateRecord record) {
-        return record.isChanged(Contact.Email) && record.isNotNull(Contact.AccountId);
+    public Boolean writeOnAfterInsertWhen(TriggerTypes.InsertRecord record) {
+        return record.startsWith(Account.Type, 'Customer');
     }
 
-    public void onAfterUpdate(TriggerHandler.UpdateRecord record) {
-        Account account = (Account) record.getNewRelated('Account');
+    public void writeOnAfterInsert(TriggerTypes.InsertRecord record, TriggerTypes.UnitOfWork unitOfWork) {
+        Account newAccount = (Account) record.getNewSObject();
+        User owner = (User) record.getNewParent('Owner');
 
-        this.accountsToUpdate.add(new Account(Id = account.Id, Description = account.Name + ': contact email changed'));
-    }
-
-    public void finalizeAfterUpdate() {
-        update this.accountsToUpdate;
+        unitOfWork.toInsert(new Task(WhatId = record.getId(), OwnerId = newAccount.OwnerId, Subject = 'Onboarding call - ' + newAccount.Name, Description = 'Assigned to ' + owner?.Name));
     }
 }
 ```

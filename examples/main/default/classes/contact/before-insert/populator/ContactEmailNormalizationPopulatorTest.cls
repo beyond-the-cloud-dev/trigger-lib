@@ -8,7 +8,7 @@ private class ContactEmailNormalizationPopulatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(ContactEmailNormalizationPopulator.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactEmailNormalizationPopulator());
+        TriggerOrchestrator.runTestFor(new ContactEmailNormalizationPopulator());
 
         // Verify
         Assert.areEqual('jane.doe@example.com', doe.Email, 'The email should be lowercased.');
@@ -22,7 +22,7 @@ private class ContactEmailNormalizationPopulatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(ContactEmailNormalizationPopulator.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactEmailNormalizationPopulator());
+        TriggerOrchestrator.runTestFor(new ContactEmailNormalizationPopulator());
 
         // Verify
         Assert.areEqual('jane.doe@example.com', doe.Email, 'The email should be trimmed.');
@@ -36,7 +36,7 @@ private class ContactEmailNormalizationPopulatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(ContactEmailNormalizationPopulator.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactEmailNormalizationPopulator());
+        TriggerOrchestrator.runTestFor(new ContactEmailNormalizationPopulator());
 
         // Verify
         Assert.isNull(doe.Email, 'The missing email should be skipped.');

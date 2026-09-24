@@ -9,7 +9,7 @@ private class OpportunityCloseDateValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(OpportunityCloseDateValidator.class).with(renewal);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityCloseDateValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityCloseDateValidator());
 
         // Verify
         Assert.areEqual(
@@ -27,7 +27,7 @@ private class OpportunityCloseDateValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(OpportunityCloseDateValidator.class).with(renewal);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityCloseDateValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityCloseDateValidator());
 
         // Verify
         Assert.isFalse(renewal.hasErrors(), 'Today as the close date should be accepted.');
@@ -41,7 +41,7 @@ private class OpportunityCloseDateValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(OpportunityCloseDateValidator.class).with(renewal);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityCloseDateValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityCloseDateValidator());
 
         // Verify
         Assert.isFalse(renewal.hasErrors(), 'An empty close date should be accepted.');

@@ -8,7 +8,7 @@ private class AccountTypeAuditPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountTypeAuditPopulator.class).with(acme, new Account(Name = 'Acme', Type = 'Prospect'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountTypeAuditPopulator());
+        TriggerOrchestrator.runTestFor(new AccountTypeAuditPopulator());
 
         // Verify
         Assert.areEqual('Type Prospect -> Customer - Direct by ' + UserInfo.getName(), acme.Description.substringAfter(' - '), 'The type change should be stamped.');
@@ -22,7 +22,7 @@ private class AccountTypeAuditPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountTypeAuditPopulator.class).with(acme, new Account(Name = 'Acme'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountTypeAuditPopulator());
+        TriggerOrchestrator.runTestFor(new AccountTypeAuditPopulator());
 
         // Verify
         Assert.areEqual('Type none -> Prospect by ' + UserInfo.getName(), acme.Description.substringAfter(' - '), 'The blank type should be stamped as none.');
@@ -36,7 +36,7 @@ private class AccountTypeAuditPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountTypeAuditPopulator.class).with(acme, new Account(Name = 'Acme', Type = 'Prospect'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountTypeAuditPopulator());
+        TriggerOrchestrator.runTestFor(new AccountTypeAuditPopulator());
 
         // Verify
         Assert.areEqual('Type Prospect -> none by ' + UserInfo.getName(), acme.Description.substringAfter(' - '), 'The blank type should be stamped as none.');
@@ -50,7 +50,7 @@ private class AccountTypeAuditPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountTypeAuditPopulator.class).with(acme, new Account(Name = 'Acme', Type = 'Prospect', Description = 'Key account.'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountTypeAuditPopulator());
+        TriggerOrchestrator.runTestFor(new AccountTypeAuditPopulator());
 
         // Verify
         Assert.areEqual('Key account.', acme.Description.substringAfter('\n'), 'The existing description should be kept below the stamp.');
@@ -64,7 +64,7 @@ private class AccountTypeAuditPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountTypeAuditPopulator.class).with(acme, new Account(Name = 'Acme', Type = 'Prospect', Description = 'x'.repeat(32000)));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountTypeAuditPopulator());
+        TriggerOrchestrator.runTestFor(new AccountTypeAuditPopulator());
 
         // Verify
         Assert.areEqual(32000, acme.Description.length(), 'The description should be cut to the field length.');
@@ -78,22 +78,22 @@ private class AccountTypeAuditPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountTypeAuditPopulator.class).with(acme, new Account(Name = 'Acme', Type = 'Prospect', Description = 'Key account.'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountTypeAuditPopulator());
+        TriggerOrchestrator.runTestFor(new AccountTypeAuditPopulator());
 
         // Verify
         Assert.areEqual('Key account.', acme.Description, 'The description should be kept.');
     }
 
     @IsTest
-    static void maxRecursionDepthOnBeforeUpdateWhenUpdatedTwice() {
+    static void maxRunsPerRecordOnBeforeUpdateWhenUpdatedTwice() {
         // Setup
         Account acme = new Account(Name = 'Acme', Type = 'Customer - Direct');
 
         TriggerOrchestrator.mock().beforeUpdateFor(AccountTypeAuditPopulator.class).with(acme, new Account(Name = 'Acme', Type = 'Prospect'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountTypeAuditPopulator());
-        TriggerOrchestrator.executeTestFor(new AccountTypeAuditPopulator());
+        TriggerOrchestrator.runTestFor(new AccountTypeAuditPopulator());
+        TriggerOrchestrator.runTestFor(new AccountTypeAuditPopulator());
 
         // Verify
         Assert.areEqual(1, acme.Description.countMatches('Type Prospect -> Customer - Direct'), 'The type change should be stamped once.');

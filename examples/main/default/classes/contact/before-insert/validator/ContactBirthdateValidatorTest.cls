@@ -8,7 +8,7 @@ private class ContactBirthdateValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(ContactBirthdateValidator.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactBirthdateValidator());
+        TriggerOrchestrator.runTestFor(new ContactBirthdateValidator());
 
         // Verify
         Assert.areEqual('Birthdate must be in the past and less than 120 years ago. Check the year.', doe.getErrors()[0].getMessage(), 'The future birthdate should be rejected.');
@@ -22,7 +22,7 @@ private class ContactBirthdateValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(ContactBirthdateValidator.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactBirthdateValidator());
+        TriggerOrchestrator.runTestFor(new ContactBirthdateValidator());
 
         // Verify
         Assert.areEqual('Birthdate must be in the past and less than 120 years ago. Check the year.', doe.getErrors()[0].getMessage(), 'The too old birthdate should be rejected.');
@@ -36,7 +36,7 @@ private class ContactBirthdateValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(ContactBirthdateValidator.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactBirthdateValidator());
+        TriggerOrchestrator.runTestFor(new ContactBirthdateValidator());
 
         // Verify
         Assert.isFalse(doe.hasErrors(), 'The birthdate today should be accepted.');
@@ -50,7 +50,7 @@ private class ContactBirthdateValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(ContactBirthdateValidator.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactBirthdateValidator());
+        TriggerOrchestrator.runTestFor(new ContactBirthdateValidator());
 
         // Verify
         Assert.isFalse(doe.hasErrors(), 'The birthdate exactly 120 years ago should be accepted.');
@@ -64,7 +64,7 @@ private class ContactBirthdateValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(ContactBirthdateValidator.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactBirthdateValidator());
+        TriggerOrchestrator.runTestFor(new ContactBirthdateValidator());
 
         // Verify
         Assert.isFalse(doe.hasErrors(), 'The missing birthdate should be accepted.');

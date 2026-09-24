@@ -8,7 +8,7 @@ private class AccountRatingPopulatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(AccountRatingPopulator.class).with(acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountRatingPopulator());
+        TriggerOrchestrator.runTestFor(new AccountRatingPopulator());
 
         // Verify
         Assert.areEqual('Hot', acme.Rating, 'The rating should follow the annual revenue.');
@@ -22,7 +22,7 @@ private class AccountRatingPopulatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(AccountRatingPopulator.class).with(acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountRatingPopulator());
+        TriggerOrchestrator.runTestFor(new AccountRatingPopulator());
 
         // Verify
         Assert.areEqual('Warm', acme.Rating, 'The rating should follow the annual revenue.');
@@ -36,7 +36,7 @@ private class AccountRatingPopulatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(AccountRatingPopulator.class).with(acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountRatingPopulator());
+        TriggerOrchestrator.runTestFor(new AccountRatingPopulator());
 
         // Verify
         Assert.areEqual('Cold', acme.Rating, 'The rating should follow the annual revenue.');
@@ -50,7 +50,7 @@ private class AccountRatingPopulatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(AccountRatingPopulator.class).with(acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountRatingPopulator());
+        TriggerOrchestrator.runTestFor(new AccountRatingPopulator());
 
         // Verify
         Assert.areEqual('Cold', acme.Rating, 'The rating should be kept.');
@@ -64,7 +64,7 @@ private class AccountRatingPopulatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(AccountRatingPopulator.class).with(acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountRatingPopulator());
+        TriggerOrchestrator.runTestFor(new AccountRatingPopulator());
 
         // Verify
         Assert.isNull(acme.Rating, 'The rating should stay blank.');

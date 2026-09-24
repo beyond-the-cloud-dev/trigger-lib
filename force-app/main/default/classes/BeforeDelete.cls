@@ -1,15 +1,20 @@
 public class BeforeDelete {
-    // Main interfaces - pick one
+    // Roles - pick one
 
-    public interface Handler {
-        Boolean qualifiesForBeforeDeleteWhen(TriggerHandler.DeleteRecord record);
-        void onBeforeDelete(TriggerHandler.DeleteRecord record);
+    public interface Validator extends Handler {
+        Boolean addErrorOnBeforeDeleteWhen(TriggerTypes.DeleteRecord record);
+        void addErrorOnBeforeDelete(TriggerTypes.RejectableDeleteRecord record);
     }
 
-    // Additional interfaces - pick as many as you need
+    public interface Writer extends Handler {
+        Boolean writeOnBeforeDeleteWhen(TriggerTypes.DeleteRecord record);
+        void writeOnBeforeDelete(TriggerTypes.DeleteRecord record, TriggerTypes.UnitOfWork unitOfWork);
+    }
+
+    // Add-ons - pick as many as you need
 
     public interface PriorParentQuery {
-        Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeDelete();
+        Map<SObjectField, TriggerTypes.ParentFields> queryPriorParentsOnBeforeDelete();
     }
 
     public interface RelatedQuery {
@@ -17,8 +22,12 @@ public class BeforeDelete {
     }
 
     public interface RecordsProvider {
-        List<SObject> query(TriggerHandler.DeleteRecords records);
-        String keyOf(SObject record);
+        List<SObject> query(TriggerTypes.DeleteRecords records);
+        String keyOf(SObject row);
+    }
+
+    public interface OwnUnitOfWork {
+        DML.Committable ownUnitOfWorkOnBeforeDelete();
     }
 
     public interface Bypassable {
@@ -26,9 +35,14 @@ public class BeforeDelete {
     }
 
     public interface Finalizer {
-        void finalizeBeforeDelete(TriggerHandler.DeleteRecords records);
+        void finalizeOnBeforeDelete(TriggerTypes.DeleteRecords records);
     }
 
     public interface ContinueOnError {
+    }
+
+    // Marker
+
+    public interface Handler {
     }
 }

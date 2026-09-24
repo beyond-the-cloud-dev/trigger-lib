@@ -3,8 +3,8 @@ private class ContactAccountTransferPopulatorTest {
     @IsTest
     static void populateOnBeforeUpdateWithTransferredAccount() {
         // Setup
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme');
-        Account globex = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Globex');
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
+        Account globex = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Globex');
         Contact doe = new Contact(LastName = 'Doe', AccountId = globex.Id);
 
         TriggerOrchestrator.mock()
@@ -13,7 +13,7 @@ private class ContactAccountTransferPopulatorTest {
             .withParent(Contact.AccountId, new List<Account>{ acme, globex });
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactAccountTransferPopulator());
+        TriggerOrchestrator.runTestFor(new ContactAccountTransferPopulator());
 
         // Verify
         Assert.areEqual(Date.today().format() + ' - transferred from Acme to Globex.', doe.Description, 'The audit line should name both accounts.');
@@ -22,8 +22,8 @@ private class ContactAccountTransferPopulatorTest {
     @IsTest
     static void populateOnBeforeUpdateWithExistingDescription() {
         // Setup
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme');
-        Account globex = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Globex');
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
+        Account globex = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Globex');
         Contact doe = new Contact(LastName = 'Doe', AccountId = globex.Id, Description = 'Met at Dreamforce.');
 
         TriggerOrchestrator.mock()
@@ -32,7 +32,7 @@ private class ContactAccountTransferPopulatorTest {
             .withParent(Contact.AccountId, new List<Account>{ acme, globex });
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactAccountTransferPopulator());
+        TriggerOrchestrator.runTestFor(new ContactAccountTransferPopulator());
 
         // Verify
         Assert.areEqual(
@@ -45,7 +45,7 @@ private class ContactAccountTransferPopulatorTest {
     @IsTest
     static void populateOnBeforeUpdateWithRemovedAccount() {
         // Setup
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
         Contact doe = new Contact(LastName = 'Doe');
 
         TriggerOrchestrator.mock()
@@ -54,7 +54,7 @@ private class ContactAccountTransferPopulatorTest {
             .withParent(Contact.AccountId, acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactAccountTransferPopulator());
+        TriggerOrchestrator.runTestFor(new ContactAccountTransferPopulator());
 
         // Verify
         Assert.areEqual(Date.today().format() + ' - transferred from Acme to no account.', doe.Description, 'The audit line should name no account.');
@@ -63,16 +63,16 @@ private class ContactAccountTransferPopulatorTest {
     @IsTest
     static void populateOnBeforeUpdateWithDeletedPriorAccount() {
         // Setup
-        Account globex = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Globex');
+        Account globex = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Globex');
         Contact doe = new Contact(LastName = 'Doe', AccountId = globex.Id);
 
         TriggerOrchestrator.mock()
             .beforeUpdateFor(ContactAccountTransferPopulator.class)
-            .with(doe, new Contact(LastName = 'Doe', AccountId = SOQL.IdGenerator.get(Account.SObjectType)))
+            .with(doe, new Contact(LastName = 'Doe', AccountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType)))
             .withParent(Contact.AccountId, globex);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactAccountTransferPopulator());
+        TriggerOrchestrator.runTestFor(new ContactAccountTransferPopulator());
 
         // Verify
         Assert.areEqual(Date.today().format() + ' - transferred from a deleted account to Globex.', doe.Description, 'The audit line should name a deleted account.');
@@ -81,13 +81,13 @@ private class ContactAccountTransferPopulatorTest {
     @IsTest
     static void populateOnBeforeUpdateWithFirstAccount() {
         // Setup
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
         Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
 
         TriggerOrchestrator.mock().beforeUpdateFor(ContactAccountTransferPopulator.class).with(doe, new Contact(LastName = 'Doe')).withParent(Contact.AccountId, acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactAccountTransferPopulator());
+        TriggerOrchestrator.runTestFor(new ContactAccountTransferPopulator());
 
         // Verify
         Assert.isNull(doe.Description, 'The first account should not be audited.');
@@ -96,7 +96,7 @@ private class ContactAccountTransferPopulatorTest {
     @IsTest
     static void populateOnBeforeUpdateWithUnchangedAccount() {
         // Setup
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme');
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
         Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
 
         TriggerOrchestrator.mock()
@@ -105,17 +105,17 @@ private class ContactAccountTransferPopulatorTest {
             .withParent(Contact.AccountId, acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactAccountTransferPopulator());
+        TriggerOrchestrator.runTestFor(new ContactAccountTransferPopulator());
 
         // Verify
         Assert.isNull(doe.Description, 'The unchanged account should not be audited.');
     }
 
     @IsTest
-    static void maxRecursionDepthOnBeforeUpdateWhenUpdatedTwice() {
+    static void maxRunsPerRecordOnBeforeUpdateWhenUpdatedTwice() {
         // Setup
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme');
-        Account globex = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Globex');
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
+        Account globex = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Globex');
         Contact doe = new Contact(LastName = 'Doe', AccountId = globex.Id);
 
         TriggerOrchestrator.mock()
@@ -124,8 +124,8 @@ private class ContactAccountTransferPopulatorTest {
             .withParent(Contact.AccountId, new List<Account>{ acme, globex });
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactAccountTransferPopulator());
-        TriggerOrchestrator.executeTestFor(new ContactAccountTransferPopulator());
+        TriggerOrchestrator.runTestFor(new ContactAccountTransferPopulator());
+        TriggerOrchestrator.runTestFor(new ContactAccountTransferPopulator());
 
         // Verify
         Assert.areEqual(Date.today().format() + ' - transferred from Acme to Globex.', doe.Description, 'The audit line should be written once.');

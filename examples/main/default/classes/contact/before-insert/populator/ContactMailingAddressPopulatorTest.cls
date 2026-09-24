@@ -4,7 +4,7 @@ private class ContactMailingAddressPopulatorTest {
     static void populateOnBeforeInsertWithAccountBillingAddress() {
         // Setup
         Account acme = new Account(
-            Id = SOQL.IdGenerator.get(Account.SObjectType),
+            Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType),
             BillingStreet = '1 Main St',
             BillingCity = 'Springfield',
             BillingState = 'IL',
@@ -16,7 +16,7 @@ private class ContactMailingAddressPopulatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(ContactMailingAddressPopulator.class).with(doe).withParent(Contact.AccountId, acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactMailingAddressPopulator());
+        TriggerOrchestrator.runTestFor(new ContactMailingAddressPopulator());
 
         // Verify
         Assert.areEqual(
@@ -29,13 +29,13 @@ private class ContactMailingAddressPopulatorTest {
     @IsTest
     static void populateOnBeforeInsertWithOwnMailingStreet() {
         // Setup
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), BillingStreet = '1 Main St', BillingCity = 'Springfield');
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), BillingStreet = '1 Main St', BillingCity = 'Springfield');
         Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id, MailingStreet = '5 Elm St');
 
         TriggerOrchestrator.mock().beforeInsertFor(ContactMailingAddressPopulator.class).with(doe).withParent(Contact.AccountId, acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactMailingAddressPopulator());
+        TriggerOrchestrator.runTestFor(new ContactMailingAddressPopulator());
 
         // Verify
         Assert.areEqual('5 Elm St', doe.MailingStreet, 'The own mailing street should be kept.');
@@ -44,13 +44,13 @@ private class ContactMailingAddressPopulatorTest {
     @IsTest
     static void populateOnBeforeInsertWithOwnMailingCity() {
         // Setup
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), BillingStreet = '1 Main St', BillingCity = 'Springfield');
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), BillingStreet = '1 Main St', BillingCity = 'Springfield');
         Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id, MailingCity = 'Shelbyville');
 
         TriggerOrchestrator.mock().beforeInsertFor(ContactMailingAddressPopulator.class).with(doe).withParent(Contact.AccountId, acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactMailingAddressPopulator());
+        TriggerOrchestrator.runTestFor(new ContactMailingAddressPopulator());
 
         // Verify
         Assert.areEqual('Shelbyville', doe.MailingCity, 'The own mailing city should be kept.');
@@ -59,13 +59,13 @@ private class ContactMailingAddressPopulatorTest {
     @IsTest
     static void populateOnBeforeInsertWithOwnMailingCountry() {
         // Setup
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), BillingStreet = '1 Main St', BillingCity = 'Springfield', BillingCountry = 'USA');
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), BillingStreet = '1 Main St', BillingCity = 'Springfield', BillingCountry = 'USA');
         Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id, MailingCountry = 'Canada');
 
         TriggerOrchestrator.mock().beforeInsertFor(ContactMailingAddressPopulator.class).with(doe).withParent(Contact.AccountId, acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactMailingAddressPopulator());
+        TriggerOrchestrator.runTestFor(new ContactMailingAddressPopulator());
 
         // Verify
         Assert.areEqual('USA', doe.MailingCountry, 'The whole address should be copied from the account.');
@@ -74,12 +74,12 @@ private class ContactMailingAddressPopulatorTest {
     @IsTest
     static void populateOnBeforeInsertWithMissingAccount() {
         // Setup
-        Contact doe = new Contact(LastName = 'Doe', AccountId = SOQL.IdGenerator.get(Account.SObjectType));
+        Contact doe = new Contact(LastName = 'Doe', AccountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType));
 
         TriggerOrchestrator.mock().beforeInsertFor(ContactMailingAddressPopulator.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactMailingAddressPopulator());
+        TriggerOrchestrator.runTestFor(new ContactMailingAddressPopulator());
 
         // Verify
         Assert.isNull(doe.MailingStreet, 'No address should be copied without an account.');

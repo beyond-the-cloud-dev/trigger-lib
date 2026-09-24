@@ -8,7 +8,7 @@ private class AccountBillingCountryValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountBillingCountryValidator.class).with(acme, new Account(Name = 'Acme', BillingCountry = 'Poland'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountBillingCountryValidator());
+        TriggerOrchestrator.runTestFor(new AccountBillingCountryValidator());
 
         // Verify
         Assert.areEqual(
@@ -26,7 +26,7 @@ private class AccountBillingCountryValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountBillingCountryValidator.class).with(acme, new Account(Name = 'Acme', BillingCountry = 'Poland'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountBillingCountryValidator());
+        TriggerOrchestrator.runTestFor(new AccountBillingCountryValidator());
 
         // Verify
         Assert.isFalse(acme.hasErrors(), 'The new country should be accepted.');

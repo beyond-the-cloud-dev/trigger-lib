@@ -8,7 +8,7 @@ private class ContactReachabilityValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(ContactReachabilityValidator.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactReachabilityValidator());
+        TriggerOrchestrator.runTestFor(new ContactReachabilityValidator());
 
         // Verify
         Assert.areEqual(
@@ -26,7 +26,7 @@ private class ContactReachabilityValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(ContactReachabilityValidator.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactReachabilityValidator());
+        TriggerOrchestrator.runTestFor(new ContactReachabilityValidator());
 
         // Verify
         Assert.isFalse(doe.hasErrors(), 'The contact with an email should be accepted.');
@@ -40,7 +40,7 @@ private class ContactReachabilityValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(ContactReachabilityValidator.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactReachabilityValidator());
+        TriggerOrchestrator.runTestFor(new ContactReachabilityValidator());
 
         // Verify
         Assert.isFalse(doe.hasErrors(), 'The contact with a phone should be accepted.');
@@ -54,25 +54,25 @@ private class ContactReachabilityValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(ContactReachabilityValidator.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactReachabilityValidator());
+        TriggerOrchestrator.runTestFor(new ContactReachabilityValidator());
 
         // Verify
         Assert.isFalse(doe.hasErrors(), 'The contact with a mobile phone should be accepted.');
     }
 
     @IsTest
-    static void bypassOnBeforeInsertWhenDisabled() {
+    static void bypassOnBeforeInsertWhenBypassed() {
         // Setup
-        ContactReachabilityValidator.isDisabled = true;
+        ContactReachabilityValidator.isBypassed = true;
 
         Contact doe = new Contact(LastName = 'Doe');
 
         TriggerOrchestrator.mock().beforeInsertFor(ContactReachabilityValidator.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactReachabilityValidator());
+        TriggerOrchestrator.runTestFor(new ContactReachabilityValidator());
 
         // Verify
-        Assert.isFalse(doe.hasErrors(), 'The disabled validator should not reject the contact.');
+        Assert.isFalse(doe.hasErrors(), 'The bypassed validator should not reject the contact.');
     }
 }

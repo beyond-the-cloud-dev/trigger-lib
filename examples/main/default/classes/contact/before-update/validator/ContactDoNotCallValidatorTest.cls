@@ -8,7 +8,7 @@ private class ContactDoNotCallValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(ContactDoNotCallValidator.class).with(doe, new Contact(LastName = 'Doe', DoNotCall = false));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactDoNotCallValidator());
+        TriggerOrchestrator.runTestFor(new ContactDoNotCallValidator());
 
         // Verify
         Assert.areEqual(
@@ -26,7 +26,7 @@ private class ContactDoNotCallValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(ContactDoNotCallValidator.class).with(doe, new Contact(LastName = 'Doe', DoNotCall = false));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactDoNotCallValidator());
+        TriggerOrchestrator.runTestFor(new ContactDoNotCallValidator());
 
         // Verify
         Assert.isFalse(doe.hasErrors(), 'The explained Do Not Call should be accepted.');
@@ -40,7 +40,7 @@ private class ContactDoNotCallValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(ContactDoNotCallValidator.class).with(doe, new Contact(LastName = 'Doe', DoNotCall = true));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactDoNotCallValidator());
+        TriggerOrchestrator.runTestFor(new ContactDoNotCallValidator());
 
         // Verify
         Assert.isFalse(doe.hasErrors(), 'The earlier Do Not Call should be accepted.');

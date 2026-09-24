@@ -61,10 +61,6 @@ export const roleCalls = {
     predicate: 'once per record in the chunk',
     action:
       'once, after every record was checked, with the qualified records; not called when none qualified'
-  },
-  Handler: {
-    predicate: 'once per record in the chunk',
-    action: 'right after its predicate returns true, for that record'
   }
 };
 
@@ -85,9 +81,9 @@ export const addOnFacts = {
   },
   RelatedQuery: {
     summary:
-      'Query children, siblings or other records once per chunk; read them with `getRelated`.',
+      'Query children, siblings or other records once per handler per run; read them with `getRelated`.',
     called:
-      'once per chunk, at this handler’s turn, before its first predicate',
+      'once per handler per run, at this handler’s turn, before its first predicate',
     returns: 'provider name → `RecordsProvider`'
   },
   OwnUnitOfWork: {
@@ -229,10 +225,20 @@ export const honourTable = {
     }
   },
   BeforeDelete: {
-    Handler: {
+    Validator: {
       honours: [
         'PriorParentQuery',
         'RelatedQuery',
+        'Bypassable',
+        'Finalizer',
+        'ContinueOnError'
+      ]
+    },
+    Writer: {
+      honours: [
+        'PriorParentQuery',
+        'RelatedQuery',
+        'OwnUnitOfWork',
         'Bypassable',
         'Finalizer',
         'ContinueOnError'
@@ -282,6 +288,3 @@ export const honourTable = {
     }
   }
 };
-
-export const deletePriorParentNote =
-  'In delete contexts the PriorParentQuery method is named `queryParentsOn<Ctx>()`.';

@@ -1,5 +1,5 @@
 ---
-description: The order in which Trigger Lib runs switches, handlers, parent queries, providers, Finalizers and unit-of-work commits, and what one run costs in SOQL queries and DML statements.
+description: The order in which Trigger Lib runs bypasses, handlers, parent queries, providers, Finalizers and unit-of-work commits, and what one run costs in SOQL queries and DML statements.
 ---
 
 # Execution Order & Cost
@@ -8,21 +8,21 @@ description: The order in which Trigger Lib runs switches, handlers, parent quer
 
 The platform fires a trigger once per context for each chunk of up to 200 records. Each firing is one run. An insert of 201 records makes four runs: before insert and after insert for the first 200 records, then both again for the last one.
 
-Each run calls `<ctx>Handlers()`, loads parents, runs providers and commits again. Handlers created in `<ctx>Handlers()` start with empty instance fields. Static fields, `TriggerOrchestrator.bypass()` switches and recursion counts last the whole transaction.
+Each run calls `<ctx>Handlers()`, loads parents, runs providers and commits again. Handlers created in `<ctx>Handlers()` start with empty instance fields. Static fields, bypasses set with `TriggerOrchestrator.bypass()` and recursion counts last the whole transaction.
 
 ## Order of a Run {#order}
 
-1. **Run switches.** `TriggerOrchestrator.bypass()` (`all()`, `sObject(…)`, `orchestrator(…)`) or a checked `TriggerObject__mdt.Bypass__c` ends the run before any of your code. So does an orchestrator that does not implement the context.
-2. **Handler list.** `<ctx>Handlers()` runs. A class that implements two roles runs only as the first: Populator over Validator, Writer over Dispatcher.
-3. **Handler switches.** `bypass().handler(…)`, then `TriggerHandler__mdt.Bypass__c`, then `bypassOn<Ctx>When()`. A skipped handler declares no parents.
+1. **Run bypasses.** `TriggerOrchestrator.bypass()` (`all()`, `sObject(…)`, `orchestrator(…)`) or a checked `TriggerObject__mdt.Bypass__c` ends the run before any of your code. So does an orchestrator that does not implement the context.
+2. **Handler list.** `<ctx>Handlers()` runs. A class that implements two roles runs only as the first: Populator over Validator, Validator over Writer, Writer over Dispatcher.
+3. **Handler bypasses.** `bypass().handler(…)`, then `TriggerHandler__mdt.Bypass__c`, then `bypassOn<Ctx>When()`. A skipped handler declares no parents.
 4. **Parents load.** One load for all remaining handlers.
 5. **Each handler runs, in list order.**
    - Its RelatedQuery providers run over all records.
    - Per record, the predicate decides and the action runs. A Dispatcher collects the records and dispatches once.
    - The Finalizer runs when at least one record qualified.
    - A Writer with OwnUnitOfWork or ContinueOnError commits its own unit of work.
-6. **Default commit.** In after contexts, the [default unit of work](/guide/unit-of-work#which-unit) commits once.
-7. **Logger.** The outermost run calls `finalize()` on the org's Logger.
+6. **Shared commit.** In before delete and the after contexts, the [shared unit of work](/guide/unit-of-work#which-unit) commits once.
+7. **Logger.** The outermost run calls `flush()` on the org's Logger.
 
 ## Query Cost {#query-cost}
 
@@ -44,9 +44,9 @@ SOQL queries a run spends outside your code:
 ## DML Cost {#dml-cost}
 
 - **Before insert and before update:** none. DML or an event publish throws.
-- **Default unit of work:** one commit per run. It costs one statement per operation and object type. An empty unit costs nothing.
+- **Shared unit of work:** one commit per run. It costs one statement per operation and object type. An empty unit costs nothing.
 - **A Writer with OwnUnitOfWork or ContinueOnError:** one more commit per run, when a record qualified.
-- **Direct DML** in a Dispatcher, a before delete handler or a Finalizer costs what it runs.
+- **Direct DML** in a Dispatcher or a Finalizer costs what it runs.
 - **Events:** a Publish After Commit event counts as a DML statement. A Publish Immediately event counts toward `Limits.getPublishImmediateDML()`.
 
 ## Nested Runs {#nested}

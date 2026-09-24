@@ -38,11 +38,11 @@ The Dispatcher runs before the commit. A Publish Immediately event sent here rea
 @IsTest
 static void dispatchOnAfterUndeleteEnqueuesOneJob() {
     // Setup
-    Contact restoredContact = new Contact(Id = new TriggerHandler.RandomIdGenerator().get(Contact.SObjectType));
-    List<TriggerHandler.TriggerRecord> qualified = new List<TriggerHandler.TriggerRecord>{ new TriggerHandler.TriggerRecord(restoredContact, null) };
+    Contact restoredContact = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType));
+    List<TriggerTypes.TriggerRecord> qualified = new List<TriggerTypes.TriggerRecord>{ new TriggerTypes.TriggerRecord(restoredContact, null) };
 
     // Test
-    new ContactDispatcher().dispatchOnAfterUndelete(new TriggerHandler.UndeleteTriggerRecords(qualified));
+    new ContactDispatcher().dispatchOnAfterUndelete(new TriggerTypes.UndeleteTriggerRecords(qualified));
 
     // Verify
     Assert.areEqual(1, Limits.getQueueableJobs(), 'One job should be enqueued.');

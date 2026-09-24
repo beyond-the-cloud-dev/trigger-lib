@@ -1,33 +1,33 @@
 public with sharing class AccountParentMoveValidator implements BeforeUpdate.Validator, BeforeUpdate.ParentQuery, BeforeUpdate.PriorParentQuery {
-    public Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnBeforeUpdate() {
-        return new Map<SObjectField, TriggerHandler.ParentFields>{ Account.ParentId => TriggerHandler.ParentFields.with(Account.Name, Account.BillingCountry) };
+    public Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnBeforeUpdate() {
+        return new Map<SObjectField, TriggerTypes.ParentFields>{ Account.ParentId => TriggerTypes.ParentFields.with(Account.Name, Account.BillingCountry) };
     }
 
-    public Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnBeforeUpdate() {
-        return new Map<SObjectField, TriggerHandler.ParentFields>{ Account.ParentId => TriggerHandler.ParentFields.with(Account.Name, Account.BillingCountry) };
+    public Map<SObjectField, TriggerTypes.ParentFields> queryPriorParentsOnBeforeUpdate() {
+        return new Map<SObjectField, TriggerTypes.ParentFields>{ Account.ParentId => TriggerTypes.ParentFields.with(Account.Name, Account.BillingCountry) };
     }
 
-    public Boolean errorShouldBeAttachedOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+    public Boolean addErrorOnBeforeUpdateWhen(TriggerTypes.UpdateRecord record) {
         if (!record.isChanged(Account.ParentId) || !record.startsWith(Account.Type, 'Customer')) {
             return false;
         }
 
-        Account previousParent = (Account) record.getOldParent('Parent');
+        Account oldParent = (Account) record.getOldParent('Parent');
         Account newParent = (Account) record.getNewParent('Parent');
 
-        return previousParent != null && newParent != null && previousParent.BillingCountry != newParent.BillingCountry;
+        return oldParent != null && newParent != null && oldParent.BillingCountry != newParent.BillingCountry;
     }
 
-    public void addErrorOnBeforeUpdate(TriggerHandler.RejectableUpdateRecord record) {
-        Account previousParent = (Account) record.getOldParent('Parent');
+    public void addErrorOnBeforeUpdate(TriggerTypes.RejectableUpdateRecord record) {
+        Account oldParent = (Account) record.getOldParent('Parent');
         Account newParent = (Account) record.getNewParent('Parent');
 
         record.addError(
             Account.ParentId,
             'Moving this customer from "' +
-                previousParent.Name +
+                oldParent.Name +
                 '" (' +
-                previousParent.BillingCountry +
+                oldParent.BillingCountry +
                 ') to "' +
                 newParent.Name +
                 '" (' +

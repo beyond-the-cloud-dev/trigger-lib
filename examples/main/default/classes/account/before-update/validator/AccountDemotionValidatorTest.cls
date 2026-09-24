@@ -8,7 +8,7 @@ private class AccountDemotionValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountDemotionValidator.class).with(acme, new Account(Name = 'Acme', Type = 'Customer - Direct'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountDemotionValidator());
+        TriggerOrchestrator.runTestFor(new AccountDemotionValidator());
 
         // Verify
         Assert.areEqual(
@@ -26,7 +26,7 @@ private class AccountDemotionValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountDemotionValidator.class).with(acme, new Account(Name = 'Acme', Type = 'Other'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountDemotionValidator());
+        TriggerOrchestrator.runTestFor(new AccountDemotionValidator());
 
         // Verify
         Assert.isFalse(acme.hasErrors(), 'The non-customer should be accepted.');
@@ -40,7 +40,7 @@ private class AccountDemotionValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountDemotionValidator.class).with(acme, new Account(Name = 'Acme'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountDemotionValidator());
+        TriggerOrchestrator.runTestFor(new AccountDemotionValidator());
 
         // Verify
         Assert.isFalse(acme.hasErrors(), 'The account without a type should be accepted.');
@@ -54,7 +54,7 @@ private class AccountDemotionValidatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountDemotionValidator.class).with(acme, new Account(Name = 'Acme', Type = 'Customer - Direct'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountDemotionValidator());
+        TriggerOrchestrator.runTestFor(new AccountDemotionValidator());
 
         // Verify
         Assert.isFalse(acme.hasErrors(), 'The customer should be allowed to change to another type.');

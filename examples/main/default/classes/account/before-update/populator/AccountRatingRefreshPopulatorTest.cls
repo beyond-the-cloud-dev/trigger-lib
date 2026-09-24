@@ -8,7 +8,7 @@ private class AccountRatingRefreshPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountRatingRefreshPopulator.class).with(acme, new Account(Name = 'Acme', AnnualRevenue = 100000, Rating = 'Cold'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountRatingRefreshPopulator());
+        TriggerOrchestrator.runTestFor(new AccountRatingRefreshPopulator());
 
         // Verify
         Assert.areEqual('Hot', acme.Rating, 'The rating should follow the annual revenue.');
@@ -22,7 +22,7 @@ private class AccountRatingRefreshPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountRatingRefreshPopulator.class).with(acme, new Account(Name = 'Acme', AnnualRevenue = 100000, Rating = 'Cold'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountRatingRefreshPopulator());
+        TriggerOrchestrator.runTestFor(new AccountRatingRefreshPopulator());
 
         // Verify
         Assert.areEqual('Warm', acme.Rating, 'The rating should follow the annual revenue.');
@@ -36,7 +36,7 @@ private class AccountRatingRefreshPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountRatingRefreshPopulator.class).with(acme, new Account(Name = 'Acme', AnnualRevenue = 6000000, Rating = 'Hot'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountRatingRefreshPopulator());
+        TriggerOrchestrator.runTestFor(new AccountRatingRefreshPopulator());
 
         // Verify
         Assert.areEqual('Cold', acme.Rating, 'The rating should follow the annual revenue.');
@@ -50,7 +50,7 @@ private class AccountRatingRefreshPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountRatingRefreshPopulator.class).with(acme, new Account(Name = 'Acme', AnnualRevenue = 6000000, Rating = 'Hot'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountRatingRefreshPopulator());
+        TriggerOrchestrator.runTestFor(new AccountRatingRefreshPopulator());
 
         // Verify
         Assert.areEqual('Cold', acme.Rating, 'The rating should be kept.');
@@ -64,7 +64,7 @@ private class AccountRatingRefreshPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountRatingRefreshPopulator.class).with(acme, new Account(Name = 'Acme', AnnualRevenue = 6000000, Rating = 'Hot'));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountRatingRefreshPopulator());
+        TriggerOrchestrator.runTestFor(new AccountRatingRefreshPopulator());
 
         // Verify
         Assert.areEqual('Hot', acme.Rating, 'The rating should be kept.');

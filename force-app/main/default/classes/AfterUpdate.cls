@@ -1,24 +1,24 @@
 public class AfterUpdate {
-    // Main interfaces - pick one
+    // Roles - pick one
 
     public interface Writer extends Handler {
-        Boolean writeOnAfterUpdateWhen(TriggerHandler.UpdateRecord record);
-        void writeOnAfterUpdate(TriggerHandler.UpdateRecord record, TriggerHandler.UnitOfWork unitOfWork);
+        Boolean writeOnAfterUpdateWhen(TriggerTypes.UpdateRecord record);
+        void writeOnAfterUpdate(TriggerTypes.UpdateRecord record, TriggerTypes.UnitOfWork unitOfWork);
     }
 
     public interface Dispatcher extends Handler {
-        Boolean dispatchOnAfterUpdateWhen(TriggerHandler.UpdateRecord record);
-        void dispatchOnAfterUpdate(TriggerHandler.UpdateRecords records);
+        Boolean dispatchOnAfterUpdateWhen(TriggerTypes.UpdateRecord record);
+        void dispatchOnAfterUpdate(TriggerTypes.UpdateRecords records);
     }
 
-    // Additional interfaces - pick as many as you need
+    // Add-ons - pick as many as you need
 
     public interface ParentQuery {
-        Map<SObjectField, TriggerHandler.ParentFields> queryParentsOnAfterUpdate();
+        Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnAfterUpdate();
     }
 
     public interface PriorParentQuery {
-        Map<SObjectField, TriggerHandler.ParentFields> queryPriorParentsOnAfterUpdate();
+        Map<SObjectField, TriggerTypes.ParentFields> queryPriorParentsOnAfterUpdate();
     }
 
     public interface RelatedQuery {
@@ -26,8 +26,8 @@ public class AfterUpdate {
     }
 
     public interface RecordsProvider {
-        List<SObject> query(TriggerHandler.UpdateRecords records);
-        String keyOf(SObject record);
+        List<SObject> query(TriggerTypes.UpdateRecords records);
+        String keyOf(SObject row);
     }
 
     public interface OwnUnitOfWork {
@@ -39,17 +39,17 @@ public class AfterUpdate {
     }
 
     public interface RecursionGuard {
-        Integer maxRecursionDepthOnAfterUpdate();
+        Integer maxRunsPerRecordOnAfterUpdate();
     }
 
     public interface Finalizer {
-        void finalizeAfterUpdate(TriggerHandler.UpdateRecords records);
+        void finalizeOnAfterUpdate(TriggerTypes.UpdateRecords records);
     }
 
     public interface ContinueOnError {
     }
 
-    // For internal use only
+    // Marker
 
     public interface Handler {
     }

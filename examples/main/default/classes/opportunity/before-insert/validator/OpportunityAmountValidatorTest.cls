@@ -8,7 +8,7 @@ private class OpportunityAmountValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(OpportunityAmountValidator.class).with(renewal);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityAmountValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityAmountValidator());
 
         // Verify
         Assert.areEqual(
@@ -26,7 +26,7 @@ private class OpportunityAmountValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(OpportunityAmountValidator.class).with(renewal);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityAmountValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityAmountValidator());
 
         // Verify
         Assert.areEqual(
@@ -44,7 +44,7 @@ private class OpportunityAmountValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(OpportunityAmountValidator.class).with(renewal);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityAmountValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityAmountValidator());
 
         // Verify
         Assert.isFalse(renewal.hasErrors(), 'A positive amount should be accepted.');
@@ -58,7 +58,7 @@ private class OpportunityAmountValidatorTest {
         TriggerOrchestrator.mock().beforeInsertFor(OpportunityAmountValidator.class).with(renewal);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityAmountValidator());
+        TriggerOrchestrator.runTestFor(new OpportunityAmountValidator());
 
         // Verify
         Assert.isFalse(renewal.hasErrors(), 'An empty amount should be accepted.');

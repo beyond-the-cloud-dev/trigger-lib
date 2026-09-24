@@ -2,7 +2,7 @@
 template: add-on
 context: AfterInsert
 interface: Finalizer
-description: Run once after an after insert Writer or Dispatcher has processed the chunk, with the records that qualified.
+description: Run once per chunk after an after insert Writer or Dispatcher, with the qualified records.
 ---
 
 # AfterInsert.Finalizer

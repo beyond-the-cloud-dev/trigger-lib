@@ -33,7 +33,7 @@ private class AccountShippingSyncPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountShippingSyncPopulator.class).with(acme, acmeBefore);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountShippingSyncPopulator());
+        TriggerOrchestrator.runTestFor(new AccountShippingSyncPopulator());
 
         // Verify
         Assert.areEqual(
@@ -65,7 +65,7 @@ private class AccountShippingSyncPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountShippingSyncPopulator.class).with(acme, acmeBefore);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountShippingSyncPopulator());
+        TriggerOrchestrator.runTestFor(new AccountShippingSyncPopulator());
 
         // Verify
         Assert.areEqual('Oakland', acme.ShippingCity, 'The shipping address should follow the billing address.');
@@ -96,7 +96,7 @@ private class AccountShippingSyncPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountShippingSyncPopulator.class).with(acme, acmeBefore);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountShippingSyncPopulator());
+        TriggerOrchestrator.runTestFor(new AccountShippingSyncPopulator());
 
         // Verify
         Assert.areEqual('5 Dock Rd', acme.ShippingStreet, 'The separate shipping address should be kept.');
@@ -111,7 +111,7 @@ private class AccountShippingSyncPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(AccountShippingSyncPopulator.class).with(acme, acmeBefore);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountShippingSyncPopulator());
+        TriggerOrchestrator.runTestFor(new AccountShippingSyncPopulator());
 
         // Verify
         Assert.isNull(acme.ShippingStreet, 'The shipping address should stay blank.');

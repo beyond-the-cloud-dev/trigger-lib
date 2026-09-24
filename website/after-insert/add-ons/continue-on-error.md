@@ -26,9 +26,9 @@ Log and swallow the handler's exceptions, so later handlers still run and the in
 ## Rules {#rules}
 
 - **The rest of the handler is skipped.** After an exception, its remaining records and its Finalizer do not run.
-- **A Writer gets a separate unit.** It commits right after the Writer, so a failure never touches other Writers' writes.
+- **A Writer gets the automatic unit of work.** It commits right after the Writer, so a failure never touches other Writers' writes.
 - **Add a [Logger](/guide/error-handling#logger).** Without one, a swallowed exception leaves no trace.
 
 ::: warning
-Some errors still fail the insert. [Library exceptions](/api/record#triggerhandlerexception), `System.LimitException`, the `FinalException` from writing a trigger row and exceptions outside the handler's own methods, such as `bypassOnAfterInsertWhen()` or the final commit, are never swallowed.
+Some errors still fail the insert. [Library exceptions](/api/trigger-orchestrator#triggerlibexception), `System.LimitException`, the `FinalException` from writing a trigger row and exceptions outside the handler's own methods, such as `bypassOnAfterInsertWhen()` or the final commit, are never swallowed.
 :::

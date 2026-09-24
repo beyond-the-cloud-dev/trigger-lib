@@ -17,7 +17,7 @@ private class AccountAddressCascadeWriterTest {
         TriggerOrchestrator.mock().afterUpdateFor(AccountAddressCascadeWriter.class).with(acme, acmeBefore);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountAddressCascadeWriter());
+        TriggerOrchestrator.runTestFor(new AccountAddressCascadeWriter());
 
         // Verify
         Assert.areEqual(0, DML.retrieveResultFor('triggerUow').updatesOf(Contact.SObjectType).records().size(), 'No contact should be updated.');
@@ -40,7 +40,7 @@ private class AccountAddressCascadeWriterTest {
         TriggerOrchestrator.mock().afterUpdateFor(AccountAddressCascadeWriter.class).with(acme, acmeBefore);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountAddressCascadeWriter());
+        TriggerOrchestrator.runTestFor(new AccountAddressCascadeWriter());
 
         // Verify
         Assert.areEqual(0, DML.retrieveResultFor('triggerUow').updatesOf(Contact.SObjectType).records().size(), 'No contact should be updated.');

@@ -3,8 +3,8 @@ private class ContactOwnerAlignmentWriterTest {
     @IsTest
     static void writeOnAfterInsertWithActiveAccountOwner() {
         // Setup
-        User jane = new User(Id = SOQL.IdGenerator.get(User.SObjectType), IsActive = true);
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), OwnerId = jane.Id, Owner = jane);
+        User jane = new User(Id = new TriggerTypes.RandomIdGenerator().get(User.SObjectType), IsActive = true);
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), OwnerId = jane.Id, Owner = jane);
         Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
 
         DML.mock('triggerUow').allDmls();
@@ -12,7 +12,7 @@ private class ContactOwnerAlignmentWriterTest {
         TriggerOrchestrator.mock().afterInsertFor(ContactOwnerAlignmentWriter.class).with(doe).withParent(Contact.AccountId, acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactOwnerAlignmentWriter());
+        TriggerOrchestrator.runTestFor(new ContactOwnerAlignmentWriter());
 
         // Verify
         Contact updated = (Contact) DML.retrieveResultFor('triggerUow').updatesOf(Contact.SObjectType).records()[0];
@@ -22,8 +22,8 @@ private class ContactOwnerAlignmentWriterTest {
     @IsTest
     static void writeOnAfterInsertWithInactiveAccountOwner() {
         // Setup
-        User jane = new User(Id = SOQL.IdGenerator.get(User.SObjectType), IsActive = false);
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), OwnerId = jane.Id, Owner = jane);
+        User jane = new User(Id = new TriggerTypes.RandomIdGenerator().get(User.SObjectType), IsActive = false);
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), OwnerId = jane.Id, Owner = jane);
         Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
 
         DML.mock('triggerUow').allDmls();
@@ -31,7 +31,7 @@ private class ContactOwnerAlignmentWriterTest {
         TriggerOrchestrator.mock().afterInsertFor(ContactOwnerAlignmentWriter.class).with(doe).withParent(Contact.AccountId, acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactOwnerAlignmentWriter());
+        TriggerOrchestrator.runTestFor(new ContactOwnerAlignmentWriter());
 
         // Verify
         Assert.areEqual(0, DML.retrieveResultFor('triggerUow').updatesOf(Contact.SObjectType).records().size(), 'No contact should be updated.');
@@ -40,8 +40,8 @@ private class ContactOwnerAlignmentWriterTest {
     @IsTest
     static void writeOnAfterInsertWithSameOwner() {
         // Setup
-        User jane = new User(Id = SOQL.IdGenerator.get(User.SObjectType), IsActive = true);
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), OwnerId = jane.Id, Owner = jane);
+        User jane = new User(Id = new TriggerTypes.RandomIdGenerator().get(User.SObjectType), IsActive = true);
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), OwnerId = jane.Id, Owner = jane);
         Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id, OwnerId = jane.Id);
 
         DML.mock('triggerUow').allDmls();
@@ -49,7 +49,7 @@ private class ContactOwnerAlignmentWriterTest {
         TriggerOrchestrator.mock().afterInsertFor(ContactOwnerAlignmentWriter.class).with(doe).withParent(Contact.AccountId, acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactOwnerAlignmentWriter());
+        TriggerOrchestrator.runTestFor(new ContactOwnerAlignmentWriter());
 
         // Verify
         Assert.areEqual(0, DML.retrieveResultFor('triggerUow').updatesOf(Contact.SObjectType).records().size(), 'No contact should be updated.');
@@ -65,19 +65,19 @@ private class ContactOwnerAlignmentWriterTest {
         TriggerOrchestrator.mock().afterInsertFor(ContactOwnerAlignmentWriter.class).with(doe);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactOwnerAlignmentWriter());
+        TriggerOrchestrator.runTestFor(new ContactOwnerAlignmentWriter());
 
         // Verify
         Assert.areEqual(0, DML.retrieveResultFor('triggerUow').updatesOf(Contact.SObjectType).records().size(), 'No contact should be updated.');
     }
 
     @IsTest
-    static void bypassOnAfterInsertWhenDisabled() {
+    static void bypassOnAfterInsertWhenBypassed() {
         // Setup
-        ContactOwnerAlignmentWriter.isDisabled = true;
+        ContactOwnerAlignmentWriter.isBypassed = true;
 
-        User jane = new User(Id = SOQL.IdGenerator.get(User.SObjectType), IsActive = true);
-        Account acme = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), OwnerId = jane.Id, Owner = jane);
+        User jane = new User(Id = new TriggerTypes.RandomIdGenerator().get(User.SObjectType), IsActive = true);
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), OwnerId = jane.Id, Owner = jane);
         Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
 
         DML.mock('triggerUow').allDmls();
@@ -85,7 +85,7 @@ private class ContactOwnerAlignmentWriterTest {
         TriggerOrchestrator.mock().afterInsertFor(ContactOwnerAlignmentWriter.class).with(doe).withParent(Contact.AccountId, acme);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new ContactOwnerAlignmentWriter());
+        TriggerOrchestrator.runTestFor(new ContactOwnerAlignmentWriter());
 
         // Verify
         Assert.areEqual(0, DML.retrieveResultFor('triggerUow').updatesOf(Contact.SObjectType).records().size(), 'No contact should be updated.');

@@ -25,7 +25,7 @@ Make one bulk call per chunk with the records that qualify, such as enqueueing a
 
 - **Pass Ids to async work.** Let the job query what it needs.
 - **No unit of work.** A Dispatcher never gets one, and OwnUnitOfWork is ignored. DML here runs at once and is not merged. Use a [Writer](/after-insert/writer) for record writes.
-- **Publish with `EventBus.publish(events)`.** It runs at once, before the default unit of work commits.
+- **Publish with `EventBus.publish(events)`.** It runs at once, before the shared unit of work commits.
 - **Writer wins.** A class that also implements `AfterInsert.Writer` runs only as a Writer.
 
 ::: warning
@@ -41,7 +41,7 @@ static void dispatchOnAfterInsertWhenEmailIsSet() {
     Contact newContact = new Contact(Email = 'jane.doe@example.com');
 
     // Test
-    Boolean isQualified = new ContactDispatcher().dispatchOnAfterInsertWhen(new TriggerHandler.TriggerRecord(newContact, null));
+    Boolean isQualified = new ContactDispatcher().dispatchOnAfterInsertWhen(new TriggerTypes.TriggerRecord(newContact, null));
 
     // Verify
     Assert.isTrue(isQualified, 'A contact with an email should be dispatched.');

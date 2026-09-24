@@ -3,8 +3,8 @@ private class AccountParentMoveValidatorTest {
     @IsTest
     static void addErrorOnBeforeUpdateWithParentInAnotherCountry() {
         // Setup
-        Account acmePoland = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme Poland', BillingCountry = 'Poland');
-        Account acmeGermany = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme Germany', BillingCountry = 'Germany');
+        Account acmePoland = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme Poland', BillingCountry = 'Poland');
+        Account acmeGermany = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme Germany', BillingCountry = 'Germany');
         Account acme = new Account(Name = 'Acme', Type = 'Customer - Direct', ParentId = acmeGermany.Id);
 
         TriggerOrchestrator.mock()
@@ -13,7 +13,7 @@ private class AccountParentMoveValidatorTest {
             .withParent(Account.ParentId, new List<Account>{ acmePoland, acmeGermany });
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountParentMoveValidator());
+        TriggerOrchestrator.runTestFor(new AccountParentMoveValidator());
 
         // Verify
         Assert.areEqual(
@@ -26,8 +26,8 @@ private class AccountParentMoveValidatorTest {
     @IsTest
     static void addErrorOnBeforeUpdateWithParentInSameCountry() {
         // Setup
-        Account acmePoland = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme Poland', BillingCountry = 'Poland');
-        Account acmeKrakow = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme Krakow', BillingCountry = 'Poland');
+        Account acmePoland = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme Poland', BillingCountry = 'Poland');
+        Account acmeKrakow = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme Krakow', BillingCountry = 'Poland');
         Account acme = new Account(Name = 'Acme', Type = 'Customer - Direct', ParentId = acmeKrakow.Id);
 
         TriggerOrchestrator.mock()
@@ -36,7 +36,7 @@ private class AccountParentMoveValidatorTest {
             .withParent(Account.ParentId, new List<Account>{ acmePoland, acmeKrakow });
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountParentMoveValidator());
+        TriggerOrchestrator.runTestFor(new AccountParentMoveValidator());
 
         // Verify
         Assert.isFalse(acme.hasErrors(), 'The move within one country should be accepted.');
@@ -45,8 +45,8 @@ private class AccountParentMoveValidatorTest {
     @IsTest
     static void addErrorOnBeforeUpdateWithProspect() {
         // Setup
-        Account acmePoland = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme Poland', BillingCountry = 'Poland');
-        Account acmeGermany = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme Germany', BillingCountry = 'Germany');
+        Account acmePoland = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme Poland', BillingCountry = 'Poland');
+        Account acmeGermany = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme Germany', BillingCountry = 'Germany');
         Account acme = new Account(Name = 'Acme', Type = 'Prospect', ParentId = acmeGermany.Id);
 
         TriggerOrchestrator.mock()
@@ -55,7 +55,7 @@ private class AccountParentMoveValidatorTest {
             .withParent(Account.ParentId, new List<Account>{ acmePoland, acmeGermany });
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountParentMoveValidator());
+        TriggerOrchestrator.runTestFor(new AccountParentMoveValidator());
 
         // Verify
         Assert.isFalse(acme.hasErrors(), 'The prospect should be accepted.');
@@ -64,7 +64,7 @@ private class AccountParentMoveValidatorTest {
     @IsTest
     static void addErrorOnBeforeUpdateWithFirstParent() {
         // Setup
-        Account acmeGermany = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme Germany', BillingCountry = 'Germany');
+        Account acmeGermany = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme Germany', BillingCountry = 'Germany');
         Account acme = new Account(Name = 'Acme', Type = 'Customer - Direct', ParentId = acmeGermany.Id);
 
         TriggerOrchestrator.mock()
@@ -73,7 +73,7 @@ private class AccountParentMoveValidatorTest {
             .withParent(Account.ParentId, acmeGermany);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountParentMoveValidator());
+        TriggerOrchestrator.runTestFor(new AccountParentMoveValidator());
 
         // Verify
         Assert.isFalse(acme.hasErrors(), 'The first parent should be accepted.');
@@ -82,7 +82,7 @@ private class AccountParentMoveValidatorTest {
     @IsTest
     static void addErrorOnBeforeUpdateWithRemovedParent() {
         // Setup
-        Account acmePoland = new Account(Id = SOQL.IdGenerator.get(Account.SObjectType), Name = 'Acme Poland', BillingCountry = 'Poland');
+        Account acmePoland = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme Poland', BillingCountry = 'Poland');
         Account acme = new Account(Name = 'Acme', Type = 'Customer - Direct');
 
         TriggerOrchestrator.mock()
@@ -91,7 +91,7 @@ private class AccountParentMoveValidatorTest {
             .withParent(Account.ParentId, acmePoland);
 
         // Test
-        TriggerOrchestrator.executeTestFor(new AccountParentMoveValidator());
+        TriggerOrchestrator.runTestFor(new AccountParentMoveValidator());
 
         // Verify
         Assert.isFalse(acme.hasErrors(), 'The removed parent should be accepted.');

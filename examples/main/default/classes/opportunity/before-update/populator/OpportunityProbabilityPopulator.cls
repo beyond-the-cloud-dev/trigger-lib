@@ -12,13 +12,13 @@ public with sharing class OpportunityProbabilityPopulator implements BeforeUpdat
         'Closed Lost' => 0
     };
 
-    public Boolean populateOnBeforeUpdateWhen(TriggerHandler.UpdateRecord record) {
+    public Boolean populateOnBeforeUpdateWhen(TriggerTypes.UpdateRecord record) {
         Opportunity newOpportunity = (Opportunity) record.getNewSObject();
 
         return record.isChanged(Opportunity.StageName) && PROBABILITY_BY_STAGE.containsKey(newOpportunity.StageName);
     }
 
-    public void populateOnBeforeUpdate(TriggerHandler.UpdateRecord record) {
+    public void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record) {
         Opportunity newOpportunity = (Opportunity) record.getNewSObject();
 
         record.put(Opportunity.Probability, PROBABILITY_BY_STAGE.get(newOpportunity.StageName));

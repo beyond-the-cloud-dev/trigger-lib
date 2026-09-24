@@ -2,7 +2,7 @@
 template: add-on
 context: BeforeDelete
 interface: Bypassable
-description: Skip a before delete Handler for the chunk when a condition holds, such as a static flag or a batch purge.
+description: Skip a before delete Validator or Writer for the chunk when a condition holds, such as a static flag or a batch purge.
 ---
 
 # BeforeDelete.Bypassable
@@ -23,9 +23,9 @@ Skip a handler for the whole chunk when a condition holds, such as a static flag
 
 ## Rules {#rules}
 
-- **To skip single records, return false from `qualifiesForBeforeDeleteWhen`.**
+- **To skip single records, use the predicate.** Return false from `addErrorOnBeforeDeleteWhen` or `writeOnBeforeDeleteWhen`.
 - **Reset static flags.** A static flag lasts the whole transaction, nested saves included. Reset it in a `finally` block after the DML it was meant for.
-- **Only this context.** [Other switches](/guide/bypasses) cover every context, and `bypass().handler(X.class)` never matches an inner class.
+- **Only this context.** [Other bypasses](/guide/bypasses) cover every context, and `bypass().handler(X.class)` never matches an inner class.
 
 ::: warning
 The method runs outside the error handling. An exception in `bypassOnBeforeDeleteWhen()` is not logged, ContinueOnError does not apply, and the delete fails.

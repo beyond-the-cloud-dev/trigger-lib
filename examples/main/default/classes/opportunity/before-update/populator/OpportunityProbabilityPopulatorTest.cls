@@ -8,7 +8,7 @@ private class OpportunityProbabilityPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityProbabilityPopulator.class).with(renewal, new Opportunity(StageName = 'Prospecting', Probability = 10));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityProbabilityPopulator());
+        TriggerOrchestrator.runTestFor(new OpportunityProbabilityPopulator());
 
         // Verify
         Assert.areEqual(75, renewal.Probability, 'The probability should follow the stage.');
@@ -22,7 +22,7 @@ private class OpportunityProbabilityPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityProbabilityPopulator.class).with(renewal, new Opportunity(StageName = 'Negotiation/Review', Probability = 90));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityProbabilityPopulator());
+        TriggerOrchestrator.runTestFor(new OpportunityProbabilityPopulator());
 
         // Verify
         Assert.areEqual(0, renewal.Probability, 'The probability should drop to zero.');
@@ -36,7 +36,7 @@ private class OpportunityProbabilityPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityProbabilityPopulator.class).with(renewal, new Opportunity(StageName = 'Negotiation/Review', Probability = 90));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityProbabilityPopulator());
+        TriggerOrchestrator.runTestFor(new OpportunityProbabilityPopulator());
 
         // Verify
         Assert.areEqual(85, renewal.Probability, 'The probability should be kept.');
@@ -50,7 +50,7 @@ private class OpportunityProbabilityPopulatorTest {
         TriggerOrchestrator.mock().beforeUpdateFor(OpportunityProbabilityPopulator.class).with(renewal, new Opportunity(StageName = 'Negotiation/Review', Probability = 90));
 
         // Test
-        TriggerOrchestrator.executeTestFor(new OpportunityProbabilityPopulator());
+        TriggerOrchestrator.runTestFor(new OpportunityProbabilityPopulator());
 
         // Verify
         Assert.areEqual(95, renewal.Probability, 'The probability should be kept.');

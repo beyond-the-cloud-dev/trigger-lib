@@ -1,8 +1,8 @@
 {
   "packageDirectories": [
     {
-      "versionName": "Trigger Lib 1.0.0",
-      "versionNumber": "1.0.0.NEXT",
+      "versionName": "ver 0.1",
+      "versionNumber": "0.1.0.NEXT",
       "path": "package",
       "default": true,
       "package": "Trigger Lib",
@@ -32,6 +32,8 @@
   "sourceApiVersion": "67.0",
   "packageAliases": {
     "SOQL Lib@6.12.0-1": "04tP6000003dX2PIAU",
-    "DML Lib": "0HoP600000001IfKAI"
+    "DML Lib": "0HoP600000001IfKAI",
+    "Trigger Lib": "0HoP600000002wHKAQ",
+    "Trigger Lib@0.1.0-1": "04tP6000003jdrVIAQ"
   }
 }

@@ -258,9 +258,9 @@ const icons = {
   margin: 0 auto;
   padding: 24px 24px;
   display: grid;
-  grid-template-columns: 360px minmax(0, 1fr);
+  grid-template-columns: 240px minmax(0, 1fr);
   align-items: center;
-  gap: 40px;
+  gap: 32px;
 }
 .btc-footer__os .btc-footer__label {
   margin-bottom: 8px;
@@ -299,7 +299,7 @@ const icons = {
 .btc-footer__tiles {
   min-width: 0;
   display: grid;
-  grid-template-columns: repeat(9, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   gap: 6px;
 }
 .btc-footer__tile {
@@ -312,6 +312,7 @@ const icons = {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  padding: 0 8px;
   box-sizing: border-box;
   min-width: 0;
 }

@@ -1,149 +1,169 @@
 ---
-description: Unit-test Trigger Lib handlers without DML - TriggerRecord, the record collections, ProvidedRecords and RandomIdGenerator, a recording unit of work, registration tests, and running the whole orchestrator with mocked metadata, Logger, SOQL and DML.
+description: Unit-test Trigger Lib handlers and orchestrators without DML - mock a trigger context with TriggerOrchestrator.mock(), run it with runTestFor, and mock parents, related records, the unit of work, the metadata and the Logger.
 ---
 
 # Testing
 
-Test a handler without DML: build records in memory, call its methods and assert the result.
+Mock a trigger context with `TriggerOrchestrator.mock()`, then run a handler or an orchestrator in it with `TriggerOrchestrator.runTestFor(…)`. The whole pipeline runs, with no trigger and no DML.
 
 ## Test API {#test-api}
 
-| Member | Gives you |
+| Member | Does |
 |---|---|
-| `new TriggerTypes.TriggerRecord(newRow, oldRow)` | a record of any type; pass `null` for the side the context lacks |
-| `new TriggerTypes.InsertTriggerRecords(records)`, and the `Update`, `Delete` and `Undelete` variants | the collection a Finalizer, dispatch or `query` receives |
-| `new TriggerTypes.ProvidedRecords(rows)` with `groupUnderKey(key, row)` | provider results |
-| `new TriggerTypes.RandomIdGenerator().get(SObjectType)` | a fake Id |
-| `record.setNewParent(relationshipName, parent)`, `record.setOldParent(…)` | what `getNewParent` and `getOldParent` return; key it by the lookup's relationship name, such as `'Account'` for `Contact.AccountId` |
-| `record.setRelated(providers)` | what `getRelated` returns |
+| `TriggerOrchestrator.mock().beforeInsertFor(X.class)`, and `afterInsertFor`, `beforeUpdateFor`, `afterUpdateFor`, `beforeDeleteFor`, `afterDeleteFor`, `afterUndeleteFor` | queues a trigger context for the handler or orchestrator class `X` |
+| `.with(row)`, `.with(rows)` | sets the trigger rows; the update contexts take `.with(newRow, oldRow)` and `.with(newRows, oldRows)` |
+| `.withParent(lookupField, parent)`, `.withParent(lookupField, parents)` | sets the parents the library's parent query returns |
+| `TriggerOrchestrator.runTestFor(handlerOrOrchestrator)` | runs it in the next context queued for its class |
+| `new TriggerTypes.RandomIdGenerator().get(SObjectType)` | builds a fake Id |
 
-`setNewParent`, `setOldParent` and `setRelated` are marked internal use only and may change.
+::: warning Test classes only
+`mock()` and `runTestFor()` are `@TestVisible` private members of TriggerOrchestrator.
+:::
 
-## Predicates and Actions {#handler}
+## Test a Handler {#handler}
 
 ::: code-group
 
 ```apex [Populator]
 @IsTest
-static void populateOnBeforeInsertCopiesBillingCity() {
+static void populateOnBeforeInsertWithMixedCaseEmail() {
     // Setup
-    Account acme = new Account(Name = 'Acme', BillingCity = 'Berlin', BillingCountry = 'Germany');
+    Contact doe = new Contact(LastName = 'Doe', Email = 'Jane.Doe@Example.com');
+
+    TriggerOrchestrator.mock().beforeInsertFor(ContactEmailNormalizationPopulator.class).with(doe);
 
     // Test
-    new AccountShippingAddressPopulator().populateOnBeforeInsert(new TriggerTypes.TriggerRecord(acme, null));
+    TriggerOrchestrator.runTestFor(new ContactEmailNormalizationPopulator());
 
     // Verify
-    Assert.areEqual('Berlin', acme.ShippingCity, 'The shipping city should be copied.');
+    Assert.areEqual('jane.doe@example.com', doe.Email, 'The email should be lowercased.');
 }
 ```
 
 ```apex [Validator]
 @IsTest
-static void addErrorOnBeforeInsertWhenUnreachable() {
+static void addErrorOnBeforeInsertWithoutContactDetails() {
     // Setup
     Contact doe = new Contact(LastName = 'Doe');
 
+    TriggerOrchestrator.mock().beforeInsertFor(ContactReachabilityValidator.class).with(doe);
+
     // Test
-    new ContactReachabilityValidator().addErrorOnBeforeInsert(new TriggerTypes.TriggerRecord(doe, null));
+    TriggerOrchestrator.runTestFor(new ContactReachabilityValidator());
 
     // Verify
-    Assert.isTrue(doe.hasErrors(), 'The contact should be rejected.');
+    Assert.isTrue(doe.hasErrors(), 'The unreachable contact should be rejected.');
 }
 ```
 
-```apex [Predicate]
+```apex [Update]
 @IsTest
-static void addErrorOnBeforeInsertWhenNoPhoneOrEmail() {
+static void populateOnBeforeUpdateWithSmallAmount() {
     // Setup
-    TriggerTypes.InsertRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'Doe'), null);
+    Opportunity renewal = new Opportunity(StageName = 'Prospecting', Amount = 4999);
+
+    TriggerOrchestrator.mock().beforeUpdateFor(OpportunityForecastPopulator.class).with(renewal, new Opportunity(StageName = 'Prospecting', Amount = 10000));
 
     // Test
-    Boolean result = new ContactReachabilityValidator().addErrorOnBeforeInsertWhen(record);
+    TriggerOrchestrator.runTestFor(new OpportunityForecastPopulator());
 
     // Verify
-    Assert.isTrue(result, 'A contact without email or phone should qualify.');
+    Assert.areEqual('Omitted', renewal.ForecastCategoryName, 'The forecast category should be omitted.');
 }
 ```
 
 :::
 
-In the update contexts, pass both rows so change detection has something to compare.
+- **Assert on your own rows.** The handler gets the same instances, so the fields a Populator set and the errors a Validator added are on them after the run.
+- **The predicate, the add-ons and the Finalizer run too.** A row the predicate rejects is skipped, as in a real save.
+- **Mock the class you run.** `beforeInsertFor(X.class)` pairs with `runTestFor(new X())` by class name. Without a mock, `runTestFor` throws a `TriggerTypes.TriggerLibException`.
+- **Rows get Ids where the context has them.** In after insert, after undelete and both delete contexts, a row without an Id gets a fake one. In the update contexts, the new and the old row share one Id.
+- **Queue several contexts before the first run.** Each `runTestFor` takes the next context queued for the class, and the last one stays for every later call.
 
-## Writers {#writers}
+## Parents {#parents}
 
-Pass the action a small class of your own that implements `TriggerTypes.UnitOfWork` and keeps what it receives. It never commits:
+Pass the parents with `withParent`. The library's parent query returns them:
 
 ```apex
 @IsTest
-static void writeOnAfterInsertAlignsOwner() {
+static void writeOnAfterInsertWithActiveAccountOwner() {
     // Setup
-    Id ownerId = new TriggerTypes.RandomIdGenerator().get(User.SObjectType);
-    TriggerTypes.TriggerRecord record = new TriggerTypes.TriggerRecord(new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType)), null);
-    record.setNewParent('Account', new Account(OwnerId = ownerId));
-    RecordingUnitOfWork unitOfWork = new RecordingUnitOfWork();
+    User jane = new User(Id = new TriggerTypes.RandomIdGenerator().get(User.SObjectType), IsActive = true);
+    Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), OwnerId = jane.Id, Owner = jane);
+    Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
+
+    DML.mock('triggerUow').allDmls();
+
+    TriggerOrchestrator.mock().afterInsertFor(ContactOwnerAlignmentWriter.class).with(doe).withParent(Contact.AccountId, acme);
 
     // Test
-    new ContactOwnerAlignmentWriter().writeOnAfterInsert(record, unitOfWork);
+    TriggerOrchestrator.runTestFor(new ContactOwnerAlignmentWriter());
 
     // Verify
-    Assert.areEqual(ownerId, ((Contact) unitOfWork.updated[0]).OwnerId, 'The contact should get the account owner.');
+    Contact updated = (Contact) DML.retrieveResultFor('triggerUow').updatesOf(Contact.SObjectType).records()[0];
+    Assert.areEqual(jane.Id, updated.OwnerId, 'The contact should get the account owner.');
 }
 ```
 
-::: details The recording unit of work
-
-```apex
-private class RecordingUnitOfWork implements TriggerTypes.UnitOfWork {
-    public List<SObject> inserted = new List<SObject>();
-    public List<SObject> updated = new List<SObject>();
-
-    public TriggerTypes.UnitOfWork toInsert(SObject record) {
-        this.inserted.add(record);
-        return this;
-    }
-
-    public TriggerTypes.UnitOfWork toUpdate(SObject record) {
-        this.updated.add(record);
-        return this;
-    }
-
-    public TriggerTypes.UnitOfWork toInsert(DML.Record record) { return this; }
-    public TriggerTypes.UnitOfWork toUpdate(DML.Record record) { return this; }
-    public TriggerTypes.UnitOfWork toUpsert(SObject record, SObjectField externalIdField) { return this; }
-    public TriggerTypes.UnitOfWork toDelete(SObject record) { return this; }
-    public TriggerTypes.UnitOfWork toPublish(SObject event) { return this; }
-}
-```
-
-:::
-
-## Parents and Related Records {#parents}
-
-Attach them yourself. Nothing is queried:
-
-```apex
-record.setNewParent('Account', new Account(Name = 'Acme', Owner = new User(IsActive = true)));
-
-Account existing = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
-TriggerTypes.ProvidedRecords provided = new TriggerTypes.ProvidedRecords(new List<SObject>{ existing });
-provided.groupUnderKey('acme', existing);
-record.setRelated(new Map<String, TriggerTypes.RelatedRecords>{ '<provider name>' => provided });
-```
-
+- **Give each parent the Id the row's lookup holds.** Each row picks its own parent by that Id.
 - **Nest a grandparent** inside the parent, as `Owner` above.
-- **Group each row under the key your `keyOf` returns.** Test `keyOf` on its own with an in-memory row.
+- **Pass the old parents too for a PriorParentQuery.** Set the lookup on the old row and pass both parents, such as `withParent(Account.OwnerId, new List<User>{ newOwner, oldOwner })`.
+- **Parents of one type share one mock.** Each lookup still picks its parent by Id, so two lookups to Account work side by side.
 
-## Finalizers and Dispatchers {#finalizers}
+## Related Records {#related}
 
-Call `finalizeOn<Ctx>` or `dispatchOn<Ctx>` directly with the records your predicate would qualify:
+`runTestFor` runs your RecordsProvider's `query` for real.
+
+- **A provider written with SOQL Lib can be mocked.** Give its query a `mockId(…)` and call `SOQL.mock('<mock id>').thenReturn(rows)` before `runTestFor`.
+- **An inline `[SELECT …]` cannot be mocked.** It reads the test's own data, which is empty unless the test inserts records.
+- **Test `keyOf` on its own** with an in-memory row.
+
+## Writers and Dispatchers {#writers}
+
+Mock the shared unit of work, then read what the Writers registered:
 
 ```apex
-List<TriggerTypes.TriggerRecord> qualified = new List<TriggerTypes.TriggerRecord>{ new TriggerTypes.TriggerRecord(newRow, oldRow) };
+@IsTest
+static void writeOnAfterInsertWithCustomer() {
+    // Setup
+    Account acme = new Account(Name = 'Acme', Type = 'Customer - Direct');
 
-new <YourHandler>().finalizeOn<Ctx>(new TriggerTypes.<X>TriggerRecords(qualified));
+    DML.mock('triggerUow').allDmls();
+
+    TriggerOrchestrator.mock().afterInsertFor(AccountWelcomeTaskWriter.class).with(acme);
+
+    // Test
+    TriggerOrchestrator.runTestFor(new AccountWelcomeTaskWriter());
+
+    // Verify
+    Task onboardingCall = (Task) DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()[0];
+    Assert.areEqual('Onboarding call - Acme', onboardingCall.Subject, 'The task should name the account.');
+}
 ```
 
-`<X>` is `Insert`, `Update`, `Delete` or `Undelete`. `Limits.getQueueableJobs()` counts the jobs a Dispatcher enqueued.
+- **`DML.mock('triggerUow').allDmls()` replaces the commit.** It covers the shared unit of work and the one a ContinueOnError Writer gets. Read them with `DML.retrieveResultFor('triggerUow')`.
+- **OwnUnitOfWork or a Dispatcher's DML.** Mock the identifier the handler gives its `DML` instance.
+- **Dispatchers.** `Limits.getQueueableJobs()` counts the jobs a Dispatcher enqueued. The jobs run when the test method ends, so mock their callouts with `Test.setMock`.
+
+## Run the Orchestrator {#orchestrator}
+
+Mock the orchestrator's class to run all its handlers for that context, in order:
+
+```apex
+@IsTest
+static void beforeInsertHandlersCopyBillingAddress() {
+    // Setup
+    Account acme = new Account(Name = 'Acme', BillingCity = 'Berlin', BillingCountry = 'Germany');
+
+    TriggerOrchestrator.mock().beforeInsertFor(AccountTriggerOrchestrator.class).with(acme);
+
+    // Test
+    TriggerOrchestrator.runTestFor(new AccountTriggerOrchestrator());
+
+    // Verify
+    Assert.areEqual('Berlin', acme.ShippingCity, 'The populator should copy the billing city.');
+}
+```
 
 ## Registration Tests {#registration}
 
@@ -160,56 +180,18 @@ static void afterInsertHandlersContainsWelcomeTaskWriter() {
 }
 ```
 
-## Run the Orchestrator in a Test {#orchestrator}
+## Mock the Metadata and the Logger {#mock-metadata}
 
-::: warning Private API
-`new TriggerOrchestrator(…)`, `context` and `run()` are `@TestVisible` private members and may change.
-:::
-
-Set the trigger context on a `new TriggerOrchestrator(…)` and call `run()`. Use typed lists, and give every row an Id in after and delete contexts:
+Mock the bypass metadata and the Logger search before anything refers to `TriggerOrchestrator`, so before `TriggerOrchestrator.mock()`. Otherwise the org's deployed bypass records and its real Logger apply to your test:
 
 ```apex
-static void mockFramework() {
-    SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
-    SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
-}
-
-static TriggerOrchestrator runFor(System.TriggerOperation operation, List<SObject> newRecords, List<SObject> oldRecords) {
-    TriggerOrchestrator orchestrator = new TriggerOrchestrator(new AccountTriggerOrchestrator());
-    orchestrator.context.triggerOperation = operation;
-    orchestrator.context.newRecords = newRecords;
-    orchestrator.context.oldRecords = oldRecords;
-    return orchestrator;
-}
-
-@IsTest
-static void beforeInsertHandlersCopyBillingAddress() {
-    // Setup
-    mockFramework();
-    Account acme = new Account(Name = 'Acme', BillingCity = 'Berlin', BillingCountry = 'Germany');
-
-    // Test
-    runFor(System.TriggerOperation.BEFORE_INSERT, new List<Account>{ acme }, null).run();
-
-    // Verify
-    Assert.areEqual('Berlin', acme.ShippingCity, 'The populator should copy the billing city.');
-}
+SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 ```
 
-### Mock the Metadata and the Logger {#mock-metadata}
-
-Call `mockFramework()` first, before anything refers to `TriggerOrchestrator`. Otherwise the org's deployed bypass records and its real Logger apply to your test.
-
 - **A metadata bypass.** Return `new TriggerObject__mdt(ObjectAPIName__c = 'Account', Bypass__c = true)` instead of the empty list.
-- **An Apex bypass.** Call `TriggerOrchestrator.bypass()` after the mocks and before `run()`.
+- **An Apex bypass.** Call `TriggerOrchestrator.bypass().handler(…)` or `.sObject(…)` before `runTestFor`. `.orchestrator(…)` does not apply under `runTestFor`.
 - **A Logger.** Set `TriggerOrchestrator.triggerLogger.logger` to a class of your own that collects the errors. Use it to test ContinueOnError.
-
-### Mock Queries and DML {#mock-queries-dml}
-
-- **Parents.** `SOQL.mock(Account.SObjectType).thenReturn(rows)` serves the parent queries on Account. In after insert, update and undelete, mock the trigger object instead and return its rows with the parent attached.
-- **Providers.** Only a provider written with SOQL Lib can be mocked. An inline `[SELECT …]` cannot.
-- **The shared unit of work.** `DML.mock('triggerUow').allDmls()` replaces its commit. Read it with `DML.retrieveResultFor('triggerUow')`.
-- **OwnUnitOfWork or a Dispatcher's DML.** Mock the identifier the handler gives its `DML` instance.
 
 ## Integration Tests {#integration}
 

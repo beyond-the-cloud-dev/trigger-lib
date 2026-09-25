@@ -48,14 +48,16 @@ A self-delete fails. A `toDelete` of a record being restored throws a `DmlExcept
 
 ```apex
 @IsTest
-static void writeOnAfterUndeleteRejectsRestore() {
+static void writeOnAfterUndeleteWithoutPermission() {
     // Setup
-    Account restoredAccount = new Account(Name = 'Acme');
+    Account acme = new Account(Name = 'Acme');
+
+    TriggerOrchestrator.mock().afterUndeleteFor(AccountRestoreGuardWriter.class).with(acme);
 
     // Test
-    new AccountRestoreGuardWriter().writeOnAfterUndelete(new TriggerTypes.TriggerRecord(restoredAccount, null), null);
+    TriggerOrchestrator.runTestFor(new AccountRestoreGuardWriter());
 
     // Verify
-    Assert.areEqual('You are not allowed to restore accounts.', restoredAccount.getErrors()[0].getMessage(), 'The restore should be rejected.');
+    Assert.areEqual('You are not allowed to restore accounts.', acme.getErrors()[0].getMessage(), 'The restore should be rejected.');
 }
 ```

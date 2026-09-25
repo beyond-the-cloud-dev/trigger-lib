@@ -36,14 +36,16 @@ No synchronous callouts. A callout from a trigger throws, so enqueue a Queueable
 
 ```apex
 @IsTest
-static void dispatchOnAfterInsertWhenEmailIsSet() {
+static void dispatchOnAfterInsertWithEmail() {
     // Setup
-    Contact newContact = new Contact(Email = 'jane.doe@example.com');
+    Contact doe = new Contact(LastName = 'Doe', Email = 'jane.doe@example.com');
+
+    TriggerOrchestrator.mock().afterInsertFor(ContactDispatcher.class).with(doe);
 
     // Test
-    Boolean isQualified = new ContactDispatcher().dispatchOnAfterInsertWhen(new TriggerTypes.TriggerRecord(newContact, null));
+    TriggerOrchestrator.runTestFor(new ContactDispatcher());
 
     // Verify
-    Assert.isTrue(isQualified, 'A contact with an email should be dispatched.');
+    Assert.areEqual(1, Limits.getQueueableJobs(), 'One job should be enqueued for the chunk.');
 }
 ```

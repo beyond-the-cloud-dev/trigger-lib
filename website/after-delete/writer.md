@@ -55,14 +55,18 @@ Never register the deleted row. An update of it fails the commit with `ENTITY_IS
 
 ```apex
 @IsTest
-static void writeOnAfterDeleteWhenQualifiesContactWithAccount() {
+static void writeOnAfterDeleteWithAccount() {
     // Setup
-    Contact oldContact = new Contact(AccountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType));
+    Contact doe = new Contact(LastName = 'Doe', AccountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType));
+
+    DML.mock('triggerUow').allDmls();
+
+    TriggerOrchestrator.mock().afterDeleteFor(ContactWriter.class).with(doe);
 
     // Test
-    Boolean qualifies = new ContactWriter().writeOnAfterDeleteWhen(new TriggerTypes.TriggerRecord(null, oldContact));
+    TriggerOrchestrator.runTestFor(new ContactWriter());
 
     // Verify
-    Assert.isTrue(qualifies, 'A contact with a former account should qualify.');
+    Assert.areEqual(1, DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records().size(), 'One task should be registered.');
 }
 ```

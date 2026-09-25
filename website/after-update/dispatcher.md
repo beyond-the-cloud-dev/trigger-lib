@@ -64,14 +64,16 @@ A callout here throws `System.CalloutException`. Call out from a Queueable that 
 
 ```apex
 @IsTest
-static void dispatchOnAfterUpdateWhenStageChangedToClosedWon() {
+static void dispatchOnAfterUpdateWithUnchangedStage() {
     // Setup
-    TriggerTypes.UpdateRecord record = new TriggerTypes.TriggerRecord(new Opportunity(StageName = 'Closed Won'), new Opportunity(StageName = 'Negotiation/Review'));
+    Opportunity renewal = new Opportunity(StageName = 'Closed Won');
+
+    TriggerOrchestrator.mock().afterUpdateFor(OpportunityWonSyncDispatcher.class).with(renewal, new Opportunity(StageName = 'Closed Won'));
 
     // Test
-    Boolean result = new OpportunityWonSyncDispatcher().dispatchOnAfterUpdateWhen(record);
+    TriggerOrchestrator.runTestFor(new OpportunityWonSyncDispatcher());
 
     // Verify
-    Assert.isTrue(result, 'The record should qualify.');
+    Assert.areEqual(0, Limits.getQueueableJobs(), 'An opportunity that was already won should not be synced again.');
 }
 ```

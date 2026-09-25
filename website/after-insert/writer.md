@@ -40,18 +40,18 @@ The row is read-only. `record.put(…)` throws, and the insert fails. To change 
 
 ```apex
 @IsTest
-static void writeOnAfterInsertRegistersOnboardingTask() {
+static void writeOnAfterInsertWithCustomer() {
     // Setup
-    Id accountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType);
-    TriggerTypes.InsertRecord record = new TriggerTypes.TriggerRecord(new Account(Id = accountId, Name = 'Acme', Type = 'Customer - Direct'), null);
-    RecordingUnitOfWork unitOfWork = new RecordingUnitOfWork();
+    Account acme = new Account(Name = 'Acme', Type = 'Customer - Direct');
+
+    DML.mock('triggerUow').allDmls();
+
+    TriggerOrchestrator.mock().afterInsertFor(AccountWelcomeTaskWriter.class).with(acme);
 
     // Test
-    new AccountWelcomeTaskWriter().writeOnAfterInsert(record, unitOfWork);
+    TriggerOrchestrator.runTestFor(new AccountWelcomeTaskWriter());
 
     // Verify
-    Assert.areEqual('Onboarding call - Acme', ((Task) unitOfWork.inserted[0]).Subject, 'The task subject should name the account.');
+    Assert.areEqual('Onboarding call - Acme', ((Task) DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()[0]).Subject, 'The task subject should name the account.');
 }
 ```
-
-`RecordingUnitOfWork` is a small [test class](/guide/testing#writers) that implements `TriggerTypes.UnitOfWork` and keeps what it receives.

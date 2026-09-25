@@ -66,14 +66,18 @@ Leave the records being deleted alone. A `toDelete` of one fails the commit with
 
 ```apex
 @IsTest
-static void writeOnBeforeDeleteWhenQualifiesContactWithAccount() {
+static void writeOnBeforeDeleteWithAccount() {
     // Setup
-    Contact oldContact = new Contact(AccountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType));
+    Contact doe = new Contact(LastName = 'Doe', AccountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType));
+
+    DML.mock('triggerUow').allDmls();
+
+    TriggerOrchestrator.mock().beforeDeleteFor(ContactWriter.class).with(doe);
 
     // Test
-    Boolean qualifies = new ContactWriter().writeOnBeforeDeleteWhen(new TriggerTypes.TriggerRecord(null, oldContact));
+    TriggerOrchestrator.runTestFor(new ContactWriter());
 
     // Verify
-    Assert.isTrue(qualifies, 'A contact with an account should qualify.');
+    Assert.areEqual(1, DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records().size(), 'One task should be registered.');
 }
 ```

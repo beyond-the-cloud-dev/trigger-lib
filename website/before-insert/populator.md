@@ -40,14 +40,16 @@ No DML. If the handler runs DML or publishes an event, the library throws. Chang
 
 ```apex
 @IsTest
-static void populateOnBeforeInsertLowercasesEmail() {
+static void populateOnBeforeInsertWithPaddedEmail() {
     // Setup
-    Contact newContact = new Contact(Email = ' Jane.Doe@Example.com ');
+    Contact doe = new Contact(LastName = 'Doe', Email = ' Jane.Doe@Example.com ');
+
+    TriggerOrchestrator.mock().beforeInsertFor(ContactEmailNormalizationPopulator.class).with(doe);
 
     // Test
-    new ContactEmailNormalizationPopulator().populateOnBeforeInsert(new TriggerTypes.TriggerRecord(newContact, null));
+    TriggerOrchestrator.runTestFor(new ContactEmailNormalizationPopulator());
 
     // Verify
-    Assert.areEqual('jane.doe@example.com', newContact.Email, 'The email should be trimmed and lowercased.');
+    Assert.areEqual('jane.doe@example.com', doe.Email, 'The email should be trimmed and lowercased.');
 }
 ```

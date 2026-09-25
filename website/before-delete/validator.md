@@ -62,14 +62,16 @@ A guard must see every row. A `with sharing` provider misses rows the user canno
 
 ```apex
 @IsTest
-static void addErrorOnBeforeDeleteAttachesError() {
+static void addErrorOnBeforeDeleteWithoutOpenOpportunities() {
     // Setup
-    Account oldAccount = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
+    Account acme = new Account(Name = 'Acme');
+
+    TriggerOrchestrator.mock().beforeDeleteFor(AccountDeletionGuardValidator.class).with(acme);
 
     // Test
-    new AccountDeletionGuardValidator().addErrorOnBeforeDelete(new TriggerTypes.TriggerRecord(null, oldAccount));
+    TriggerOrchestrator.runTestFor(new AccountDeletionGuardValidator());
 
     // Verify
-    Assert.isTrue(oldAccount.hasErrors(), 'The delete should be blocked.');
+    Assert.isFalse(acme.hasErrors(), 'An account without open opportunities can be deleted.');
 }
 ```

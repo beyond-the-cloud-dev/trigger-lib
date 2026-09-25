@@ -40,14 +40,18 @@ The trigger rows are read-only. Register a new record with the Id and only the f
 
 ```apex
 @IsTest
-static void writeOnAfterUpdateWhenStageChangedToClosedWon() {
+static void writeOnAfterUpdateWithWonOpportunity() {
     // Setup
-    TriggerTypes.UpdateRecord record = new TriggerTypes.TriggerRecord(new Opportunity(StageName = 'Closed Won'), new Opportunity(StageName = 'Negotiation/Review'));
+    Opportunity renewal = new Opportunity(Name = 'Acme Renewal', StageName = 'Closed Won');
+
+    DML.mock('triggerUow').allDmls();
+
+    TriggerOrchestrator.mock().afterUpdateFor(OpportunityWinTaskWriter.class).with(renewal, new Opportunity(StageName = 'Negotiation/Review'));
 
     // Test
-    Boolean result = new OpportunityWinTaskWriter().writeOnAfterUpdateWhen(record);
+    TriggerOrchestrator.runTestFor(new OpportunityWinTaskWriter());
 
     // Verify
-    Assert.isTrue(result, 'The record should qualify.');
+    Assert.areEqual(1, DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records().size(), 'One task should be registered.');
 }
 ```

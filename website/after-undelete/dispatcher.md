@@ -36,15 +36,16 @@ The Dispatcher runs before the commit. A Publish Immediately event sent here rea
 
 ```apex
 @IsTest
-static void dispatchOnAfterUndeleteEnqueuesOneJob() {
+static void dispatchOnAfterUndeleteWithEmail() {
     // Setup
-    Contact restoredContact = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType));
-    List<TriggerTypes.TriggerRecord> qualified = new List<TriggerTypes.TriggerRecord>{ new TriggerTypes.TriggerRecord(restoredContact, null) };
+    Contact doe = new Contact(LastName = 'Doe', Email = 'jane.doe@example.com');
+
+    TriggerOrchestrator.mock().afterUndeleteFor(ContactDispatcher.class).with(doe);
 
     // Test
-    new ContactDispatcher().dispatchOnAfterUndelete(new TriggerTypes.UndeleteTriggerRecords(qualified));
+    TriggerOrchestrator.runTestFor(new ContactDispatcher());
 
     // Verify
-    Assert.areEqual(1, Limits.getQueueableJobs(), 'One job should be enqueued.');
+    Assert.areEqual(1, Limits.getQueueableJobs(), 'One job should be enqueued for the chunk.');
 }
 ```

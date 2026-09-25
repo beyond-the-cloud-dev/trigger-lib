@@ -40,17 +40,16 @@ No DML. If the handler runs DML or publishes an event, the library throws.
 
 ```apex
 @IsTest
-static void addErrorOnBeforeUpdateWhenWonWithZeroAmount() {
+static void addErrorOnBeforeUpdateWithZeroAmount() {
     // Setup
-    TriggerTypes.UpdateRecord record = new TriggerTypes.TriggerRecord(
-        new Opportunity(StageName = 'Closed Won', Amount = 0),
-        new Opportunity(StageName = 'Negotiation/Review')
-    );
+    Opportunity renewal = new Opportunity(StageName = 'Closed Won', Amount = 0);
+
+    TriggerOrchestrator.mock().beforeUpdateFor(OpportunityWinAmountValidator.class).with(renewal, new Opportunity(StageName = 'Negotiation/Review'));
 
     // Test
-    Boolean result = new OpportunityWinAmountValidator().addErrorOnBeforeUpdateWhen(record);
+    TriggerOrchestrator.runTestFor(new OpportunityWinAmountValidator());
 
     // Verify
-    Assert.isTrue(result, 'The record should be rejected.');
+    Assert.isTrue(renewal.hasErrors(), 'Winning a deal without an amount should be rejected.');
 }
 ```

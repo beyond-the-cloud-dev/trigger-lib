@@ -1,20 +1,37 @@
 {
   "packageDirectories": [
     {
-      "versionName": "ver 1.0.0",
+      "versionName": "Trigger Lib 1.0.0",
       "versionNumber": "1.0.0.NEXT",
-      "path": "force-app",
+      "path": "package",
       "default": true,
-      "package": "trigger-lib",
-      "versionDescription": ""
+      "package": "Trigger Lib",
+      "versionDescription": "",
+      "dependencies": [
+        {
+          "package": "SOQL Lib@6.12.0-1"
+        },
+        {
+          "package": "DML Lib",
+          "versionNumber": "4.0.0.LATEST"
+        }
+      ]
     },
     {
       "path": "examples",
+      "default": false
+    },
+    {
+      "path": "force-app",
       "default": false
     }
   ],
   "name": "trigger-lib",
   "namespace": "btcdev",
   "sfdcLoginUrl": "https://login.salesforce.com",
-  "sourceApiVersion": "67.0"
+  "sourceApiVersion": "67.0",
+  "packageAliases": {
+    "SOQL Lib@6.12.0-1": "04tP6000003dX2PIAU",
+    "DML Lib": "0HoP600000001IfKAI"
+  }
 }

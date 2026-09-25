@@ -4,6 +4,26 @@ description: Install Trigger Lib in a Salesforce org - deploy via button, or cop
 
 # Installation
 
+<!--
+ sf package version create --package "Trigger Lib" --target-dev-hub beyondthecloud-prod --installation-key-bypass --wait 30 --code-coverage
+
+ sf package version promote --package "Trigger Lib@1.0.0-1"  --target-dev-hub beyondthecloud-prod
+-->
+
+## Install via Unlocked Package
+
+Install the SOQL Lib unlocked package with `btcdev` namespace to your Salesforce environment:
+
+`/packaging/installPackage.apexp?p0=04tP6000003jdrVIAQ`
+
+<a href="https://test.salesforce.com/packaging/installPackage.apexp?p0=04tP6000003jdrVIAQ" target="_blank" style={{display: 'inline-block', backgroundColor: '#1976d2', color: 'white', padding: '10px 20px', textDecoration: 'none', borderRadius: '4px', marginRight: '10px'}}>
+    <p style={{margin: '0px'}}>Install on Sandbox</p>
+</a>
+
+<a href="https://login.salesforce.com/packaging/installPackage.apexp?p0=04tP6000003jdrVIAQ" target="_blank" style={{display: 'inline-block', backgroundColor: '#d32f2f', color: 'white', padding: '10px 20px', textDecoration: 'none', borderRadius: '4px'}}>
+    <p style={{margin: '0px'}}>Install on Production</p>
+</a>
+
 ## Deploy via Button {#deploy-via-button}
 
 Click the button below to deploy Trigger Lib to your environment.

@@ -233,25 +233,6 @@ const icons = {
   font-family: inherit;
   -webkit-font-smoothing: antialiased;
 }
-:global(html:not(.dark)) .btc-footer {
-  --f-bg: #f9f9f9;
-  --f-strip: #ffffff;
-  --f-fg: #1f1f1f;
-  --f-text: #424242;
-  --f-muted: #616161;
-  --f-label: #616161;
-  --f-border: #e2e2e2;
-  --f-hover: rgba(0, 0, 0, 0.04);
-  --f-link: #0073a3;
-  --f-accent: #007db0;
-  --f-icon-bg: #ececec;
-  --f-icon: #424242;
-  --f-tint: rgba(0, 146, 200, 0.07);
-  --f-tint-border: rgba(0, 115, 163, 0.5);
-  --f-tile-m: #f9f9f9;
-  --f-logo-fx: drop-shadow(0 0 0.6px rgba(0, 0, 0, 0.7))
-    drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.35));
-}
 .btc-footer a {
   text-decoration: none;
   transition:
@@ -384,12 +365,6 @@ const icons = {
 }
 .btc-footer__logo--light {
   display: none;
-}
-:global(html:not(.dark)) .btc-footer__logo--dark {
-  display: none;
-}
-:global(html:not(.dark)) .btc-footer__logo--light {
-  display: block;
 }
 .btc-footer__tagline {
   font-size: 16px;
@@ -633,5 +608,33 @@ const icons = {
   .btc-footer__copy {
     margin-top: 4px;
   }
+}
+</style>
+
+<style>
+html:not(.dark) .btc-footer {
+  --f-bg: #f9f9f9;
+  --f-strip: #ffffff;
+  --f-fg: #1f1f1f;
+  --f-text: #424242;
+  --f-muted: #616161;
+  --f-label: #616161;
+  --f-border: #e2e2e2;
+  --f-hover: rgba(0, 0, 0, 0.04);
+  --f-link: #0073a3;
+  --f-accent: #007db0;
+  --f-icon-bg: #ececec;
+  --f-icon: #424242;
+  --f-tint: rgba(0, 146, 200, 0.07);
+  --f-tint-border: rgba(0, 115, 163, 0.5);
+  --f-tile-m: #f9f9f9;
+  --f-logo-fx: drop-shadow(0 0 0.6px rgba(0, 0, 0, 0.7))
+    drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.35));
+}
+html:not(.dark) .btc-footer .btc-footer__logo--dark {
+  display: none;
+}
+html:not(.dark) .btc-footer .btc-footer__logo--light {
+  display: block;
 }
 </style>

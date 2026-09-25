@@ -227,6 +227,7 @@ const icons = {
   --f-tile-m: rgba(255, 255, 255, 0.035);
   --f-logo-fx: none;
   width: 100%;
+  margin-top: 64px;
   box-sizing: border-box;
   background: var(--f-bg);
   color: var(--f-text);
@@ -482,6 +483,9 @@ const icons = {
 }
 
 @media (max-width: 767px) {
+  .btc-footer {
+    margin-top: 48px;
+  }
   .btc-footer__strip-inner {
     padding: 24px 20px 16px;
     gap: 0;

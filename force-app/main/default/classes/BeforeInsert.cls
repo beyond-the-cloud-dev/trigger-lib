@@ -44,32 +44,32 @@ public class BeforeInsert {
 
     // Implementation
 
-    public class ExecutionStrategy extends TriggerOrchestrator.ExecutionStrategy {
-        public override List<TriggerOrchestrator.HandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator) {
-            List<TriggerOrchestrator.HandlerAdapter> adapters = new List<TriggerOrchestrator.HandlerAdapter>();
+    public class Operation extends TriggerOrchestrator.Operation {
+        public override List<TriggerOrchestrator.HandlerExecutor> buildExecutors(TriggerOrchestrator orchestrator) {
+            List<TriggerOrchestrator.HandlerExecutor> executors = new List<TriggerOrchestrator.HandlerExecutor>();
 
             for (BeforeInsert.Handler handler : ((TriggerOrchestrator.BeforeInsert) orchestrator.orchestrator).beforeInsertHandlers()) {
                 if (handler instanceof BeforeInsert.Populator) {
-                    adapters.add(new BeforeInsert.PopulatorAdapter((BeforeInsert.Populator) handler, orchestrator));
+                    executors.add(new BeforeInsert.PopulatorExecutor((BeforeInsert.Populator) handler, orchestrator));
                 } else if (handler instanceof BeforeInsert.Validator) {
-                    adapters.add(new BeforeInsert.ValidatorAdapter((BeforeInsert.Validator) handler, orchestrator));
+                    executors.add(new BeforeInsert.ValidatorExecutor((BeforeInsert.Validator) handler, orchestrator));
                 }
             }
 
-            return adapters;
+            return executors;
         }
     }
 
-    public class PopulatorAdapter extends TriggerOrchestrator.HandlerAdapter {
+    public class PopulatorExecutor extends TriggerOrchestrator.HandlerExecutor {
         private BeforeInsert.Populator populator;
 
-        public PopulatorAdapter(BeforeInsert.Populator populator, TriggerOrchestrator orchestrator) {
+        public PopulatorExecutor(BeforeInsert.Populator populator, TriggerOrchestrator orchestrator) {
             super(populator, orchestrator);
 
             this.populator = populator;
             this.parentDeclaration = new BeforeInsert.ParentDeclaration(this.populator);
             this.relatedLoader = new BeforeInsert.RelatedLoader(this.populator);
-            this.handlerLifecycle = new BeforeInsert.HandlerLifecycle(this.populator);
+            this.handlerHooks = new BeforeInsert.HandlerHooks(this.populator);
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -83,7 +83,7 @@ public class BeforeInsert {
                     this.populate(record);
                 }
 
-                this.handlerLifecycle.finalize(this.qualifiedRecords);
+                this.handlerHooks.finalize(this.qualifiedRecords);
             } catch (Exception e) {
                 this.handleException(e);
             }
@@ -105,25 +105,23 @@ public class BeforeInsert {
         }
 
         private void populate(TriggerTypes.TriggerRecord record) {
-            if (!this.populator.populateOnBeforeInsertWhen(record)) {
-                return;
+            if (this.populator.populateOnBeforeInsertWhen(record)) {
+                this.qualifiedRecords.add(record);
+                this.populator.populateOnBeforeInsert(record);
             }
-
-            this.qualifiedRecords.add(record);
-            this.populator.populateOnBeforeInsert(record);
         }
     }
 
-    public class ValidatorAdapter extends TriggerOrchestrator.HandlerAdapter {
+    public class ValidatorExecutor extends TriggerOrchestrator.HandlerExecutor {
         private BeforeInsert.Validator validator;
 
-        public ValidatorAdapter(BeforeInsert.Validator validator, TriggerOrchestrator orchestrator) {
+        public ValidatorExecutor(BeforeInsert.Validator validator, TriggerOrchestrator orchestrator) {
             super(validator, orchestrator);
 
             this.validator = validator;
             this.parentDeclaration = new BeforeInsert.ParentDeclaration(this.validator);
             this.relatedLoader = new BeforeInsert.RelatedLoader(this.validator);
-            this.handlerLifecycle = new BeforeInsert.HandlerLifecycle(this.validator);
+            this.handlerHooks = new BeforeInsert.HandlerHooks(this.validator);
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -137,7 +135,7 @@ public class BeforeInsert {
                     this.validate(record);
                 }
 
-                this.handlerLifecycle.finalize(this.qualifiedRecords);
+                this.handlerHooks.finalize(this.qualifiedRecords);
             } catch (Exception e) {
                 this.handleException(e);
             }
@@ -157,18 +155,18 @@ public class BeforeInsert {
         }
 
         private void validate(TriggerTypes.TriggerRecord record) {
-            if (!this.validator.addErrorOnBeforeInsertWhen(record)) {
-                return;
-            }
+            if (this.validator.addErrorOnBeforeInsertWhen(record)) {
+                this.qualifiedRecords.add(record);
 
-            this.qualifiedRecords.add(record);
+                Integer errorsBefore = record.getNewSObject().getErrors().size();
 
-            Integer errorsBefore = record.getNewSObject().getErrors().size();
+                this.validator.addErrorOnBeforeInsert(record);
 
-            this.validator.addErrorOnBeforeInsert(record);
-
-            if (record.getNewSObject().getErrors().size() == errorsBefore) {
-                throw new TriggerTypes.TriggerLibException(this.handlerName + ' qualified a record in addErrorOnBeforeInsertWhen but attached no error in addErrorOnBeforeInsert.');
+                if (record.getNewSObject().getErrors().size() == errorsBefore) {
+                    throw new TriggerTypes.TriggerLibException(
+                        this.handlerName + ' qualified a record in addErrorOnBeforeInsertWhen but attached no error in addErrorOnBeforeInsert.'
+                    );
+                }
             }
         }
     }
@@ -223,10 +221,10 @@ public class BeforeInsert {
         }
     }
 
-    public class HandlerLifecycle extends TriggerOrchestrator.HandlerLifecycle {
+    public class HandlerHooks extends TriggerOrchestrator.HandlerHooks {
         private BeforeInsert.Handler handler;
 
-        public HandlerLifecycle(BeforeInsert.Handler handler) {
+        public HandlerHooks(BeforeInsert.Handler handler) {
             this.handler = handler;
         }
 
@@ -271,9 +269,11 @@ public class BeforeInsert {
         }
 
         public List<BeforeInsert.Handler> beforeInsertHandlers() {
-            return this.handlerOrOrchestrator instanceof TriggerOrchestrator.BeforeInsert
-                ? ((TriggerOrchestrator.BeforeInsert) this.handlerOrOrchestrator).beforeInsertHandlers()
-                : new List<BeforeInsert.Handler>{ (BeforeInsert.Handler) this.handlerOrOrchestrator };
+            if (this.handlerOrOrchestrator instanceof TriggerOrchestrator.BeforeInsert) {
+                return ((TriggerOrchestrator.BeforeInsert) this.handlerOrOrchestrator).beforeInsertHandlers();
+            }
+
+            return new List<BeforeInsert.Handler>{ (BeforeInsert.Handler) this.handlerOrOrchestrator };
         }
     }
 }

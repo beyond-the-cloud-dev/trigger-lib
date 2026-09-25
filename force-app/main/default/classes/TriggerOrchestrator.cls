@@ -171,7 +171,7 @@ public with sharing class TriggerOrchestrator {
 
     @TestVisible
     private void run() {
-        ExecutionStrategy executionStrategy;
+        Operation operation;
 
         try {
             if (this.context.triggerOperation == null) {
@@ -187,33 +187,33 @@ public with sharing class TriggerOrchestrator {
             }
 
             if (this.context.triggerOperation == System.TriggerOperation.BEFORE_INSERT && this.orchestrator instanceof TriggerOrchestrator.BeforeInsert) {
-                executionStrategy = new BeforeInsert.ExecutionStrategy();
+                operation = new BeforeInsert.Operation();
             } else if (this.context.triggerOperation == System.TriggerOperation.AFTER_INSERT && this.orchestrator instanceof TriggerOrchestrator.AfterInsert) {
-                executionStrategy = new AfterInsert.ExecutionStrategy();
+                operation = new AfterInsert.Operation();
             } else if (this.context.triggerOperation == System.TriggerOperation.BEFORE_UPDATE && this.orchestrator instanceof TriggerOrchestrator.BeforeUpdate) {
-                executionStrategy = new BeforeUpdate.ExecutionStrategy();
+                operation = new BeforeUpdate.Operation();
             } else if (this.context.triggerOperation == System.TriggerOperation.AFTER_UPDATE && this.orchestrator instanceof TriggerOrchestrator.AfterUpdate) {
-                executionStrategy = new AfterUpdate.ExecutionStrategy();
+                operation = new AfterUpdate.Operation();
             } else if (this.context.triggerOperation == System.TriggerOperation.BEFORE_DELETE && this.orchestrator instanceof TriggerOrchestrator.BeforeDelete) {
-                executionStrategy = new BeforeDelete.ExecutionStrategy();
+                operation = new BeforeDelete.Operation();
             } else if (this.context.triggerOperation == System.TriggerOperation.AFTER_DELETE && this.orchestrator instanceof TriggerOrchestrator.AfterDelete) {
-                executionStrategy = new AfterDelete.ExecutionStrategy();
+                operation = new AfterDelete.Operation();
             } else if (this.context.triggerOperation == System.TriggerOperation.AFTER_UNDELETE && this.orchestrator instanceof TriggerOrchestrator.AfterUndelete) {
-                executionStrategy = new AfterUndelete.ExecutionStrategy();
+                operation = new AfterUndelete.Operation();
             } else {
                 return;
             }
 
-            TriggerOrchestrator.triggerStack.push(executionStrategy);
+            TriggerOrchestrator.triggerStack.push(operation);
 
-            executionStrategy.execute(this);
+            operation.execute(this);
         } finally {
-            this.finalizeTransactionChunk(executionStrategy);
+            this.finalizeTransactionChunk(operation);
         }
     }
 
-    private void finalizeTransactionChunk(ExecutionStrategy executionStrategy) {
-        if (executionStrategy == null) {
+    private void finalizeTransactionChunk(Operation operation) {
+        if (operation == null) {
             return;
         }
 
@@ -347,10 +347,10 @@ public with sharing class TriggerOrchestrator {
     }
 
     private class TriggerStack {
-        private List<ExecutionStrategy> executionStack = new List<ExecutionStrategy>();
+        private List<Operation> executionStack = new List<Operation>();
 
-        public void push(ExecutionStrategy executionStrategy) {
-            this.executionStack.add(executionStrategy);
+        public void push(Operation operation) {
+            this.executionStack.add(operation);
         }
 
         public void popLast() {
@@ -451,51 +451,51 @@ public with sharing class TriggerOrchestrator {
         }
     }
 
-    public abstract class ExecutionStrategy {
+    public abstract class Operation {
         public void execute(TriggerOrchestrator orchestrator) {
-            List<HandlerAdapter> activeAdapters = this.getActiveAdapters(orchestrator);
+            List<HandlerExecutor> activeExecutors = this.getActiveExecutors(orchestrator);
 
-            orchestrator.parentLoader.collectDeclarations(activeAdapters);
+            orchestrator.parentLoader.collectDeclarations(activeExecutors);
 
-            for (HandlerAdapter adapter : activeAdapters) {
-                adapter.execute(orchestrator.context.triggerRecords);
+            for (HandlerExecutor executor : activeExecutors) {
+                executor.execute(orchestrator.context.triggerRecords);
             }
 
             orchestrator.sharedUnitOfWork.commitWork();
         }
 
-        private List<HandlerAdapter> getActiveAdapters(TriggerOrchestrator orchestrator) {
-            List<HandlerAdapter> activeAdapters = new List<HandlerAdapter>();
+        private List<HandlerExecutor> getActiveExecutors(TriggerOrchestrator orchestrator) {
+            List<HandlerExecutor> activeExecutors = new List<HandlerExecutor>();
 
-            for (HandlerAdapter adapter : this.adaptHandlers(orchestrator)) {
-                if (!adapter.isBypassed()) {
-                    activeAdapters.add(adapter);
+            for (HandlerExecutor executor : this.buildExecutors(orchestrator)) {
+                if (!executor.isBypassed()) {
+                    activeExecutors.add(executor);
                 }
             }
 
-            return activeAdapters;
+            return activeExecutors;
         }
 
-        protected abstract List<HandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator);
+        protected abstract List<HandlerExecutor> buildExecutors(TriggerOrchestrator orchestrator);
     }
 
-    public abstract class HandlerAdapter {
+    public abstract class HandlerExecutor {
         protected String handlerName;
 
         protected TriggerOrchestrator orchestrator;
         protected ParentDeclaration parentDeclaration;
         protected RelatedLoader relatedLoader;
-        protected HandlerLifecycle handlerLifecycle;
+        protected HandlerHooks handlerHooks;
 
         protected List<TriggerTypes.TriggerRecord> qualifiedRecords = new List<TriggerTypes.TriggerRecord>();
 
-        public HandlerAdapter(Object handler, TriggerOrchestrator orchestrator) {
+        public HandlerExecutor(Object handler, TriggerOrchestrator orchestrator) {
             this.handlerName = handler.toString().substringBefore(':');
             this.orchestrator = orchestrator;
         }
 
         public Boolean isBypassed() {
-            return this.isBypassedByApexOrMetadata() || this.handlerLifecycle.isBypassedByAddOn();
+            return this.isBypassedByApexOrMetadata() || this.handlerHooks.isBypassedByAddOn();
         }
 
         private Boolean isBypassedByApexOrMetadata() {
@@ -508,7 +508,7 @@ public with sharing class TriggerOrchestrator {
         protected void handleException(Exception e) {
             this.logError(e);
 
-            if (e instanceof TriggerTypes.TriggerLibException || !this.handlerLifecycle.continuesOnError()) {
+            if (e instanceof TriggerTypes.TriggerLibException || !this.handlerHooks.continuesOnError()) {
                 throw e;
             }
         }
@@ -545,8 +545,8 @@ public with sharing class TriggerOrchestrator {
             this.context = context;
         }
 
-        public void collectDeclarations(List<HandlerAdapter> handlers) {
-            for (HandlerAdapter handler : handlers) {
+        public void collectDeclarations(List<HandlerExecutor> handlers) {
+            for (HandlerExecutor handler : handlers) {
                 this.declareNewParents(handler.parentDeclaration.getNewParentFields());
                 this.declareOldParents(handler.parentDeclaration.getOldParentFields());
             }
@@ -834,7 +834,7 @@ public with sharing class TriggerOrchestrator {
         }
     }
 
-    public abstract class HandlerLifecycle {
+    public abstract class HandlerHooks {
         public abstract Boolean isBypassedByAddOn();
         public abstract void finalize(List<TriggerTypes.TriggerRecord> qualifiedRecords);
         public abstract Boolean continuesOnError();

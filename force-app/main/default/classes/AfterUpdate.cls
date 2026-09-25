@@ -56,35 +56,35 @@ public class AfterUpdate {
 
     // Implementation
 
-    public class ExecutionStrategy extends TriggerOrchestrator.ExecutionStrategy {
-        public override List<TriggerOrchestrator.HandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator) {
-            List<TriggerOrchestrator.HandlerAdapter> adapters = new List<TriggerOrchestrator.HandlerAdapter>();
+    public class Operation extends TriggerOrchestrator.Operation {
+        public override List<TriggerOrchestrator.HandlerExecutor> buildExecutors(TriggerOrchestrator orchestrator) {
+            List<TriggerOrchestrator.HandlerExecutor> executors = new List<TriggerOrchestrator.HandlerExecutor>();
 
             for (AfterUpdate.Handler handler : ((TriggerOrchestrator.AfterUpdate) orchestrator.orchestrator).afterUpdateHandlers()) {
                 if (handler instanceof AfterUpdate.Writer) {
-                    adapters.add(new AfterUpdate.WriterAdapter((AfterUpdate.Writer) handler, orchestrator));
+                    executors.add(new AfterUpdate.WriterExecutor((AfterUpdate.Writer) handler, orchestrator));
                 } else if (handler instanceof AfterUpdate.Dispatcher) {
-                    adapters.add(new AfterUpdate.DispatcherAdapter((AfterUpdate.Dispatcher) handler, orchestrator));
+                    executors.add(new AfterUpdate.DispatcherExecutor((AfterUpdate.Dispatcher) handler, orchestrator));
                 }
             }
 
-            return adapters;
+            return executors;
         }
     }
 
-    public class WriterAdapter extends TriggerOrchestrator.HandlerAdapter {
+    public class WriterExecutor extends TriggerOrchestrator.HandlerExecutor {
         private AfterUpdate.Writer writer;
         private TriggerOrchestrator.UnitOfWork unitOfWork;
         private TriggerOrchestrator.RecursionTracker recursionTracker;
 
-        public WriterAdapter(AfterUpdate.Writer writer, TriggerOrchestrator orchestrator) {
+        public WriterExecutor(AfterUpdate.Writer writer, TriggerOrchestrator orchestrator) {
             super(writer, orchestrator);
 
             this.writer = writer;
             this.parentDeclaration = new AfterUpdate.ParentDeclaration(this.writer);
             this.relatedLoader = new AfterUpdate.RelatedLoader(this.writer);
             this.unitOfWork = new AfterUpdate.UnitOfWorkResolver(this.writer).resolve(this.orchestrator.sharedUnitOfWork);
-            this.handlerLifecycle = new AfterUpdate.HandlerLifecycle(this.writer);
+            this.handlerHooks = new AfterUpdate.HandlerHooks(this.writer);
             this.recursionTracker = new AfterUpdate.RecursionTracker(this.writer, this.handlerName);
         }
 
@@ -96,7 +96,7 @@ public class AfterUpdate {
                     this.write(record);
                 }
 
-                this.handlerLifecycle.finalize(this.qualifiedRecords);
+                this.handlerHooks.finalize(this.qualifiedRecords);
                 this.commitOwnUnitOfWork();
             } catch (Exception e) {
                 this.handleException(e);
@@ -104,13 +104,11 @@ public class AfterUpdate {
         }
 
         private void write(TriggerTypes.TriggerRecord record) {
-            if (this.recursionTracker.isLimitReached(record) || !this.writer.writeOnAfterUpdateWhen(record)) {
-                return;
+            if (!this.recursionTracker.isLimitReached(record) && this.writer.writeOnAfterUpdateWhen(record)) {
+                this.recursionTracker.countRun(record);
+                this.qualifiedRecords.add(record);
+                this.writer.writeOnAfterUpdate(record, this.unitOfWork);
             }
-
-            this.recursionTracker.countRun(record);
-            this.qualifiedRecords.add(record);
-            this.writer.writeOnAfterUpdate(record, this.unitOfWork);
         }
 
         private void commitOwnUnitOfWork() {
@@ -122,17 +120,17 @@ public class AfterUpdate {
         }
     }
 
-    public class DispatcherAdapter extends TriggerOrchestrator.HandlerAdapter {
+    public class DispatcherExecutor extends TriggerOrchestrator.HandlerExecutor {
         private AfterUpdate.Dispatcher dispatcher;
         private TriggerOrchestrator.RecursionTracker recursionTracker;
 
-        public DispatcherAdapter(AfterUpdate.Dispatcher dispatcher, TriggerOrchestrator orchestrator) {
+        public DispatcherExecutor(AfterUpdate.Dispatcher dispatcher, TriggerOrchestrator orchestrator) {
             super(dispatcher, orchestrator);
 
             this.dispatcher = dispatcher;
             this.parentDeclaration = new AfterUpdate.ParentDeclaration(this.dispatcher);
             this.relatedLoader = new AfterUpdate.RelatedLoader(this.dispatcher);
-            this.handlerLifecycle = new AfterUpdate.HandlerLifecycle(this.dispatcher);
+            this.handlerHooks = new AfterUpdate.HandlerHooks(this.dispatcher);
             this.recursionTracker = new AfterUpdate.RecursionTracker(this.dispatcher, this.handlerName);
         }
 
@@ -145,19 +143,17 @@ public class AfterUpdate {
                 }
 
                 this.dispatch();
-                this.handlerLifecycle.finalize(this.qualifiedRecords);
+                this.handlerHooks.finalize(this.qualifiedRecords);
             } catch (Exception e) {
                 this.handleException(e);
             }
         }
 
         private void qualify(TriggerTypes.TriggerRecord record) {
-            if (this.recursionTracker.isLimitReached(record) || !this.dispatcher.dispatchOnAfterUpdateWhen(record)) {
-                return;
+            if (!this.recursionTracker.isLimitReached(record) && this.dispatcher.dispatchOnAfterUpdateWhen(record)) {
+                this.recursionTracker.countRun(record);
+                this.qualifiedRecords.add(record);
             }
-
-            this.recursionTracker.countRun(record);
-            this.qualifiedRecords.add(record);
         }
 
         private void dispatch() {
@@ -235,16 +231,22 @@ public class AfterUpdate {
         }
 
         public override TriggerOrchestrator.UnitOfWork resolve(TriggerOrchestrator.UnitOfWork sharedUnitOfWork) {
-            return this.writer instanceof AfterUpdate.OwnUnitOfWork
-                ? new TriggerOrchestrator.UnitOfWork(((AfterUpdate.OwnUnitOfWork) this.writer).ownUnitOfWorkOnAfterUpdate())
-                : this.writer instanceof AfterUpdate.ContinueOnError ? new TriggerOrchestrator.UnitOfWork() : sharedUnitOfWork;
+            if (this.writer instanceof AfterUpdate.OwnUnitOfWork) {
+                return new TriggerOrchestrator.UnitOfWork(((AfterUpdate.OwnUnitOfWork) this.writer).ownUnitOfWorkOnAfterUpdate());
+            }
+
+            if (this.writer instanceof AfterUpdate.ContinueOnError) {
+                return new TriggerOrchestrator.UnitOfWork();
+            }
+
+            return sharedUnitOfWork;
         }
     }
 
-    public class HandlerLifecycle extends TriggerOrchestrator.HandlerLifecycle {
+    public class HandlerHooks extends TriggerOrchestrator.HandlerHooks {
         private AfterUpdate.Handler handler;
 
-        public HandlerLifecycle(AfterUpdate.Handler handler) {
+        public HandlerHooks(AfterUpdate.Handler handler) {
             this.handler = handler;
         }
 
@@ -301,9 +303,11 @@ public class AfterUpdate {
         }
 
         public List<AfterUpdate.Handler> afterUpdateHandlers() {
-            return this.handlerOrOrchestrator instanceof TriggerOrchestrator.AfterUpdate
-                ? ((TriggerOrchestrator.AfterUpdate) this.handlerOrOrchestrator).afterUpdateHandlers()
-                : new List<AfterUpdate.Handler>{ (AfterUpdate.Handler) this.handlerOrOrchestrator };
+            if (this.handlerOrOrchestrator instanceof TriggerOrchestrator.AfterUpdate) {
+                return ((TriggerOrchestrator.AfterUpdate) this.handlerOrOrchestrator).afterUpdateHandlers();
+            }
+
+            return new List<AfterUpdate.Handler>{ (AfterUpdate.Handler) this.handlerOrOrchestrator };
         }
     }
 }

@@ -48,34 +48,34 @@ public class AfterUndelete {
 
     // Implementation
 
-    public class ExecutionStrategy extends TriggerOrchestrator.ExecutionStrategy {
-        public override List<TriggerOrchestrator.HandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator) {
-            List<TriggerOrchestrator.HandlerAdapter> adapters = new List<TriggerOrchestrator.HandlerAdapter>();
+    public class Operation extends TriggerOrchestrator.Operation {
+        public override List<TriggerOrchestrator.HandlerExecutor> buildExecutors(TriggerOrchestrator orchestrator) {
+            List<TriggerOrchestrator.HandlerExecutor> executors = new List<TriggerOrchestrator.HandlerExecutor>();
 
             for (AfterUndelete.Handler handler : ((TriggerOrchestrator.AfterUndelete) orchestrator.orchestrator).afterUndeleteHandlers()) {
                 if (handler instanceof AfterUndelete.Writer) {
-                    adapters.add(new AfterUndelete.WriterAdapter((AfterUndelete.Writer) handler, orchestrator));
+                    executors.add(new AfterUndelete.WriterExecutor((AfterUndelete.Writer) handler, orchestrator));
                 } else if (handler instanceof AfterUndelete.Dispatcher) {
-                    adapters.add(new AfterUndelete.DispatcherAdapter((AfterUndelete.Dispatcher) handler, orchestrator));
+                    executors.add(new AfterUndelete.DispatcherExecutor((AfterUndelete.Dispatcher) handler, orchestrator));
                 }
             }
 
-            return adapters;
+            return executors;
         }
     }
 
-    public class WriterAdapter extends TriggerOrchestrator.HandlerAdapter {
+    public class WriterExecutor extends TriggerOrchestrator.HandlerExecutor {
         private AfterUndelete.Writer writer;
         private TriggerOrchestrator.UnitOfWork unitOfWork;
 
-        public WriterAdapter(AfterUndelete.Writer writer, TriggerOrchestrator orchestrator) {
+        public WriterExecutor(AfterUndelete.Writer writer, TriggerOrchestrator orchestrator) {
             super(writer, orchestrator);
 
             this.writer = writer;
             this.parentDeclaration = new AfterUndelete.ParentDeclaration(this.writer);
             this.relatedLoader = new AfterUndelete.RelatedLoader(this.writer);
             this.unitOfWork = new AfterUndelete.UnitOfWorkResolver(this.writer).resolve(this.orchestrator.sharedUnitOfWork);
-            this.handlerLifecycle = new AfterUndelete.HandlerLifecycle(this.writer);
+            this.handlerHooks = new AfterUndelete.HandlerHooks(this.writer);
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -86,7 +86,7 @@ public class AfterUndelete {
                     this.write(record);
                 }
 
-                this.handlerLifecycle.finalize(this.qualifiedRecords);
+                this.handlerHooks.finalize(this.qualifiedRecords);
                 this.commitOwnUnitOfWork();
             } catch (Exception e) {
                 this.handleException(e);
@@ -94,12 +94,10 @@ public class AfterUndelete {
         }
 
         private void write(TriggerTypes.TriggerRecord record) {
-            if (!this.writer.writeOnAfterUndeleteWhen(record)) {
-                return;
+            if (this.writer.writeOnAfterUndeleteWhen(record)) {
+                this.qualifiedRecords.add(record);
+                this.writer.writeOnAfterUndelete(record, this.unitOfWork);
             }
-
-            this.qualifiedRecords.add(record);
-            this.writer.writeOnAfterUndelete(record, this.unitOfWork);
         }
 
         private void commitOwnUnitOfWork() {
@@ -111,16 +109,16 @@ public class AfterUndelete {
         }
     }
 
-    public class DispatcherAdapter extends TriggerOrchestrator.HandlerAdapter {
+    public class DispatcherExecutor extends TriggerOrchestrator.HandlerExecutor {
         private AfterUndelete.Dispatcher dispatcher;
 
-        public DispatcherAdapter(AfterUndelete.Dispatcher dispatcher, TriggerOrchestrator orchestrator) {
+        public DispatcherExecutor(AfterUndelete.Dispatcher dispatcher, TriggerOrchestrator orchestrator) {
             super(dispatcher, orchestrator);
 
             this.dispatcher = dispatcher;
             this.parentDeclaration = new AfterUndelete.ParentDeclaration(this.dispatcher);
             this.relatedLoader = new AfterUndelete.RelatedLoader(this.dispatcher);
-            this.handlerLifecycle = new AfterUndelete.HandlerLifecycle(this.dispatcher);
+            this.handlerHooks = new AfterUndelete.HandlerHooks(this.dispatcher);
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -132,18 +130,16 @@ public class AfterUndelete {
                 }
 
                 this.dispatch();
-                this.handlerLifecycle.finalize(this.qualifiedRecords);
+                this.handlerHooks.finalize(this.qualifiedRecords);
             } catch (Exception e) {
                 this.handleException(e);
             }
         }
 
         private void qualify(TriggerTypes.TriggerRecord record) {
-            if (!this.dispatcher.dispatchOnAfterUndeleteWhen(record)) {
-                return;
+            if (this.dispatcher.dispatchOnAfterUndeleteWhen(record)) {
+                this.qualifiedRecords.add(record);
             }
-
-            this.qualifiedRecords.add(record);
         }
 
         private void dispatch() {
@@ -213,16 +209,22 @@ public class AfterUndelete {
         }
 
         public override TriggerOrchestrator.UnitOfWork resolve(TriggerOrchestrator.UnitOfWork sharedUnitOfWork) {
-            return this.writer instanceof AfterUndelete.OwnUnitOfWork
-                ? new TriggerOrchestrator.UnitOfWork(((AfterUndelete.OwnUnitOfWork) this.writer).ownUnitOfWorkOnAfterUndelete())
-                : this.writer instanceof AfterUndelete.ContinueOnError ? new TriggerOrchestrator.UnitOfWork() : sharedUnitOfWork;
+            if (this.writer instanceof AfterUndelete.OwnUnitOfWork) {
+                return new TriggerOrchestrator.UnitOfWork(((AfterUndelete.OwnUnitOfWork) this.writer).ownUnitOfWorkOnAfterUndelete());
+            }
+
+            if (this.writer instanceof AfterUndelete.ContinueOnError) {
+                return new TriggerOrchestrator.UnitOfWork();
+            }
+
+            return sharedUnitOfWork;
         }
     }
 
-    public class HandlerLifecycle extends TriggerOrchestrator.HandlerLifecycle {
+    public class HandlerHooks extends TriggerOrchestrator.HandlerHooks {
         private AfterUndelete.Handler handler;
 
-        public HandlerLifecycle(AfterUndelete.Handler handler) {
+        public HandlerHooks(AfterUndelete.Handler handler) {
             this.handler = handler;
         }
 
@@ -267,9 +269,11 @@ public class AfterUndelete {
         }
 
         public List<AfterUndelete.Handler> afterUndeleteHandlers() {
-            return this.handlerOrOrchestrator instanceof TriggerOrchestrator.AfterUndelete
-                ? ((TriggerOrchestrator.AfterUndelete) this.handlerOrOrchestrator).afterUndeleteHandlers()
-                : new List<AfterUndelete.Handler>{ (AfterUndelete.Handler) this.handlerOrOrchestrator };
+            if (this.handlerOrOrchestrator instanceof TriggerOrchestrator.AfterUndelete) {
+                return ((TriggerOrchestrator.AfterUndelete) this.handlerOrOrchestrator).afterUndeleteHandlers();
+            }
+
+            return new List<AfterUndelete.Handler>{ (AfterUndelete.Handler) this.handlerOrOrchestrator };
         }
     }
 }

@@ -3,7 +3,7 @@
  * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
  *
- * v0.0.1
+ * v0.0.4
  *
  * PMD False Positives:
  * - ExcessiveClassLength: It is a library and we tried to put everything into ONE test class
@@ -13,7 +13,7 @@
  * - ApexUnitTestClassShouldHaveRunAs: The lib does not branch on the running user, so running as one proves nothing
  **/
 @SuppressWarnings('PMD.ExcessiveClassLength,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.NcssTypeCount,PMD.ApexUnitTestClassShouldHaveRunAs')
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:BeforeUpdate, ApexClass:TriggerOrchestrator')
 private class BeforeUpdateTest {
     @IsTest
     static void populatorWithoutAddOns() {
@@ -995,7 +995,7 @@ private class BeforeUpdateTest {
         }
 
         public void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record) {
-            record.put(Contact.Department, record.getOldParent('Account')?.get(Account.Name));
+            record.put(Contact.Department, record.getOldParent(Contact.AccountId)?.get(Account.Name));
         }
     }
 
@@ -1113,7 +1113,7 @@ private class BeforeUpdateTest {
         }
 
         public void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record) {
-            record.put(Contact.Department, record.getNewParent('Account')?.get(Account.Name));
+            record.put(Contact.Department, record.getNewParent(Contact.AccountId)?.get(Account.Name));
         }
     }
 

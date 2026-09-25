@@ -8,7 +8,7 @@ public with sharing class AccountParentDefaultsPopulator implements BeforeInsert
     }
 
     public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
-        Account parent = (Account) record.getNewParent('Parent');
+        Account parent = (Account) record.getNewParent(Account.ParentId);
 
         if (parent == null) {
             return;

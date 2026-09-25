@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:OpportunityTypeFromAccountPopulator')
 private class OpportunityTypeFromAccountPopulatorTest {
     @IsTest
     static void populateOnBeforeInsertWithCustomerAccount() {

@@ -29,7 +29,7 @@ Query children, siblings or other records once per handler per run, and read the
 
 ## Rules {#rules}
 
-- **SOQL runs even when no record qualifies.** Return an empty list when no record can qualify.
+- **SOQL runs on the first read.** A provider queries when the handler first calls `getRelated` with its name. A read in a predicate queries even when no record qualifies, so return an empty list when no record can qualify.
 - **SOQL sees the restored records.** Add `Id NOT IN :records.getIds()` to look only at other records.
 - **Exact keys.** Keys are compared as text, case included. Normalize text keys the same way on both sides.
 - **Unknown names throw.** `record.getRelated('<name>')` with a name the handler did not return throws `TriggerTypes.TriggerLibException`, even with ContinueOnError.

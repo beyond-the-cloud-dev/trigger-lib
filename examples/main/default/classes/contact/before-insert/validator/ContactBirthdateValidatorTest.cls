@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:ContactBirthdateValidator')
 private class ContactBirthdateValidatorTest {
     @IsTest
     static void addErrorOnBeforeInsertWithFutureBirthdate() {

@@ -60,7 +60,7 @@ public with sharing class ContactDuplicateEmailValidator implements BeforeInsert
 - **No Ids yet.** `records.getIds()` is empty. Filter by field values with `records.getValuesOf(…)` or by lookups with `records.getIdsOf(…)`.
 - **SOQL cannot see this save.** The new records are not in the database yet. Compare them with each other in a Populator's [Finalizer](/before-insert/add-ons/finalizer).
 - **Keys match exactly, case included.** Normalize text keys the same way in `keyOf` and in the lookup, as `[Duplicate email]` does with `toLowerCase()`.
-- **Providers query even when nothing qualifies.** Return an empty list from `query` when no record can qualify.
+- **Providers query on the first read.** A provider queries when the handler first calls `getRelated` with its name. A read in a predicate queries even when nothing qualifies, so return an empty list from `query` when no record can qualify.
 
 ::: warning
 Each provider has its own sharing. Declare a keyword on every provider class; an inner class does not inherit it. A `with sharing` duplicate check misses records the user cannot see.

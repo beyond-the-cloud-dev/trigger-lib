@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:AccountCustomerDataValidator')
 private class AccountCustomerDataValidatorTest {
     @IsTest
     static void addErrorOnBeforeInsertWithBlankIndustry() {

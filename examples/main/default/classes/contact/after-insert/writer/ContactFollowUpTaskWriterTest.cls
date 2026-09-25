@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:ContactFollowUpTaskWriter')
 private class ContactFollowUpTaskWriterTest {
     @IsTest
     static void writeOnAfterInsertWithWebLeadSource() {

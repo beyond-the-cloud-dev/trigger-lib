@@ -18,7 +18,7 @@ Handlers run in list order. Each predicate runs at its handler's turn, so it see
 
 ## No Loops, No SOQL per Record {#no-loops}
 
-The library loops over the records. Handlers declare the parents and related records they need, and the library loads them before the handler runs.
+The library loops over the records. Handlers declare the parents and related records they need, and the library loads them in bulk, never per record.
 
 ## Before Contexts Populate, After Contexts Act {#before-populates-after-acts}
 

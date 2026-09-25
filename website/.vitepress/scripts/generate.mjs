@@ -298,15 +298,15 @@ function skeletonBody(context, roleName, addOnName) {
 
   if (addOnName === 'ParentQuery') {
     body.predicate = [
-      `return ${accountChanged}record.getNewParent('Account') != null;`
+      `return ${accountChanged}record.getNewParent(Contact.AccountId) != null;`
     ];
     if (roleName === 'Populator')
       body.action = [
-        "record.put(Contact.Description, ((Account) record.getNewParent('Account')).Name);"
+        "record.put(Contact.Description, ((Account) record.getNewParent(Contact.AccountId)).Name);"
       ];
     if (roleName === 'Writer')
       body.action = [
-        "Account accountRecord = (Account) record.getNewParent('Account');",
+        "Account accountRecord = (Account) record.getNewParent(Contact.AccountId);",
         '',
         reviewTask(
           'accountRecord.Id',
@@ -317,15 +317,15 @@ function skeletonBody(context, roleName, addOnName) {
 
   if (addOnName === 'PriorParentQuery') {
     body.predicate = [
-      `return ${accountChanged}record.getOldParent('Account') != null;`
+      `return ${accountChanged}record.getOldParent(Contact.AccountId) != null;`
     ];
     if (roleName === 'Populator')
       body.action = [
-        "record.put(Contact.Description, 'Moved from ' + ((Account) record.getOldParent('Account')).Name);"
+        "record.put(Contact.Description, 'Moved from ' + ((Account) record.getOldParent(Contact.AccountId)).Name);"
       ];
     if (roleName === 'Writer')
       body.action = [
-        "Account previousAccount = (Account) record.getOldParent('Account');",
+        "Account previousAccount = (Account) record.getOldParent(Contact.AccountId);",
         '',
         reviewTask(
           'previousAccount.Id',
@@ -334,7 +334,7 @@ function skeletonBody(context, roleName, addOnName) {
       ];
     if (roleName === 'Validator')
       body.action = [
-        "record.addError('Remove the contact from ' + ((Account) record.getOldParent('Account')).Name + ' first.');"
+        "record.addError('Remove the contact from ' + ((Account) record.getOldParent(Contact.AccountId)).Name + ' first.');"
       ];
   }
 

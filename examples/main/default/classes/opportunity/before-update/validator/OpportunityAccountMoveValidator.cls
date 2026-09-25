@@ -12,8 +12,8 @@ public with sharing class OpportunityAccountMoveValidator implements BeforeUpdat
     }
 
     public void addErrorOnBeforeUpdate(TriggerTypes.RejectableUpdateRecord record) {
-        Account oldAccount = (Account) record.getOldParent('Account');
-        Account newAccount = (Account) record.getNewParent('Account');
+        Account oldAccount = (Account) record.getOldParent(Opportunity.AccountId);
+        Account newAccount = (Account) record.getNewParent(Opportunity.AccountId);
 
         record.addError(
             Opportunity.AccountId,

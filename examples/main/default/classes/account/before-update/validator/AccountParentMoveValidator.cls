@@ -12,15 +12,15 @@ public with sharing class AccountParentMoveValidator implements BeforeUpdate.Val
             return false;
         }
 
-        Account oldParent = (Account) record.getOldParent('Parent');
-        Account newParent = (Account) record.getNewParent('Parent');
+        Account oldParent = (Account) record.getOldParent(Account.ParentId);
+        Account newParent = (Account) record.getNewParent(Account.ParentId);
 
         return oldParent != null && newParent != null && oldParent.BillingCountry != newParent.BillingCountry;
     }
 
     public void addErrorOnBeforeUpdate(TriggerTypes.RejectableUpdateRecord record) {
-        Account oldParent = (Account) record.getOldParent('Parent');
-        Account newParent = (Account) record.getNewParent('Parent');
+        Account oldParent = (Account) record.getOldParent(Account.ParentId);
+        Account newParent = (Account) record.getNewParent(Account.ParentId);
 
         record.addError(
             Account.ParentId,

@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:OpportunityProbabilityPopulator')
 private class OpportunityProbabilityPopulatorTest {
     @IsTest
     static void populateOnBeforeUpdateWithStageChange() {

@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:AccountAddressCascadeWriter')
 private class AccountAddressCascadeWriterTest {
     @IsTest
     static void writeOnAfterUpdateWithoutContacts() {

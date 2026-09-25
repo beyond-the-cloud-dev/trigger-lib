@@ -3,7 +3,7 @@
  * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
  *
- * v0.0.1
+ * v0.0.4
  *
  * PMD False Positives:
  * - CyclomaticComplexity: It is a library and we tried to put everything into ONE test class
@@ -12,7 +12,7 @@
  * - ApexUnitTestClassShouldHaveRunAs: The lib does not branch on the running user, so running as one proves nothing
  **/
 @SuppressWarnings('PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.NcssTypeCount,PMD.ApexUnitTestClassShouldHaveRunAs')
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:TriggerTypes')
 private class TriggerTypesTest {
     @IsTest
     static void isChangedWhenValueDiffers() {
@@ -3463,7 +3463,7 @@ private class TriggerTypesTest {
         record.setNewParent('Account', parentAccount);
 
         // Test
-        SObject result = record.getNewParent('Account');
+        SObject result = record.getNewParent(Contact.AccountId);
 
         // Verify
         Assert.areEqual(parentAccount, result, 'The enriched parent should be returned.');
@@ -3482,10 +3482,38 @@ private class TriggerTypesTest {
         record.setOldParent('Account', priorParentAccount);
 
         // Test
-        SObject result = record.getOldParent('Account');
+        SObject result = record.getOldParent(Contact.AccountId);
 
         // Verify
         Assert.areEqual(priorParentAccount, result, 'The enriched parent should be returned.');
+    }
+
+    @IsTest
+    static void getNewParentWithParentLoader() {
+        // Setup
+        TestParentLoader parentLoader = new TestParentLoader();
+        TriggerTypes.TriggerRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'New'), null);
+        record.setParentLoader(parentLoader);
+
+        // Test
+        record.getNewParent(Contact.AccountId);
+
+        // Verify
+        Assert.areEqual(new List<String>{ 'Account' }, parentLoader.loadedRelationshipNames, 'The parent should be loaded before it is read.');
+    }
+
+    @IsTest
+    static void getOldParentWithParentLoader() {
+        // Setup
+        TestParentLoader parentLoader = new TestParentLoader();
+        TriggerTypes.TriggerRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'New'), new Contact(LastName = 'Old'));
+        record.setParentLoader(parentLoader);
+
+        // Test
+        record.getOldParent(Contact.AccountId);
+
+        // Verify
+        Assert.areEqual(new List<String>{ 'Account' }, parentLoader.loadedRelationshipNames, 'The parent should be loaded before it is read.');
     }
 
     @IsTest
@@ -3501,7 +3529,7 @@ private class TriggerTypesTest {
         record.setNewParent('Account', new Account(Id = firstAccountId, Name = 'Current Parent'));
 
         // Test
-        SObject result = record.getOldParent('Account');
+        SObject result = record.getOldParent(Contact.AccountId);
 
         // Verify
         Assert.areEqual('Prior Parent', result.get(Account.Name), 'The old parent should be returned.');
@@ -3520,28 +3548,28 @@ private class TriggerTypesTest {
         record.setOldParent('Account', new Account(Id = secondAccountId, Name = 'Prior Parent'));
 
         // Test
-        SObject result = record.getNewParent('Account');
+        SObject result = record.getNewParent(Contact.AccountId);
 
         // Verify
         Assert.areEqual('Current Parent', result.get(Account.Name), 'The new parent should be returned.');
     }
 
     @IsTest
-    static void getNewParentWhenRelationshipIsNotEnriched() {
+    static void getNewParentWhenLookupIsNotEnriched() {
         // Setup
         Id accountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType);
         TriggerTypes.TriggerRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'New', AccountId = accountId), null);
         record.setNewParent('Account', new Account(Id = accountId, Name = 'Parent'));
 
         // Test
-        SObject result = record.getNewParent('ReportsTo');
+        SObject result = record.getNewParent(Contact.ReportsToId);
 
         // Verify
         Assert.isNull(result, 'The parent should be null.');
     }
 
     @IsTest
-    static void getOldParentWhenRelationshipIsNotEnriched() {
+    static void getOldParentWhenLookupIsNotEnriched() {
         // Setup
         Id accountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType);
         TriggerTypes.TriggerRecord record = new TriggerTypes.TriggerRecord(
@@ -3551,7 +3579,7 @@ private class TriggerTypesTest {
         record.setOldParent('Account', new Account(Id = accountId, Name = 'Parent'));
 
         // Test
-        SObject result = record.getOldParent('ReportsTo');
+        SObject result = record.getOldParent(Contact.ReportsToId);
 
         // Verify
         Assert.isNull(result, 'The parent should be null.');
@@ -3568,7 +3596,7 @@ private class TriggerTypesTest {
         record.setNewParent('Account', new Account(Id = accountId, Name = 'Parent'));
 
         // Test
-        SObject result = record.getOldParent('Account');
+        SObject result = record.getOldParent(Contact.AccountId);
 
         // Verify
         Assert.isNull(result, 'The parent should be null.');
@@ -3585,21 +3613,21 @@ private class TriggerTypesTest {
         record.setOldParent('Account', new Account(Id = accountId, Name = 'Parent'));
 
         // Test
-        SObject result = record.getNewParent('Account');
+        SObject result = record.getNewParent(Contact.AccountId);
 
         // Verify
         Assert.isNull(result, 'The parent should be null.');
     }
 
     @IsTest
-    static void getNewParentWhenOnlyLetterCaseDiffers() {
+    static void getNewParentWhenOtherLookupPointsToSameObject() {
         // Setup
-        Id accountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType);
-        TriggerTypes.TriggerRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'New', AccountId = accountId), null);
-        record.setNewParent('Account', new Account(Id = accountId, Name = 'Parent'));
+        Id managerId = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType);
+        TriggerTypes.TriggerRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'New', ReportsToId = managerId), null);
+        record.setNewParent('ReportsTo', new Contact(Id = managerId, LastName = 'Manager'));
 
         // Test
-        SObject result = record.getNewParent('account');
+        SObject result = record.getNewParent(Contact.MasterRecordId);
 
         // Verify
         Assert.isNull(result, 'The parent should be null.');
@@ -3615,7 +3643,7 @@ private class TriggerTypesTest {
         record.setNewParent('Account', new Account(Id = secondAccountId, Name = 'Re-pointed Parent'));
 
         // Test
-        SObject result = record.getNewParent('Account');
+        SObject result = record.getNewParent(Contact.AccountId);
 
         // Verify
         Assert.areEqual('Re-pointed Parent', result.get(Account.Name), 'The parent should be replaced.');
@@ -3631,7 +3659,7 @@ private class TriggerTypesTest {
         record.setNewParent('ReportsTo', new Contact(Id = contactId, LastName = 'Manager'));
 
         // Test
-        SObject result = record.getNewParent('Account');
+        SObject result = record.getNewParent(Contact.AccountId);
 
         // Verify
         Assert.areEqual('Parent', result.get(Account.Name), 'The first parent should be kept.');
@@ -4025,6 +4053,21 @@ private class TriggerTypesTest {
     }
 
     @IsTest
+    static void getRelatedWithRelatedLoader() {
+        // Setup
+        TestRelatedLoader relatedLoader = new TestRelatedLoader();
+        TriggerTypes.TriggerRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'New'), null);
+        record.setRelated(new Map<String, TriggerTypes.RelatedRecords>{ 'openOpportunities' => new TriggerTypes.ProvidedRecords(new List<Opportunity>()) });
+        record.setRelatedLoader(relatedLoader);
+
+        // Test
+        record.getRelated('openOpportunities');
+
+        // Verify
+        Assert.areEqual(new List<String>{ 'openOpportunities' }, relatedLoader.loadedProviderNames, 'The related records should be loaded before they are read.');
+    }
+
+    @IsTest
     static void getRelatedWhenNameIsUnknown() {
         // Setup
         TriggerTypes.TriggerRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'New'), null);
@@ -4309,6 +4352,36 @@ private class TriggerTypesTest {
     }
 
     @IsTest
+    static void updateRecordsGetValuesOfWithParentLoader() {
+        // Setup
+        TestParentLoader parentLoader = new TestParentLoader();
+        TriggerTypes.TriggerRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'A'), new Contact(LastName = 'A'));
+        record.setParentLoader(parentLoader);
+        TriggerTypes.UpdateRecords records = new TriggerTypes.UpdateTriggerRecords(new List<TriggerTypes.TriggerRecord>{ record });
+
+        // Test
+        records.getValuesOf('Account.Parent', Account.Name);
+
+        // Verify
+        Assert.areEqual(new List<String>{ 'Account' }, parentLoader.loadedRelationshipNames, 'The parent should be loaded before it is read.');
+    }
+
+    @IsTest
+    static void updateRecordsGetOldValuesOfWithParentLoader() {
+        // Setup
+        TestParentLoader parentLoader = new TestParentLoader();
+        TriggerTypes.TriggerRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'A'), new Contact(LastName = 'A'));
+        record.setParentLoader(parentLoader);
+        TriggerTypes.UpdateRecords records = new TriggerTypes.UpdateTriggerRecords(new List<TriggerTypes.TriggerRecord>{ record });
+
+        // Test
+        records.getOldValuesOf('Account', Account.Name);
+
+        // Verify
+        Assert.areEqual(new List<String>{ 'Account' }, parentLoader.loadedRelationshipNames, 'The parent should be loaded before it is read.');
+    }
+
+    @IsTest
     static void deleteRecordsGetValuesOfWithRelationship() {
         // Setup
         Id accountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType);
@@ -4439,5 +4512,21 @@ private class TriggerTypesTest {
 
         // Verify
         Assert.isTrue(records[1].isChangedFromTo(Contact.LastName, 'Second Before', 'Second'), 'The new and old records should be paired by position.');
+    }
+
+    private class TestRelatedLoader implements TriggerTypes.RelatedLoader {
+        public List<String> loadedProviderNames = new List<String>();
+
+        public void load(String providerName) {
+            this.loadedProviderNames.add(providerName);
+        }
+    }
+
+    private class TestParentLoader implements TriggerTypes.ParentLoader {
+        public List<String> loadedRelationshipNames = new List<String>();
+
+        public void load(String relationshipName) {
+            this.loadedRelationshipNames.add(relationshipName);
+        }
     }
 }

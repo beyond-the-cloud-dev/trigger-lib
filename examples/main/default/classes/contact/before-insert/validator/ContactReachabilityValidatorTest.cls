@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:ContactReachabilityValidator')
 private class ContactReachabilityValidatorTest {
     @IsTest
     static void addErrorOnBeforeInsertWithoutContactDetails() {

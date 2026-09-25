@@ -83,7 +83,7 @@ export const addOnFacts = {
     summary:
       'Query children, siblings or other records once per handler per run; read them with `getRelated`.',
     called:
-      'once per handler per run, at this handler’s turn, before its first predicate',
+      'at most once per handler per run, at this handler’s first `getRelated`',
     returns: 'provider name → `RecordsProvider`'
   },
   OwnUnitOfWork: {
@@ -123,7 +123,7 @@ export const supportFacts = {
   RecordsProvider: {
     query: {
       called:
-        'once per provider, at the handler’s turn, with every record in the chunk',
+        'once per provider, at the handler’s first `getRelated` with its name, with every record in the chunk',
       returns: 'the rows to index by key; `null` counts as no rows'
     },
     keyOf: {

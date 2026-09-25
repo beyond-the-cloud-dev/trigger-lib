@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:OpportunityCloseDateValidator')
 private class OpportunityCloseDateValidatorTest {
     @IsTest
     static void addErrorOnBeforeInsertWithPastCloseDate() {

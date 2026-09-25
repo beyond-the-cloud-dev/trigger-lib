@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:OpportunityLargeDealValidator')
 private class OpportunityLargeDealValidatorTest {
     @IsTest
     static void addErrorOnBeforeUpdateWithoutNextStep() {

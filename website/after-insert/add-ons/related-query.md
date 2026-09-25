@@ -30,7 +30,7 @@ Query children, siblings or other records once per handler per run, and read the
 ## Rules {#rules}
 
 - **SOQL sees the new records.** They are saved but not committed. Add `Id NOT IN :records.getIds()` to leave them out.
-- **Providers query even when no record qualifies.** Return an empty list from `query` when no record can qualify.
+- **Providers query on the first read.** A provider queries when the handler first calls `getRelated` with its name. A read in a predicate queries even when no record qualifies, so return an empty list from `query` when no record can qualify.
 - **Keys are case-sensitive.** Normalize text keys the same way in `keyOf` and when you read.
 - **Unknown names throw.** `getRelated` with a name the handler did not return throws `TriggerTypes.TriggerLibException`, even with ContinueOnError.
 

@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:ContactEmailFormatValidator')
 private class ContactEmailFormatValidatorTest {
     @IsTest
     static void addErrorOnBeforeInsertWithEmailWithoutAtSign() {

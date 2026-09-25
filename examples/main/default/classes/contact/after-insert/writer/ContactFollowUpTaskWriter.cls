@@ -9,7 +9,7 @@ public with sharing class ContactFollowUpTaskWriter implements AfterInsert.Write
 
     public void writeOnAfterInsert(TriggerTypes.InsertRecord record, TriggerTypes.UnitOfWork unitOfWork) {
         Contact newContact = (Contact) record.getNewSObject();
-        Account account = (Account) record.getNewParent('Account');
+        Account account = (Account) record.getNewParent(Contact.AccountId);
 
         unitOfWork.toInsert(
             new Task(

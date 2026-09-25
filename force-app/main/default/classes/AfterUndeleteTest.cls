@@ -3,7 +3,7 @@
  * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
  *
- * v0.0.1
+ * v0.0.4
  *
  * PMD False Positives:
  * - ExcessiveClassLength: It is a library and we tried to put everything into ONE test class
@@ -13,7 +13,7 @@
  * - ApexUnitTestClassShouldHaveRunAs: The lib does not branch on the running user, so running as one proves nothing
  **/
 @SuppressWarnings('PMD.ExcessiveClassLength,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.NcssTypeCount,PMD.ApexUnitTestClassShouldHaveRunAs')
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:AfterUndelete, ApexClass:TriggerOrchestrator')
 private class AfterUndeleteTest {
     @IsTest
     static void writerWithoutAddOns() {
@@ -610,7 +610,7 @@ private class AfterUndeleteTest {
         }
 
         public void writeOnAfterUndelete(TriggerTypes.UndeleteRecord record, TriggerTypes.UnitOfWork unitOfWork) {
-            unitOfWork.toInsert(new Task(Subject = (String) record.getNewParent('Account')?.get(Account.Name)));
+            unitOfWork.toInsert(new Task(Subject = (String) record.getNewParent(Contact.AccountId)?.get(Account.Name)));
         }
     }
 

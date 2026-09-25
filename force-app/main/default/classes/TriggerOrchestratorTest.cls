@@ -3,7 +3,7 @@
  * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
  *
- * v0.0.1
+ * v0.0.4
  *
  * PMD False Positives:
  * - ExcessiveClassLength: It is a library and we tried to put everything into ONE test class
@@ -13,7 +13,7 @@
  * - ApexUnitTestClassShouldHaveRunAs: The lib does not branch on the running user, so running as one proves nothing
  **/
 @SuppressWarnings('PMD.ExcessiveClassLength,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.NcssTypeCount,PMD.ApexUnitTestClassShouldHaveRunAs')
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:TriggerOrchestrator')
 private class TriggerOrchestratorTest {
     @IsTest
     static void runOutsideTriggerContext() {
@@ -1467,6 +1467,50 @@ private class TriggerOrchestratorTest {
     }
 
     @IsTest
+    static void parentQueryWhenRecordDoesNotQualify() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TriggerOrchestrator.mock()
+            .beforeInsertFor(AccountNamePopulator.class)
+            .with(new Contact(LastName = 'Roe', AccountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType)));
+
+        // Test
+        Test.startTest();
+        Integer queriesBefore = SOQL.getQueries();
+        TriggerOrchestrator.runTestFor(new AccountNamePopulator());
+        Integer queriesAfter = SOQL.getQueries();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(0, queriesAfter - queriesBefore, 'The accounts should not be queried.');
+    }
+
+    @IsTest
+    static void parentQueryWhenOtherLookupIsNotRead() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
+        Contact manager = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Manager');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        TriggerOrchestrator.mock().beforeInsertFor(AccountNamePopulatorWithManagerQuery.class).with(new Contact(LastName = 'Doe', AccountId = acme.Id, ReportsToId = manager.Id));
+
+        // Test
+        Test.startTest();
+        Integer queriesBefore = SOQL.getQueries();
+        TriggerOrchestrator.runTestFor(new AccountNamePopulatorWithManagerQuery());
+        Integer queriesAfter = SOQL.getQueries();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(1, queriesAfter - queriesBefore, 'Only the accounts should be queried.');
+    }
+
+    @IsTest
     static void parentQueryWhenParentIsNotFound() {
         // Setup
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
@@ -1604,20 +1648,62 @@ private class TriggerOrchestratorTest {
     }
 
     @IsTest
+    static void relatedQueryWhenProviderIsNotRead() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        LastNameProvider provider = new LastNameProvider();
+
+        TriggerOrchestrator.mock().beforeInsertFor(TitlePopulatorWithUnreadRelatedQuery.class).with(new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(new TitlePopulatorWithUnreadRelatedQuery(provider));
+
+        // Verify
+        Assert.isNull(provider.lastNames, 'The provider should not query.');
+    }
+
+    @IsTest
+    static void relatedQueryWhenOtherProviderIsNotRead() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        LastNameProvider otherProvider = new LastNameProvider();
+
+        TriggerOrchestrator.mock().beforeInsertFor(TitlePopulatorWithTwoRelatedQueries.class).with(new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(new TitlePopulatorWithTwoRelatedQueries(new LastNameProvider(), otherProvider));
+
+        // Verify
+        Assert.isNull(otherProvider.lastNames, 'The other provider should not query.');
+    }
+
+    @IsTest
     static void relatedQueryWithNullProviders() {
         // Setup
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
-        Contact doe = new Contact(LastName = 'Doe');
+        TriggerOrchestrator.mock().beforeInsertFor(TitlePopulatorWithNullRelatedQuery.class).with(new Contact(LastName = 'Doe'));
 
-        TriggerOrchestrator.mock().beforeInsertFor(TitlePopulatorWithNullRelatedQuery.class).with(doe);
+        Exception expectedException = null;
 
         // Test
-        TriggerOrchestrator.runTestFor(new TitlePopulatorWithNullRelatedQuery());
+        try {
+            TriggerOrchestrator.runTestFor(new TitlePopulatorWithNullRelatedQuery());
+        } catch (Exception e) {
+            expectedException = e;
+        }
 
         // Verify
-        Assert.areEqual('CEO', doe.Title, 'The populator should set the title.');
+        Assert.areEqual(
+            'No related records provider named titles is declared. Return it from the queryRelatedOn method of the handler first.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
     }
 
     @IsTest
@@ -1702,6 +1788,30 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.mock()
             .beforeInsertFor(RelatedAccountNamePopulator.class)
             .with(new List<Contact>{ new Contact(LastName = 'Doe', AccountId = acme.Id), new Contact(LastName = 'Roe', AccountId = acme.Id) });
+
+        // Test
+        Test.startTest();
+        Integer queriesBefore = SOQL.getQueries();
+        TriggerOrchestrator.runTestFor(new RelatedAccountNamePopulator());
+        Integer queriesAfter = SOQL.getQueries();
+        Test.stopTest();
+
+        // Verify
+        Assert.areEqual(1, queriesAfter - queriesBefore, 'The related accounts should be queried once.');
+    }
+
+    @IsTest
+    static void relatedQueryWhenReadByManyRecords() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
+        SOQL.mock(Account.SObjectType).thenReturn(acme);
+
+        TriggerOrchestrator.mock()
+            .beforeInsertFor(RelatedAccountNamePopulator.class)
+            .with(new List<Contact>{ new Contact(LastName = 'Doe', AccountId = acme.Id), new Contact(LastName = 'Doe', AccountId = acme.Id) });
 
         // Test
         Test.startTest();
@@ -2238,7 +2348,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record) {
-            record.put(Contact.Department, record.getOldParent('Account')?.get(Account.Name));
+            record.put(Contact.Department, record.getOldParent(Contact.AccountId)?.get(Account.Name));
         }
     }
 
@@ -2254,7 +2364,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
-            record.put(Contact.Description, record.getNewParent('Account')?.get(Account.Name));
+            record.put(Contact.Description, record.getNewParent(Contact.AccountId)?.get(Account.Name));
         }
 
         public Boolean populateOnBeforeUpdateWhen(TriggerTypes.UpdateRecord record) {
@@ -2262,7 +2372,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record) {
-            record.put(Contact.Description, record.getNewParent('Account')?.get(Account.Name));
+            record.put(Contact.Description, record.getNewParent(Contact.AccountId)?.get(Account.Name));
         }
     }
 
@@ -2276,7 +2386,24 @@ private class TriggerOrchestratorTest {
         }
 
         public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
-            record.put(Contact.Description, record.getNewParent('Account')?.get(Account.Industry));
+            record.put(Contact.Description, record.getNewParent(Contact.AccountId)?.get(Account.Industry));
+        }
+    }
+
+    private class AccountNamePopulatorWithManagerQuery implements BeforeInsert.Populator, BeforeInsert.ParentQuery {
+        public Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnBeforeInsert() {
+            return new Map<SObjectField, TriggerTypes.ParentFields>{
+                Contact.AccountId => TriggerTypes.ParentFields.with(Account.Name),
+                Contact.ReportsToId => TriggerTypes.ParentFields.with(Contact.LastName)
+            };
+        }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
+            record.put(Contact.Department, record.getNewParent(Contact.AccountId)?.get(Account.Name));
         }
     }
 
@@ -2402,7 +2529,7 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class TitlePopulatorWithRelatedQuery extends TitlePopulator implements BeforeInsert.RelatedQuery {
+    private class TitlePopulatorWithRelatedQuery implements BeforeInsert.Populator, BeforeInsert.RelatedQuery {
         private BeforeInsert.RecordsProvider provider;
 
         public TitlePopulatorWithRelatedQuery(BeforeInsert.RecordsProvider provider) {
@@ -2412,29 +2539,99 @@ private class TriggerOrchestratorTest {
         public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
             return new Map<String, BeforeInsert.RecordsProvider>{ 'lastNames' => this.provider };
         }
-    }
 
-    private class TitlePopulatorWithNullRelatedQuery extends TitlePopulator implements BeforeInsert.RelatedQuery {
-        public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
-            return null;
+        public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
+            record.put(Contact.Title, record.getRelated('lastNames').isEmpty() ? 'CEO' : 'CFO');
         }
     }
 
-    private class AccountNamePopulatorWithRelatedQuery extends AccountNamePopulator implements BeforeInsert.RelatedQuery {
+    private class TitlePopulatorWithUnreadRelatedQuery extends TitlePopulator implements BeforeInsert.RelatedQuery {
+        private BeforeInsert.RecordsProvider provider;
+
+        public TitlePopulatorWithUnreadRelatedQuery(BeforeInsert.RecordsProvider provider) {
+            this.provider = provider;
+        }
+
+        public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
+            return new Map<String, BeforeInsert.RecordsProvider>{ 'lastNames' => this.provider };
+        }
+    }
+
+    private class TitlePopulatorWithTwoRelatedQueries implements BeforeInsert.Populator, BeforeInsert.RelatedQuery {
+        private BeforeInsert.RecordsProvider provider;
+        private BeforeInsert.RecordsProvider otherProvider;
+
+        public TitlePopulatorWithTwoRelatedQueries(BeforeInsert.RecordsProvider provider, BeforeInsert.RecordsProvider otherProvider) {
+            this.provider = provider;
+            this.otherProvider = otherProvider;
+        }
+
+        public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
+            return new Map<String, BeforeInsert.RecordsProvider>{ 'lastNames' => this.provider, 'otherLastNames' => this.otherProvider };
+        }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
+            record.put(Contact.Title, record.getRelated('lastNames').isEmpty() ? 'CEO' : 'CFO');
+        }
+    }
+
+    private class TitlePopulatorWithNullRelatedQuery implements BeforeInsert.Populator, BeforeInsert.RelatedQuery {
+        public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
+            return null;
+        }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
+            record.put(Contact.Title, record.getRelated('titles').isEmpty() ? 'CEO' : 'CFO');
+        }
+    }
+
+    private class AccountNamePopulatorWithRelatedQuery implements BeforeInsert.Populator, BeforeInsert.ParentQuery, BeforeInsert.RelatedQuery {
         private BeforeInsert.RecordsProvider provider;
 
         public AccountNamePopulatorWithRelatedQuery(BeforeInsert.RecordsProvider provider) {
             this.provider = provider;
         }
 
+        public Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnBeforeInsert() {
+            return new Map<SObjectField, TriggerTypes.ParentFields>{ Contact.AccountId => TriggerTypes.ParentFields.with(Account.Name) };
+        }
+
         public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
             return new Map<String, BeforeInsert.RecordsProvider>{ 'accountNames' => this.provider };
         }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
+            record.put(Contact.Department, record.getRelated('accountNames').isEmpty() ? 'None' : 'Some');
+        }
     }
 
-    private class FailingRelatedQueryPopulatorWithContinueOnError extends TitlePopulator implements BeforeInsert.RelatedQuery, BeforeInsert.ContinueOnError {
+    private class FailingRelatedQueryPopulatorWithContinueOnError implements BeforeInsert.Populator, BeforeInsert.RelatedQuery, BeforeInsert.ContinueOnError {
         public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
             throw new TestException('The related query failed.');
+        }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
+            record.put(Contact.Title, record.getRelated('accounts').isEmpty() ? 'CEO' : 'CFO');
         }
     }
 
@@ -2544,7 +2741,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
-            record.put(Contact.Description, record.getNewParent('Account')?.get(Account.Industry));
+            record.put(Contact.Description, record.getNewParent(Contact.AccountId)?.get(Account.Industry));
         }
     }
 
@@ -2558,7 +2755,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
-            record.put(Contact.Description, record.getNewParent('Account')?.getSObject('Owner')?.get(User.LastName));
+            record.put(Contact.Description, record.getNewParent(Contact.AccountId)?.getSObject('Owner')?.get(User.LastName));
         }
     }
 
@@ -2734,7 +2931,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
-            record.put(Contact.Department, record.getNewParent('Account')?.get(Account.Name));
+            record.put(Contact.Department, record.getNewParent(Contact.AccountId)?.get(Account.Name));
         }
 
         public Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnBeforeUpdate() {
@@ -2746,7 +2943,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record) {
-            record.put(Contact.Department, record.getNewParent('Account')?.get(Account.Name));
+            record.put(Contact.Department, record.getNewParent(Contact.AccountId)?.get(Account.Name));
         }
     }
 

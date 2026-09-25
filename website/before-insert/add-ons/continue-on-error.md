@@ -28,5 +28,5 @@ Log and swallow the handler's exceptions, so later handlers still run and the in
 - **Add a [Logger](/guide/error-handling#logger).** Without one, a swallowed exception leaves no trace.
 
 ::: warning
-Some exceptions still fail the insert: DML in the handler, a Validator that attaches no error, `TriggerTypes.TriggerLibException`, `System.LimitException`, and exceptions in `bypassOnBeforeInsertWhen()` or while parents load.
+Some exceptions still fail the insert: DML in the handler, a Validator that attaches no error, `TriggerTypes.TriggerLibException`, `System.LimitException`, and exceptions in `bypassOnBeforeInsertWhen()`, `queryParentsOnBeforeInsert()` or the parent query after a Populator.
 :::

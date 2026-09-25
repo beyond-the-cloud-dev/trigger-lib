@@ -27,7 +27,7 @@ Read fields of the parent the old row pointed to, such as a contact's previous a
 
 ## Rules {#rules}
 
-- **Read with `getOldParent`.** `record.getOldParent('Account')` is null when the old lookup was empty or the parent has been deleted since.
+- **Read with `getOldParent`.** `record.getOldParent(Contact.AccountId)` is null when the old lookup was empty or the parent has been deleted since.
 - **Current field values.** The previous parent is queried when the trigger runs, so its fields show their values now, not when the record pointed to it.
 - **One query for both sides.** With a [ParentQuery](/before-update/add-ons/parent-query) on the same lookup, both parents load in one query, and each gets every field either side declared.
 

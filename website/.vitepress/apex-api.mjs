@@ -169,6 +169,16 @@ function parseRegistrations(source) {
     }));
 }
 
+function parseMockableMethods(source) {
+  const match = stripComments(source).match(
+    /\binterface\s+Mockable\s*\{([^}]*)\}/
+  );
+  if (!match) {
+    throw new Error('apex-api: TriggerOrchestrator.cls declares no Mockable');
+  }
+  return parseMethods(match[1], 'Mockable');
+}
+
 function classifyTriggerTypesInterface(declared) {
   const methodNames = declared.methods.map(method => method.name);
   if (methodNames.includes('getRecords') && methodNames.includes('size'))
@@ -452,6 +462,9 @@ function buildModel() {
     for (const item of context.interfaces) {
       for (const method of item.methods) methodNames.add(method.name);
     }
+  }
+  for (const method of parseMockableMethods(readClass('TriggerOrchestrator'))) {
+    methodNames.add(method.name);
   }
 
   return {

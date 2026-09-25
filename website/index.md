@@ -38,7 +38,7 @@ features:
     details: Switch handlers off in Apex or custom metadata, and cap recursion on update.
     link: /guide/bypasses
   - title: Unit Tests Without DML
-    details: Test handlers with in-memory records, with no trigger and no DML.
+    details: Run handlers in a mocked trigger context, with no trigger and no DML.
     link: /guide/testing
 ---
 

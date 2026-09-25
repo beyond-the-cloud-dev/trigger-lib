@@ -40,14 +40,16 @@ Every qualified record must get an error. If one gets none, the whole chunk fail
 
 ```apex
 @IsTest
-static void addErrorOnBeforeInsertAttachesErrorToAmount() {
+static void addErrorOnBeforeInsertWithNegativeAmount() {
     // Setup
-    Opportunity newOpportunity = new Opportunity(Amount = -100);
+    Opportunity renewal = new Opportunity(Amount = -100);
+
+    TriggerOrchestrator.mock().beforeInsertFor(OpportunityAmountValidator.class).with(renewal);
 
     // Test
-    new OpportunityAmountValidator().addErrorOnBeforeInsert(new TriggerTypes.TriggerRecord(newOpportunity, null));
+    TriggerOrchestrator.runTestFor(new OpportunityAmountValidator());
 
     // Verify
-    Assert.areEqual(new List<String>{ 'Amount' }, newOpportunity.getErrors()[0].getFields(), 'The error should be attached to Amount.');
+    Assert.areEqual(new List<String>{ 'Amount' }, renewal.getErrors()[0].getFields(), 'The error should be attached to Amount.');
 }
 ```

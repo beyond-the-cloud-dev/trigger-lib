@@ -59,13 +59,14 @@ Pass values, not the deleted Ids. The job runs after the commit, when the delete
 
 ```apex
 @IsTest
-static void dispatchOnAfterDeleteEnqueuesOneJob() {
+static void dispatchOnAfterDeleteWithEmail() {
     // Setup
-    Contact oldContact = new Contact(LastName = 'Doe', Email = 'jane@acme.com');
-    TriggerTypes.DeleteRecords records = new TriggerTypes.DeleteTriggerRecords(new List<TriggerTypes.TriggerRecord>{ new TriggerTypes.TriggerRecord(null, oldContact) });
+    Contact doe = new Contact(LastName = 'Doe', Email = 'jane.doe@example.com');
+
+    TriggerOrchestrator.mock().afterDeleteFor(ContactDispatcher.class).with(doe);
 
     // Test
-    new ContactDispatcher().dispatchOnAfterDelete(records);
+    TriggerOrchestrator.runTestFor(new ContactDispatcher());
 
     // Verify
     Assert.areEqual(1, Limits.getQueueableJobs(), 'One job should be enqueued for the chunk.');

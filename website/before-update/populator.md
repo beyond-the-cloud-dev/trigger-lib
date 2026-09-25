@@ -40,14 +40,16 @@ No DML. If the handler runs DML or publishes an event, the library throws. Chang
 
 ```apex
 @IsTest
-static void populateOnBeforeUpdateOmitsForecast() {
+static void populateOnBeforeUpdateWithSmallAmount() {
     // Setup
-    Opportunity newOpportunity = new Opportunity(Amount = 4000, StageName = 'Prospecting');
+    Opportunity renewal = new Opportunity(StageName = 'Prospecting', Amount = 4000);
+
+    TriggerOrchestrator.mock().beforeUpdateFor(OpportunityForecastPopulator.class).with(renewal, new Opportunity(StageName = 'Prospecting', Amount = 9000));
 
     // Test
-    new OpportunityForecastPopulator().populateOnBeforeUpdate(new TriggerTypes.TriggerRecord(newOpportunity, new Opportunity(Amount = 9000)));
+    TriggerOrchestrator.runTestFor(new OpportunityForecastPopulator());
 
     // Verify
-    Assert.areEqual('Omitted', newOpportunity.ForecastCategoryName, 'The forecast category should be Omitted.');
+    Assert.areEqual('Omitted', renewal.ForecastCategoryName, 'The forecast category should be Omitted.');
 }
 ```

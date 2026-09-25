@@ -27,10 +27,10 @@ Read fields of the record a lookup points to, such as a contact's current accoun
 
 ## Rules {#rules}
 
-- **Read by lookup field.** Pass the lookup field you declared, such as `getNewParent(Contact.AccountId)` or `getNewParent(Account.ParentId)`. The parent is null when the lookup is empty or no record has that Id.
-- **Later handlers see the new parent.** When a Populator changes the lookup, handlers after it get the new parent. A parent not loaded yet costs one more query.
+- **Read by lookup field.** Pass the lookup field you declared, such as `getNewParent(Contact.AccountId)` or `getNewParent(Opportunity.AccountId)`. The parent is null when the lookup is empty or no record has that Id.
+- **Later handlers see the new parent.** When a Populator changes the lookup, handlers after it get the new parent. If the lookup was read before, a parent not loaded yet costs one more query.
 - **Only declared fields.** The parent holds the declared fields and its `Id`. Reading any other field throws an `SObjectException`. Add grandparent fields with `.with('Owner', User.IsActive)`.
-- **One query per lookup.** Each declared lookup costs at most one SOQL query before the first handler, even when no record qualifies. A [PriorParentQuery](/before-update/add-ons/prior-parent-query) on the same lookup shares that query.
+- **One query per lookup.** Each declared lookup costs at most one SOQL query per chunk, when a handler first reads its parent. A lookup no handler reads costs nothing. A [PriorParentQuery](/before-update/add-ons/prior-parent-query) on the same lookup shares that query.
 
 ::: warning
 Parents are read in system mode without sharing, so a handler can see records the user cannot.

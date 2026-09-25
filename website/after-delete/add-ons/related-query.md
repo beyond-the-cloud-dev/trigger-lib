@@ -30,7 +30,7 @@ Query children, siblings or other records once per handler per run, and read the
 ## Rules {#rules}
 
 - **Inbound lookups may be stale.** Records that looked up to a deleted row may still point at it during this trigger. Exclude them with `AND ReportsToId NOT IN :records.getIds()`.
-- **Providers run even when nothing qualifies.** They run before the first predicate and cost their SOQL on every chunk.
+- **Providers run on the first read.** A provider queries when the handler first calls `getRelated` with its name, at most once per chunk. A read in a predicate costs its SOQL even when nothing qualifies.
 - **Write once per parent.** Two deleted contacts of one account both see the same remaining contacts. Write to the account once from a [Finalizer](/after-delete/add-ons/finalizer).
 - **Set sharing on the provider.** Its SOQL runs under the provider class's own sharing keyword. An inner class does not inherit its outer class's keyword.
 

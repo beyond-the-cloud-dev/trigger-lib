@@ -26,7 +26,7 @@ Read fields of the parent the old row pointed to, such as a deleted contact's ac
 - **Read by lookup field.** Pass the lookup field you declared, such as `getOldParent(Contact.AccountId)` or `getOldParent(Account.ParentId)`.
 - **Check for null.** The parent is null when the lookup is empty or no record has that Id.
 - **Only declared fields.** The parent holds the declared fields and its `Id`. Reading any other field throws an `SObjectException`. Add grandparent fields with `.with('Owner', User.IsActive)`.
-- **One query per lookup.** Each declared lookup costs at most one SOQL query per chunk, even when no record qualifies.
+- **One query per lookup.** Each declared lookup costs at most one SOQL query per chunk, when a handler first reads its parent. A lookup no handler reads costs nothing.
 
 ::: warning
 Parents are read in system mode without sharing, so a handler can see records the user cannot.

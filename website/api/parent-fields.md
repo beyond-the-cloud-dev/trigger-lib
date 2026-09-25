@@ -40,7 +40,7 @@ Contact.AccountId => TriggerTypes.ParentFields.with(Account.Name).with('Owner', 
 
 - **The declared fields and the `Id`.** Reading any other field throws an `SObjectException`.
 - **Declare what you read.** Declarations of all handlers are merged, so a handler may see another handler's fields. If that handler is switched off, the field is gone. Declare every field in the handler that reads it.
-- **Every record, qualified or not.** Parents load before any predicate runs, so the query costs SOQL even when nothing qualifies.
+- **Every record, qualified or not.** The first read of a lookup's parent loads the parents of every record in the chunk. A lookup whose parent no handler reads costs no SOQL.
 - **Once per chunk.** The parent queries run per chunk, never per record.
 - **No sharing.** Parents are read in system mode, so a handler can see records and fields the user cannot.
 - **Polymorphic lookups are limited.** For `WhatId`, `WhoId` or an `OwnerId` that can hold a queue, some parents come back null. In after insert, after update and after undelete, a field outside the `Name` object makes the query fail.

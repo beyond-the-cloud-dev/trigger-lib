@@ -462,7 +462,7 @@ public with sharing class TriggerOrchestrator {
         public void execute(TriggerOrchestrator orchestrator) {
             List<HandlerAdapter> activeAdapters = this.getActiveAdapters(orchestrator);
 
-            orchestrator.parentLoader.load(activeAdapters);
+            orchestrator.parentLoader.collectDeclarations(activeAdapters);
 
             for (HandlerAdapter adapter : activeAdapters) {
                 adapter.execute(orchestrator.context.triggerRecords);
@@ -654,7 +654,7 @@ public with sharing class TriggerOrchestrator {
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
             try {
-                this.relatedLoader.load(records);
+                this.relatedLoader.attachTo(records);
 
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.populate(record);
@@ -708,7 +708,7 @@ public with sharing class TriggerOrchestrator {
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
             try {
-                this.relatedLoader.load(records);
+                this.relatedLoader.attachTo(records);
 
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.validate(record);
@@ -766,7 +766,7 @@ public with sharing class TriggerOrchestrator {
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
             try {
-                this.relatedLoader.load(records);
+                this.relatedLoader.attachTo(records);
 
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.write(record);
@@ -811,7 +811,7 @@ public with sharing class TriggerOrchestrator {
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
             try {
-                this.relatedLoader.load(records);
+                this.relatedLoader.attachTo(records);
 
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.qualify(record);
@@ -860,7 +860,7 @@ public with sharing class TriggerOrchestrator {
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
             try {
-                this.relatedLoader.load(records);
+                this.relatedLoader.attachTo(records);
 
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.populate(record);
@@ -915,7 +915,7 @@ public with sharing class TriggerOrchestrator {
             Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
             try {
-                this.relatedLoader.load(records);
+                this.relatedLoader.attachTo(records);
 
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.validate(record);
@@ -975,7 +975,7 @@ public with sharing class TriggerOrchestrator {
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
             try {
-                this.relatedLoader.load(records);
+                this.relatedLoader.attachTo(records);
 
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.write(record);
@@ -1023,7 +1023,7 @@ public with sharing class TriggerOrchestrator {
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
             try {
-                this.relatedLoader.load(records);
+                this.relatedLoader.attachTo(records);
 
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.qualify(record);
@@ -1068,7 +1068,7 @@ public with sharing class TriggerOrchestrator {
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
             try {
-                this.relatedLoader.load(records);
+                this.relatedLoader.attachTo(records);
 
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.validate(record);
@@ -1113,7 +1113,7 @@ public with sharing class TriggerOrchestrator {
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
             try {
-                this.relatedLoader.load(records);
+                this.relatedLoader.attachTo(records);
 
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.write(record);
@@ -1160,7 +1160,7 @@ public with sharing class TriggerOrchestrator {
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
             try {
-                this.relatedLoader.load(records);
+                this.relatedLoader.attachTo(records);
 
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.write(record);
@@ -1205,7 +1205,7 @@ public with sharing class TriggerOrchestrator {
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
             try {
-                this.relatedLoader.load(records);
+                this.relatedLoader.attachTo(records);
 
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.qualify(record);
@@ -1251,7 +1251,7 @@ public with sharing class TriggerOrchestrator {
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
             try {
-                this.relatedLoader.load(records);
+                this.relatedLoader.attachTo(records);
 
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.write(record);
@@ -1296,7 +1296,7 @@ public with sharing class TriggerOrchestrator {
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
             try {
-                this.relatedLoader.load(records);
+                this.relatedLoader.attachTo(records);
 
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.qualify(record);
@@ -1464,12 +1464,16 @@ public with sharing class TriggerOrchestrator {
         }
     }
 
-    private class ParentLoader {
+    private class ParentLoader implements TriggerTypes.ParentLoader {
         private Set<SObjectField> lookupsForNewParents = new Set<SObjectField>();
         private Set<SObjectField> lookupsForOldParents = new Set<SObjectField>();
+        private Set<SObjectField> loadedLookups = new Set<SObjectField>();
 
+        private Map<String, SObjectField> lookupByRelationshipName = new Map<String, SObjectField>();
         private Map<SObjectField, Set<String>> fieldPathsByLookup = new Map<SObjectField, Set<String>>();
         private Map<SObjectField, Map<Id, SObject>> cachedParentsByLookup = new Map<SObjectField, Map<Id, SObject>>();
+
+        private Boolean areSavedRecordsQueried = false;
 
         private TriggerContext context;
 
@@ -1477,10 +1481,30 @@ public with sharing class TriggerOrchestrator {
             this.context = context;
         }
 
-        public void load(List<HandlerAdapter> handlers) {
-            this.collectDeclarations(handlers);
-            this.queryNewParentsFromSavedRecords();
-            this.queryAndAttachParents();
+        public void collectDeclarations(List<HandlerAdapter> handlers) {
+            for (HandlerAdapter handler : handlers) {
+                this.declareNewParents(handler.parentDeclaration.getNewParentFields());
+                this.declareOldParents(handler.parentDeclaration.getOldParentFields());
+            }
+
+            for (TriggerTypes.TriggerRecord record : this.context.triggerRecords) {
+                record.setParentLoader(this);
+            }
+        }
+
+        public void load(String relationshipName) {
+            SObjectField lookupField = this.lookupByRelationshipName.get(relationshipName);
+
+            if (lookupField == null || this.loadedLookups.contains(lookupField)) {
+                return;
+            }
+
+            if (this.lookupsForNewParents.contains(lookupField)) {
+                this.queryNewParentsFromSavedRecords();
+            }
+
+            this.queryAndAttachParents(lookupField);
+            this.loadedLookups.add(lookupField);
         }
 
         public void refreshNewParents(List<TriggerTypes.TriggerRecord> records) {
@@ -1488,16 +1512,9 @@ public with sharing class TriggerOrchestrator {
                 return;
             }
 
-            for (SObjectField lookupField : this.fieldPathsByLookup.keySet()) {
+            for (SObjectField lookupField : this.loadedLookups) {
                 this.queryParents(lookupField, this.notQueriedNewParentIds(lookupField, records));
                 this.attachNewParents(lookupField, records);
-            }
-        }
-
-        private void collectDeclarations(List<HandlerAdapter> handlers) {
-            for (HandlerAdapter handler : handlers) {
-                this.declareNewParents(handler.parentDeclaration.getNewParentFields());
-                this.declareOldParents(handler.parentDeclaration.getOldParentFields());
             }
         }
 
@@ -1520,12 +1537,13 @@ public with sharing class TriggerOrchestrator {
                     this.cachedParentsByLookup.put(lookupField, new Map<Id, SObject>());
                 }
 
+                this.lookupByRelationshipName.put(lookupField.getDescribe().getRelationshipName(), lookupField);
                 this.fieldPathsByLookup.get(lookupField).addAll(parentFieldsByLookup.get(lookupField).getFields());
             }
         }
 
         private void queryNewParentsFromSavedRecords() {
-            if (this.lookupsForNewParents.isEmpty() || !this.haveTriggeredRecordsIds()) {
+            if (this.areSavedRecordsQueried || !this.haveTriggeredRecordsIds()) {
                 return;
             }
 
@@ -1549,6 +1567,8 @@ public with sharing class TriggerOrchestrator {
                     }
                 }
             }
+
+            this.areSavedRecordsQueried = true;
         }
 
         private Boolean haveTriggeredRecordsIds() {
@@ -1568,18 +1588,16 @@ public with sharing class TriggerOrchestrator {
             return fieldPaths;
         }
 
-        private void queryAndAttachParents() {
-            for (SObjectField lookupField : this.fieldPathsByLookup.keySet()) {
-                Set<Id> parentIdsToQuery = new Set<Id>();
+        private void queryAndAttachParents(SObjectField lookupField) {
+            Set<Id> parentIdsToQuery = new Set<Id>();
 
-                parentIdsToQuery.addAll(this.notQueriedNewParentIds(lookupField, this.context.triggerRecords));
-                parentIdsToQuery.addAll(this.notQueriedOldParentIds(lookupField, this.context.triggerRecords));
+            parentIdsToQuery.addAll(this.notQueriedNewParentIds(lookupField, this.context.triggerRecords));
+            parentIdsToQuery.addAll(this.notQueriedOldParentIds(lookupField, this.context.triggerRecords));
 
-                this.queryParents(lookupField, parentIdsToQuery);
+            this.queryParents(lookupField, parentIdsToQuery);
 
-                this.attachNewParents(lookupField, this.context.triggerRecords);
-                this.attachOldParents(lookupField, this.context.triggerRecords);
-            }
+            this.attachNewParents(lookupField, this.context.triggerRecords);
+            this.attachOldParents(lookupField, this.context.triggerRecords);
         }
 
         private Set<Id> notQueriedNewParentIds(SObjectField lookupField, List<TriggerTypes.TriggerRecord> records) {
@@ -1668,248 +1686,270 @@ public with sharing class TriggerOrchestrator {
         }
     }
 
-    private abstract class RelatedLoader {
-        public void load(List<TriggerTypes.TriggerRecord> records) {
-            Map<String, TriggerTypes.RelatedRecords> relatedByProviderName = new Map<String, TriggerTypes.RelatedRecords>();
+    private abstract class RelatedLoader implements TriggerTypes.RelatedLoader {
+        protected List<TriggerTypes.TriggerRecord> records = new List<TriggerTypes.TriggerRecord>();
+
+        private Map<String, TriggerTypes.RelatedRecords> relatedByProviderName = new Map<String, TriggerTypes.RelatedRecords>();
+
+        public void attachTo(List<TriggerTypes.TriggerRecord> records) {
+            this.records = records;
 
             for (TriggerTypes.TriggerRecord record : records) {
-                record.setRelated(relatedByProviderName);
+                record.setRelated(this.relatedByProviderName);
+                record.setRelatedLoader(this);
             }
-
-            relatedByProviderName.putAll(this.queryRelated(records));
         }
 
-        protected abstract Map<String, TriggerTypes.RelatedRecords> queryRelated(List<TriggerTypes.TriggerRecord> records);
+        public void load(String providerName) {
+            if (this.relatedByProviderName.containsKey(providerName)) {
+                return;
+            }
+
+            TriggerTypes.RelatedRecords related = this.queryRelated(providerName);
+
+            if (related != null) {
+                this.relatedByProviderName.put(providerName, related);
+            }
+        }
+
+        protected abstract TriggerTypes.RelatedRecords queryRelated(String providerName);
     }
 
     private class BeforeInsertRelatedLoader extends RelatedLoader {
         private BeforeInsert.Handler handler;
+        private Map<String, BeforeInsert.RecordsProvider> providers;
 
         public BeforeInsertRelatedLoader(BeforeInsert.Handler handler) {
             this.handler = handler;
         }
 
-        public override Map<String, TriggerTypes.RelatedRecords> queryRelated(List<TriggerTypes.TriggerRecord> records) {
-            Map<String, TriggerTypes.RelatedRecords> relatedByProviderName = new Map<String, TriggerTypes.RelatedRecords>();
-
+        public override TriggerTypes.RelatedRecords queryRelated(String providerName) {
             if (!(this.handler instanceof BeforeInsert.RelatedQuery)) {
-                return relatedByProviderName;
+                return null;
             }
 
-            Map<String, BeforeInsert.RecordsProvider> providers = ((BeforeInsert.RelatedQuery) this.handler).queryRelatedOnBeforeInsert() ??
-                new Map<String, BeforeInsert.RecordsProvider>();
-            TriggerTypes.InsertRecords insertRecords = new TriggerTypes.InsertTriggerRecords(records);
-
-            for (String providerName : providers.keySet()) {
-                BeforeInsert.RecordsProvider provider = providers.get(providerName);
-                TriggerTypes.ProvidedRecords related = new TriggerTypes.ProvidedRecords(provider.query(insertRecords));
-
-                for (SObject row : related.getRecords()) {
-                    related.groupUnderKey(provider.keyOf(row), row);
-                }
-
-                relatedByProviderName.put(providerName, related);
+            if (this.providers == null) {
+                this.providers = ((BeforeInsert.RelatedQuery) this.handler).queryRelatedOnBeforeInsert() ?? new Map<String, BeforeInsert.RecordsProvider>();
             }
 
-            return relatedByProviderName;
+            BeforeInsert.RecordsProvider provider = this.providers.get(providerName);
+
+            if (provider == null) {
+                return null;
+            }
+
+            TriggerTypes.InsertRecords insertRecords = new TriggerTypes.InsertTriggerRecords(this.records);
+            TriggerTypes.ProvidedRecords related = new TriggerTypes.ProvidedRecords(provider.query(insertRecords));
+
+            for (SObject row : related.getRecords()) {
+                related.groupUnderKey(provider.keyOf(row), row);
+            }
+
+            return related;
         }
     }
 
     private class AfterInsertRelatedLoader extends RelatedLoader {
         private AfterInsert.Handler handler;
+        private Map<String, AfterInsert.RecordsProvider> providers;
 
         public AfterInsertRelatedLoader(AfterInsert.Handler handler) {
             this.handler = handler;
         }
 
-        public override Map<String, TriggerTypes.RelatedRecords> queryRelated(List<TriggerTypes.TriggerRecord> records) {
-            Map<String, TriggerTypes.RelatedRecords> relatedByProviderName = new Map<String, TriggerTypes.RelatedRecords>();
-
+        public override TriggerTypes.RelatedRecords queryRelated(String providerName) {
             if (!(this.handler instanceof AfterInsert.RelatedQuery)) {
-                return relatedByProviderName;
+                return null;
             }
 
-            Map<String, AfterInsert.RecordsProvider> providers = ((AfterInsert.RelatedQuery) this.handler).queryRelatedOnAfterInsert() ??
-                new Map<String, AfterInsert.RecordsProvider>();
-            TriggerTypes.InsertRecords insertRecords = new TriggerTypes.InsertTriggerRecords(records);
-
-            for (String providerName : providers.keySet()) {
-                AfterInsert.RecordsProvider provider = providers.get(providerName);
-                TriggerTypes.ProvidedRecords related = new TriggerTypes.ProvidedRecords(provider.query(insertRecords));
-
-                for (SObject row : related.getRecords()) {
-                    related.groupUnderKey(provider.keyOf(row), row);
-                }
-
-                relatedByProviderName.put(providerName, related);
+            if (this.providers == null) {
+                this.providers = ((AfterInsert.RelatedQuery) this.handler).queryRelatedOnAfterInsert() ?? new Map<String, AfterInsert.RecordsProvider>();
             }
 
-            return relatedByProviderName;
+            AfterInsert.RecordsProvider provider = this.providers.get(providerName);
+
+            if (provider == null) {
+                return null;
+            }
+
+            TriggerTypes.InsertRecords insertRecords = new TriggerTypes.InsertTriggerRecords(this.records);
+            TriggerTypes.ProvidedRecords related = new TriggerTypes.ProvidedRecords(provider.query(insertRecords));
+
+            for (SObject row : related.getRecords()) {
+                related.groupUnderKey(provider.keyOf(row), row);
+            }
+
+            return related;
         }
     }
 
     private class BeforeUpdateRelatedLoader extends RelatedLoader {
         private BeforeUpdate.Handler handler;
+        private Map<String, BeforeUpdate.RecordsProvider> providers;
 
         public BeforeUpdateRelatedLoader(BeforeUpdate.Handler handler) {
             this.handler = handler;
         }
 
-        public override Map<String, TriggerTypes.RelatedRecords> queryRelated(List<TriggerTypes.TriggerRecord> records) {
-            Map<String, TriggerTypes.RelatedRecords> relatedByProviderName = new Map<String, TriggerTypes.RelatedRecords>();
-
+        public override TriggerTypes.RelatedRecords queryRelated(String providerName) {
             if (!(this.handler instanceof BeforeUpdate.RelatedQuery)) {
-                return relatedByProviderName;
+                return null;
             }
 
-            Map<String, BeforeUpdate.RecordsProvider> providers = ((BeforeUpdate.RelatedQuery) this.handler).queryRelatedOnBeforeUpdate() ??
-                new Map<String, BeforeUpdate.RecordsProvider>();
-            TriggerTypes.UpdateRecords updateRecords = new TriggerTypes.UpdateTriggerRecords(records);
-
-            for (String providerName : providers.keySet()) {
-                BeforeUpdate.RecordsProvider provider = providers.get(providerName);
-                TriggerTypes.ProvidedRecords related = new TriggerTypes.ProvidedRecords(provider.query(updateRecords));
-
-                for (SObject row : related.getRecords()) {
-                    related.groupUnderKey(provider.keyOf(row), row);
-                }
-
-                relatedByProviderName.put(providerName, related);
+            if (this.providers == null) {
+                this.providers = ((BeforeUpdate.RelatedQuery) this.handler).queryRelatedOnBeforeUpdate() ?? new Map<String, BeforeUpdate.RecordsProvider>();
             }
 
-            return relatedByProviderName;
+            BeforeUpdate.RecordsProvider provider = this.providers.get(providerName);
+
+            if (provider == null) {
+                return null;
+            }
+
+            TriggerTypes.UpdateRecords updateRecords = new TriggerTypes.UpdateTriggerRecords(this.records);
+            TriggerTypes.ProvidedRecords related = new TriggerTypes.ProvidedRecords(provider.query(updateRecords));
+
+            for (SObject row : related.getRecords()) {
+                related.groupUnderKey(provider.keyOf(row), row);
+            }
+
+            return related;
         }
     }
 
     private class AfterUpdateRelatedLoader extends RelatedLoader {
         private AfterUpdate.Handler handler;
+        private Map<String, AfterUpdate.RecordsProvider> providers;
 
         public AfterUpdateRelatedLoader(AfterUpdate.Handler handler) {
             this.handler = handler;
         }
 
-        public override Map<String, TriggerTypes.RelatedRecords> queryRelated(List<TriggerTypes.TriggerRecord> records) {
-            Map<String, TriggerTypes.RelatedRecords> relatedByProviderName = new Map<String, TriggerTypes.RelatedRecords>();
-
+        public override TriggerTypes.RelatedRecords queryRelated(String providerName) {
             if (!(this.handler instanceof AfterUpdate.RelatedQuery)) {
-                return relatedByProviderName;
+                return null;
             }
 
-            Map<String, AfterUpdate.RecordsProvider> providers = ((AfterUpdate.RelatedQuery) this.handler).queryRelatedOnAfterUpdate() ??
-                new Map<String, AfterUpdate.RecordsProvider>();
-            TriggerTypes.UpdateRecords updateRecords = new TriggerTypes.UpdateTriggerRecords(records);
-
-            for (String providerName : providers.keySet()) {
-                AfterUpdate.RecordsProvider provider = providers.get(providerName);
-                TriggerTypes.ProvidedRecords related = new TriggerTypes.ProvidedRecords(provider.query(updateRecords));
-
-                for (SObject row : related.getRecords()) {
-                    related.groupUnderKey(provider.keyOf(row), row);
-                }
-
-                relatedByProviderName.put(providerName, related);
+            if (this.providers == null) {
+                this.providers = ((AfterUpdate.RelatedQuery) this.handler).queryRelatedOnAfterUpdate() ?? new Map<String, AfterUpdate.RecordsProvider>();
             }
 
-            return relatedByProviderName;
+            AfterUpdate.RecordsProvider provider = this.providers.get(providerName);
+
+            if (provider == null) {
+                return null;
+            }
+
+            TriggerTypes.UpdateRecords updateRecords = new TriggerTypes.UpdateTriggerRecords(this.records);
+            TriggerTypes.ProvidedRecords related = new TriggerTypes.ProvidedRecords(provider.query(updateRecords));
+
+            for (SObject row : related.getRecords()) {
+                related.groupUnderKey(provider.keyOf(row), row);
+            }
+
+            return related;
         }
     }
 
     private class BeforeDeleteRelatedLoader extends RelatedLoader {
         private BeforeDelete.Handler handler;
+        private Map<String, BeforeDelete.RecordsProvider> providers;
 
         public BeforeDeleteRelatedLoader(BeforeDelete.Handler handler) {
             this.handler = handler;
         }
 
-        public override Map<String, TriggerTypes.RelatedRecords> queryRelated(List<TriggerTypes.TriggerRecord> records) {
-            Map<String, TriggerTypes.RelatedRecords> relatedByProviderName = new Map<String, TriggerTypes.RelatedRecords>();
-
+        public override TriggerTypes.RelatedRecords queryRelated(String providerName) {
             if (!(this.handler instanceof BeforeDelete.RelatedQuery)) {
-                return relatedByProviderName;
+                return null;
             }
 
-            Map<String, BeforeDelete.RecordsProvider> providers = ((BeforeDelete.RelatedQuery) this.handler).queryRelatedOnBeforeDelete() ??
-                new Map<String, BeforeDelete.RecordsProvider>();
-            TriggerTypes.DeleteRecords deleteRecords = new TriggerTypes.DeleteTriggerRecords(records);
-
-            for (String providerName : providers.keySet()) {
-                BeforeDelete.RecordsProvider provider = providers.get(providerName);
-                TriggerTypes.ProvidedRecords related = new TriggerTypes.ProvidedRecords(provider.query(deleteRecords));
-
-                for (SObject row : related.getRecords()) {
-                    related.groupUnderKey(provider.keyOf(row), row);
-                }
-
-                relatedByProviderName.put(providerName, related);
+            if (this.providers == null) {
+                this.providers = ((BeforeDelete.RelatedQuery) this.handler).queryRelatedOnBeforeDelete() ?? new Map<String, BeforeDelete.RecordsProvider>();
             }
 
-            return relatedByProviderName;
+            BeforeDelete.RecordsProvider provider = this.providers.get(providerName);
+
+            if (provider == null) {
+                return null;
+            }
+
+            TriggerTypes.DeleteRecords deleteRecords = new TriggerTypes.DeleteTriggerRecords(this.records);
+            TriggerTypes.ProvidedRecords related = new TriggerTypes.ProvidedRecords(provider.query(deleteRecords));
+
+            for (SObject row : related.getRecords()) {
+                related.groupUnderKey(provider.keyOf(row), row);
+            }
+
+            return related;
         }
     }
 
     private class AfterDeleteRelatedLoader extends RelatedLoader {
         private AfterDelete.Handler handler;
+        private Map<String, AfterDelete.RecordsProvider> providers;
 
         public AfterDeleteRelatedLoader(AfterDelete.Handler handler) {
             this.handler = handler;
         }
 
-        public override Map<String, TriggerTypes.RelatedRecords> queryRelated(List<TriggerTypes.TriggerRecord> records) {
-            Map<String, TriggerTypes.RelatedRecords> relatedByProviderName = new Map<String, TriggerTypes.RelatedRecords>();
-
+        public override TriggerTypes.RelatedRecords queryRelated(String providerName) {
             if (!(this.handler instanceof AfterDelete.RelatedQuery)) {
-                return relatedByProviderName;
+                return null;
             }
 
-            Map<String, AfterDelete.RecordsProvider> providers = ((AfterDelete.RelatedQuery) this.handler).queryRelatedOnAfterDelete() ??
-                new Map<String, AfterDelete.RecordsProvider>();
-            TriggerTypes.DeleteRecords deleteRecords = new TriggerTypes.DeleteTriggerRecords(records);
-
-            for (String providerName : providers.keySet()) {
-                AfterDelete.RecordsProvider provider = providers.get(providerName);
-                TriggerTypes.ProvidedRecords related = new TriggerTypes.ProvidedRecords(provider.query(deleteRecords));
-
-                for (SObject row : related.getRecords()) {
-                    related.groupUnderKey(provider.keyOf(row), row);
-                }
-
-                relatedByProviderName.put(providerName, related);
+            if (this.providers == null) {
+                this.providers = ((AfterDelete.RelatedQuery) this.handler).queryRelatedOnAfterDelete() ?? new Map<String, AfterDelete.RecordsProvider>();
             }
 
-            return relatedByProviderName;
+            AfterDelete.RecordsProvider provider = this.providers.get(providerName);
+
+            if (provider == null) {
+                return null;
+            }
+
+            TriggerTypes.DeleteRecords deleteRecords = new TriggerTypes.DeleteTriggerRecords(this.records);
+            TriggerTypes.ProvidedRecords related = new TriggerTypes.ProvidedRecords(provider.query(deleteRecords));
+
+            for (SObject row : related.getRecords()) {
+                related.groupUnderKey(provider.keyOf(row), row);
+            }
+
+            return related;
         }
     }
 
     private class AfterUndeleteRelatedLoader extends RelatedLoader {
         private AfterUndelete.Handler handler;
+        private Map<String, AfterUndelete.RecordsProvider> providers;
 
         public AfterUndeleteRelatedLoader(AfterUndelete.Handler handler) {
             this.handler = handler;
         }
 
-        public override Map<String, TriggerTypes.RelatedRecords> queryRelated(List<TriggerTypes.TriggerRecord> records) {
-            Map<String, TriggerTypes.RelatedRecords> relatedByProviderName = new Map<String, TriggerTypes.RelatedRecords>();
-
+        public override TriggerTypes.RelatedRecords queryRelated(String providerName) {
             if (!(this.handler instanceof AfterUndelete.RelatedQuery)) {
-                return relatedByProviderName;
+                return null;
             }
 
-            Map<String, AfterUndelete.RecordsProvider> providers = ((AfterUndelete.RelatedQuery) this.handler).queryRelatedOnAfterUndelete() ??
-                new Map<String, AfterUndelete.RecordsProvider>();
-            TriggerTypes.UndeleteRecords undeleteRecords = new TriggerTypes.UndeleteTriggerRecords(records);
-
-            for (String providerName : providers.keySet()) {
-                AfterUndelete.RecordsProvider provider = providers.get(providerName);
-                TriggerTypes.ProvidedRecords related = new TriggerTypes.ProvidedRecords(provider.query(undeleteRecords));
-
-                for (SObject row : related.getRecords()) {
-                    related.groupUnderKey(provider.keyOf(row), row);
-                }
-
-                relatedByProviderName.put(providerName, related);
+            if (this.providers == null) {
+                this.providers = ((AfterUndelete.RelatedQuery) this.handler).queryRelatedOnAfterUndelete() ?? new Map<String, AfterUndelete.RecordsProvider>();
             }
 
-            return relatedByProviderName;
+            AfterUndelete.RecordsProvider provider = this.providers.get(providerName);
+
+            if (provider == null) {
+                return null;
+            }
+
+            TriggerTypes.UndeleteRecords undeleteRecords = new TriggerTypes.UndeleteTriggerRecords(this.records);
+            TriggerTypes.ProvidedRecords related = new TriggerTypes.ProvidedRecords(provider.query(undeleteRecords));
+
+            for (SObject row : related.getRecords()) {
+                related.groupUnderKey(provider.keyOf(row), row);
+            }
+
+            return related;
         }
     }
 

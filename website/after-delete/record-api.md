@@ -17,5 +17,5 @@ description: What an after delete handler receives - DeleteRecord and DeleteReco
 ## Rules {#rules}
 
 - **Ids without rows.** `getId()` and `getIds()` return the deleted Ids, but SOQL no longer finds those rows. Key queries by `getIdsOf(Contact.AccountId)`.
-- **Lookups hold only the Id.** `((Contact) record.getOldSObject()).Account` is null. Declare a [PriorParentQuery](/after-delete/add-ons/prior-parent-query) and read `record.getOldParent('Account')`.
+- **Lookups hold only the Id.** `((Contact) record.getOldSObject()).Account` is null. Declare a [PriorParentQuery](/after-delete/add-ons/prior-parent-query) and read `record.getOldParent(Contact.AccountId)`.
 - **`0` and `false` are values.** They are not null, empty or blank.

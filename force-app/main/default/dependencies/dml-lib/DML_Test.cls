@@ -12,7 +12,7 @@
  * - NcssTypeCount: It is a library and we tried to put everything into ONE class
  **/
 @SuppressWarnings('PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ApexUnitTestClassShouldHaveRunAs,PMD.NcssMethodCount,PMD.NcssTypeCount')
-@IsTest
+@IsTest(IsParallel=true testFor='ApexClass:DML')
 private class DML_Test {
 
     @IsTest

@@ -68,7 +68,7 @@ public interface UpdateRecords {
 
 - **They read the new row.** In the delete contexts they read the old row.
 - **No nulls, no duplicates.** Each call returns a new set.
-- **Parents by relationship name.** Pass the name `getNewParent` takes, such as `'Account'`. A record without a loaded parent adds nothing.
+- **Parents by relationship name.** Pass the relationship name of the declared lookup, such as `'Account'` for `Contact.AccountId` or `'Region__r'` for `Invoice__c.Region__c`. The name is case-sensitive. A record without a loaded parent adds nothing.
 - **Ids only from Id fields.** `getIdsOf` throws on a field that does not hold Ids, such as `Contact.Email`. Use `getValuesOf` there.
 - **Do not change `getRecords()`.** It is the library's own list, not a copy. Call `.clone()` before you add or remove elements.
 

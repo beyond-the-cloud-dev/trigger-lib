@@ -35,7 +35,7 @@ Query children, siblings or other records once per handler per run, and read the
 
 - **Read your own providers by name.** Call `record.getRelated('contacts').getAllWhereKeyEquals(record.getId())`. An unknown name throws `TriggerTypes.TriggerLibException`, even with ContinueOnError.
 - **Keys match exactly, case included.** Normalize text keys the same way in `keyOf` and in the lookup.
-- **Providers run even when nothing qualifies.** Return an empty list from `query` when no record can qualify.
+- **Providers run on the first read.** A provider queries when the handler first calls `getRelated` with its name. A read in a predicate queries even when nothing qualifies, so return an empty list from `query` when no record can qualify.
 - **Both rows.** `records.getIdsOf(…)` reads the new rows and `records.getOldIdsOf(…)` the old ones. SOQL sees the saved new values. Add `Id NOT IN :records.getIds()` to leave out the trigger records.
 
 ::: warning

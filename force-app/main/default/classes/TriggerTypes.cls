@@ -2,7 +2,7 @@
  * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
  *
- * v0.0.1
+ * v0.0.4
  *
  * PMD False Positives:
  * - ExcessivePublicCount: It is a library class and exposes all necessary methods to evaluate a trigger record
@@ -79,7 +79,7 @@ public with sharing class TriggerTypes {
 
         SObject getNewSObject();
 
-        SObject getNewParent(String relationshipName);
+        SObject getNewParent(SObjectField lookupField);
 
         TriggerTypes.RelatedRecords getRelated(String providerName);
 
@@ -142,7 +142,7 @@ public with sharing class TriggerTypes {
 
         SObject getNewSObject();
 
-        SObject getNewParent(String relationshipName);
+        SObject getNewParent(SObjectField lookupField);
 
         TriggerTypes.RelatedRecords getRelated(String providerName);
 
@@ -225,8 +225,8 @@ public with sharing class TriggerTypes {
         SObject getNewSObject();
         SObject getOldSObject();
 
-        SObject getNewParent(String relationshipName);
-        SObject getOldParent(String relationshipName);
+        SObject getNewParent(SObjectField lookupField);
+        SObject getOldParent(SObjectField lookupField);
 
         TriggerTypes.RelatedRecords getRelated(String providerName);
 
@@ -308,8 +308,8 @@ public with sharing class TriggerTypes {
         SObject getNewSObject();
         SObject getOldSObject();
 
-        SObject getNewParent(String relationshipName);
-        SObject getOldParent(String relationshipName);
+        SObject getNewParent(SObjectField lookupField);
+        SObject getOldParent(SObjectField lookupField);
 
         TriggerTypes.RelatedRecords getRelated(String providerName);
 
@@ -373,7 +373,7 @@ public with sharing class TriggerTypes {
 
         SObject getOldSObject();
 
-        SObject getOldParent(String relationshipName);
+        SObject getOldParent(SObjectField lookupField);
 
         TriggerTypes.RelatedRecords getRelated(String providerName);
     }
@@ -434,7 +434,7 @@ public with sharing class TriggerTypes {
 
         SObject getOldSObject();
 
-        SObject getOldParent(String relationshipName);
+        SObject getOldParent(SObjectField lookupField);
 
         TriggerTypes.RelatedRecords getRelated(String providerName);
 
@@ -498,51 +498,9 @@ public with sharing class TriggerTypes {
 
         SObject getNewSObject();
 
-        SObject getNewParent(String relationshipName);
+        SObject getNewParent(SObjectField lookupField);
 
         TriggerTypes.RelatedRecords getRelated(String providerName);
-    }
-
-    public interface ParentFields {
-        ParentFields with(SObjectField field);
-        ParentFields with(SObjectField field1, SObjectField field2);
-        ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3);
-        ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
-        ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
-        ParentFields with(Iterable<SObjectField> fields);
-        // Relationship fields
-        ParentFields with(String relationshipName, SObjectField field);
-        ParentFields with(String relationshipName, SObjectField field1, SObjectField field2);
-        ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3);
-        ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
-        ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
-        ParentFields with(String relationshipName, Iterable<SObjectField> fields);
-
-        // for private use only
-        List<String> getFields();
-    }
-
-    public interface RelatedRecords {
-        SObject getFirstWhereKeyEquals(Object key);
-
-        List<SObject> getAllWhereKeyEquals(Object key);
-        List<SObject> getRecords();
-
-        Boolean isEmpty();
-    }
-
-    public interface UnitOfWork {
-        UnitOfWork toInsert(SObject record);
-        UnitOfWork toInsert(DML.Record record);
-
-        UnitOfWork toUpdate(SObject record);
-        UnitOfWork toUpdate(DML.Record record);
-
-        UnitOfWork toUpsert(SObject record, SObjectField externalIdField);
-
-        UnitOfWork toDelete(SObject record);
-
-        UnitOfWork toPublish(SObject event);
     }
 
     public interface InsertRecords {
@@ -605,6 +563,56 @@ public with sharing class TriggerTypes {
         Integer size();
     }
 
+    public interface UnitOfWork {
+        UnitOfWork toInsert(SObject record);
+        UnitOfWork toInsert(DML.Record record);
+
+        UnitOfWork toUpdate(SObject record);
+        UnitOfWork toUpdate(DML.Record record);
+
+        UnitOfWork toUpsert(SObject record, SObjectField externalIdField);
+
+        UnitOfWork toDelete(SObject record);
+
+        UnitOfWork toPublish(SObject event);
+    }
+
+    public interface ParentFields {
+        ParentFields with(SObjectField field);
+        ParentFields with(SObjectField field1, SObjectField field2);
+        ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3);
+        ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
+        ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
+        ParentFields with(Iterable<SObjectField> fields);
+        // Relationship fields
+        ParentFields with(String relationshipName, SObjectField field);
+        ParentFields with(String relationshipName, SObjectField field1, SObjectField field2);
+        ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3);
+        ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4);
+        ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5);
+        ParentFields with(String relationshipName, Iterable<SObjectField> fields);
+
+        // for private use only
+        List<String> getFields();
+    }
+
+    public interface RelatedRecords {
+        SObject getFirstWhereKeyEquals(Object key);
+
+        List<SObject> getAllWhereKeyEquals(Object key);
+        List<SObject> getRecords();
+
+        Boolean isEmpty();
+    }
+
+    public interface ParentLoader {
+        void load(String relationshipName);
+    }
+
+    public interface RelatedLoader {
+        void load(String providerName);
+    }
+
     // Implementation
 
     private static RecordTypesInfo RecordTypesInfo = new RecordTypesInfo();
@@ -622,296 +630,6 @@ public with sharing class TriggerTypes {
         return triggerRecords;
     }
 
-    private class TriggerParentFields implements ParentFields {
-        private List<String> fields = new List<String>();
-
-        public ParentFields with(SObjectField field) {
-            this.fields.add(field.toString());
-            return this;
-        }
-
-        public ParentFields with(SObjectField field1, SObjectField field2) {
-            this.fields.add(field1.toString());
-            this.fields.add(field2.toString());
-            return this;
-        }
-
-        public ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3) {
-            this.fields.add(field1.toString());
-            this.fields.add(field2.toString());
-            this.fields.add(field3.toString());
-            return this;
-        }
-
-        public ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4) {
-            this.fields.add(field1.toString());
-            this.fields.add(field2.toString());
-            this.fields.add(field3.toString());
-            this.fields.add(field4.toString());
-            return this;
-        }
-
-        public ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5) {
-            this.fields.add(field1.toString());
-            this.fields.add(field2.toString());
-            this.fields.add(field3.toString());
-            this.fields.add(field4.toString());
-            this.fields.add(field5.toString());
-            return this;
-        }
-
-        public ParentFields with(Iterable<SObjectField> fields) {
-            for (SObjectField field : fields) {
-                this.fields.add(field.toString());
-            }
-            return this;
-        }
-
-        public ParentFields with(String relationshipName, SObjectField field) {
-            this.fields.add(relationshipName + '.' + field.toString());
-            return this;
-        }
-
-        public ParentFields with(String relationshipName, SObjectField field1, SObjectField field2) {
-            this.fields.add(relationshipName + '.' + field1.toString());
-            this.fields.add(relationshipName + '.' + field2.toString());
-            return this;
-        }
-
-        public ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3) {
-            this.fields.add(relationshipName + '.' + field1.toString());
-            this.fields.add(relationshipName + '.' + field2.toString());
-            this.fields.add(relationshipName + '.' + field3.toString());
-            return this;
-        }
-
-        public ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4) {
-            this.fields.add(relationshipName + '.' + field1.toString());
-            this.fields.add(relationshipName + '.' + field2.toString());
-            this.fields.add(relationshipName + '.' + field3.toString());
-            this.fields.add(relationshipName + '.' + field4.toString());
-            return this;
-        }
-
-        public ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5) {
-            this.fields.add(relationshipName + '.' + field1.toString());
-            this.fields.add(relationshipName + '.' + field2.toString());
-            this.fields.add(relationshipName + '.' + field3.toString());
-            this.fields.add(relationshipName + '.' + field4.toString());
-            this.fields.add(relationshipName + '.' + field5.toString());
-            return this;
-        }
-
-        public ParentFields with(String relationshipName, Iterable<SObjectField> fields) {
-            for (SObjectField field : fields) {
-                this.fields.add(relationshipName + '.' + field.toString());
-            }
-            return this;
-        }
-
-        public List<String> getFields() {
-            return this.fields;
-        }
-    }
-
-    public class ProvidedRecords implements RelatedRecords {
-        private List<SObject> records = new List<SObject>();
-        private Map<String, List<SObject>> recordsByKey = new Map<String, List<SObject>>();
-
-        public ProvidedRecords(List<SObject> rows) {
-            this.records = rows ?? new List<SObject>();
-        }
-
-        public void groupUnderKey(String key, SObject row) {
-            if (key == null) {
-                return;
-            }
-
-            if (!this.recordsByKey.containsKey(key)) {
-                this.recordsByKey.put(key, new List<SObject>());
-            }
-
-            this.recordsByKey.get(key).add(row);
-        }
-
-        public SObject getFirstWhereKeyEquals(Object key) {
-            List<SObject> found = this.getAllWhereKeyEquals(key);
-            return found.isEmpty() ? null : found[0];
-        }
-
-        public List<SObject> getAllWhereKeyEquals(Object key) {
-            return this.recordsByKey.get(String.valueOf(key)) ?? new List<SObject>();
-        }
-
-        public List<SObject> getRecords() {
-            return this.records;
-        }
-
-        public Boolean isEmpty() {
-            return this.records.isEmpty();
-        }
-    }
-
-    public class InsertTriggerRecords implements InsertRecords {
-        private List<TriggerRecord> records;
-
-        public InsertTriggerRecords(List<TriggerRecord> records) {
-            this.records = records;
-        }
-
-        public Set<Id> getIds() {
-            return RecordsAggregator.ids(this.records);
-        }
-
-        public Set<Id> getIdsOf(SObjectField field) {
-            return RecordsAggregator.idsOf(this.records, field);
-        }
-
-        public Set<Id> getIdsOf(String relationshipName, SObjectField field) {
-            return RecordsAggregator.idsOf(this.records, relationshipName, field);
-        }
-
-        public Set<String> getValuesOf(SObjectField field) {
-            return RecordsAggregator.valuesOf(this.records, field);
-        }
-
-        public Set<String> getValuesOf(String relationshipName, SObjectField field) {
-            return RecordsAggregator.valuesOf(this.records, relationshipName, field);
-        }
-
-        public List<TriggerTypes.InsertRecord> getRecords() {
-            return (List<TriggerTypes.InsertRecord>) this.records;
-        }
-
-        public Integer size() {
-            return this.records.size();
-        }
-    }
-
-    public class UpdateTriggerRecords implements UpdateRecords {
-        private List<TriggerRecord> records;
-
-        public UpdateTriggerRecords(List<TriggerRecord> records) {
-            this.records = records;
-        }
-
-        public Set<Id> getIds() {
-            return RecordsAggregator.ids(this.records);
-        }
-
-        public Set<Id> getIdsOf(SObjectField field) {
-            return RecordsAggregator.idsOf(this.records, field);
-        }
-
-        public Set<Id> getIdsOf(String relationshipName, SObjectField field) {
-            return RecordsAggregator.idsOf(this.records, relationshipName, field);
-        }
-
-        public Set<Id> getOldIdsOf(SObjectField field) {
-            return RecordsAggregator.oldIdsOf(this.records, field);
-        }
-
-        public Set<Id> getOldIdsOf(String relationshipName, SObjectField field) {
-            return RecordsAggregator.oldIdsOf(this.records, relationshipName, field);
-        }
-
-        public Set<String> getValuesOf(SObjectField field) {
-            return RecordsAggregator.valuesOf(this.records, field);
-        }
-
-        public Set<String> getValuesOf(String relationshipName, SObjectField field) {
-            return RecordsAggregator.valuesOf(this.records, relationshipName, field);
-        }
-
-        public Set<String> getOldValuesOf(SObjectField field) {
-            return RecordsAggregator.oldValuesOf(this.records, field);
-        }
-
-        public Set<String> getOldValuesOf(String relationshipName, SObjectField field) {
-            return RecordsAggregator.oldValuesOf(this.records, relationshipName, field);
-        }
-
-        public List<TriggerTypes.UpdateRecord> getRecords() {
-            return (List<TriggerTypes.UpdateRecord>) this.records;
-        }
-
-        public Integer size() {
-            return this.records.size();
-        }
-    }
-
-    public class DeleteTriggerRecords implements DeleteRecords {
-        private List<TriggerRecord> records;
-
-        public DeleteTriggerRecords(List<TriggerRecord> records) {
-            this.records = records;
-        }
-
-        public Set<Id> getIds() {
-            return RecordsAggregator.ids(this.records);
-        }
-
-        public Set<Id> getIdsOf(SObjectField field) {
-            return RecordsAggregator.idsOf(this.records, field);
-        }
-
-        public Set<Id> getIdsOf(String relationshipName, SObjectField field) {
-            return RecordsAggregator.idsOf(this.records, relationshipName, field);
-        }
-
-        public Set<String> getValuesOf(SObjectField field) {
-            return RecordsAggregator.valuesOf(this.records, field);
-        }
-
-        public Set<String> getValuesOf(String relationshipName, SObjectField field) {
-            return RecordsAggregator.valuesOf(this.records, relationshipName, field);
-        }
-
-        public List<TriggerTypes.DeleteRecord> getRecords() {
-            return (List<TriggerTypes.DeleteRecord>) this.records;
-        }
-
-        public Integer size() {
-            return this.records.size();
-        }
-    }
-
-    public class UndeleteTriggerRecords implements UndeleteRecords {
-        private List<TriggerRecord> records;
-
-        public UndeleteTriggerRecords(List<TriggerRecord> records) {
-            this.records = records;
-        }
-
-        public Set<Id> getIds() {
-            return RecordsAggregator.ids(this.records);
-        }
-
-        public Set<Id> getIdsOf(SObjectField field) {
-            return RecordsAggregator.idsOf(this.records, field);
-        }
-
-        public Set<Id> getIdsOf(String relationshipName, SObjectField field) {
-            return RecordsAggregator.idsOf(this.records, relationshipName, field);
-        }
-
-        public Set<String> getValuesOf(SObjectField field) {
-            return RecordsAggregator.valuesOf(this.records, field);
-        }
-
-        public Set<String> getValuesOf(String relationshipName, SObjectField field) {
-            return RecordsAggregator.valuesOf(this.records, relationshipName, field);
-        }
-
-        public List<TriggerTypes.UndeleteRecord> getRecords() {
-            return (List<TriggerTypes.UndeleteRecord>) this.records;
-        }
-
-        public Integer size() {
-            return this.records.size();
-        }
-    }
-
     public class TriggerRecord implements TriggerTypes.InsertRecord, TriggerTypes.RejectableInsertRecord, TriggerTypes.UpdateRecord, TriggerTypes.RejectableUpdateRecord, TriggerTypes.DeleteRecord, TriggerTypes.RejectableDeleteRecord, TriggerTypes.UndeleteRecord {
         private SObject newRecord;
         private SObject oldRecord;
@@ -920,6 +638,9 @@ public with sharing class TriggerTypes {
         private Map<String, SObject> oldParents = new Map<String, SObject>();
 
         private Map<String, RelatedRecords> relatedByProviderName = new Map<String, RelatedRecords>();
+
+        private ParentLoader parentLoader;
+        private RelatedLoader relatedLoader;
 
         private SObjectType sObjectType;
 
@@ -1218,15 +939,21 @@ public with sharing class TriggerTypes {
             return this.oldRecord;
         }
 
-        public SObject getNewParent(String relationshipName) {
+        public SObject getNewParent(SObjectField lookupField) {
+            String relationshipName = lookupField.getDescribe().getRelationshipName();
+
+            this.parentLoader?.load(relationshipName);
+
             return this.newParents.get(relationshipName);
         }
 
-        public SObject getOldParent(String relationshipName) {
-            return this.oldParents.get(relationshipName);
+        public SObject getOldParent(SObjectField lookupField) {
+            return this.getOldParent(lookupField.getDescribe().getRelationshipName());
         }
 
         public RelatedRecords getRelated(String providerName) {
+            this.relatedLoader?.load(providerName);
+
             if (!this.relatedByProviderName.containsKey(providerName)) {
                 throw new TriggerLibException('No related records provider named ' + providerName + ' is declared. Return it from the queryRelatedOn method of the handler first.');
             }
@@ -1253,11 +980,15 @@ public with sharing class TriggerTypes {
         }
 
         public SObject getParent(String relationshipName) {
+            this.parentLoader?.load(relationshipName);
+
             return this.newRecord == null ? this.oldParents.get(relationshipName) : this.newParents.get(relationshipName);
         }
 
-        public void setNewParent(String relationshipName, SObject parent) {
-            this.newParents.put(relationshipName, parent);
+        public SObject getOldParent(String relationshipName) {
+            this.parentLoader?.load(relationshipName);
+
+            return this.oldParents.get(relationshipName);
         }
 
         public Id getNewParentId(SObjectField lookupField) {
@@ -1268,12 +999,214 @@ public with sharing class TriggerTypes {
             return this.oldRecord?.isSet(lookupField) == true ? (Id) this.oldRecord.get(lookupField) : null;
         }
 
+        public void setNewParent(String relationshipName, SObject parent) {
+            this.newParents.put(relationshipName, parent);
+        }
+
         public void setOldParent(String relationshipName, SObject parent) {
             this.oldParents.put(relationshipName, parent);
         }
 
         public void setRelated(Map<String, RelatedRecords> relatedByProviderName) {
             this.relatedByProviderName = relatedByProviderName;
+        }
+
+        public void setParentLoader(ParentLoader parentLoader) {
+            this.parentLoader = parentLoader;
+        }
+
+        public void setRelatedLoader(RelatedLoader relatedLoader) {
+            this.relatedLoader = relatedLoader;
+        }
+    }
+
+    private without sharing class RecordTypesInfo {
+        private final Map<SObjectType, Map<String, Schema.RecordTypeInfo>> OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME = new Map<SObjectType, Map<String, Schema.RecordTypeInfo>>();
+
+        public Id getId(SObjectType objectType, String recordTypeDeveloperName) {
+            return this.byDeveloperName(objectType, recordTypeDeveloperName)?.getRecordTypeId();
+        }
+
+        public Boolean hasRecordTypes(SObjectType objectType) {
+            if (!this.OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.containsKey(objectType)) {
+                this.load(objectType);
+            }
+
+            return this.OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.get(objectType).size() > 1;
+        }
+
+        public Schema.RecordTypeInfo byDeveloperName(SObjectType objectType, String recordTypeDeveloperName) {
+            if (!this.OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.containsKey(objectType)) {
+                this.load(objectType);
+            }
+
+            return this.OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.get(objectType).get(recordTypeDeveloperName);
+        }
+
+        private void load(SObjectType objectType) {
+            Schema.DescribeSObjectResult describe = objectType.getDescribe(SObjectDescribeOptions.DEFERRED);
+
+            this.OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.put(objectType, describe.getRecordTypeInfosByDeveloperName());
+        }
+    }
+
+    public class InsertTriggerRecords implements InsertRecords {
+        private List<TriggerRecord> records;
+
+        public InsertTriggerRecords(List<TriggerRecord> records) {
+            this.records = records;
+        }
+
+        public Set<Id> getIds() {
+            return RecordsAggregator.ids(this.records);
+        }
+
+        public Set<Id> getIdsOf(SObjectField field) {
+            return RecordsAggregator.idsOf(this.records, field);
+        }
+
+        public Set<Id> getIdsOf(String relationshipName, SObjectField field) {
+            return RecordsAggregator.idsOf(this.records, relationshipName, field);
+        }
+
+        public Set<String> getValuesOf(SObjectField field) {
+            return RecordsAggregator.valuesOf(this.records, field);
+        }
+
+        public Set<String> getValuesOf(String relationshipName, SObjectField field) {
+            return RecordsAggregator.valuesOf(this.records, relationshipName, field);
+        }
+
+        public List<TriggerTypes.InsertRecord> getRecords() {
+            return (List<TriggerTypes.InsertRecord>) this.records;
+        }
+
+        public Integer size() {
+            return this.records.size();
+        }
+    }
+
+    public class UpdateTriggerRecords implements UpdateRecords {
+        private List<TriggerRecord> records;
+
+        public UpdateTriggerRecords(List<TriggerRecord> records) {
+            this.records = records;
+        }
+
+        public Set<Id> getIds() {
+            return RecordsAggregator.ids(this.records);
+        }
+
+        public Set<Id> getIdsOf(SObjectField field) {
+            return RecordsAggregator.idsOf(this.records, field);
+        }
+
+        public Set<Id> getIdsOf(String relationshipName, SObjectField field) {
+            return RecordsAggregator.idsOf(this.records, relationshipName, field);
+        }
+
+        public Set<Id> getOldIdsOf(SObjectField field) {
+            return RecordsAggregator.oldIdsOf(this.records, field);
+        }
+
+        public Set<Id> getOldIdsOf(String relationshipName, SObjectField field) {
+            return RecordsAggregator.oldIdsOf(this.records, relationshipName, field);
+        }
+
+        public Set<String> getValuesOf(SObjectField field) {
+            return RecordsAggregator.valuesOf(this.records, field);
+        }
+
+        public Set<String> getValuesOf(String relationshipName, SObjectField field) {
+            return RecordsAggregator.valuesOf(this.records, relationshipName, field);
+        }
+
+        public Set<String> getOldValuesOf(SObjectField field) {
+            return RecordsAggregator.oldValuesOf(this.records, field);
+        }
+
+        public Set<String> getOldValuesOf(String relationshipName, SObjectField field) {
+            return RecordsAggregator.oldValuesOf(this.records, relationshipName, field);
+        }
+
+        public List<TriggerTypes.UpdateRecord> getRecords() {
+            return (List<TriggerTypes.UpdateRecord>) this.records;
+        }
+
+        public Integer size() {
+            return this.records.size();
+        }
+    }
+
+    public class DeleteTriggerRecords implements DeleteRecords {
+        private List<TriggerRecord> records;
+
+        public DeleteTriggerRecords(List<TriggerRecord> records) {
+            this.records = records;
+        }
+
+        public Set<Id> getIds() {
+            return RecordsAggregator.ids(this.records);
+        }
+
+        public Set<Id> getIdsOf(SObjectField field) {
+            return RecordsAggregator.idsOf(this.records, field);
+        }
+
+        public Set<Id> getIdsOf(String relationshipName, SObjectField field) {
+            return RecordsAggregator.idsOf(this.records, relationshipName, field);
+        }
+
+        public Set<String> getValuesOf(SObjectField field) {
+            return RecordsAggregator.valuesOf(this.records, field);
+        }
+
+        public Set<String> getValuesOf(String relationshipName, SObjectField field) {
+            return RecordsAggregator.valuesOf(this.records, relationshipName, field);
+        }
+
+        public List<TriggerTypes.DeleteRecord> getRecords() {
+            return (List<TriggerTypes.DeleteRecord>) this.records;
+        }
+
+        public Integer size() {
+            return this.records.size();
+        }
+    }
+
+    public class UndeleteTriggerRecords implements UndeleteRecords {
+        private List<TriggerRecord> records;
+
+        public UndeleteTriggerRecords(List<TriggerRecord> records) {
+            this.records = records;
+        }
+
+        public Set<Id> getIds() {
+            return RecordsAggregator.ids(this.records);
+        }
+
+        public Set<Id> getIdsOf(SObjectField field) {
+            return RecordsAggregator.idsOf(this.records, field);
+        }
+
+        public Set<Id> getIdsOf(String relationshipName, SObjectField field) {
+            return RecordsAggregator.idsOf(this.records, relationshipName, field);
+        }
+
+        public Set<String> getValuesOf(SObjectField field) {
+            return RecordsAggregator.valuesOf(this.records, field);
+        }
+
+        public Set<String> getValuesOf(String relationshipName, SObjectField field) {
+            return RecordsAggregator.valuesOf(this.records, relationshipName, field);
+        }
+
+        public List<TriggerTypes.UndeleteRecord> getRecords() {
+            return (List<TriggerTypes.UndeleteRecord>) this.records;
+        }
+
+        public Integer size() {
+            return this.records.size();
         }
     }
 
@@ -1401,33 +1334,133 @@ public with sharing class TriggerTypes {
         }
     }
 
-    private without sharing class RecordTypesInfo {
-        private final Map<SObjectType, Map<String, Schema.RecordTypeInfo>> OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME = new Map<SObjectType, Map<String, Schema.RecordTypeInfo>>();
+    private class TriggerParentFields implements ParentFields {
+        private List<String> fields = new List<String>();
 
-        public Id getId(SObjectType objectType, String recordTypeDeveloperName) {
-            return this.byDeveloperName(objectType, recordTypeDeveloperName)?.getRecordTypeId();
+        public ParentFields with(SObjectField field) {
+            this.fields.add(field.toString());
+            return this;
         }
 
-        public Boolean hasRecordTypes(SObjectType objectType) {
-            if (!this.OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.containsKey(objectType)) {
-                this.load(objectType);
+        public ParentFields with(SObjectField field1, SObjectField field2) {
+            this.fields.add(field1.toString());
+            this.fields.add(field2.toString());
+            return this;
+        }
+
+        public ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3) {
+            this.fields.add(field1.toString());
+            this.fields.add(field2.toString());
+            this.fields.add(field3.toString());
+            return this;
+        }
+
+        public ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4) {
+            this.fields.add(field1.toString());
+            this.fields.add(field2.toString());
+            this.fields.add(field3.toString());
+            this.fields.add(field4.toString());
+            return this;
+        }
+
+        public ParentFields with(SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5) {
+            this.fields.add(field1.toString());
+            this.fields.add(field2.toString());
+            this.fields.add(field3.toString());
+            this.fields.add(field4.toString());
+            this.fields.add(field5.toString());
+            return this;
+        }
+
+        public ParentFields with(Iterable<SObjectField> fields) {
+            for (SObjectField field : fields) {
+                this.fields.add(field.toString());
+            }
+            return this;
+        }
+
+        public ParentFields with(String relationshipName, SObjectField field) {
+            this.fields.add(relationshipName + '.' + field.toString());
+            return this;
+        }
+
+        public ParentFields with(String relationshipName, SObjectField field1, SObjectField field2) {
+            this.fields.add(relationshipName + '.' + field1.toString());
+            this.fields.add(relationshipName + '.' + field2.toString());
+            return this;
+        }
+
+        public ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3) {
+            this.fields.add(relationshipName + '.' + field1.toString());
+            this.fields.add(relationshipName + '.' + field2.toString());
+            this.fields.add(relationshipName + '.' + field3.toString());
+            return this;
+        }
+
+        public ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4) {
+            this.fields.add(relationshipName + '.' + field1.toString());
+            this.fields.add(relationshipName + '.' + field2.toString());
+            this.fields.add(relationshipName + '.' + field3.toString());
+            this.fields.add(relationshipName + '.' + field4.toString());
+            return this;
+        }
+
+        public ParentFields with(String relationshipName, SObjectField field1, SObjectField field2, SObjectField field3, SObjectField field4, SObjectField field5) {
+            this.fields.add(relationshipName + '.' + field1.toString());
+            this.fields.add(relationshipName + '.' + field2.toString());
+            this.fields.add(relationshipName + '.' + field3.toString());
+            this.fields.add(relationshipName + '.' + field4.toString());
+            this.fields.add(relationshipName + '.' + field5.toString());
+            return this;
+        }
+
+        public ParentFields with(String relationshipName, Iterable<SObjectField> fields) {
+            for (SObjectField field : fields) {
+                this.fields.add(relationshipName + '.' + field.toString());
+            }
+            return this;
+        }
+
+        public List<String> getFields() {
+            return this.fields;
+        }
+    }
+
+    public class ProvidedRecords implements RelatedRecords {
+        private List<SObject> records = new List<SObject>();
+        private Map<String, List<SObject>> recordsByKey = new Map<String, List<SObject>>();
+
+        public ProvidedRecords(List<SObject> rows) {
+            this.records = rows ?? new List<SObject>();
+        }
+
+        public void groupUnderKey(String key, SObject row) {
+            if (key == null) {
+                return;
             }
 
-            return this.OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.get(objectType).size() > 1;
-        }
-
-        public Schema.RecordTypeInfo byDeveloperName(SObjectType objectType, String recordTypeDeveloperName) {
-            if (!this.OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.containsKey(objectType)) {
-                this.load(objectType);
+            if (!this.recordsByKey.containsKey(key)) {
+                this.recordsByKey.put(key, new List<SObject>());
             }
 
-            return this.OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.get(objectType).get(recordTypeDeveloperName);
+            this.recordsByKey.get(key).add(row);
         }
 
-        private void load(SObjectType objectType) {
-            Schema.DescribeSObjectResult describe = objectType.getDescribe(SObjectDescribeOptions.DEFERRED);
+        public SObject getFirstWhereKeyEquals(Object key) {
+            List<SObject> found = this.getAllWhereKeyEquals(key);
+            return found.isEmpty() ? null : found[0];
+        }
 
-            this.OBJECT_TYPE_TO_RECORD_TYPE_BY_DEVELOPER_NAME.put(objectType, describe.getRecordTypeInfosByDeveloperName());
+        public List<SObject> getAllWhereKeyEquals(Object key) {
+            return this.recordsByKey.get(String.valueOf(key)) ?? new List<SObject>();
+        }
+
+        public List<SObject> getRecords() {
+            return this.records;
+        }
+
+        public Boolean isEmpty() {
+            return this.records.isEmpty();
         }
     }
 

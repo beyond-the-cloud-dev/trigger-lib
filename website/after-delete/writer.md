@@ -26,12 +26,12 @@ public with sharing class ContactRemovalTaskWriter implements AfterDelete.Writer
     }
 
     public Boolean writeOnAfterDeleteWhen(TriggerTypes.DeleteRecord record) {
-        return record.isNull(Contact.MasterRecordId) && record.getOldParent('Account') != null;
+        return record.isNull(Contact.MasterRecordId) && record.getOldParent(Contact.AccountId) != null;
     }
 
     public void writeOnAfterDelete(TriggerTypes.DeleteRecord record, TriggerTypes.UnitOfWork unitOfWork) {
         Contact contactRecord = (Contact) record.getOldSObject();
-        Account accountRecord = (Account) record.getOldParent('Account');
+        Account accountRecord = (Account) record.getOldParent(Contact.AccountId);
 
         unitOfWork.toInsert(new Task(WhatId = contactRecord.AccountId, OwnerId = accountRecord.OwnerId, Subject = 'Contact removed: ' + contactRecord.LastName));
     }

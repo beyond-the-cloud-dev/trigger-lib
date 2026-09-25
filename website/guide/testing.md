@@ -14,7 +14,7 @@ Test a handler without DML: build records in memory, call its methods and assert
 | `new TriggerTypes.InsertTriggerRecords(records)`, and the `Update`, `Delete` and `Undelete` variants | the collection a Finalizer, dispatch or `query` receives |
 | `new TriggerTypes.ProvidedRecords(rows)` with `groupUnderKey(key, row)` | provider results |
 | `new TriggerTypes.RandomIdGenerator().get(SObjectType)` | a fake Id |
-| `record.setNewParent(relationshipName, parent)`, `record.setOldParent(…)` | what `getNewParent` and `getOldParent` return |
+| `record.setNewParent(relationshipName, parent)`, `record.setOldParent(…)` | what `getNewParent` and `getOldParent` return; key it by the lookup's relationship name, such as `'Account'` for `Contact.AccountId` |
 | `record.setRelated(providers)` | what `getRelated` returns |
 
 `setNewParent`, `setOldParent` and `setRelated` are marked internal use only and may change.

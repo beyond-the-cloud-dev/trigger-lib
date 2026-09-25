@@ -9,7 +9,7 @@ public with sharing class AccountWelcomeTaskWriter implements AfterInsert.Writer
 
     public void writeOnAfterInsert(TriggerTypes.InsertRecord record, TriggerTypes.UnitOfWork unitOfWork) {
         Account newAccount = (Account) record.getNewSObject();
-        User owner = (User) record.getNewParent('Owner');
+        User owner = (User) record.getNewParent(Account.OwnerId);
 
         unitOfWork.toInsert(
             new Task(

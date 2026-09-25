@@ -14,13 +14,7 @@ Lists the parent (lookup) fields a ParentQuery or PriorParentQuery add-on loads.
 
 The add-on method returns a `Map<SObjectField, TriggerTypes.ParentFields>`. The key is a lookup field on the trigger object, and the fields belong to the object it points to.
 
-| Key | Read back with |
-|---|---|
-| `Contact.AccountId` | `getNewParent('Account')` |
-| `Contact.OwnerId` | `getNewParent('Owner')` |
-| `Invoice__c.Region__c` | `getNewParent('Region__r')` |
-
-The relationship name is case-sensitive.
+Read the parent back with the same key, such as `record.getNewParent(Contact.AccountId)`.
 
 ## Methods {#methods}
 
@@ -46,7 +40,7 @@ Contact.AccountId => TriggerTypes.ParentFields.with(Account.Name).with('Owner', 
 
 - **The declared fields and the `Id`.** Reading any other field throws an `SObjectException`.
 - **Declare what you read.** Declarations of all handlers are merged, so a handler may see another handler's fields. If that handler is switched off, the field is gone. Declare every field in the handler that reads it.
-- **Every record, qualified or not.** Parents load before any predicate runs, so the query costs SOQL even when nothing qualifies.
+- **Every record, qualified or not.** The first read of a lookup's parent loads the parents of every record in the chunk. A lookup whose parent no handler reads costs no SOQL.
 - **Once per chunk.** The parent queries run per chunk, never per record.
 - **No sharing.** Parents are read in system mode, so a handler can see records and fields the user cannot.
 - **Polymorphic lookups are limited.** For `WhatId`, `WhoId` or an `OwnerId` that can hold a queue, some parents come back null. In after insert, after update and after undelete, a field outside the `Name` object makes the query fail.

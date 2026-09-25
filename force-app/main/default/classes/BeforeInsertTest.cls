@@ -3,7 +3,7 @@
  * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
  *
- * v0.0.1
+ * v0.0.4
  *
  * PMD False Positives:
  * - ExcessiveClassLength: It is a library and we tried to put everything into ONE test class
@@ -13,7 +13,7 @@
  * - ApexUnitTestClassShouldHaveRunAs: The lib does not branch on the running user, so running as one proves nothing
  **/
 @SuppressWarnings('PMD.ExcessiveClassLength,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.NcssTypeCount,PMD.ApexUnitTestClassShouldHaveRunAs')
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:BeforeInsert, ApexClass:TriggerOrchestrator')
 private class BeforeInsertTest {
     @IsTest
     static void populatorWithoutAddOns() {
@@ -866,7 +866,6 @@ private class BeforeInsertTest {
 
         Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
         Account globex = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Globex');
-        SOQL.mock(Account.SObjectType).thenReturn(acme);
         SOQL.mock(Account.SObjectType).thenReturn(globex);
 
         Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
@@ -1053,7 +1052,7 @@ private class BeforeInsertTest {
         }
 
         public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
-            record.put(Contact.Department, record.getNewParent('Account')?.get(Account.Name));
+            record.put(Contact.Department, record.getNewParent(Contact.AccountId)?.get(Account.Name));
         }
     }
 
@@ -1182,10 +1181,18 @@ private class BeforeInsertTest {
         }
     }
 
-    private class TitlePopulatorWithDmlRelatedQuery extends TitlePopulator implements BeforeInsert.RelatedQuery {
+    private class TitlePopulatorWithDmlRelatedQuery implements BeforeInsert.Populator, BeforeInsert.RelatedQuery {
         public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
             Database.setSavepoint();
-            return new Map<String, BeforeInsert.RecordsProvider>();
+            return new Map<String, BeforeInsert.RecordsProvider>{ 'accounts' => new RelatedAccountProvider() };
+        }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
+            record.put(Contact.Title, record.getRelated('accounts').isEmpty() ? 'CEO' : 'CFO');
         }
     }
 
@@ -1331,7 +1338,7 @@ private class BeforeInsertTest {
         }
 
         public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
-            record.put(Contact.Department, record.getNewParent('Account')?.get(Account.Name));
+            record.put(Contact.Department, record.getNewParent(Contact.AccountId)?.get(Account.Name));
         }
     }
 

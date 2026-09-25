@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:AccountShippingSyncPopulator')
 private class AccountShippingSyncPopulatorTest {
     @IsTest
     static void populateOnBeforeUpdateWithShippingMatchingBilling() {

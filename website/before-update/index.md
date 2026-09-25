@@ -21,7 +21,7 @@ Runs in **before update**, before the changes are saved, with the old and new va
 
 - **The old row is read-only.** Writing to `getOldSObject()` or calling `addError` on it throws a `FinalException` that no `catch` stops. The update fails.
 - **Updates re-enter.** A later update of the same records in the transaction runs BeforeUpdate again. A Populator acts on a record at most 3 times per transaction by default. A Validator runs on every pass.
-- **Lookups hold only the Id.** `((Contact) record.getNewSObject()).Account` is null. Declare a [ParentQuery](/before-update/add-ons/parent-query) and read `record.getNewParent('Account')`.
+- **Lookups hold only the Id.** `((Contact) record.getNewSObject()).Account` is null. Declare a [ParentQuery](/before-update/add-ons/parent-query) and read `record.getNewParent(Contact.AccountId)`.
 - **One role per class.** A class that implements both roles runs only as a Populator. List Populators first, so Validators see the values they set.
 
 ::: warning

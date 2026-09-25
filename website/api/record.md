@@ -25,8 +25,8 @@ All interfaces are nested in `TriggerTypes`.
 | Member | Insert | Rejectable Insert | Update | Rejectable Update | Delete | Rejectable Delete | Undelete |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 | `getId()`, `getRelated(providerName)` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| `getNewSObject()`, `getNewParent(relationshipName)` | ✓ | ✓ | ✓ | ✓ | | | ✓ |
-| `getOldSObject()`, `getOldParent(relationshipName)` | | | ✓ | ✓ | ✓ | ✓ | |
+| `getNewSObject()`, `getNewParent(lookupField)` | ✓ | ✓ | ✓ | ✓ | | | ✓ |
+| `getOldSObject()`, `getOldParent(lookupField)` | | | ✓ | ✓ | ✓ | ✓ | |
 | `put(field, value)` | ✓ | | ✓ | | | | |
 | `addError(error)`, `addError(field, error)` | | ✓ | | ✓ | | ✓ | |
 | value checks and record type checks | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
@@ -37,7 +37,7 @@ A missing member is a compile error, such as `isChanged` in an insert handler.
 - **`getId()`** is null in before insert.
 - **`getNewSObject()`** is the live row in before insert and before update. In the after contexts it is read-only.
 - **`getOldSObject()`** is read-only. Stop a delete with `record.addError(…)` in a [BeforeDelete.Validator](/before-delete/validator).
-- **`getNewParent('Account')`** returns the parent a [ParentQuery](/api/parent-fields) loaded, or null. `getOldParent` reads PriorParentQuery. The name is case-sensitive. The row itself holds only the lookup Id: `getNewSObject().Account` is null.
+- **`getNewParent(Contact.AccountId)`** returns the parent a [ParentQuery](/api/parent-fields) loaded, or null. `getOldParent` reads PriorParentQuery. Pass the lookup field you declared. The row itself holds only the lookup Id: `getNewSObject().Account` is null.
 - **`put`** works only in before insert and before update. In after insert and after update it compiles but throws a `FinalException` that nothing can catch. Change saved records with a [Writer](/api/unit-of-work).
 - **`addError(field, error)`** shows the error at record level on `Name` and address fields. The record is still rejected.
 

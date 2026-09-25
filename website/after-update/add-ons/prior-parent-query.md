@@ -25,7 +25,7 @@ Read fields of the parent the old row pointed to, such as the previous owner, wi
 
 ## Rules {#rules}
 
-- **Read with `getOldParent`.** Use `getOldParent('Owner')` for `OwnerId`. It is null when the old lookup was empty or the parent no longer exists.
+- **Read with `getOldParent`.** Pass the lookup field you declared, such as `getOldParent(Account.OwnerId)`. It is null when the old lookup was empty or the parent no longer exists.
 - **Each side needs its own declaration.** `getOldParent` needs PriorParentQuery and `getNewParent` needs [ParentQuery](/after-update/add-ons/parent-query), even when the lookup did not change. Implement both to compare the two parents.
 - **Current values.** The previous parent is queried now, so its fields show today's values.
 - **At most one query per lookup per chunk.** It runs even when no record qualifies.

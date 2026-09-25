@@ -79,7 +79,7 @@ public with sharing class TriggerTypes {
 
         SObject getNewSObject();
 
-        SObject getNewParent(String relationshipName);
+        SObject getNewParent(SObjectField lookupField);
 
         TriggerTypes.RelatedRecords getRelated(String providerName);
 
@@ -142,7 +142,7 @@ public with sharing class TriggerTypes {
 
         SObject getNewSObject();
 
-        SObject getNewParent(String relationshipName);
+        SObject getNewParent(SObjectField lookupField);
 
         TriggerTypes.RelatedRecords getRelated(String providerName);
 
@@ -225,8 +225,8 @@ public with sharing class TriggerTypes {
         SObject getNewSObject();
         SObject getOldSObject();
 
-        SObject getNewParent(String relationshipName);
-        SObject getOldParent(String relationshipName);
+        SObject getNewParent(SObjectField lookupField);
+        SObject getOldParent(SObjectField lookupField);
 
         TriggerTypes.RelatedRecords getRelated(String providerName);
 
@@ -308,8 +308,8 @@ public with sharing class TriggerTypes {
         SObject getNewSObject();
         SObject getOldSObject();
 
-        SObject getNewParent(String relationshipName);
-        SObject getOldParent(String relationshipName);
+        SObject getNewParent(SObjectField lookupField);
+        SObject getOldParent(SObjectField lookupField);
 
         TriggerTypes.RelatedRecords getRelated(String providerName);
 
@@ -373,7 +373,7 @@ public with sharing class TriggerTypes {
 
         SObject getOldSObject();
 
-        SObject getOldParent(String relationshipName);
+        SObject getOldParent(SObjectField lookupField);
 
         TriggerTypes.RelatedRecords getRelated(String providerName);
     }
@@ -434,7 +434,7 @@ public with sharing class TriggerTypes {
 
         SObject getOldSObject();
 
-        SObject getOldParent(String relationshipName);
+        SObject getOldParent(SObjectField lookupField);
 
         TriggerTypes.RelatedRecords getRelated(String providerName);
 
@@ -498,7 +498,7 @@ public with sharing class TriggerTypes {
 
         SObject getNewSObject();
 
-        SObject getNewParent(String relationshipName);
+        SObject getNewParent(SObjectField lookupField);
 
         TriggerTypes.RelatedRecords getRelated(String providerName);
     }
@@ -928,12 +928,12 @@ public with sharing class TriggerTypes {
             return this.oldRecord;
         }
 
-        public SObject getNewParent(String relationshipName) {
-            return this.newParents.get(relationshipName);
+        public SObject getNewParent(SObjectField lookupField) {
+            return this.newParents.get(lookupField.getDescribe().getRelationshipName());
         }
 
-        public SObject getOldParent(String relationshipName) {
-            return this.oldParents.get(relationshipName);
+        public SObject getOldParent(SObjectField lookupField) {
+            return this.oldParents.get(lookupField.getDescribe().getRelationshipName());
         }
 
         public RelatedRecords getRelated(String providerName) {
@@ -964,6 +964,10 @@ public with sharing class TriggerTypes {
 
         public SObject getParent(String relationshipName) {
             return this.newRecord == null ? this.oldParents.get(relationshipName) : this.newParents.get(relationshipName);
+        }
+
+        public SObject getOldParent(String relationshipName) {
+            return this.oldParents.get(relationshipName);
         }
 
         public Id getNewParentId(SObjectField lookupField) {

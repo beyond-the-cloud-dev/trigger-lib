@@ -9,7 +9,7 @@ public with sharing class OpportunityWinTaskWriter implements AfterUpdate.Writer
 
     public void writeOnAfterUpdate(TriggerTypes.UpdateRecord record, TriggerTypes.UnitOfWork unitOfWork) {
         Opportunity newOpportunity = (Opportunity) record.getNewSObject();
-        Account account = (Account) record.getNewParent('Account');
+        Account account = (Account) record.getNewParent(Opportunity.AccountId);
 
         unitOfWork.toInsert(
             new Task(

@@ -12,7 +12,7 @@ public with sharing class ContactMailingAddressPopulator implements BeforeInsert
     }
 
     public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
-        Account account = (Account) record.getNewParent('Account');
+        Account account = (Account) record.getNewParent(Contact.AccountId);
 
         if (account == null) {
             return;

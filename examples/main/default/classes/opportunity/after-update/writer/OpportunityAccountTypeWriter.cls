@@ -8,7 +8,7 @@ public with sharing class OpportunityAccountTypeWriter implements AfterUpdate.Wr
     }
 
     public Boolean writeOnAfterUpdateWhen(TriggerTypes.UpdateRecord record) {
-        Account account = (Account) record.getNewParent('Account');
+        Account account = (Account) record.getNewParent(Opportunity.AccountId);
 
         return record.isChangedTo(Opportunity.StageName, 'Closed Won') && account != null && account.Type != 'Customer - Direct';
     }

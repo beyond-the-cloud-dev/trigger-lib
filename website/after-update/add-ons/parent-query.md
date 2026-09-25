@@ -27,7 +27,7 @@ Read fields of the record a lookup points to, such as an opportunity's account, 
 
 ## Rules {#rules}
 
-- **Read by relationship name.** Use `getNewParent('Account')` for `AccountId` and `getNewParent('Owner')` for `OwnerId`. The name is case-sensitive.
+- **Read by lookup field.** Pass the lookup field you declared, such as `getNewParent(Opportunity.AccountId)` or `getNewParent(Opportunity.OwnerId)`.
 - **Check for null.** The parent is null when the lookup is empty or no record has that Id.
 - **Declare every field you read.** The parent holds only the fields the active handlers declared. Reading any other field throws an `SObjectException`. Add grandparent fields with `.with('Owner', User.IsActive)`.
 - **One query per chunk.** One query on the trigger records loads every declared parent, even when no record qualifies.

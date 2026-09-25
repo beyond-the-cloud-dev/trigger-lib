@@ -27,7 +27,7 @@ Read fields of the record a lookup points to, such as a contact's current accoun
 
 ## Rules {#rules}
 
-- **Read by relationship name.** Use `getNewParent('Account')` for `AccountId` and `getNewParent('Parent')` for `ParentId`. The name is case-sensitive. The parent is null when the lookup is empty or no record has that Id.
+- **Read by lookup field.** Pass the lookup field you declared, such as `getNewParent(Contact.AccountId)` or `getNewParent(Account.ParentId)`. The parent is null when the lookup is empty or no record has that Id.
 - **Later handlers see the new parent.** When a Populator changes the lookup, handlers after it get the new parent. A parent not loaded yet costs one more query.
 - **Only declared fields.** The parent holds the declared fields and its `Id`. Reading any other field throws an `SObjectException`. Add grandparent fields with `.with('Owner', User.IsActive)`.
 - **One query per lookup.** Each declared lookup costs at most one SOQL query before the first handler, even when no record qualifies. A [PriorParentQuery](/before-update/add-ons/prior-parent-query) on the same lookup shares that query.

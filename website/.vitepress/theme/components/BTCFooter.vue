@@ -487,6 +487,21 @@ const icons = {
   .btc-footer__os .btc-footer__label {
     margin-bottom: 4px;
   }
+  .btc-footer__os {
+    display: contents;
+  }
+  .btc-footer__os .btc-footer__label {
+    order: 1;
+  }
+  .btc-footer__parent {
+    order: 2;
+  }
+  .btc-footer__tiles {
+    order: 3;
+  }
+  .btc-footer__more {
+    order: 4;
+  }
   .btc-footer__parent {
     min-height: 44px;
   }
@@ -584,7 +599,7 @@ const icons = {
   .btc-footer__legal-company > span {
     display: block;
   }
-  .btc-footer__dot {
+  .btc-footer__legal-company > .btc-footer__dot {
     display: none;
   }
   .btc-footer__email {

@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:ContactEmailNormalizationPopulator')
 private class ContactEmailNormalizationPopulatorTest {
     @IsTest
     static void populateOnBeforeInsertWithMixedCaseEmail() {

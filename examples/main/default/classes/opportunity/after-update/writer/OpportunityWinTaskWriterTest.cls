@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:OpportunityWinTaskWriter')
 private class OpportunityWinTaskWriterTest {
     @IsTest
     static void writeOnAfterUpdateWithWonOpportunity() {

@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:OpportunityWinAmountValidator')
 private class OpportunityWinAmountValidatorTest {
     @IsTest
     static void addErrorOnBeforeUpdateWithoutAmount() {

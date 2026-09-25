@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:AccountDemotionValidator')
 private class AccountDemotionValidatorTest {
     @IsTest
     static void addErrorOnBeforeUpdateWithCustomerChangedToProspect() {

@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:OpportunityCloseDatePopulator')
 private class OpportunityCloseDatePopulatorTest {
     @IsTest
     static void populateOnBeforeInsertWithoutCloseDate() {

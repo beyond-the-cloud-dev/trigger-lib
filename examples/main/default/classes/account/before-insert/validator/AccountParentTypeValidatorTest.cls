@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:AccountParentTypeValidator')
 private class AccountParentTypeValidatorTest {
     @IsTest
     static void addErrorOnBeforeInsertWithProspectParent() {

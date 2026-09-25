@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:OpportunityAmountValidator')
 private class OpportunityAmountValidatorTest {
     @IsTest
     static void addErrorOnBeforeInsertWithNegativeAmount() {

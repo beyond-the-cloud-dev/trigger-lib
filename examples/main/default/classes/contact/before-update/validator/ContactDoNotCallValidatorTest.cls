@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:ContactDoNotCallValidator')
 private class ContactDoNotCallValidatorTest {
     @IsTest
     static void addErrorOnBeforeUpdateWithDoNotCallWithoutDescription() {

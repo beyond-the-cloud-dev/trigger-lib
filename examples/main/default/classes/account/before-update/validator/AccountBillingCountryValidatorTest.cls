@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:AccountBillingCountryValidator')
 private class AccountBillingCountryValidatorTest {
     @IsTest
     static void addErrorOnBeforeUpdateWithClearedBillingCountry() {

@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:AccountParentMoveValidator')
 private class AccountParentMoveValidatorTest {
     @IsTest
     static void addErrorOnBeforeUpdateWithParentInAnotherCountry() {

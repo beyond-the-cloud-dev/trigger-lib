@@ -599,7 +599,8 @@ const icons = {
   .btc-footer__legal-company > span {
     display: block;
   }
-  .btc-footer__legal-company > .btc-footer__dot {
+  .btc-footer__legal-company > .btc-footer__dot,
+  .btc-footer__legal-links > .btc-footer__dot {
     display: none;
   }
   .btc-footer__email {

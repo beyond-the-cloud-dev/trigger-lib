@@ -42,4 +42,3 @@ features:
     link: /guide/testing
 ---
 
-<BTCFooter context="trigger-lib" />

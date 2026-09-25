@@ -16,17 +16,17 @@ export const footerData = {
         { label: 'Contact Us', href: 'https://beyondthecloud.dev/contact' }
     ],
     openSource: {
-        parent: { label: 'Apex Fluently', href: 'https://apexfluently.beyondthecloud.dev' },
+        parent: { label: 'Apex Fluently', href: 'https://apexfluently.beyondthecloud.dev', logo: '/images/libs/apex-fluently.png' },
         children: [
-            { label: 'SOQL Lib', href: 'https://soql.beyondthecloud.dev' },
-            { label: 'DML Lib', href: 'https://dml.beyondthecloud.dev' },
-            { label: 'Async Lib', href: 'https://async.beyondthecloud.dev' },
-            { label: 'HTTP Mock', href: 'https://httpmock.beyondthecloud.dev' },
-            { label: 'Apex Consts', href: 'https://apexconsts.beyondthecloud.dev' },
-            { label: 'Cache Manager', href: 'https://cachemanager.beyondthecloud.dev' },
-            { label: 'Test Lib', href: 'https://testlib.beyondthecloud.dev' },
-            { label: 'Trigger Lib', href: 'https://trigger.beyondthecloud.dev' },
-            { label: 'Callout Lib', href: 'https://callout.beyondthecloud.dev' }
+            { id: 'soql-lib', label: 'SOQL Lib', href: 'https://soql.beyondthecloud.dev', logo: '/images/libs/soql-lib.png' },
+            { id: 'dml-lib', label: 'DML Lib', href: 'https://dml.beyondthecloud.dev', logo: '/images/libs/dml-lib.png' },
+            { id: 'async-lib', label: 'Async Lib', href: 'https://async.beyondthecloud.dev', logo: '/images/libs/async-lib.png' },
+            { id: 'http-mock', label: 'HTTP Mock', href: 'https://httpmock.beyondthecloud.dev', logo: '/images/libs/http-mock-lib.png' },
+            { id: 'apex-consts', label: 'Apex Consts', href: 'https://apexconsts.beyondthecloud.dev', logo: '/images/libs/apex-consts.png' },
+            { id: 'cache-manager', label: 'Cache Manager', href: 'https://cachemanager.beyondthecloud.dev', logo: '/images/libs/cache-manager.png' },
+            { id: 'test-lib', label: 'Test Lib', href: 'https://testlib.beyondthecloud.dev', logo: '/images/libs/test-lib.png' },
+            { id: 'trigger-lib', label: 'Trigger Lib', href: 'https://trigger.beyondthecloud.dev', logo: '/images/libs/trigger-lib.png' },
+            { id: 'callout-lib', label: 'Callout Lib', href: 'https://callout.beyondthecloud.dev', logo: '/images/libs/callout-lib.png' }
         ],
         more: { label: 'More on GitHub', href: 'https://github.com/beyond-the-cloud-dev' }
     },
@@ -51,7 +51,7 @@ export const footerData = {
 };
 
 // Context-specific links for different sites
-// These appear in the "This Site" section when the footer is used on different properties
+// These appear in the "This site" section when the footer is used on different properties
 export const contextLinks = {
     main: [],
     blog: [

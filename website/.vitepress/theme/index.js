@@ -1,9 +1,15 @@
 import DefaultTheme from 'vitepress/theme';
+import { h } from 'vue';
 import BTCFooter from './components/BTCFooter.vue';
 import './custom.css';
 
 export default {
     extends: DefaultTheme,
+    Layout() {
+        return h(DefaultTheme.Layout, null, {
+            'layout-bottom': () => h(BTCFooter, { context: 'trigger-lib' })
+        });
+    },
     enhanceApp({ app }) {
         app.component('BTCFooter', BTCFooter);
     }

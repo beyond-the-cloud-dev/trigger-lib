@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:AccountRatingRefreshPopulator')
 private class AccountRatingRefreshPopulatorTest {
     @IsTest
     static void populateOnBeforeUpdateWithFiveMillionRevenue() {

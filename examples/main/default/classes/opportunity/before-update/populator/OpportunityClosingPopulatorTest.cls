@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:OpportunityClosingPopulator')
 private class OpportunityClosingPopulatorTest {
     @IsTest
     static void populateOnBeforeUpdateWithWonOpportunity() {

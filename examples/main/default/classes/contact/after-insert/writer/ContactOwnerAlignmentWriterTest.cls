@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:ContactOwnerAlignmentWriter')
 private class ContactOwnerAlignmentWriterTest {
     @IsTest
     static void writeOnAfterInsertWithActiveAccountOwner() {

@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:OpportunityReopenValidator')
 private class OpportunityReopenValidatorTest {
     @IsTest
     static void addErrorOnBeforeUpdateWithReopenedDeal() {

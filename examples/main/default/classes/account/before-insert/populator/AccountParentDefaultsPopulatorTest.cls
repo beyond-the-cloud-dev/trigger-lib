@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:AccountParentDefaultsPopulator')
 private class AccountParentDefaultsPopulatorTest {
     @IsTest
     static void populateOnBeforeInsertWithBlankIndustry() {

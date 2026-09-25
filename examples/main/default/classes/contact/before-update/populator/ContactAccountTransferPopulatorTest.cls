@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:ContactAccountTransferPopulator')
 private class ContactAccountTransferPopulatorTest {
     @IsTest
     static void populateOnBeforeUpdateWithTransferredAccount() {

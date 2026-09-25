@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:ContactEmailRemovalValidator')
 private class ContactEmailRemovalValidatorTest {
     @IsTest
     static void addErrorOnBeforeUpdateWithClearedEmail() {

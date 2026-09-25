@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:ContactTitleDepartmentPopulator')
 private class ContactTitleDepartmentPopulatorTest {
     @IsTest
     static void populateOnBeforeUpdateWithKnownTitle() {

@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:AccountShippingAddressPopulator')
 private class AccountShippingAddressPopulatorTest {
     @IsTest
     static void populateOnBeforeInsertWithBillingAddress() {

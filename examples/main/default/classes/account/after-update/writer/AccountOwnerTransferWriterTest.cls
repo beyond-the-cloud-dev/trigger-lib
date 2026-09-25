@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:AccountOwnerTransferWriter')
 private class AccountOwnerTransferWriterTest {
     @IsTest
     static void writeOnAfterUpdateWithoutOpenOpportunities() {

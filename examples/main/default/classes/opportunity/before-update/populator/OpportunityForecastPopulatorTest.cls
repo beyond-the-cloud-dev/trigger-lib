@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:OpportunityForecastPopulator')
 private class OpportunityForecastPopulatorTest {
     @IsTest
     static void populateOnBeforeUpdateWithSmallAmount() {

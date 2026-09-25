@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:AccountWelcomeTaskWriter')
 private class AccountWelcomeTaskWriterTest {
     @IsTest
     static void writeOnAfterInsertWithCustomer() {

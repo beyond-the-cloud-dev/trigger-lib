@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:AccountTypeAuditPopulator')
 private class AccountTypeAuditPopulatorTest {
     @IsTest
     static void populateOnBeforeUpdateWithChangedType() {

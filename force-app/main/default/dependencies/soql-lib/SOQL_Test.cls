@@ -11,7 +11,7 @@
  * - NcssTypeCount: It is a library and we tried to put everything into ONE test class
  **/
 @SuppressWarnings('PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.NcssTypeCount')
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:SOQL')
 private class SOQL_Test {
     @IsTest
     static void ofSObjectType() {

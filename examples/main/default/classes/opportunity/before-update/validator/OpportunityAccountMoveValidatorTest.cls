@@ -1,4 +1,4 @@
-@IsTest(IsParallel=true)
+@IsTest(IsParallel=true testFor='ApexClass:OpportunityAccountMoveValidator')
 private class OpportunityAccountMoveValidatorTest {
     @IsTest
     static void addErrorOnBeforeUpdateWithMovedWonOpportunity() {

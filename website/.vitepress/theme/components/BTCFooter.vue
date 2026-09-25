@@ -637,4 +637,17 @@ html:not(.dark) .btc-footer .btc-footer__logo--dark {
 html:not(.dark) .btc-footer .btc-footer__logo--light {
   display: block;
 }
+/* Docs pages: keep the footer clear of the fixed VitePress sidebar */
+@media (min-width: 960px) {
+  .VPContent.has-sidebar ~ .btc-footer {
+    padding-left: var(--vp-sidebar-width);
+  }
+}
+@media (min-width: 1440px) {
+  .VPContent.has-sidebar ~ .btc-footer {
+    padding-left: calc(
+      (100vw - var(--vp-layout-max-width)) / 2 + var(--vp-sidebar-width)
+    );
+  }
+}
 </style>

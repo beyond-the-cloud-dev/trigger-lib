@@ -995,7 +995,7 @@ private class BeforeUpdateTest {
         }
 
         public void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record) {
-            record.put(Contact.Department, record.getOldParent('Account')?.get(Account.Name));
+            record.put(Contact.Department, record.getOldParent(Contact.AccountId)?.get(Account.Name));
         }
     }
 
@@ -1113,7 +1113,7 @@ private class BeforeUpdateTest {
         }
 
         public void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record) {
-            record.put(Contact.Department, record.getNewParent('Account')?.get(Account.Name));
+            record.put(Contact.Department, record.getNewParent(Contact.AccountId)?.get(Account.Name));
         }
     }
 

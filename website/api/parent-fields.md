@@ -14,13 +14,7 @@ Lists the parent (lookup) fields a ParentQuery or PriorParentQuery add-on loads.
 
 The add-on method returns a `Map<SObjectField, TriggerTypes.ParentFields>`. The key is a lookup field on the trigger object, and the fields belong to the object it points to.
 
-| Key | Read back with |
-|---|---|
-| `Contact.AccountId` | `getNewParent('Account')` |
-| `Contact.OwnerId` | `getNewParent('Owner')` |
-| `Invoice__c.Region__c` | `getNewParent('Region__r')` |
-
-The relationship name is case-sensitive.
+Read the parent back with the same key, such as `record.getNewParent(Contact.AccountId)`.
 
 ## Methods {#methods}
 

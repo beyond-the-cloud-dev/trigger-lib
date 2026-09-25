@@ -698,7 +698,7 @@ private class AfterInsertTest {
         }
 
         public void writeOnAfterInsert(TriggerTypes.InsertRecord record, TriggerTypes.UnitOfWork unitOfWork) {
-            unitOfWork.toInsert(new Task(Subject = (String) record.getNewParent('Account')?.get(Account.Name)));
+            unitOfWork.toInsert(new Task(Subject = (String) record.getNewParent(Contact.AccountId)?.get(Account.Name)));
         }
     }
 

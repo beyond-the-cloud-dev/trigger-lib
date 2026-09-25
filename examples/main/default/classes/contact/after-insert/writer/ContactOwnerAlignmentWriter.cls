@@ -11,13 +11,13 @@ public with sharing class ContactOwnerAlignmentWriter implements AfterInsert.Wri
 
     public Boolean writeOnAfterInsertWhen(TriggerTypes.InsertRecord record) {
         Contact newContact = (Contact) record.getNewSObject();
-        Account account = (Account) record.getNewParent('Account');
+        Account account = (Account) record.getNewParent(Contact.AccountId);
 
         return account?.Owner?.IsActive == true && account.OwnerId != newContact.OwnerId;
     }
 
     public void writeOnAfterInsert(TriggerTypes.InsertRecord record, TriggerTypes.UnitOfWork unitOfWork) {
-        Account account = (Account) record.getNewParent('Account');
+        Account account = (Account) record.getNewParent(Contact.AccountId);
 
         unitOfWork.toUpdate(new Contact(Id = record.getId(), OwnerId = account.OwnerId));
     }

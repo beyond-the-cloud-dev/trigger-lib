@@ -3463,7 +3463,7 @@ private class TriggerTypesTest {
         record.setNewParent('Account', parentAccount);
 
         // Test
-        SObject result = record.getNewParent('Account');
+        SObject result = record.getNewParent(Contact.AccountId);
 
         // Verify
         Assert.areEqual(parentAccount, result, 'The enriched parent should be returned.');
@@ -3482,7 +3482,7 @@ private class TriggerTypesTest {
         record.setOldParent('Account', priorParentAccount);
 
         // Test
-        SObject result = record.getOldParent('Account');
+        SObject result = record.getOldParent(Contact.AccountId);
 
         // Verify
         Assert.areEqual(priorParentAccount, result, 'The enriched parent should be returned.');
@@ -3501,7 +3501,7 @@ private class TriggerTypesTest {
         record.setNewParent('Account', new Account(Id = firstAccountId, Name = 'Current Parent'));
 
         // Test
-        SObject result = record.getOldParent('Account');
+        SObject result = record.getOldParent(Contact.AccountId);
 
         // Verify
         Assert.areEqual('Prior Parent', result.get(Account.Name), 'The old parent should be returned.');
@@ -3520,28 +3520,28 @@ private class TriggerTypesTest {
         record.setOldParent('Account', new Account(Id = secondAccountId, Name = 'Prior Parent'));
 
         // Test
-        SObject result = record.getNewParent('Account');
+        SObject result = record.getNewParent(Contact.AccountId);
 
         // Verify
         Assert.areEqual('Current Parent', result.get(Account.Name), 'The new parent should be returned.');
     }
 
     @IsTest
-    static void getNewParentWhenRelationshipIsNotEnriched() {
+    static void getNewParentWhenLookupIsNotEnriched() {
         // Setup
         Id accountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType);
         TriggerTypes.TriggerRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'New', AccountId = accountId), null);
         record.setNewParent('Account', new Account(Id = accountId, Name = 'Parent'));
 
         // Test
-        SObject result = record.getNewParent('ReportsTo');
+        SObject result = record.getNewParent(Contact.ReportsToId);
 
         // Verify
         Assert.isNull(result, 'The parent should be null.');
     }
 
     @IsTest
-    static void getOldParentWhenRelationshipIsNotEnriched() {
+    static void getOldParentWhenLookupIsNotEnriched() {
         // Setup
         Id accountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType);
         TriggerTypes.TriggerRecord record = new TriggerTypes.TriggerRecord(
@@ -3551,7 +3551,7 @@ private class TriggerTypesTest {
         record.setOldParent('Account', new Account(Id = accountId, Name = 'Parent'));
 
         // Test
-        SObject result = record.getOldParent('ReportsTo');
+        SObject result = record.getOldParent(Contact.ReportsToId);
 
         // Verify
         Assert.isNull(result, 'The parent should be null.');
@@ -3568,7 +3568,7 @@ private class TriggerTypesTest {
         record.setNewParent('Account', new Account(Id = accountId, Name = 'Parent'));
 
         // Test
-        SObject result = record.getOldParent('Account');
+        SObject result = record.getOldParent(Contact.AccountId);
 
         // Verify
         Assert.isNull(result, 'The parent should be null.');
@@ -3585,21 +3585,21 @@ private class TriggerTypesTest {
         record.setOldParent('Account', new Account(Id = accountId, Name = 'Parent'));
 
         // Test
-        SObject result = record.getNewParent('Account');
+        SObject result = record.getNewParent(Contact.AccountId);
 
         // Verify
         Assert.isNull(result, 'The parent should be null.');
     }
 
     @IsTest
-    static void getNewParentWhenOnlyLetterCaseDiffers() {
+    static void getNewParentWhenOtherLookupPointsToSameObject() {
         // Setup
-        Id accountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType);
-        TriggerTypes.TriggerRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'New', AccountId = accountId), null);
-        record.setNewParent('Account', new Account(Id = accountId, Name = 'Parent'));
+        Id managerId = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType);
+        TriggerTypes.TriggerRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'New', ReportsToId = managerId), null);
+        record.setNewParent('ReportsTo', new Contact(Id = managerId, LastName = 'Manager'));
 
         // Test
-        SObject result = record.getNewParent('account');
+        SObject result = record.getNewParent(Contact.MasterRecordId);
 
         // Verify
         Assert.isNull(result, 'The parent should be null.');
@@ -3615,7 +3615,7 @@ private class TriggerTypesTest {
         record.setNewParent('Account', new Account(Id = secondAccountId, Name = 'Re-pointed Parent'));
 
         // Test
-        SObject result = record.getNewParent('Account');
+        SObject result = record.getNewParent(Contact.AccountId);
 
         // Verify
         Assert.areEqual('Re-pointed Parent', result.get(Account.Name), 'The parent should be replaced.');
@@ -3631,7 +3631,7 @@ private class TriggerTypesTest {
         record.setNewParent('ReportsTo', new Contact(Id = contactId, LastName = 'Manager'));
 
         // Test
-        SObject result = record.getNewParent('Account');
+        SObject result = record.getNewParent(Contact.AccountId);
 
         // Verify
         Assert.areEqual('Parent', result.get(Account.Name), 'The first parent should be kept.');

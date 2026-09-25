@@ -1053,7 +1053,7 @@ private class BeforeInsertTest {
         }
 
         public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
-            record.put(Contact.Department, record.getNewParent('Account')?.get(Account.Name));
+            record.put(Contact.Department, record.getNewParent(Contact.AccountId)?.get(Account.Name));
         }
     }
 
@@ -1331,7 +1331,7 @@ private class BeforeInsertTest {
         }
 
         public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
-            record.put(Contact.Department, record.getNewParent('Account')?.get(Account.Name));
+            record.put(Contact.Department, record.getNewParent(Contact.AccountId)?.get(Account.Name));
         }
     }
 

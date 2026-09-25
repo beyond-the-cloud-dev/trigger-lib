@@ -17,8 +17,8 @@ public with sharing class ContactAccountTransferPopulator implements BeforeUpdat
 
     public void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record) {
         Contact newContact = (Contact) record.getNewSObject();
-        Account oldAccount = (Account) record.getOldParent('Account');
-        Account newAccount = (Account) record.getNewParent('Account');
+        Account oldAccount = (Account) record.getOldParent(Contact.AccountId);
+        Account newAccount = (Account) record.getNewParent(Contact.AccountId);
 
         String auditLine = Date.today().format() + ' - transferred from ' + (oldAccount?.Name ?? 'a deleted account') + ' to ' + (newAccount?.Name ?? 'no account') + '.';
 

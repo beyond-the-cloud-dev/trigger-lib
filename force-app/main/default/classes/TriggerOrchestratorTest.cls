@@ -2238,7 +2238,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record) {
-            record.put(Contact.Department, record.getOldParent('Account')?.get(Account.Name));
+            record.put(Contact.Department, record.getOldParent(Contact.AccountId)?.get(Account.Name));
         }
     }
 
@@ -2254,7 +2254,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
-            record.put(Contact.Description, record.getNewParent('Account')?.get(Account.Name));
+            record.put(Contact.Description, record.getNewParent(Contact.AccountId)?.get(Account.Name));
         }
 
         public Boolean populateOnBeforeUpdateWhen(TriggerTypes.UpdateRecord record) {
@@ -2262,7 +2262,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record) {
-            record.put(Contact.Description, record.getNewParent('Account')?.get(Account.Name));
+            record.put(Contact.Description, record.getNewParent(Contact.AccountId)?.get(Account.Name));
         }
     }
 
@@ -2276,7 +2276,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
-            record.put(Contact.Description, record.getNewParent('Account')?.get(Account.Industry));
+            record.put(Contact.Description, record.getNewParent(Contact.AccountId)?.get(Account.Industry));
         }
     }
 
@@ -2544,7 +2544,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
-            record.put(Contact.Description, record.getNewParent('Account')?.get(Account.Industry));
+            record.put(Contact.Description, record.getNewParent(Contact.AccountId)?.get(Account.Industry));
         }
     }
 
@@ -2558,7 +2558,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
-            record.put(Contact.Description, record.getNewParent('Account')?.getSObject('Owner')?.get(User.LastName));
+            record.put(Contact.Description, record.getNewParent(Contact.AccountId)?.getSObject('Owner')?.get(User.LastName));
         }
     }
 
@@ -2734,7 +2734,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
-            record.put(Contact.Department, record.getNewParent('Account')?.get(Account.Name));
+            record.put(Contact.Department, record.getNewParent(Contact.AccountId)?.get(Account.Name));
         }
 
         public Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnBeforeUpdate() {
@@ -2746,7 +2746,7 @@ private class TriggerOrchestratorTest {
         }
 
         public void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record) {
-            record.put(Contact.Department, record.getNewParent('Account')?.get(Account.Name));
+            record.put(Contact.Department, record.getNewParent(Contact.AccountId)?.get(Account.Name));
         }
     }
 

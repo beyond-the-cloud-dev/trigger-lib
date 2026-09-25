@@ -4,13 +4,13 @@ public with sharing class AccountParentTypeValidator implements BeforeInsert.Val
     }
 
     public Boolean addErrorOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
-        Account parent = (Account) record.getNewParent('Parent');
+        Account parent = (Account) record.getNewParent(Account.ParentId);
 
         return record.isNotNull(Account.ParentId) && parent?.Type == 'Prospect';
     }
 
     public void addErrorOnBeforeInsert(TriggerTypes.RejectableInsertRecord record) {
-        Account parent = (Account) record.getNewParent('Parent');
+        Account parent = (Account) record.getNewParent(Account.ParentId);
 
         record.addError(Account.ParentId, 'Parent account "' + parent.Name + '" is still a Prospect and cannot head a hierarchy. Qualify it first.');
     }

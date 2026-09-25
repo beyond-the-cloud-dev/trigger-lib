@@ -615,7 +615,7 @@ private class AfterDeleteTest {
         }
 
         public void writeOnAfterDelete(TriggerTypes.DeleteRecord record, TriggerTypes.UnitOfWork unitOfWork) {
-            unitOfWork.toInsert(new Task(Subject = (String) record.getOldParent('Account')?.get(Account.Name)));
+            unitOfWork.toInsert(new Task(Subject = (String) record.getOldParent(Contact.AccountId)?.get(Account.Name)));
         }
     }
 

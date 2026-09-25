@@ -386,7 +386,7 @@ private class BeforeDeleteTest {
         }
 
         public void addErrorOnBeforeDelete(TriggerTypes.RejectableDeleteRecord record) {
-            record.addError('Contacts of ' + (String) record.getOldParent('Account')?.get(Account.Name) + ' cannot be deleted.');
+            record.addError('Contacts of ' + (String) record.getOldParent(Contact.AccountId)?.get(Account.Name) + ' cannot be deleted.');
         }
     }
 

@@ -19,7 +19,7 @@ Runs in **after insert**, after new records are saved.
 
 ## Rules {#rules}
 
-- **Lookups hold only the Id.** `((Contact) record.getNewSObject()).Account` is null. Declare a [ParentQuery](/after-insert/add-ons/parent-query) and read `record.getNewParent('Account')`.
+- **Lookups hold only the Id.** `((Contact) record.getNewSObject()).Account` is null. Declare a [ParentQuery](/after-insert/add-ons/parent-query) and read `record.getNewParent(Contact.AccountId)`.
 - **Updating the new record saves it again.** A Writer's `toUpdate` with the record Id runs before update and after update for it.
 - **One role per class.** A class that implements both roles runs only as a Writer.
 - **Called per chunk.** A 1,000-record insert is 5 runs, so each Dispatcher and Finalizer can run 5 times. Static fields keep their values across chunks.

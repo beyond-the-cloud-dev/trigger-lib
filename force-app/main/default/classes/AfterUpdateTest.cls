@@ -924,7 +924,7 @@ private class AfterUpdateTest {
         }
 
         public void writeOnAfterUpdate(TriggerTypes.UpdateRecord record, TriggerTypes.UnitOfWork unitOfWork) {
-            unitOfWork.toInsert(new Task(Subject = (String) record.getNewParent('Account')?.get(Account.Name)));
+            unitOfWork.toInsert(new Task(Subject = (String) record.getNewParent(Contact.AccountId)?.get(Account.Name)));
         }
     }
 
@@ -944,7 +944,7 @@ private class AfterUpdateTest {
         }
 
         public void writeOnAfterUpdate(TriggerTypes.UpdateRecord record, TriggerTypes.UnitOfWork unitOfWork) {
-            unitOfWork.toInsert(new Task(Subject = (String) record.getOldParent('Account')?.get(Account.Name)));
+            unitOfWork.toInsert(new Task(Subject = (String) record.getOldParent(Contact.AccountId)?.get(Account.Name)));
         }
     }
 

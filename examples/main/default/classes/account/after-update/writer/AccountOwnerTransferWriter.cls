@@ -23,8 +23,8 @@ public with sharing class AccountOwnerTransferWriter implements AfterUpdate.Writ
 
     public void writeOnAfterUpdate(TriggerTypes.UpdateRecord record, TriggerTypes.UnitOfWork unitOfWork) {
         Account newAccount = (Account) record.getNewSObject();
-        User oldOwner = (User) record.getOldParent('Owner');
-        User newOwner = (User) record.getNewParent('Owner');
+        User oldOwner = (User) record.getOldParent(Account.OwnerId);
+        User newOwner = (User) record.getNewParent(Account.OwnerId);
         String handoverNote = Date.today().format() + ' - account handed over from ' + oldOwner?.Name + ' to ' + newOwner?.Name;
 
         for (SObject row : record.getRelated('openOpportunities').getAllWhereKeyEquals(record.getId())) {

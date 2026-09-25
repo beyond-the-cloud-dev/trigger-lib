@@ -2,7 +2,7 @@
  * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
  *
- * v0.0.1
+ * v0.0.4
  *
  * PMD False Positives:
  * - ExcessiveClassLength: It is a library and we tried to put everything into ONE class
@@ -295,72 +295,6 @@ public with sharing class TriggerOrchestrator {
         }
     }
 
-    private class TriggerStack {
-        private List<ExecutionStrategy> executionStack = new List<ExecutionStrategy>();
-
-        public void push(ExecutionStrategy executionStrategy) {
-            this.executionStack.add(executionStrategy);
-        }
-
-        public void popLast() {
-            this.executionStack.remove(this.executionStack.size() - 1);
-        }
-
-        public Boolean isMainTransactionChunkCompleted() {
-            return this.executionStack.isEmpty();
-        }
-    }
-
-    private class RunCounter {
-        private Map<String, Map<Id, Integer>> runCountByRecordIdByScope = new Map<String, Map<Id, Integer>>();
-
-        public void registerScope(String recursionScope) {
-            if (!this.runCountByRecordIdByScope.containsKey(recursionScope)) {
-                this.runCountByRecordIdByScope.put(recursionScope, new Map<Id, Integer>());
-            }
-        }
-
-        public Map<Id, Integer> getForRecursionScope(String recursionScope) {
-            return this.runCountByRecordIdByScope.get(recursionScope);
-        }
-    }
-
-    @TestVisible
-    private class TriggerLogger {
-        @TestVisible
-        private Logger logger = this.resolveLogger();
-
-        public void log(Error error) {
-            this.logger?.log(error);
-        }
-
-        public void flush() {
-            this.logger?.flush();
-        }
-
-        private Logger resolveLogger() {
-            List<ApexTypeImplementor> implementors = SOQL.of('ApexTypeImplementor')
-                .with(ApexTypeImplementor.ClassName, ApexTypeImplementor.ClassNamespacePrefix)
-                .whereAre(SOQL.Filter.with(ApexTypeImplementor.InterfaceName).equal('TriggerOrchestrator.Logger'))
-                .whereAre(SOQL.Filter.with(ApexTypeImplementor.InterfaceNamespacePrefix).equal(TriggerOrchestrator.class.getName().substringBetween('', '.')))
-                .whereAre(SOQL.Filter.with(ApexTypeImplementor.IsConcrete).isTrue())
-                .systemMode()
-                .setLimit(2)
-                .mockId('ApexTypeImplementor')
-                .toList();
-
-            if (implementors.size() > 1) {
-                throw new TriggerTypes.TriggerLibException('Multiple implementations of TriggerOrchestrator.Logger found. Only one implementation is allowed.');
-            }
-
-            if (implementors.isEmpty()) {
-                return null;
-            }
-
-            return (Logger) Type.forName(implementors[0].ClassNamespacePrefix, implementors[0].ClassName)?.newInstance();
-        }
-    }
-
     @TestVisible
     private class MetadataBypass {
         private Map<String, ObjectMetadata> metadataByObjectName = this.resolveObjectMetadata();
@@ -415,6 +349,111 @@ public with sharing class TriggerOrchestrator {
 
             if (handlerName.contains('.')) {
                 this.handlerRowByName.put(handlerName.substringAfterLast('.'), triggerHandler);
+            }
+        }
+    }
+
+    private class TriggerStack {
+        private List<ExecutionStrategy> executionStack = new List<ExecutionStrategy>();
+
+        public void push(ExecutionStrategy executionStrategy) {
+            this.executionStack.add(executionStrategy);
+        }
+
+        public void popLast() {
+            this.executionStack.remove(this.executionStack.size() - 1);
+        }
+
+        public Boolean isMainTransactionChunkCompleted() {
+            return this.executionStack.isEmpty();
+        }
+    }
+
+    @TestVisible
+    private class TriggerLogger {
+        @TestVisible
+        private Logger logger = this.resolveLogger();
+
+        public void log(Error error) {
+            this.logger?.log(error);
+        }
+
+        public void flush() {
+            this.logger?.flush();
+        }
+
+        private Logger resolveLogger() {
+            List<ApexTypeImplementor> implementors = SOQL.of('ApexTypeImplementor')
+                .with(ApexTypeImplementor.ClassName, ApexTypeImplementor.ClassNamespacePrefix)
+                .whereAre(SOQL.Filter.with(ApexTypeImplementor.InterfaceName).equal('TriggerOrchestrator.Logger'))
+                .whereAre(SOQL.Filter.with(ApexTypeImplementor.InterfaceNamespacePrefix).equal(TriggerOrchestrator.class.getName().substringBetween('', '.')))
+                .whereAre(SOQL.Filter.with(ApexTypeImplementor.IsConcrete).isTrue())
+                .systemMode()
+                .setLimit(2)
+                .mockId('ApexTypeImplementor')
+                .toList();
+
+            if (implementors.size() > 1) {
+                throw new TriggerTypes.TriggerLibException('Multiple implementations of TriggerOrchestrator.Logger found. Only one implementation is allowed.');
+            }
+
+            if (implementors.isEmpty()) {
+                return null;
+            }
+
+            return (Logger) Type.forName(implementors[0].ClassNamespacePrefix, implementors[0].ClassName)?.newInstance();
+        }
+    }
+
+    private class TriggerError implements Error {
+        public String handlerName;
+        public SObjectType sObjectType;
+        public System.Exception thrownException;
+        public System.TriggerOperation triggerOperation;
+        public Set<Id> recordIds = new Set<Id>();
+
+        public String getHandlerName() {
+            return this.handlerName;
+        }
+
+        public SObjectType getSObjectType() {
+            return this.sObjectType;
+        }
+
+        public Exception getException() {
+            return this.thrownException;
+        }
+
+        public System.TriggerOperation getOperation() {
+            return this.triggerOperation;
+        }
+
+        public Set<Id> getRecordIds() {
+            return this.recordIds;
+        }
+
+        public TriggerError withException(System.Exception thrownException) {
+            this.thrownException = thrownException;
+            return this;
+        }
+
+        public TriggerError withHandlerName(String handlerName) {
+            this.handlerName = handlerName;
+            return this;
+        }
+
+        public TriggerError withContext(TriggerContext context) {
+            this.sObjectType = context.sObjectType;
+            this.triggerOperation = context.triggerOperation;
+            this.setRecordIds(context);
+            return this;
+        }
+
+        private void setRecordIds(TriggerContext context) {
+            for (TriggerTypes.TriggerRecord record : context.triggerRecords) {
+                if (record.getId() != null) {
+                    this.recordIds.add(record.getId());
+                }
             }
         }
     }
@@ -559,65 +598,13 @@ public with sharing class TriggerOrchestrator {
         }
     }
 
-    private class TriggerError implements Error {
-        public String handlerName;
-        public SObjectType sObjectType;
-        public System.Exception thrownException;
-        public System.TriggerOperation triggerOperation;
-        public Set<Id> recordIds = new Set<Id>();
-
-        public Exception getException() {
-            return this.thrownException;
-        }
-
-        public String getHandlerName() {
-            return this.handlerName;
-        }
-
-        public System.TriggerOperation getOperation() {
-            return this.triggerOperation;
-        }
-
-        public SObjectType getSObjectType() {
-            return this.sObjectType;
-        }
-
-        public Set<Id> getRecordIds() {
-            return this.recordIds;
-        }
-
-        public TriggerError withException(System.Exception thrownException) {
-            this.thrownException = thrownException;
-            return this;
-        }
-
-        public TriggerError withHandlerName(String handlerName) {
-            this.handlerName = handlerName;
-            return this;
-        }
-
-        public TriggerError withContext(TriggerContext context) {
-            this.sObjectType = context.sObjectType;
-            this.triggerOperation = context.triggerOperation;
-            this.setRecordIds(context);
-            return this;
-        }
-
-        private void setRecordIds(TriggerContext context) {
-            for (TriggerTypes.TriggerRecord record : context.triggerRecords) {
-                if (record.getId() != null) {
-                    this.recordIds.add(record.getId());
-                }
-            }
-        }
-    }
-
     private abstract class HandlerAdapter {
         protected String handlerName;
 
         protected TriggerOrchestrator orchestrator;
         protected ParentDeclaration parentDeclaration;
         protected RelatedLoader relatedLoader;
+        protected HandlerLifecycle handlerLifecycle;
 
         protected List<TriggerTypes.TriggerRecord> qualifiedRecords = new List<TriggerTypes.TriggerRecord>();
 
@@ -626,16 +613,23 @@ public with sharing class TriggerOrchestrator {
             this.orchestrator = orchestrator;
         }
 
-        public abstract void execute(List<TriggerTypes.TriggerRecord> records);
-        public abstract Boolean isBypassedByAddOn();
-
         public Boolean isBypassed() {
-            return this.isBypassedByApexOrMetadata() || this.isBypassedByAddOn();
+            return this.isBypassedByApexOrMetadata() || this.handlerLifecycle.isBypassedByAddOn();
         }
 
         private Boolean isBypassedByApexOrMetadata() {
             return TriggerOrchestrator.triggerBypass.isHandlerBypassed(this.handlerName) ||
                 TriggerOrchestrator.metadataBypass.isHandlerBypassed(this.orchestrator.context, this.handlerName);
+        }
+
+        public abstract void execute(List<TriggerTypes.TriggerRecord> records);
+
+        protected void handleException(Exception e) {
+            this.logError(e);
+
+            if (e instanceof TriggerTypes.TriggerLibException || !this.handlerLifecycle.continuesOnError()) {
+                throw e;
+            }
         }
 
         protected void logError(Exception e) {
@@ -652,10 +646,7 @@ public with sharing class TriggerOrchestrator {
             this.populator = populator;
             this.parentDeclaration = new BeforeInsertParentDeclaration(this.populator);
             this.relatedLoader = new BeforeInsertRelatedLoader(this.populator);
-        }
-
-        public override Boolean isBypassedByAddOn() {
-            return (this.populator instanceof BeforeInsert.Bypassable && ((BeforeInsert.Bypassable) this.populator).bypassOnBeforeInsertWhen());
+            this.handlerLifecycle = new BeforeInsertHandlerLifecycle(this.populator);
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -669,7 +660,7 @@ public with sharing class TriggerOrchestrator {
                     this.populate(record);
                 }
 
-                this.finalize();
+                this.handlerLifecycle.finalize(this.qualifiedRecords);
             } catch (Exception e) {
                 this.handleException(e);
             }
@@ -698,22 +689,6 @@ public with sharing class TriggerOrchestrator {
             this.qualifiedRecords.add(record);
             this.populator.populateOnBeforeInsert(record);
         }
-
-        private void finalize() {
-            if (this.qualifiedRecords.isEmpty() || !(this.populator instanceof BeforeInsert.Finalizer)) {
-                return;
-            }
-
-            ((BeforeInsert.Finalizer) this.populator).finalizeOnBeforeInsert(new TriggerTypes.InsertTriggerRecords(this.qualifiedRecords));
-        }
-
-        private void handleException(Exception e) {
-            this.logError(e);
-
-            if (e instanceof TriggerTypes.TriggerLibException || !(this.populator instanceof BeforeInsert.ContinueOnError)) {
-                throw e;
-            }
-        }
     }
 
     private class BeforeInsertValidatorAdapter extends HandlerAdapter {
@@ -725,10 +700,7 @@ public with sharing class TriggerOrchestrator {
             this.validator = validator;
             this.parentDeclaration = new BeforeInsertParentDeclaration(this.validator);
             this.relatedLoader = new BeforeInsertRelatedLoader(this.validator);
-        }
-
-        public override Boolean isBypassedByAddOn() {
-            return (this.validator instanceof BeforeInsert.Bypassable && ((BeforeInsert.Bypassable) this.validator).bypassOnBeforeInsertWhen());
+            this.handlerLifecycle = new BeforeInsertHandlerLifecycle(this.validator);
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -742,7 +714,7 @@ public with sharing class TriggerOrchestrator {
                     this.validate(record);
                 }
 
-                this.finalize();
+                this.handlerLifecycle.finalize(this.qualifiedRecords);
             } catch (Exception e) {
                 this.handleException(e);
             }
@@ -776,22 +748,6 @@ public with sharing class TriggerOrchestrator {
                 throw new TriggerTypes.TriggerLibException(this.handlerName + ' qualified a record in addErrorOnBeforeInsertWhen but attached no error in addErrorOnBeforeInsert.');
             }
         }
-
-        private void finalize() {
-            if (this.qualifiedRecords.isEmpty() || !(this.validator instanceof BeforeInsert.Finalizer)) {
-                return;
-            }
-
-            ((BeforeInsert.Finalizer) this.validator).finalizeOnBeforeInsert(new TriggerTypes.InsertTriggerRecords(this.qualifiedRecords));
-        }
-
-        private void handleException(Exception e) {
-            this.logError(e);
-
-            if (e instanceof TriggerTypes.TriggerLibException || !(this.validator instanceof BeforeInsert.ContinueOnError)) {
-                throw e;
-            }
-        }
     }
 
     private class AfterInsertWriterAdapter extends HandlerAdapter {
@@ -805,10 +761,7 @@ public with sharing class TriggerOrchestrator {
             this.parentDeclaration = new AfterInsertParentDeclaration(this.writer);
             this.relatedLoader = new AfterInsertRelatedLoader(this.writer);
             this.unitOfWork = new AfterInsertUnitOfWorkResolver(this.writer).resolve(this.orchestrator.sharedUnitOfWork);
-        }
-
-        public override Boolean isBypassedByAddOn() {
-            return (this.writer instanceof AfterInsert.Bypassable && ((AfterInsert.Bypassable) this.writer).bypassOnAfterInsertWhen());
+            this.handlerLifecycle = new AfterInsertHandlerLifecycle(this.writer);
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -819,7 +772,7 @@ public with sharing class TriggerOrchestrator {
                     this.write(record);
                 }
 
-                this.finalize();
+                this.handlerLifecycle.finalize(this.qualifiedRecords);
                 this.commitOwnUnitOfWork();
             } catch (Exception e) {
                 this.handleException(e);
@@ -835,28 +788,12 @@ public with sharing class TriggerOrchestrator {
             this.writer.writeOnAfterInsert(record, this.unitOfWork);
         }
 
-        private void finalize() {
-            if (this.qualifiedRecords.isEmpty() || !(this.writer instanceof AfterInsert.Finalizer)) {
-                return;
-            }
-
-            ((AfterInsert.Finalizer) this.writer).finalizeOnAfterInsert(new TriggerTypes.InsertTriggerRecords(this.qualifiedRecords));
-        }
-
         private void commitOwnUnitOfWork() {
             if (this.qualifiedRecords.isEmpty() || this.unitOfWork === this.orchestrator.sharedUnitOfWork) {
                 return;
             }
 
             this.unitOfWork.commitWork();
-        }
-
-        private void handleException(Exception e) {
-            this.logError(e);
-
-            if (e instanceof TriggerTypes.TriggerLibException || !(this.writer instanceof AfterInsert.ContinueOnError)) {
-                throw e;
-            }
         }
     }
 
@@ -869,10 +806,7 @@ public with sharing class TriggerOrchestrator {
             this.dispatcher = dispatcher;
             this.parentDeclaration = new AfterInsertParentDeclaration(this.dispatcher);
             this.relatedLoader = new AfterInsertRelatedLoader(this.dispatcher);
-        }
-
-        public override Boolean isBypassedByAddOn() {
-            return (this.dispatcher instanceof AfterInsert.Bypassable && ((AfterInsert.Bypassable) this.dispatcher).bypassOnAfterInsertWhen());
+            this.handlerLifecycle = new AfterInsertHandlerLifecycle(this.dispatcher);
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -884,7 +818,7 @@ public with sharing class TriggerOrchestrator {
                 }
 
                 this.dispatch();
-                this.finalize();
+                this.handlerLifecycle.finalize(this.qualifiedRecords);
             } catch (Exception e) {
                 this.handleException(e);
             }
@@ -905,22 +839,6 @@ public with sharing class TriggerOrchestrator {
 
             this.dispatcher.dispatchOnAfterInsert(new TriggerTypes.InsertTriggerRecords(this.qualifiedRecords));
         }
-
-        private void finalize() {
-            if (this.qualifiedRecords.isEmpty() || !(this.dispatcher instanceof AfterInsert.Finalizer)) {
-                return;
-            }
-
-            ((AfterInsert.Finalizer) this.dispatcher).finalizeOnAfterInsert(new TriggerTypes.InsertTriggerRecords(this.qualifiedRecords));
-        }
-
-        private void handleException(Exception e) {
-            this.logError(e);
-
-            if (e instanceof TriggerTypes.TriggerLibException || !(this.dispatcher instanceof AfterInsert.ContinueOnError)) {
-                throw e;
-            }
-        }
     }
 
     private class BeforeUpdatePopulatorAdapter extends HandlerAdapter {
@@ -933,11 +851,8 @@ public with sharing class TriggerOrchestrator {
             this.populator = populator;
             this.parentDeclaration = new BeforeUpdateParentDeclaration(this.populator);
             this.relatedLoader = new BeforeUpdateRelatedLoader(this.populator);
+            this.handlerLifecycle = new BeforeUpdateHandlerLifecycle(this.populator);
             this.recursionTracker = new BeforeUpdateRecursionTracker(this.populator, this.handlerName);
-        }
-
-        public override Boolean isBypassedByAddOn() {
-            return (this.populator instanceof BeforeUpdate.Bypassable && ((BeforeUpdate.Bypassable) this.populator).bypassOnBeforeUpdateWhen());
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -951,7 +866,7 @@ public with sharing class TriggerOrchestrator {
                     this.populate(record);
                 }
 
-                this.finalize();
+                this.handlerLifecycle.finalize(this.qualifiedRecords);
             } catch (Exception e) {
                 this.handleException(e);
             }
@@ -981,22 +896,6 @@ public with sharing class TriggerOrchestrator {
             this.qualifiedRecords.add(record);
             this.populator.populateOnBeforeUpdate(record);
         }
-
-        private void finalize() {
-            if (this.qualifiedRecords.isEmpty() || !(this.populator instanceof BeforeUpdate.Finalizer)) {
-                return;
-            }
-
-            ((BeforeUpdate.Finalizer) this.populator).finalizeOnBeforeUpdate(new TriggerTypes.UpdateTriggerRecords(this.qualifiedRecords));
-        }
-
-        private void handleException(Exception e) {
-            this.logError(e);
-
-            if (e instanceof TriggerTypes.TriggerLibException || !(this.populator instanceof BeforeUpdate.ContinueOnError)) {
-                throw e;
-            }
-        }
     }
 
     private class BeforeUpdateValidatorAdapter extends HandlerAdapter {
@@ -1008,10 +907,7 @@ public with sharing class TriggerOrchestrator {
             this.validator = validator;
             this.parentDeclaration = new BeforeUpdateParentDeclaration(this.validator);
             this.relatedLoader = new BeforeUpdateRelatedLoader(this.validator);
-        }
-
-        public override Boolean isBypassedByAddOn() {
-            return (this.validator instanceof BeforeUpdate.Bypassable && ((BeforeUpdate.Bypassable) this.validator).bypassOnBeforeUpdateWhen());
+            this.handlerLifecycle = new BeforeUpdateHandlerLifecycle(this.validator);
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -1025,7 +921,7 @@ public with sharing class TriggerOrchestrator {
                     this.validate(record);
                 }
 
-                this.finalize();
+                this.handlerLifecycle.finalize(this.qualifiedRecords);
             } catch (Exception e) {
                 this.handleException(e);
             }
@@ -1059,22 +955,6 @@ public with sharing class TriggerOrchestrator {
                 throw new TriggerTypes.TriggerLibException(this.handlerName + ' qualified a record in addErrorOnBeforeUpdateWhen but attached no error in addErrorOnBeforeUpdate.');
             }
         }
-
-        private void finalize() {
-            if (this.qualifiedRecords.isEmpty() || !(this.validator instanceof BeforeUpdate.Finalizer)) {
-                return;
-            }
-
-            ((BeforeUpdate.Finalizer) this.validator).finalizeOnBeforeUpdate(new TriggerTypes.UpdateTriggerRecords(this.qualifiedRecords));
-        }
-
-        private void handleException(Exception e) {
-            this.logError(e);
-
-            if (e instanceof TriggerTypes.TriggerLibException || !(this.validator instanceof BeforeUpdate.ContinueOnError)) {
-                throw e;
-            }
-        }
     }
 
     private class AfterUpdateWriterAdapter extends HandlerAdapter {
@@ -1089,11 +969,8 @@ public with sharing class TriggerOrchestrator {
             this.parentDeclaration = new AfterUpdateParentDeclaration(this.writer);
             this.relatedLoader = new AfterUpdateRelatedLoader(this.writer);
             this.unitOfWork = new AfterUpdateUnitOfWorkResolver(this.writer).resolve(this.orchestrator.sharedUnitOfWork);
+            this.handlerLifecycle = new AfterUpdateHandlerLifecycle(this.writer);
             this.recursionTracker = new AfterUpdateRecursionTracker(this.writer, this.handlerName);
-        }
-
-        public override Boolean isBypassedByAddOn() {
-            return (this.writer instanceof AfterUpdate.Bypassable && ((AfterUpdate.Bypassable) this.writer).bypassOnAfterUpdateWhen());
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -1104,7 +981,7 @@ public with sharing class TriggerOrchestrator {
                     this.write(record);
                 }
 
-                this.finalize();
+                this.handlerLifecycle.finalize(this.qualifiedRecords);
                 this.commitOwnUnitOfWork();
             } catch (Exception e) {
                 this.handleException(e);
@@ -1121,28 +998,12 @@ public with sharing class TriggerOrchestrator {
             this.writer.writeOnAfterUpdate(record, this.unitOfWork);
         }
 
-        private void finalize() {
-            if (this.qualifiedRecords.isEmpty() || !(this.writer instanceof AfterUpdate.Finalizer)) {
-                return;
-            }
-
-            ((AfterUpdate.Finalizer) this.writer).finalizeOnAfterUpdate(new TriggerTypes.UpdateTriggerRecords(this.qualifiedRecords));
-        }
-
         private void commitOwnUnitOfWork() {
             if (this.qualifiedRecords.isEmpty() || this.unitOfWork === this.orchestrator.sharedUnitOfWork) {
                 return;
             }
 
             this.unitOfWork.commitWork();
-        }
-
-        private void handleException(Exception e) {
-            this.logError(e);
-
-            if (e instanceof TriggerTypes.TriggerLibException || !(this.writer instanceof AfterUpdate.ContinueOnError)) {
-                throw e;
-            }
         }
     }
 
@@ -1156,11 +1017,8 @@ public with sharing class TriggerOrchestrator {
             this.dispatcher = dispatcher;
             this.parentDeclaration = new AfterUpdateParentDeclaration(this.dispatcher);
             this.relatedLoader = new AfterUpdateRelatedLoader(this.dispatcher);
+            this.handlerLifecycle = new AfterUpdateHandlerLifecycle(this.dispatcher);
             this.recursionTracker = new AfterUpdateRecursionTracker(this.dispatcher, this.handlerName);
-        }
-
-        public override Boolean isBypassedByAddOn() {
-            return (this.dispatcher instanceof AfterUpdate.Bypassable && ((AfterUpdate.Bypassable) this.dispatcher).bypassOnAfterUpdateWhen());
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -1172,7 +1030,7 @@ public with sharing class TriggerOrchestrator {
                 }
 
                 this.dispatch();
-                this.finalize();
+                this.handlerLifecycle.finalize(this.qualifiedRecords);
             } catch (Exception e) {
                 this.handleException(e);
             }
@@ -1194,22 +1052,6 @@ public with sharing class TriggerOrchestrator {
 
             this.dispatcher.dispatchOnAfterUpdate(new TriggerTypes.UpdateTriggerRecords(this.qualifiedRecords));
         }
-
-        private void finalize() {
-            if (this.qualifiedRecords.isEmpty() || !(this.dispatcher instanceof AfterUpdate.Finalizer)) {
-                return;
-            }
-
-            ((AfterUpdate.Finalizer) this.dispatcher).finalizeOnAfterUpdate(new TriggerTypes.UpdateTriggerRecords(this.qualifiedRecords));
-        }
-
-        private void handleException(Exception e) {
-            this.logError(e);
-
-            if (e instanceof TriggerTypes.TriggerLibException || !(this.dispatcher instanceof AfterUpdate.ContinueOnError)) {
-                throw e;
-            }
-        }
     }
 
     private class BeforeDeleteValidatorAdapter extends HandlerAdapter {
@@ -1221,10 +1063,7 @@ public with sharing class TriggerOrchestrator {
             this.validator = validator;
             this.parentDeclaration = new BeforeDeleteParentDeclaration(this.validator);
             this.relatedLoader = new BeforeDeleteRelatedLoader(this.validator);
-        }
-
-        public override Boolean isBypassedByAddOn() {
-            return (this.validator instanceof BeforeDelete.Bypassable && ((BeforeDelete.Bypassable) this.validator).bypassOnBeforeDeleteWhen());
+            this.handlerLifecycle = new BeforeDeleteHandlerLifecycle(this.validator);
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -1235,7 +1074,7 @@ public with sharing class TriggerOrchestrator {
                     this.validate(record);
                 }
 
-                this.finalize();
+                this.handlerLifecycle.finalize(this.qualifiedRecords);
             } catch (Exception e) {
                 this.handleException(e);
             }
@@ -1256,22 +1095,6 @@ public with sharing class TriggerOrchestrator {
                 throw new TriggerTypes.TriggerLibException(this.handlerName + ' qualified a record in addErrorOnBeforeDeleteWhen but attached no error in addErrorOnBeforeDelete.');
             }
         }
-
-        private void finalize() {
-            if (this.qualifiedRecords.isEmpty() || !(this.validator instanceof BeforeDelete.Finalizer)) {
-                return;
-            }
-
-            ((BeforeDelete.Finalizer) this.validator).finalizeOnBeforeDelete(new TriggerTypes.DeleteTriggerRecords(this.qualifiedRecords));
-        }
-
-        private void handleException(Exception e) {
-            this.logError(e);
-
-            if (e instanceof TriggerTypes.TriggerLibException || !(this.validator instanceof BeforeDelete.ContinueOnError)) {
-                throw e;
-            }
-        }
     }
 
     private class BeforeDeleteWriterAdapter extends HandlerAdapter {
@@ -1285,10 +1108,7 @@ public with sharing class TriggerOrchestrator {
             this.parentDeclaration = new BeforeDeleteParentDeclaration(this.writer);
             this.relatedLoader = new BeforeDeleteRelatedLoader(this.writer);
             this.unitOfWork = new BeforeDeleteUnitOfWorkResolver(this.writer).resolve(this.orchestrator.sharedUnitOfWork);
-        }
-
-        public override Boolean isBypassedByAddOn() {
-            return (this.writer instanceof BeforeDelete.Bypassable && ((BeforeDelete.Bypassable) this.writer).bypassOnBeforeDeleteWhen());
+            this.handlerLifecycle = new BeforeDeleteHandlerLifecycle(this.writer);
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -1299,7 +1119,7 @@ public with sharing class TriggerOrchestrator {
                     this.write(record);
                 }
 
-                this.finalize();
+                this.handlerLifecycle.finalize(this.qualifiedRecords);
                 this.commitOwnUnitOfWork();
             } catch (Exception e) {
                 this.handleException(e);
@@ -1315,28 +1135,12 @@ public with sharing class TriggerOrchestrator {
             this.writer.writeOnBeforeDelete(record, this.unitOfWork);
         }
 
-        private void finalize() {
-            if (this.qualifiedRecords.isEmpty() || !(this.writer instanceof BeforeDelete.Finalizer)) {
-                return;
-            }
-
-            ((BeforeDelete.Finalizer) this.writer).finalizeOnBeforeDelete(new TriggerTypes.DeleteTriggerRecords(this.qualifiedRecords));
-        }
-
         private void commitOwnUnitOfWork() {
             if (this.qualifiedRecords.isEmpty() || this.unitOfWork === this.orchestrator.sharedUnitOfWork) {
                 return;
             }
 
             this.unitOfWork.commitWork();
-        }
-
-        private void handleException(Exception e) {
-            this.logError(e);
-
-            if (e instanceof TriggerTypes.TriggerLibException || !(this.writer instanceof BeforeDelete.ContinueOnError)) {
-                throw e;
-            }
         }
     }
 
@@ -1351,10 +1155,7 @@ public with sharing class TriggerOrchestrator {
             this.parentDeclaration = new AfterDeleteParentDeclaration(this.writer);
             this.relatedLoader = new AfterDeleteRelatedLoader(this.writer);
             this.unitOfWork = new AfterDeleteUnitOfWorkResolver(this.writer).resolve(this.orchestrator.sharedUnitOfWork);
-        }
-
-        public override Boolean isBypassedByAddOn() {
-            return (this.writer instanceof AfterDelete.Bypassable && ((AfterDelete.Bypassable) this.writer).bypassOnAfterDeleteWhen());
+            this.handlerLifecycle = new AfterDeleteHandlerLifecycle(this.writer);
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -1365,7 +1166,7 @@ public with sharing class TriggerOrchestrator {
                     this.write(record);
                 }
 
-                this.finalize();
+                this.handlerLifecycle.finalize(this.qualifiedRecords);
                 this.commitOwnUnitOfWork();
             } catch (Exception e) {
                 this.handleException(e);
@@ -1381,28 +1182,12 @@ public with sharing class TriggerOrchestrator {
             this.writer.writeOnAfterDelete(record, this.unitOfWork);
         }
 
-        private void finalize() {
-            if (this.qualifiedRecords.isEmpty() || !(this.writer instanceof AfterDelete.Finalizer)) {
-                return;
-            }
-
-            ((AfterDelete.Finalizer) this.writer).finalizeOnAfterDelete(new TriggerTypes.DeleteTriggerRecords(this.qualifiedRecords));
-        }
-
         private void commitOwnUnitOfWork() {
             if (this.qualifiedRecords.isEmpty() || this.unitOfWork === this.orchestrator.sharedUnitOfWork) {
                 return;
             }
 
             this.unitOfWork.commitWork();
-        }
-
-        private void handleException(Exception e) {
-            this.logError(e);
-
-            if (e instanceof TriggerTypes.TriggerLibException || !(this.writer instanceof AfterDelete.ContinueOnError)) {
-                throw e;
-            }
         }
     }
 
@@ -1415,10 +1200,7 @@ public with sharing class TriggerOrchestrator {
             this.dispatcher = dispatcher;
             this.parentDeclaration = new AfterDeleteParentDeclaration(this.dispatcher);
             this.relatedLoader = new AfterDeleteRelatedLoader(this.dispatcher);
-        }
-
-        public override Boolean isBypassedByAddOn() {
-            return (this.dispatcher instanceof AfterDelete.Bypassable && ((AfterDelete.Bypassable) this.dispatcher).bypassOnAfterDeleteWhen());
+            this.handlerLifecycle = new AfterDeleteHandlerLifecycle(this.dispatcher);
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -1430,7 +1212,7 @@ public with sharing class TriggerOrchestrator {
                 }
 
                 this.dispatch();
-                this.finalize();
+                this.handlerLifecycle.finalize(this.qualifiedRecords);
             } catch (Exception e) {
                 this.handleException(e);
             }
@@ -1451,22 +1233,6 @@ public with sharing class TriggerOrchestrator {
 
             this.dispatcher.dispatchOnAfterDelete(new TriggerTypes.DeleteTriggerRecords(this.qualifiedRecords));
         }
-
-        private void finalize() {
-            if (this.qualifiedRecords.isEmpty() || !(this.dispatcher instanceof AfterDelete.Finalizer)) {
-                return;
-            }
-
-            ((AfterDelete.Finalizer) this.dispatcher).finalizeOnAfterDelete(new TriggerTypes.DeleteTriggerRecords(this.qualifiedRecords));
-        }
-
-        private void handleException(Exception e) {
-            this.logError(e);
-
-            if (e instanceof TriggerTypes.TriggerLibException || !(this.dispatcher instanceof AfterDelete.ContinueOnError)) {
-                throw e;
-            }
-        }
     }
 
     private class AfterUndeleteWriterAdapter extends HandlerAdapter {
@@ -1480,10 +1246,7 @@ public with sharing class TriggerOrchestrator {
             this.parentDeclaration = new AfterUndeleteParentDeclaration(this.writer);
             this.relatedLoader = new AfterUndeleteRelatedLoader(this.writer);
             this.unitOfWork = new AfterUndeleteUnitOfWorkResolver(this.writer).resolve(this.orchestrator.sharedUnitOfWork);
-        }
-
-        public override Boolean isBypassedByAddOn() {
-            return (this.writer instanceof AfterUndelete.Bypassable && ((AfterUndelete.Bypassable) this.writer).bypassOnAfterUndeleteWhen());
+            this.handlerLifecycle = new AfterUndeleteHandlerLifecycle(this.writer);
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -1494,7 +1257,7 @@ public with sharing class TriggerOrchestrator {
                     this.write(record);
                 }
 
-                this.finalize();
+                this.handlerLifecycle.finalize(this.qualifiedRecords);
                 this.commitOwnUnitOfWork();
             } catch (Exception e) {
                 this.handleException(e);
@@ -1510,28 +1273,12 @@ public with sharing class TriggerOrchestrator {
             this.writer.writeOnAfterUndelete(record, this.unitOfWork);
         }
 
-        private void finalize() {
-            if (this.qualifiedRecords.isEmpty() || !(this.writer instanceof AfterUndelete.Finalizer)) {
-                return;
-            }
-
-            ((AfterUndelete.Finalizer) this.writer).finalizeOnAfterUndelete(new TriggerTypes.UndeleteTriggerRecords(this.qualifiedRecords));
-        }
-
         private void commitOwnUnitOfWork() {
             if (this.qualifiedRecords.isEmpty() || this.unitOfWork === this.orchestrator.sharedUnitOfWork) {
                 return;
             }
 
             this.unitOfWork.commitWork();
-        }
-
-        private void handleException(Exception e) {
-            this.logError(e);
-
-            if (e instanceof TriggerTypes.TriggerLibException || !(this.writer instanceof AfterUndelete.ContinueOnError)) {
-                throw e;
-            }
         }
     }
 
@@ -1544,10 +1291,7 @@ public with sharing class TriggerOrchestrator {
             this.dispatcher = dispatcher;
             this.parentDeclaration = new AfterUndeleteParentDeclaration(this.dispatcher);
             this.relatedLoader = new AfterUndeleteRelatedLoader(this.dispatcher);
-        }
-
-        public override Boolean isBypassedByAddOn() {
-            return (this.dispatcher instanceof AfterUndelete.Bypassable && ((AfterUndelete.Bypassable) this.dispatcher).bypassOnAfterUndeleteWhen());
+            this.handlerLifecycle = new AfterUndeleteHandlerLifecycle(this.dispatcher);
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -1559,7 +1303,7 @@ public with sharing class TriggerOrchestrator {
                 }
 
                 this.dispatch();
-                this.finalize();
+                this.handlerLifecycle.finalize(this.qualifiedRecords);
             } catch (Exception e) {
                 this.handleException(e);
             }
@@ -1579,22 +1323,6 @@ public with sharing class TriggerOrchestrator {
             }
 
             this.dispatcher.dispatchOnAfterUndelete(new TriggerTypes.UndeleteTriggerRecords(this.qualifiedRecords));
-        }
-
-        private void finalize() {
-            if (this.qualifiedRecords.isEmpty() || !(this.dispatcher instanceof AfterUndelete.Finalizer)) {
-                return;
-            }
-
-            ((AfterUndelete.Finalizer) this.dispatcher).finalizeOnAfterUndelete(new TriggerTypes.UndeleteTriggerRecords(this.qualifiedRecords));
-        }
-
-        private void handleException(Exception e) {
-            this.logError(e);
-
-            if (e instanceof TriggerTypes.TriggerLibException || !(this.dispatcher instanceof AfterUndelete.ContinueOnError)) {
-                throw e;
-            }
         }
     }
 
@@ -1733,6 +1461,210 @@ public with sharing class TriggerOrchestrator {
             }
 
             return new Map<SObjectField, TriggerTypes.ParentFields>();
+        }
+    }
+
+    private class ParentLoader {
+        private Set<SObjectField> lookupsForNewParents = new Set<SObjectField>();
+        private Set<SObjectField> lookupsForOldParents = new Set<SObjectField>();
+
+        private Map<SObjectField, Set<String>> fieldPathsByLookup = new Map<SObjectField, Set<String>>();
+        private Map<SObjectField, Map<Id, SObject>> cachedParentsByLookup = new Map<SObjectField, Map<Id, SObject>>();
+
+        private TriggerContext context;
+
+        public ParentLoader(TriggerContext context) {
+            this.context = context;
+        }
+
+        public void load(List<HandlerAdapter> handlers) {
+            this.collectDeclarations(handlers);
+            this.queryNewParentsFromSavedRecords();
+            this.queryAndAttachParents();
+        }
+
+        public void refreshNewParents(List<TriggerTypes.TriggerRecord> records) {
+            if (records.isEmpty()) {
+                return;
+            }
+
+            for (SObjectField lookupField : this.fieldPathsByLookup.keySet()) {
+                this.queryParents(lookupField, this.notQueriedNewParentIds(lookupField, records));
+                this.attachNewParents(lookupField, records);
+            }
+        }
+
+        private void collectDeclarations(List<HandlerAdapter> handlers) {
+            for (HandlerAdapter handler : handlers) {
+                this.declareNewParents(handler.parentDeclaration.getNewParentFields());
+                this.declareOldParents(handler.parentDeclaration.getOldParentFields());
+            }
+        }
+
+        private void declareNewParents(Map<SObjectField, TriggerTypes.ParentFields> parentFieldsByLookup) {
+            this.lookupsForNewParents.addAll(parentFieldsByLookup.keySet());
+            this.declare(parentFieldsByLookup);
+        }
+
+        private void declareOldParents(Map<SObjectField, TriggerTypes.ParentFields> parentFieldsByLookup) {
+            this.lookupsForOldParents.addAll(parentFieldsByLookup.keySet());
+            this.declare(parentFieldsByLookup);
+        }
+
+        private void declare(Map<SObjectField, TriggerTypes.ParentFields> parentFieldsByLookup) {
+            for (SObjectField lookupField : parentFieldsByLookup.keySet()) {
+                if (!this.fieldPathsByLookup.containsKey(lookupField)) {
+                    this.fieldPathsByLookup.put(lookupField, new Set<String>());
+                }
+                if (!this.cachedParentsByLookup.containsKey(lookupField)) {
+                    this.cachedParentsByLookup.put(lookupField, new Map<Id, SObject>());
+                }
+
+                this.fieldPathsByLookup.get(lookupField).addAll(parentFieldsByLookup.get(lookupField).getFields());
+            }
+        }
+
+        private void queryNewParentsFromSavedRecords() {
+            if (this.lookupsForNewParents.isEmpty() || !this.haveTriggeredRecordsIds()) {
+                return;
+            }
+
+            Set<String> fieldsToQuery = new Set<String>();
+
+            for (SObjectField lookupField : this.lookupsForNewParents) {
+                fieldsToQuery.addAll(this.getFieldPathsForLookup(lookupField));
+            }
+
+            List<SObject> savedRecords = SOQL.of(this.context.sObjectType).with(fieldsToQuery).byIds(this.context.newRecords).systemMode().withoutSharing().toList();
+
+            for (SObjectField lookupField : this.lookupsForNewParents) {
+                Map<Id, SObject> cachedParentById = this.cachedParentsByLookup.get(lookupField);
+                String relationshipName = lookupField.getDescribe().getRelationshipName();
+
+                for (SObject savedRecord : savedRecords) {
+                    SObject parent = savedRecord.getSObject(relationshipName);
+
+                    if (parent != null) {
+                        cachedParentById.put(parent.Id, parent);
+                    }
+                }
+            }
+        }
+
+        private Boolean haveTriggeredRecordsIds() {
+            return this.context.triggerOperation == System.TriggerOperation.AFTER_INSERT ||
+                this.context.triggerOperation == System.TriggerOperation.AFTER_UPDATE ||
+                this.context.triggerOperation == System.TriggerOperation.AFTER_UNDELETE;
+        }
+
+        private Set<String> getFieldPathsForLookup(SObjectField lookupField) {
+            String relationshipName = lookupField.getDescribe().getRelationshipName();
+            Set<String> fieldPaths = new Set<String>{ relationshipName + '.Id' };
+
+            for (String field : this.fieldPathsByLookup.get(lookupField)) {
+                fieldPaths.add(relationshipName + '.' + field);
+            }
+
+            return fieldPaths;
+        }
+
+        private void queryAndAttachParents() {
+            for (SObjectField lookupField : this.fieldPathsByLookup.keySet()) {
+                Set<Id> parentIdsToQuery = new Set<Id>();
+
+                parentIdsToQuery.addAll(this.notQueriedNewParentIds(lookupField, this.context.triggerRecords));
+                parentIdsToQuery.addAll(this.notQueriedOldParentIds(lookupField, this.context.triggerRecords));
+
+                this.queryParents(lookupField, parentIdsToQuery);
+
+                this.attachNewParents(lookupField, this.context.triggerRecords);
+                this.attachOldParents(lookupField, this.context.triggerRecords);
+            }
+        }
+
+        private Set<Id> notQueriedNewParentIds(SObjectField lookupField, List<TriggerTypes.TriggerRecord> records) {
+            Set<Id> parentIds = new Set<Id>();
+
+            if (!this.lookupsForNewParents.contains(lookupField)) {
+                return parentIds;
+            }
+
+            Map<Id, SObject> cachedParentById = this.cachedParentsByLookup.get(lookupField);
+
+            for (TriggerTypes.TriggerRecord record : records) {
+                Id parentId = record.getNewParentId(lookupField);
+
+                if (parentId != null && !cachedParentById.containsKey(parentId)) {
+                    parentIds.add(parentId);
+                }
+            }
+
+            return parentIds;
+        }
+
+        private Set<Id> notQueriedOldParentIds(SObjectField lookupField, List<TriggerTypes.TriggerRecord> records) {
+            Set<Id> parentIds = new Set<Id>();
+
+            if (!this.lookupsForOldParents.contains(lookupField)) {
+                return parentIds;
+            }
+
+            Map<Id, SObject> cachedParentById = this.cachedParentsByLookup.get(lookupField);
+
+            for (TriggerTypes.TriggerRecord record : records) {
+                Id parentId = record.getOldParentId(lookupField);
+
+                if (parentId != null && !cachedParentById.containsKey(parentId)) {
+                    parentIds.add(parentId);
+                }
+            }
+
+            return parentIds;
+        }
+
+        private void queryParents(SObjectField lookupField, Set<Id> parentIdsToQuery) {
+            if (parentIdsToQuery.isEmpty()) {
+                return;
+            }
+
+            Map<Id, SObject> queriedParentById = SOQL.of(lookupField.getDescribe().getReferenceTo()[0])
+                .with(this.fieldPathsByLookup.get(lookupField))
+                .byIds(parentIdsToQuery)
+                .systemMode()
+                .withoutSharing()
+                .toMap();
+
+            Map<Id, SObject> cachedParentById = this.cachedParentsByLookup.get(lookupField);
+
+            for (Id parentId : parentIdsToQuery) {
+                cachedParentById.put(parentId, queriedParentById.get(parentId));
+            }
+        }
+
+        private void attachNewParents(SObjectField lookupField, List<TriggerTypes.TriggerRecord> records) {
+            if (!this.lookupsForNewParents.contains(lookupField)) {
+                return;
+            }
+
+            Map<Id, SObject> parentsById = this.cachedParentsByLookup.get(lookupField);
+            String relationshipName = lookupField.getDescribe().getRelationshipName();
+
+            for (TriggerTypes.TriggerRecord record : records) {
+                record.setNewParent(relationshipName, parentsById.get(record.getNewParentId(lookupField)));
+            }
+        }
+
+        private void attachOldParents(SObjectField lookupField, List<TriggerTypes.TriggerRecord> records) {
+            if (!this.lookupsForOldParents.contains(lookupField)) {
+                return;
+            }
+
+            Map<Id, SObject> parentsById = this.cachedParentsByLookup.get(lookupField);
+            String relationshipName = lookupField.getDescribe().getRelationshipName();
+
+            for (TriggerTypes.TriggerRecord record : records) {
+                record.setOldParent(relationshipName, parentsById.get(record.getOldParentId(lookupField)));
+            }
         }
     }
 
@@ -1981,57 +1913,8 @@ public with sharing class TriggerOrchestrator {
         }
     }
 
-    private abstract class RecursionTracker {
-        protected Map<Id, Integer> runCountByRecordId;
-        protected Integer maxRunsPerRecord = 3;
-
-        public Boolean isLimitReached(TriggerTypes.TriggerRecord record) {
-            return (this.runCountByRecordId.get(record.getId()) ?? 0) >= this.maxRunsPerRecord;
-        }
-
-        public void countRun(TriggerTypes.TriggerRecord record) {
-            this.runCountByRecordId.put(record.getId(), (this.runCountByRecordId.get(record.getId()) ?? 0) + 1);
-        }
-    }
-
-    private class BeforeUpdateRecursionTracker extends RecursionTracker {
-        public BeforeUpdateRecursionTracker(BeforeUpdate.Handler handler, String handlerName) {
-            TriggerOrchestrator.runCounter.registerScope(handlerName + ':BEFORE_UPDATE');
-            this.runCountByRecordId = TriggerOrchestrator.runCounter.getForRecursionScope(handlerName + ':BEFORE_UPDATE');
-
-            if (handler instanceof BeforeUpdate.RecursionGuard) {
-                this.maxRunsPerRecord = ((BeforeUpdate.RecursionGuard) handler).maxRunsPerRecordOnBeforeUpdate();
-            }
-        }
-    }
-
-    private class AfterUpdateRecursionTracker extends RecursionTracker {
-        public AfterUpdateRecursionTracker(AfterUpdate.Handler handler, String handlerName) {
-            TriggerOrchestrator.runCounter.registerScope(handlerName + ':AFTER_UPDATE');
-            this.runCountByRecordId = TriggerOrchestrator.runCounter.getForRecursionScope(handlerName + ':AFTER_UPDATE');
-
-            if (handler instanceof AfterUpdate.RecursionGuard) {
-                this.maxRunsPerRecord = ((AfterUpdate.RecursionGuard) handler).maxRunsPerRecordOnAfterUpdate();
-            }
-        }
-    }
-
     private abstract class UnitOfWorkResolver {
         public abstract UnitOfWork resolve(UnitOfWork sharedUnitOfWork);
-    }
-
-    private class BeforeDeleteUnitOfWorkResolver extends UnitOfWorkResolver {
-        private BeforeDelete.Writer writer;
-
-        public BeforeDeleteUnitOfWorkResolver(BeforeDelete.Writer writer) {
-            this.writer = writer;
-        }
-
-        public override UnitOfWork resolve(UnitOfWork sharedUnitOfWork) {
-            return this.writer instanceof BeforeDelete.OwnUnitOfWork
-                ? new UnitOfWork(((BeforeDelete.OwnUnitOfWork) this.writer).ownUnitOfWorkOnBeforeDelete())
-                : this.writer instanceof BeforeDelete.ContinueOnError ? new UnitOfWork() : sharedUnitOfWork;
-        }
     }
 
     private class AfterInsertUnitOfWorkResolver extends UnitOfWorkResolver {
@@ -2059,6 +1942,20 @@ public with sharing class TriggerOrchestrator {
             return this.writer instanceof AfterUpdate.OwnUnitOfWork
                 ? new UnitOfWork(((AfterUpdate.OwnUnitOfWork) this.writer).ownUnitOfWorkOnAfterUpdate())
                 : this.writer instanceof AfterUpdate.ContinueOnError ? new UnitOfWork() : sharedUnitOfWork;
+        }
+    }
+
+    private class BeforeDeleteUnitOfWorkResolver extends UnitOfWorkResolver {
+        private BeforeDelete.Writer writer;
+
+        public BeforeDeleteUnitOfWorkResolver(BeforeDelete.Writer writer) {
+            this.writer = writer;
+        }
+
+        public override UnitOfWork resolve(UnitOfWork sharedUnitOfWork) {
+            return this.writer instanceof BeforeDelete.OwnUnitOfWork
+                ? new UnitOfWork(((BeforeDelete.OwnUnitOfWork) this.writer).ownUnitOfWorkOnBeforeDelete())
+                : this.writer instanceof BeforeDelete.ContinueOnError ? new UnitOfWork() : sharedUnitOfWork;
         }
     }
 
@@ -2141,207 +2038,229 @@ public with sharing class TriggerOrchestrator {
         }
     }
 
-    private class ParentLoader {
-        private Set<SObjectField> lookupsForNewParents = new Set<SObjectField>();
-        private Set<SObjectField> lookupsForOldParents = new Set<SObjectField>();
+    private abstract class HandlerLifecycle {
+        public abstract Boolean isBypassedByAddOn();
+        public abstract void finalize(List<TriggerTypes.TriggerRecord> qualifiedRecords);
+        public abstract Boolean continuesOnError();
+    }
 
-        private Map<SObjectField, Set<String>> fieldPathsByLookup = new Map<SObjectField, Set<String>>();
-        private Map<SObjectField, Map<Id, SObject>> cachedParentsByLookup = new Map<SObjectField, Map<Id, SObject>>();
+    private class BeforeInsertHandlerLifecycle extends HandlerLifecycle {
+        private BeforeInsert.Handler handler;
 
-        private TriggerContext context;
-
-        public ParentLoader(TriggerContext context) {
-            this.context = context;
+        public BeforeInsertHandlerLifecycle(BeforeInsert.Handler handler) {
+            this.handler = handler;
         }
 
-        public void load(List<HandlerAdapter> handlers) {
-            this.collectDeclarations(handlers);
-            this.queryNewParentsFromSavedRecords();
-            this.queryAndAttachParents();
+        public override Boolean isBypassedByAddOn() {
+            return (this.handler instanceof BeforeInsert.Bypassable && ((BeforeInsert.Bypassable) this.handler).bypassOnBeforeInsertWhen());
         }
 
-        private void collectDeclarations(List<HandlerAdapter> handlers) {
-            for (HandlerAdapter handler : handlers) {
-                this.declareNewParents(handler.parentDeclaration.getNewParentFields());
-                this.declareOldParents(handler.parentDeclaration.getOldParentFields());
-            }
-        }
-
-        private void queryNewParentsFromSavedRecords() {
-            if (this.lookupsForNewParents.isEmpty() || !this.haveTriggeredRecordsIds()) {
+        public override void finalize(List<TriggerTypes.TriggerRecord> qualifiedRecords) {
+            if (qualifiedRecords.isEmpty() || !(this.handler instanceof BeforeInsert.Finalizer)) {
                 return;
             }
 
-            Set<String> fieldsToQuery = new Set<String>();
-
-            for (SObjectField lookupField : this.lookupsForNewParents) {
-                fieldsToQuery.addAll(this.getFieldPathsForLookup(lookupField));
-            }
-
-            List<SObject> savedRecords = SOQL.of(this.context.sObjectType).with(fieldsToQuery).byIds(this.context.newRecords).systemMode().withoutSharing().toList();
-
-            for (SObjectField lookupField : this.lookupsForNewParents) {
-                Map<Id, SObject> cachedParentById = this.cachedParentsByLookup.get(lookupField);
-                String relationshipName = lookupField.getDescribe().getRelationshipName();
-
-                for (SObject savedRecord : savedRecords) {
-                    SObject parent = savedRecord.getSObject(relationshipName);
-
-                    if (parent != null) {
-                        cachedParentById.put(parent.Id, parent);
-                    }
-                }
-            }
+            ((BeforeInsert.Finalizer) this.handler).finalizeOnBeforeInsert(new TriggerTypes.InsertTriggerRecords(qualifiedRecords));
         }
 
-        private Set<String> getFieldPathsForLookup(SObjectField lookupField) {
-            String relationshipName = lookupField.getDescribe().getRelationshipName();
-            Set<String> fieldPaths = new Set<String>{ relationshipName + '.Id' };
+        public override Boolean continuesOnError() {
+            return this.handler instanceof BeforeInsert.ContinueOnError;
+        }
+    }
 
-            for (String field : this.fieldPathsByLookup.get(lookupField)) {
-                fieldPaths.add(relationshipName + '.' + field);
-            }
+    private class AfterInsertHandlerLifecycle extends HandlerLifecycle {
+        private AfterInsert.Handler handler;
 
-            return fieldPaths;
+        public AfterInsertHandlerLifecycle(AfterInsert.Handler handler) {
+            this.handler = handler;
         }
 
-        private Boolean haveTriggeredRecordsIds() {
-            return this.context.triggerOperation == System.TriggerOperation.AFTER_INSERT ||
-                this.context.triggerOperation == System.TriggerOperation.AFTER_UPDATE ||
-                this.context.triggerOperation == System.TriggerOperation.AFTER_UNDELETE;
+        public override Boolean isBypassedByAddOn() {
+            return (this.handler instanceof AfterInsert.Bypassable && ((AfterInsert.Bypassable) this.handler).bypassOnAfterInsertWhen());
         }
 
-        private void queryAndAttachParents() {
-            for (SObjectField lookupField : this.fieldPathsByLookup.keySet()) {
-                Set<Id> parentIdsToQuery = new Set<Id>();
-
-                parentIdsToQuery.addAll(this.notQueriedNewParentIds(lookupField, this.context.triggerRecords));
-                parentIdsToQuery.addAll(this.notQueriedOldParentIds(lookupField, this.context.triggerRecords));
-
-                this.queryParents(lookupField, parentIdsToQuery);
-
-                this.attachNewParents(lookupField, this.context.triggerRecords);
-                this.attachOldParents(lookupField, this.context.triggerRecords);
-            }
-        }
-
-        public void refreshNewParents(List<TriggerTypes.TriggerRecord> records) {
-            if (records.isEmpty()) {
+        public override void finalize(List<TriggerTypes.TriggerRecord> qualifiedRecords) {
+            if (qualifiedRecords.isEmpty() || !(this.handler instanceof AfterInsert.Finalizer)) {
                 return;
             }
 
-            for (SObjectField lookupField : this.fieldPathsByLookup.keySet()) {
-                this.queryParents(lookupField, this.notQueriedNewParentIds(lookupField, records));
-                this.attachNewParents(lookupField, records);
-            }
+            ((AfterInsert.Finalizer) this.handler).finalizeOnAfterInsert(new TriggerTypes.InsertTriggerRecords(qualifiedRecords));
         }
 
-        private Set<Id> notQueriedNewParentIds(SObjectField lookupField, List<TriggerTypes.TriggerRecord> records) {
-            Set<Id> parentIds = new Set<Id>();
+        public override Boolean continuesOnError() {
+            return this.handler instanceof AfterInsert.ContinueOnError;
+        }
+    }
 
-            if (!this.lookupsForNewParents.contains(lookupField)) {
-                return parentIds;
-            }
+    private class BeforeUpdateHandlerLifecycle extends HandlerLifecycle {
+        private BeforeUpdate.Handler handler;
 
-            Map<Id, SObject> cachedParentById = this.cachedParentsByLookup.get(lookupField);
-
-            for (TriggerTypes.TriggerRecord record : records) {
-                Id parentId = record.getNewParentId(lookupField);
-
-                if (parentId != null && !cachedParentById.containsKey(parentId)) {
-                    parentIds.add(parentId);
-                }
-            }
-
-            return parentIds;
+        public BeforeUpdateHandlerLifecycle(BeforeUpdate.Handler handler) {
+            this.handler = handler;
         }
 
-        private Set<Id> notQueriedOldParentIds(SObjectField lookupField, List<TriggerTypes.TriggerRecord> records) {
-            Set<Id> parentIds = new Set<Id>();
-
-            if (!this.lookupsForOldParents.contains(lookupField)) {
-                return parentIds;
-            }
-
-            Map<Id, SObject> cachedParentById = this.cachedParentsByLookup.get(lookupField);
-
-            for (TriggerTypes.TriggerRecord record : records) {
-                Id parentId = record.getOldParentId(lookupField);
-
-                if (parentId != null && !cachedParentById.containsKey(parentId)) {
-                    parentIds.add(parentId);
-                }
-            }
-
-            return parentIds;
+        public override Boolean isBypassedByAddOn() {
+            return (this.handler instanceof BeforeUpdate.Bypassable && ((BeforeUpdate.Bypassable) this.handler).bypassOnBeforeUpdateWhen());
         }
 
-        private void queryParents(SObjectField lookupField, Set<Id> parentIdsToQuery) {
-            if (parentIdsToQuery.isEmpty()) {
+        public override void finalize(List<TriggerTypes.TriggerRecord> qualifiedRecords) {
+            if (qualifiedRecords.isEmpty() || !(this.handler instanceof BeforeUpdate.Finalizer)) {
                 return;
             }
 
-            Map<Id, SObject> queriedParentById = SOQL.of(lookupField.getDescribe().getReferenceTo()[0])
-                .with(this.fieldPathsByLookup.get(lookupField))
-                .byIds(parentIdsToQuery)
-                .systemMode()
-                .withoutSharing()
-                .toMap();
-
-            Map<Id, SObject> cachedParentById = this.cachedParentsByLookup.get(lookupField);
-
-            for (Id parentId : parentIdsToQuery) {
-                cachedParentById.put(parentId, queriedParentById.get(parentId));
-            }
+            ((BeforeUpdate.Finalizer) this.handler).finalizeOnBeforeUpdate(new TriggerTypes.UpdateTriggerRecords(qualifiedRecords));
         }
 
-        private void attachNewParents(SObjectField lookupField, List<TriggerTypes.TriggerRecord> records) {
-            if (!this.lookupsForNewParents.contains(lookupField)) {
+        public override Boolean continuesOnError() {
+            return this.handler instanceof BeforeUpdate.ContinueOnError;
+        }
+    }
+
+    private class AfterUpdateHandlerLifecycle extends HandlerLifecycle {
+        private AfterUpdate.Handler handler;
+
+        public AfterUpdateHandlerLifecycle(AfterUpdate.Handler handler) {
+            this.handler = handler;
+        }
+
+        public override Boolean isBypassedByAddOn() {
+            return (this.handler instanceof AfterUpdate.Bypassable && ((AfterUpdate.Bypassable) this.handler).bypassOnAfterUpdateWhen());
+        }
+
+        public override void finalize(List<TriggerTypes.TriggerRecord> qualifiedRecords) {
+            if (qualifiedRecords.isEmpty() || !(this.handler instanceof AfterUpdate.Finalizer)) {
                 return;
             }
 
-            Map<Id, SObject> parentsById = this.cachedParentsByLookup.get(lookupField);
-            String relationshipName = lookupField.getDescribe().getRelationshipName();
-
-            for (TriggerTypes.TriggerRecord record : records) {
-                record.setNewParent(relationshipName, parentsById.get(record.getNewParentId(lookupField)));
-            }
+            ((AfterUpdate.Finalizer) this.handler).finalizeOnAfterUpdate(new TriggerTypes.UpdateTriggerRecords(qualifiedRecords));
         }
 
-        private void attachOldParents(SObjectField lookupField, List<TriggerTypes.TriggerRecord> records) {
-            if (!this.lookupsForOldParents.contains(lookupField)) {
+        public override Boolean continuesOnError() {
+            return this.handler instanceof AfterUpdate.ContinueOnError;
+        }
+    }
+
+    private class BeforeDeleteHandlerLifecycle extends HandlerLifecycle {
+        private BeforeDelete.Handler handler;
+
+        public BeforeDeleteHandlerLifecycle(BeforeDelete.Handler handler) {
+            this.handler = handler;
+        }
+
+        public override Boolean isBypassedByAddOn() {
+            return (this.handler instanceof BeforeDelete.Bypassable && ((BeforeDelete.Bypassable) this.handler).bypassOnBeforeDeleteWhen());
+        }
+
+        public override void finalize(List<TriggerTypes.TriggerRecord> qualifiedRecords) {
+            if (qualifiedRecords.isEmpty() || !(this.handler instanceof BeforeDelete.Finalizer)) {
                 return;
             }
 
-            Map<Id, SObject> parentsById = this.cachedParentsByLookup.get(lookupField);
-            String relationshipName = lookupField.getDescribe().getRelationshipName();
+            ((BeforeDelete.Finalizer) this.handler).finalizeOnBeforeDelete(new TriggerTypes.DeleteTriggerRecords(qualifiedRecords));
+        }
 
-            for (TriggerTypes.TriggerRecord record : records) {
-                record.setOldParent(relationshipName, parentsById.get(record.getOldParentId(lookupField)));
+        public override Boolean continuesOnError() {
+            return this.handler instanceof BeforeDelete.ContinueOnError;
+        }
+    }
+
+    private class AfterDeleteHandlerLifecycle extends HandlerLifecycle {
+        private AfterDelete.Handler handler;
+
+        public AfterDeleteHandlerLifecycle(AfterDelete.Handler handler) {
+            this.handler = handler;
+        }
+
+        public override Boolean isBypassedByAddOn() {
+            return (this.handler instanceof AfterDelete.Bypassable && ((AfterDelete.Bypassable) this.handler).bypassOnAfterDeleteWhen());
+        }
+
+        public override void finalize(List<TriggerTypes.TriggerRecord> qualifiedRecords) {
+            if (qualifiedRecords.isEmpty() || !(this.handler instanceof AfterDelete.Finalizer)) {
+                return;
+            }
+
+            ((AfterDelete.Finalizer) this.handler).finalizeOnAfterDelete(new TriggerTypes.DeleteTriggerRecords(qualifiedRecords));
+        }
+
+        public override Boolean continuesOnError() {
+            return this.handler instanceof AfterDelete.ContinueOnError;
+        }
+    }
+
+    private class AfterUndeleteHandlerLifecycle extends HandlerLifecycle {
+        private AfterUndelete.Handler handler;
+
+        public AfterUndeleteHandlerLifecycle(AfterUndelete.Handler handler) {
+            this.handler = handler;
+        }
+
+        public override Boolean isBypassedByAddOn() {
+            return (this.handler instanceof AfterUndelete.Bypassable && ((AfterUndelete.Bypassable) this.handler).bypassOnAfterUndeleteWhen());
+        }
+
+        public override void finalize(List<TriggerTypes.TriggerRecord> qualifiedRecords) {
+            if (qualifiedRecords.isEmpty() || !(this.handler instanceof AfterUndelete.Finalizer)) {
+                return;
+            }
+
+            ((AfterUndelete.Finalizer) this.handler).finalizeOnAfterUndelete(new TriggerTypes.UndeleteTriggerRecords(qualifiedRecords));
+        }
+
+        public override Boolean continuesOnError() {
+            return this.handler instanceof AfterUndelete.ContinueOnError;
+        }
+    }
+
+    private abstract class RecursionTracker {
+        private Map<Id, Integer> runCountByRecordId;
+        protected Integer maxRunsPerRecord = 3;
+
+        public RecursionTracker(String recursionScope) {
+            TriggerOrchestrator.runCounter.registerScope(recursionScope);
+            this.runCountByRecordId = TriggerOrchestrator.runCounter.getForRecursionScope(recursionScope);
+        }
+
+        public Boolean isLimitReached(TriggerTypes.TriggerRecord record) {
+            return (this.runCountByRecordId.get(record.getId()) ?? 0) >= this.maxRunsPerRecord;
+        }
+
+        public void countRun(TriggerTypes.TriggerRecord record) {
+            this.runCountByRecordId.put(record.getId(), (this.runCountByRecordId.get(record.getId()) ?? 0) + 1);
+        }
+    }
+
+    private class BeforeUpdateRecursionTracker extends RecursionTracker {
+        public BeforeUpdateRecursionTracker(BeforeUpdate.Handler handler, String handlerName) {
+            super(handlerName + ':BEFORE_UPDATE');
+
+            if (handler instanceof BeforeUpdate.RecursionGuard) {
+                this.maxRunsPerRecord = ((BeforeUpdate.RecursionGuard) handler).maxRunsPerRecordOnBeforeUpdate();
+            }
+        }
+    }
+
+    private class AfterUpdateRecursionTracker extends RecursionTracker {
+        public AfterUpdateRecursionTracker(AfterUpdate.Handler handler, String handlerName) {
+            super(handlerName + ':AFTER_UPDATE');
+
+            if (handler instanceof AfterUpdate.RecursionGuard) {
+                this.maxRunsPerRecord = ((AfterUpdate.RecursionGuard) handler).maxRunsPerRecordOnAfterUpdate();
+            }
+        }
+    }
+
+    private class RunCounter {
+        private Map<String, Map<Id, Integer>> runCountByRecordIdByScope = new Map<String, Map<Id, Integer>>();
+
+        public void registerScope(String recursionScope) {
+            if (!this.runCountByRecordIdByScope.containsKey(recursionScope)) {
+                this.runCountByRecordIdByScope.put(recursionScope, new Map<Id, Integer>());
             }
         }
 
-        private void declareNewParents(Map<SObjectField, TriggerTypes.ParentFields> parentFieldsByLookup) {
-            this.lookupsForNewParents.addAll(parentFieldsByLookup.keySet());
-            this.declare(parentFieldsByLookup);
-        }
-
-        private void declareOldParents(Map<SObjectField, TriggerTypes.ParentFields> parentFieldsByLookup) {
-            this.lookupsForOldParents.addAll(parentFieldsByLookup.keySet());
-            this.declare(parentFieldsByLookup);
-        }
-
-        private void declare(Map<SObjectField, TriggerTypes.ParentFields> parentFieldsByLookup) {
-            for (SObjectField lookupField : parentFieldsByLookup.keySet()) {
-                if (!this.fieldPathsByLookup.containsKey(lookupField)) {
-                    this.fieldPathsByLookup.put(lookupField, new Set<String>());
-                }
-                if (!this.cachedParentsByLookup.containsKey(lookupField)) {
-                    this.cachedParentsByLookup.put(lookupField, new Map<Id, SObject>());
-                }
-
-                this.fieldPathsByLookup.get(lookupField).addAll(parentFieldsByLookup.get(lookupField).getFields());
-            }
+        public Map<Id, Integer> getForRecursionScope(String recursionScope) {
+            return this.runCountByRecordIdByScope.get(recursionScope);
         }
     }
 

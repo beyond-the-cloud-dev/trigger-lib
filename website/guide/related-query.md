@@ -126,7 +126,7 @@ public String keyOf(SObject row) {
 
 ### A Declared Parent's Field {#parent-field}
 
-Parents load before providers run. Declare `Account.OwnerId` with a ParentQuery, then collect it by the relationship name:
+Parents load on the first read, also inside `query`. Declare `Account.OwnerId` with a ParentQuery, then collect it by the relationship name:
 
 ```apex
 public List<SObject> query(TriggerTypes.InsertRecords records) {

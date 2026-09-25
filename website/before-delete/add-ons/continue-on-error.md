@@ -23,7 +23,7 @@ Log and swallow the handler's exceptions, so later handlers still run and the de
 
 ## Rules {#rules}
 
-- **The rest of the handler is skipped.** After an exception, this handler's remaining records and its Finalizer are skipped. An exception in a provider skips every record.
+- **The rest of the handler is skipped.** After an exception, this handler's remaining records and its Finalizer are skipped. An exception in a provider stops the handler where the provider is first read.
 - **A Writer gets the automatic unit of work.** Unless it implements OwnUnitOfWork, its writes commit right after it, so a failure never touches other Writers' writes.
 - **Some errors still fail the delete.** [Library exceptions](/api/trigger-orchestrator#triggerlibexception), `System.LimitException` and exceptions outside the handler's own methods, such as `bypassOnBeforeDeleteWhen()`, `queryPriorParentsOnBeforeDelete()` or the final commit, are never swallowed.
 - **Add a [Logger](/guide/error-handling#logger).** Without one, a swallowed exception leaves no trace.

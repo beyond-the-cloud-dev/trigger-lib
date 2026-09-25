@@ -66,7 +66,7 @@ This code runs outside every handler. An exception there is not logged, Continue
 
 - `<ctx>Handlers()`;
 - `bypassOn<Ctx>When()`, `ownUnitOfWorkOn<Ctx>()` and `maxRunsPerRecordOn<Ctx>()`;
-- the ParentQuery and PriorParentQuery methods and their parent queries;
+- the ParentQuery and PriorParentQuery methods, and the parent query after a Populator changes a lookup;
 - the shared unit of work's commit.
 
 ## Fail One Record, Not the Whole Save {#one-record}

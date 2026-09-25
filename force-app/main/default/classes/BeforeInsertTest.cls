@@ -866,7 +866,6 @@ private class BeforeInsertTest {
 
         Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
         Account globex = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Globex');
-        SOQL.mock(Account.SObjectType).thenReturn(acme);
         SOQL.mock(Account.SObjectType).thenReturn(globex);
 
         Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
@@ -1182,10 +1181,18 @@ private class BeforeInsertTest {
         }
     }
 
-    private class TitlePopulatorWithDmlRelatedQuery extends TitlePopulator implements BeforeInsert.RelatedQuery {
+    private class TitlePopulatorWithDmlRelatedQuery implements BeforeInsert.Populator, BeforeInsert.RelatedQuery {
         public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
             Database.setSavepoint();
-            return new Map<String, BeforeInsert.RecordsProvider>();
+            return new Map<String, BeforeInsert.RecordsProvider>{ 'accounts' => new RelatedAccountProvider() };
+        }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
+            record.put(Contact.Title, record.getRelated('accounts').isEmpty() ? 'CEO' : 'CFO');
         }
     }
 

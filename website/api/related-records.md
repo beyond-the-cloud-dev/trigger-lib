@@ -14,10 +14,10 @@ Each context declares its own `RecordsProvider`, so `query` gets that context's 
 
 <!--@include: @/_parts/generated/after-update/related-query/records-provider.md-->
 
-- **Runs before the first predicate.** Two handlers that use the same provider class query twice.
+- **Runs on the first read.** `query` runs when the handler first calls `getRelated` with the provider's name. Two handlers that use the same provider class query twice.
 - **Any query you like.** Use inline SOQL, SOQL Lib or a selector.
 - **Your sharing.** The query runs under the provider class's own sharing keyword. Declare one on every provider class.
-- **Parents are loaded already.** In `query`, `records.getIdsOf('Account', Account.OwnerId)` works.
+- **Parents load on the first read.** In `query`, `records.getIdsOf('Account', Account.OwnerId)` works.
 - **Normalize text keys.** Keys are compared exactly, case included. Lowercase them in `keyOf` and when you read.
 
 ## RelatedRecords {#relatedrecords}

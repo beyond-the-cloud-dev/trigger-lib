@@ -30,7 +30,7 @@ Read fields of the record a lookup points to, such as a new contact's account, w
 - **Read by lookup field.** Pass the lookup field you declared, such as `getNewParent(Contact.AccountId)` or `getNewParent(Account.OwnerId)`.
 - **Check for null.** The parent is null when the lookup is empty or no record has that Id.
 - **Only declared fields.** The parent holds the declared fields and its `Id`. Reading any other field throws an `SObjectException`. Add grandparent fields with `.with('Owner', User.IsActive)`.
-- **One query per chunk.** One SOQL query on the saved records loads every declared parent, even when no record qualifies.
+- **One query per chunk.** The first parent a handler reads runs one SOQL query on the saved records, which loads every declared parent. A chunk that reads no parent costs nothing.
 
 ::: warning
 Parents are read in system mode without sharing, so a handler can see records the user cannot.

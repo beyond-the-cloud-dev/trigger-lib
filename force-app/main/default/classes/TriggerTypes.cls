@@ -605,6 +605,14 @@ public with sharing class TriggerTypes {
         Boolean isEmpty();
     }
 
+    public interface ParentLoader {
+        void load(String relationshipName);
+    }
+
+    public interface RelatedLoader {
+        void load(String providerName);
+    }
+
     // Implementation
 
     private static RecordTypesInfo RecordTypesInfo = new RecordTypesInfo();
@@ -630,6 +638,9 @@ public with sharing class TriggerTypes {
         private Map<String, SObject> oldParents = new Map<String, SObject>();
 
         private Map<String, RelatedRecords> relatedByProviderName = new Map<String, RelatedRecords>();
+
+        private ParentLoader parentLoader;
+        private RelatedLoader relatedLoader;
 
         private SObjectType sObjectType;
 
@@ -929,14 +940,20 @@ public with sharing class TriggerTypes {
         }
 
         public SObject getNewParent(SObjectField lookupField) {
-            return this.newParents.get(lookupField.getDescribe().getRelationshipName());
+            String relationshipName = lookupField.getDescribe().getRelationshipName();
+
+            this.parentLoader?.load(relationshipName);
+
+            return this.newParents.get(relationshipName);
         }
 
         public SObject getOldParent(SObjectField lookupField) {
-            return this.oldParents.get(lookupField.getDescribe().getRelationshipName());
+            return this.getOldParent(lookupField.getDescribe().getRelationshipName());
         }
 
         public RelatedRecords getRelated(String providerName) {
+            this.relatedLoader?.load(providerName);
+
             if (!this.relatedByProviderName.containsKey(providerName)) {
                 throw new TriggerLibException('No related records provider named ' + providerName + ' is declared. Return it from the queryRelatedOn method of the handler first.');
             }
@@ -963,10 +980,14 @@ public with sharing class TriggerTypes {
         }
 
         public SObject getParent(String relationshipName) {
+            this.parentLoader?.load(relationshipName);
+
             return this.newRecord == null ? this.oldParents.get(relationshipName) : this.newParents.get(relationshipName);
         }
 
         public SObject getOldParent(String relationshipName) {
+            this.parentLoader?.load(relationshipName);
+
             return this.oldParents.get(relationshipName);
         }
 
@@ -988,6 +1009,14 @@ public with sharing class TriggerTypes {
 
         public void setRelated(Map<String, RelatedRecords> relatedByProviderName) {
             this.relatedByProviderName = relatedByProviderName;
+        }
+
+        public void setParentLoader(ParentLoader parentLoader) {
+            this.parentLoader = parentLoader;
+        }
+
+        public void setRelatedLoader(RelatedLoader relatedLoader) {
+            this.relatedLoader = relatedLoader;
         }
     }
 

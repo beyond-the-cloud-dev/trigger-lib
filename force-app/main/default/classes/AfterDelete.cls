@@ -45,4 +45,231 @@ public class AfterDelete {
 
     public interface Handler {
     }
+
+    // Implementation
+
+    public class ExecutionStrategy extends TriggerOrchestrator.ExecutionStrategy {
+        public override List<TriggerOrchestrator.HandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator) {
+            List<TriggerOrchestrator.HandlerAdapter> adapters = new List<TriggerOrchestrator.HandlerAdapter>();
+
+            for (AfterDelete.Handler handler : ((TriggerOrchestrator.AfterDelete) orchestrator.orchestrator).afterDeleteHandlers()) {
+                if (handler instanceof AfterDelete.Writer) {
+                    adapters.add(new AfterDelete.WriterAdapter((AfterDelete.Writer) handler, orchestrator));
+                } else if (handler instanceof AfterDelete.Dispatcher) {
+                    adapters.add(new AfterDelete.DispatcherAdapter((AfterDelete.Dispatcher) handler, orchestrator));
+                }
+            }
+
+            return adapters;
+        }
+    }
+
+    public class WriterAdapter extends TriggerOrchestrator.HandlerAdapter {
+        private AfterDelete.Writer writer;
+        private TriggerOrchestrator.UnitOfWork unitOfWork;
+
+        public WriterAdapter(AfterDelete.Writer writer, TriggerOrchestrator orchestrator) {
+            super(writer, orchestrator);
+
+            this.writer = writer;
+            this.parentDeclaration = new AfterDelete.ParentDeclaration(this.writer);
+            this.relatedLoader = new AfterDelete.RelatedLoader(this.writer);
+            this.unitOfWork = new AfterDelete.UnitOfWorkResolver(this.writer).resolve(this.orchestrator.sharedUnitOfWork);
+            this.handlerLifecycle = new AfterDelete.HandlerLifecycle(this.writer);
+        }
+
+        public override void execute(List<TriggerTypes.TriggerRecord> records) {
+            try {
+                this.relatedLoader.attachTo(records);
+
+                for (TriggerTypes.TriggerRecord record : records) {
+                    this.write(record);
+                }
+
+                this.handlerLifecycle.finalize(this.qualifiedRecords);
+                this.commitOwnUnitOfWork();
+            } catch (Exception e) {
+                this.handleException(e);
+            }
+        }
+
+        private void write(TriggerTypes.TriggerRecord record) {
+            if (!this.writer.writeOnAfterDeleteWhen(record)) {
+                return;
+            }
+
+            this.qualifiedRecords.add(record);
+            this.writer.writeOnAfterDelete(record, this.unitOfWork);
+        }
+
+        private void commitOwnUnitOfWork() {
+            if (this.qualifiedRecords.isEmpty() || this.unitOfWork === this.orchestrator.sharedUnitOfWork) {
+                return;
+            }
+
+            this.unitOfWork.commitWork();
+        }
+    }
+
+    public class DispatcherAdapter extends TriggerOrchestrator.HandlerAdapter {
+        private AfterDelete.Dispatcher dispatcher;
+
+        public DispatcherAdapter(AfterDelete.Dispatcher dispatcher, TriggerOrchestrator orchestrator) {
+            super(dispatcher, orchestrator);
+
+            this.dispatcher = dispatcher;
+            this.parentDeclaration = new AfterDelete.ParentDeclaration(this.dispatcher);
+            this.relatedLoader = new AfterDelete.RelatedLoader(this.dispatcher);
+            this.handlerLifecycle = new AfterDelete.HandlerLifecycle(this.dispatcher);
+        }
+
+        public override void execute(List<TriggerTypes.TriggerRecord> records) {
+            try {
+                this.relatedLoader.attachTo(records);
+
+                for (TriggerTypes.TriggerRecord record : records) {
+                    this.qualify(record);
+                }
+
+                this.dispatch();
+                this.handlerLifecycle.finalize(this.qualifiedRecords);
+            } catch (Exception e) {
+                this.handleException(e);
+            }
+        }
+
+        private void qualify(TriggerTypes.TriggerRecord record) {
+            if (!this.dispatcher.dispatchOnAfterDeleteWhen(record)) {
+                return;
+            }
+
+            this.qualifiedRecords.add(record);
+        }
+
+        private void dispatch() {
+            if (this.qualifiedRecords.isEmpty()) {
+                return;
+            }
+
+            this.dispatcher.dispatchOnAfterDelete(new TriggerTypes.DeleteTriggerRecords(this.qualifiedRecords));
+        }
+    }
+
+    public class ParentDeclaration extends TriggerOrchestrator.ParentDeclaration {
+        private AfterDelete.Handler handler;
+
+        public ParentDeclaration(AfterDelete.Handler handler) {
+            this.handler = handler;
+        }
+
+        public override Map<SObjectField, TriggerTypes.ParentFields> getOldParentFields() {
+            if (this.handler instanceof AfterDelete.PriorParentQuery) {
+                return ((AfterDelete.PriorParentQuery) this.handler).queryPriorParentsOnAfterDelete();
+            }
+
+            return new Map<SObjectField, TriggerTypes.ParentFields>();
+        }
+    }
+
+    public class RelatedLoader extends TriggerOrchestrator.RelatedLoader {
+        private AfterDelete.Handler handler;
+        private Map<String, AfterDelete.RecordsProvider> providers;
+
+        public RelatedLoader(AfterDelete.Handler handler) {
+            this.handler = handler;
+        }
+
+        public override TriggerTypes.RelatedRecords queryRelated(String providerName) {
+            if (!(this.handler instanceof AfterDelete.RelatedQuery)) {
+                return null;
+            }
+
+            if (this.providers == null) {
+                this.providers = ((AfterDelete.RelatedQuery) this.handler).queryRelatedOnAfterDelete() ?? new Map<String, AfterDelete.RecordsProvider>();
+            }
+
+            AfterDelete.RecordsProvider provider = this.providers.get(providerName);
+
+            if (provider == null) {
+                return null;
+            }
+
+            TriggerTypes.DeleteRecords deleteRecords = new TriggerTypes.DeleteTriggerRecords(this.records);
+            TriggerTypes.ProvidedRecords related = new TriggerTypes.ProvidedRecords(provider.query(deleteRecords));
+
+            for (SObject row : related.getRecords()) {
+                related.groupUnderKey(provider.keyOf(row), row);
+            }
+
+            return related;
+        }
+    }
+
+    public class UnitOfWorkResolver extends TriggerOrchestrator.UnitOfWorkResolver {
+        private AfterDelete.Writer writer;
+
+        public UnitOfWorkResolver(AfterDelete.Writer writer) {
+            this.writer = writer;
+        }
+
+        public override TriggerOrchestrator.UnitOfWork resolve(TriggerOrchestrator.UnitOfWork sharedUnitOfWork) {
+            return this.writer instanceof AfterDelete.OwnUnitOfWork
+                ? new TriggerOrchestrator.UnitOfWork(((AfterDelete.OwnUnitOfWork) this.writer).ownUnitOfWorkOnAfterDelete())
+                : this.writer instanceof AfterDelete.ContinueOnError ? new TriggerOrchestrator.UnitOfWork() : sharedUnitOfWork;
+        }
+    }
+
+    public class HandlerLifecycle extends TriggerOrchestrator.HandlerLifecycle {
+        private AfterDelete.Handler handler;
+
+        public HandlerLifecycle(AfterDelete.Handler handler) {
+            this.handler = handler;
+        }
+
+        public override Boolean isBypassedByAddOn() {
+            return (this.handler instanceof AfterDelete.Bypassable && ((AfterDelete.Bypassable) this.handler).bypassOnAfterDeleteWhen());
+        }
+
+        public override void finalize(List<TriggerTypes.TriggerRecord> qualifiedRecords) {
+            if (qualifiedRecords.isEmpty() || !(this.handler instanceof AfterDelete.Finalizer)) {
+                return;
+            }
+
+            ((AfterDelete.Finalizer) this.handler).finalizeOnAfterDelete(new TriggerTypes.DeleteTriggerRecords(qualifiedRecords));
+        }
+
+        public override Boolean continuesOnError() {
+            return this.handler instanceof AfterDelete.ContinueOnError;
+        }
+    }
+
+    public class MockedContext extends TriggerOrchestrator.MockedContext implements TriggerOrchestrator.AfterDeleteMockable, TriggerOrchestrator.AfterDelete {
+        public MockedContext() {
+            super(System.TriggerOperation.AFTER_DELETE);
+        }
+
+        public TriggerOrchestrator.AfterDeleteMockable with(SObject row) {
+            return this.with(new List<SObject>{ row });
+        }
+
+        public TriggerOrchestrator.AfterDeleteMockable with(List<SObject> rows) {
+            this.oldRecords.addAll(this.assignIds(rows));
+            return this;
+        }
+
+        public TriggerOrchestrator.AfterDeleteMockable withParent(SObjectField lookupField, SObject parent) {
+            return this.withParent(lookupField, new List<SObject>{ parent });
+        }
+
+        public TriggerOrchestrator.AfterDeleteMockable withParent(SObjectField lookupField, List<SObject> parents) {
+            this.addParents(lookupField, parents);
+            return this;
+        }
+
+        public List<AfterDelete.Handler> afterDeleteHandlers() {
+            return this.handlerOrOrchestrator instanceof TriggerOrchestrator.AfterDelete
+                ? ((TriggerOrchestrator.AfterDelete) this.handlerOrOrchestrator).afterDeleteHandlers()
+                : new List<AfterDelete.Handler>{ (AfterDelete.Handler) this.handlerOrOrchestrator };
+        }
+    }
 }

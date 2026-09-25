@@ -569,20 +569,24 @@ function extractClassBodies(source) {
 }
 
 export function parseAdapterHonours() {
-  const bodies = extractClassBodies(
-    stripComments(readClass('TriggerOrchestrator'))
-  );
+  const bodies = new Map();
   const honours = {};
+
+  for (const context of model.contexts) {
+    for (const [className, body] of extractClassBodies(
+      stripComments(readClass(context.name))
+    )) {
+      bodies.set(`${context.name}.${className}`, body);
+    }
+  }
 
   for (const context of model.contexts) {
     honours[context.name] = {};
 
     for (const role of context.roles) {
-      const adapterName = `${context.name}${role}Adapter`;
+      const adapterName = `${context.name}.${role}Adapter`;
       if (!bodies.has(adapterName)) {
-        throw new Error(
-          `apex-api: TriggerOrchestrator.cls has no ${adapterName}`
-        );
+        throw new Error(`apex-api: ${context.name}.cls has no ${role}Adapter`);
       }
 
       const visited = new Set();
@@ -601,7 +605,7 @@ export function parseAdapterHonours() {
           if (context.addOns.includes(match[1])) found.add(match[1]);
         }
 
-        for (const match of body.matchAll(/\bnew\s+(\w+)\s*\(/g)) {
+        for (const match of body.matchAll(/\bnew\s+([\w.]+)\s*\(/g)) {
           if (bodies.has(match[1]) && !visited.has(match[1]))
             queue.push(match[1]);
         }

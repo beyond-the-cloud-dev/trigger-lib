@@ -52,33 +52,33 @@ public class BeforeUpdate {
 
     // Implementation
 
-    public class ExecutionStrategy extends TriggerOrchestrator.ExecutionStrategy {
-        public override List<TriggerOrchestrator.HandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator) {
-            List<TriggerOrchestrator.HandlerAdapter> adapters = new List<TriggerOrchestrator.HandlerAdapter>();
+    public class Operation extends TriggerOrchestrator.Operation {
+        public override List<TriggerOrchestrator.HandlerExecutor> buildExecutors(TriggerOrchestrator orchestrator) {
+            List<TriggerOrchestrator.HandlerExecutor> executors = new List<TriggerOrchestrator.HandlerExecutor>();
 
             for (BeforeUpdate.Handler handler : ((TriggerOrchestrator.BeforeUpdate) orchestrator.orchestrator).beforeUpdateHandlers()) {
                 if (handler instanceof BeforeUpdate.Populator) {
-                    adapters.add(new BeforeUpdate.PopulatorAdapter((BeforeUpdate.Populator) handler, orchestrator));
+                    executors.add(new BeforeUpdate.PopulatorExecutor((BeforeUpdate.Populator) handler, orchestrator));
                 } else if (handler instanceof BeforeUpdate.Validator) {
-                    adapters.add(new BeforeUpdate.ValidatorAdapter((BeforeUpdate.Validator) handler, orchestrator));
+                    executors.add(new BeforeUpdate.ValidatorExecutor((BeforeUpdate.Validator) handler, orchestrator));
                 }
             }
 
-            return adapters;
+            return executors;
         }
     }
 
-    public class PopulatorAdapter extends TriggerOrchestrator.HandlerAdapter {
+    public class PopulatorExecutor extends TriggerOrchestrator.HandlerExecutor {
         private BeforeUpdate.Populator populator;
         private TriggerOrchestrator.RecursionTracker recursionTracker;
 
-        public PopulatorAdapter(BeforeUpdate.Populator populator, TriggerOrchestrator orchestrator) {
+        public PopulatorExecutor(BeforeUpdate.Populator populator, TriggerOrchestrator orchestrator) {
             super(populator, orchestrator);
 
             this.populator = populator;
             this.parentDeclaration = new BeforeUpdate.ParentDeclaration(this.populator);
             this.relatedLoader = new BeforeUpdate.RelatedLoader(this.populator);
-            this.handlerLifecycle = new BeforeUpdate.HandlerLifecycle(this.populator);
+            this.handlerHooks = new BeforeUpdate.HandlerHooks(this.populator);
             this.recursionTracker = new BeforeUpdate.RecursionTracker(this.populator, this.handlerName);
         }
 
@@ -93,7 +93,7 @@ public class BeforeUpdate {
                     this.populate(record);
                 }
 
-                this.handlerLifecycle.finalize(this.qualifiedRecords);
+                this.handlerHooks.finalize(this.qualifiedRecords);
             } catch (Exception e) {
                 this.handleException(e);
             }
@@ -115,26 +115,24 @@ public class BeforeUpdate {
         }
 
         private void populate(TriggerTypes.TriggerRecord record) {
-            if (this.recursionTracker.isLimitReached(record) || !this.populator.populateOnBeforeUpdateWhen(record)) {
-                return;
+            if (!this.recursionTracker.isLimitReached(record) && this.populator.populateOnBeforeUpdateWhen(record)) {
+                this.recursionTracker.countRun(record);
+                this.qualifiedRecords.add(record);
+                this.populator.populateOnBeforeUpdate(record);
             }
-
-            this.recursionTracker.countRun(record);
-            this.qualifiedRecords.add(record);
-            this.populator.populateOnBeforeUpdate(record);
         }
     }
 
-    public class ValidatorAdapter extends TriggerOrchestrator.HandlerAdapter {
+    public class ValidatorExecutor extends TriggerOrchestrator.HandlerExecutor {
         private BeforeUpdate.Validator validator;
 
-        public ValidatorAdapter(BeforeUpdate.Validator validator, TriggerOrchestrator orchestrator) {
+        public ValidatorExecutor(BeforeUpdate.Validator validator, TriggerOrchestrator orchestrator) {
             super(validator, orchestrator);
 
             this.validator = validator;
             this.parentDeclaration = new BeforeUpdate.ParentDeclaration(this.validator);
             this.relatedLoader = new BeforeUpdate.RelatedLoader(this.validator);
-            this.handlerLifecycle = new BeforeUpdate.HandlerLifecycle(this.validator);
+            this.handlerHooks = new BeforeUpdate.HandlerHooks(this.validator);
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -148,7 +146,7 @@ public class BeforeUpdate {
                     this.validate(record);
                 }
 
-                this.handlerLifecycle.finalize(this.qualifiedRecords);
+                this.handlerHooks.finalize(this.qualifiedRecords);
             } catch (Exception e) {
                 this.handleException(e);
             }
@@ -168,18 +166,18 @@ public class BeforeUpdate {
         }
 
         private void validate(TriggerTypes.TriggerRecord record) {
-            if (!this.validator.addErrorOnBeforeUpdateWhen(record)) {
-                return;
-            }
+            if (this.validator.addErrorOnBeforeUpdateWhen(record)) {
+                this.qualifiedRecords.add(record);
 
-            this.qualifiedRecords.add(record);
+                Integer errorsBefore = record.getNewSObject().getErrors().size();
 
-            Integer errorsBefore = record.getNewSObject().getErrors().size();
+                this.validator.addErrorOnBeforeUpdate(record);
 
-            this.validator.addErrorOnBeforeUpdate(record);
-
-            if (record.getNewSObject().getErrors().size() == errorsBefore) {
-                throw new TriggerTypes.TriggerLibException(this.handlerName + ' qualified a record in addErrorOnBeforeUpdateWhen but attached no error in addErrorOnBeforeUpdate.');
+                if (record.getNewSObject().getErrors().size() == errorsBefore) {
+                    throw new TriggerTypes.TriggerLibException(
+                        this.handlerName + ' qualified a record in addErrorOnBeforeUpdateWhen but attached no error in addErrorOnBeforeUpdate.'
+                    );
+                }
             }
         }
     }
@@ -242,10 +240,10 @@ public class BeforeUpdate {
         }
     }
 
-    public class HandlerLifecycle extends TriggerOrchestrator.HandlerLifecycle {
+    public class HandlerHooks extends TriggerOrchestrator.HandlerHooks {
         private BeforeUpdate.Handler handler;
 
-        public HandlerLifecycle(BeforeUpdate.Handler handler) {
+        public HandlerHooks(BeforeUpdate.Handler handler) {
             this.handler = handler;
         }
 
@@ -302,9 +300,11 @@ public class BeforeUpdate {
         }
 
         public List<BeforeUpdate.Handler> beforeUpdateHandlers() {
-            return this.handlerOrOrchestrator instanceof TriggerOrchestrator.BeforeUpdate
-                ? ((TriggerOrchestrator.BeforeUpdate) this.handlerOrOrchestrator).beforeUpdateHandlers()
-                : new List<BeforeUpdate.Handler>{ (BeforeUpdate.Handler) this.handlerOrOrchestrator };
+            if (this.handlerOrOrchestrator instanceof TriggerOrchestrator.BeforeUpdate) {
+                return ((TriggerOrchestrator.BeforeUpdate) this.handlerOrOrchestrator).beforeUpdateHandlers();
+            }
+
+            return new List<BeforeUpdate.Handler>{ (BeforeUpdate.Handler) this.handlerOrOrchestrator };
         }
     }
 }

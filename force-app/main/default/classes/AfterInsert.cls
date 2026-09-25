@@ -48,34 +48,34 @@ public class AfterInsert {
 
     // Implementation
 
-    public class ExecutionStrategy extends TriggerOrchestrator.ExecutionStrategy {
-        public override List<TriggerOrchestrator.HandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator) {
-            List<TriggerOrchestrator.HandlerAdapter> adapters = new List<TriggerOrchestrator.HandlerAdapter>();
+    public class Operation extends TriggerOrchestrator.Operation {
+        public override List<TriggerOrchestrator.HandlerExecutor> buildExecutors(TriggerOrchestrator orchestrator) {
+            List<TriggerOrchestrator.HandlerExecutor> executors = new List<TriggerOrchestrator.HandlerExecutor>();
 
             for (AfterInsert.Handler handler : ((TriggerOrchestrator.AfterInsert) orchestrator.orchestrator).afterInsertHandlers()) {
                 if (handler instanceof AfterInsert.Writer) {
-                    adapters.add(new AfterInsert.WriterAdapter((AfterInsert.Writer) handler, orchestrator));
+                    executors.add(new AfterInsert.WriterExecutor((AfterInsert.Writer) handler, orchestrator));
                 } else if (handler instanceof AfterInsert.Dispatcher) {
-                    adapters.add(new AfterInsert.DispatcherAdapter((AfterInsert.Dispatcher) handler, orchestrator));
+                    executors.add(new AfterInsert.DispatcherExecutor((AfterInsert.Dispatcher) handler, orchestrator));
                 }
             }
 
-            return adapters;
+            return executors;
         }
     }
 
-    public class WriterAdapter extends TriggerOrchestrator.HandlerAdapter {
+    public class WriterExecutor extends TriggerOrchestrator.HandlerExecutor {
         private AfterInsert.Writer writer;
         private TriggerOrchestrator.UnitOfWork unitOfWork;
 
-        public WriterAdapter(AfterInsert.Writer writer, TriggerOrchestrator orchestrator) {
+        public WriterExecutor(AfterInsert.Writer writer, TriggerOrchestrator orchestrator) {
             super(writer, orchestrator);
 
             this.writer = writer;
             this.parentDeclaration = new AfterInsert.ParentDeclaration(this.writer);
             this.relatedLoader = new AfterInsert.RelatedLoader(this.writer);
             this.unitOfWork = new AfterInsert.UnitOfWorkResolver(this.writer).resolve(this.orchestrator.sharedUnitOfWork);
-            this.handlerLifecycle = new AfterInsert.HandlerLifecycle(this.writer);
+            this.handlerHooks = new AfterInsert.HandlerHooks(this.writer);
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -86,7 +86,7 @@ public class AfterInsert {
                     this.write(record);
                 }
 
-                this.handlerLifecycle.finalize(this.qualifiedRecords);
+                this.handlerHooks.finalize(this.qualifiedRecords);
                 this.commitOwnUnitOfWork();
             } catch (Exception e) {
                 this.handleException(e);
@@ -94,12 +94,10 @@ public class AfterInsert {
         }
 
         private void write(TriggerTypes.TriggerRecord record) {
-            if (!this.writer.writeOnAfterInsertWhen(record)) {
-                return;
+            if (this.writer.writeOnAfterInsertWhen(record)) {
+                this.qualifiedRecords.add(record);
+                this.writer.writeOnAfterInsert(record, this.unitOfWork);
             }
-
-            this.qualifiedRecords.add(record);
-            this.writer.writeOnAfterInsert(record, this.unitOfWork);
         }
 
         private void commitOwnUnitOfWork() {
@@ -111,16 +109,16 @@ public class AfterInsert {
         }
     }
 
-    public class DispatcherAdapter extends TriggerOrchestrator.HandlerAdapter {
+    public class DispatcherExecutor extends TriggerOrchestrator.HandlerExecutor {
         private AfterInsert.Dispatcher dispatcher;
 
-        public DispatcherAdapter(AfterInsert.Dispatcher dispatcher, TriggerOrchestrator orchestrator) {
+        public DispatcherExecutor(AfterInsert.Dispatcher dispatcher, TriggerOrchestrator orchestrator) {
             super(dispatcher, orchestrator);
 
             this.dispatcher = dispatcher;
             this.parentDeclaration = new AfterInsert.ParentDeclaration(this.dispatcher);
             this.relatedLoader = new AfterInsert.RelatedLoader(this.dispatcher);
-            this.handlerLifecycle = new AfterInsert.HandlerLifecycle(this.dispatcher);
+            this.handlerHooks = new AfterInsert.HandlerHooks(this.dispatcher);
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -132,18 +130,16 @@ public class AfterInsert {
                 }
 
                 this.dispatch();
-                this.handlerLifecycle.finalize(this.qualifiedRecords);
+                this.handlerHooks.finalize(this.qualifiedRecords);
             } catch (Exception e) {
                 this.handleException(e);
             }
         }
 
         private void qualify(TriggerTypes.TriggerRecord record) {
-            if (!this.dispatcher.dispatchOnAfterInsertWhen(record)) {
-                return;
+            if (this.dispatcher.dispatchOnAfterInsertWhen(record)) {
+                this.qualifiedRecords.add(record);
             }
-
-            this.qualifiedRecords.add(record);
         }
 
         private void dispatch() {
@@ -213,16 +209,22 @@ public class AfterInsert {
         }
 
         public override TriggerOrchestrator.UnitOfWork resolve(TriggerOrchestrator.UnitOfWork sharedUnitOfWork) {
-            return this.writer instanceof AfterInsert.OwnUnitOfWork
-                ? new TriggerOrchestrator.UnitOfWork(((AfterInsert.OwnUnitOfWork) this.writer).ownUnitOfWorkOnAfterInsert())
-                : this.writer instanceof AfterInsert.ContinueOnError ? new TriggerOrchestrator.UnitOfWork() : sharedUnitOfWork;
+            if (this.writer instanceof AfterInsert.OwnUnitOfWork) {
+                return new TriggerOrchestrator.UnitOfWork(((AfterInsert.OwnUnitOfWork) this.writer).ownUnitOfWorkOnAfterInsert());
+            }
+
+            if (this.writer instanceof AfterInsert.ContinueOnError) {
+                return new TriggerOrchestrator.UnitOfWork();
+            }
+
+            return sharedUnitOfWork;
         }
     }
 
-    public class HandlerLifecycle extends TriggerOrchestrator.HandlerLifecycle {
+    public class HandlerHooks extends TriggerOrchestrator.HandlerHooks {
         private AfterInsert.Handler handler;
 
-        public HandlerLifecycle(AfterInsert.Handler handler) {
+        public HandlerHooks(AfterInsert.Handler handler) {
             this.handler = handler;
         }
 
@@ -267,9 +269,11 @@ public class AfterInsert {
         }
 
         public List<AfterInsert.Handler> afterInsertHandlers() {
-            return this.handlerOrOrchestrator instanceof TriggerOrchestrator.AfterInsert
-                ? ((TriggerOrchestrator.AfterInsert) this.handlerOrOrchestrator).afterInsertHandlers()
-                : new List<AfterInsert.Handler>{ (AfterInsert.Handler) this.handlerOrOrchestrator };
+            if (this.handlerOrOrchestrator instanceof TriggerOrchestrator.AfterInsert) {
+                return ((TriggerOrchestrator.AfterInsert) this.handlerOrOrchestrator).afterInsertHandlers();
+            }
+
+            return new List<AfterInsert.Handler>{ (AfterInsert.Handler) this.handlerOrOrchestrator };
         }
     }
 }

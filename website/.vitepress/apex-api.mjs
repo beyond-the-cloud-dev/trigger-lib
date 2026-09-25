@@ -581,7 +581,7 @@ function extractClassBodies(source) {
   return bodies;
 }
 
-export function parseAdapterHonours() {
+export function parseExecutorHonours() {
   const bodies = new Map();
   const honours = {};
 
@@ -597,13 +597,13 @@ export function parseAdapterHonours() {
     honours[context.name] = {};
 
     for (const role of context.roles) {
-      const adapterName = `${context.name}.${role}Adapter`;
-      if (!bodies.has(adapterName)) {
-        throw new Error(`apex-api: ${context.name}.cls has no ${role}Adapter`);
+      const executorName = `${context.name}.${role}Executor`;
+      if (!bodies.has(executorName)) {
+        throw new Error(`apex-api: ${context.name}.cls has no ${role}Executor`);
       }
 
       const visited = new Set();
-      const queue = [adapterName];
+      const queue = [executorName];
       const found = new Set();
 
       while (queue.length > 0) {

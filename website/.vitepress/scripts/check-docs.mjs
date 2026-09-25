@@ -16,7 +16,7 @@ import {
   getInterface,
   model,
   nav as defaultNav,
-  parseAdapterHonours,
+  parseExecutorHonours,
   sidebar as defaultSidebar
 } from '../apex-api.mjs';
 import { honourTable as defaultHonourTable } from '../context-facts.mjs';
@@ -2664,7 +2664,7 @@ function lineInFacts(state, contextName, role) {
 }
 
 function checkHonours(state) {
-  const actual = parseAdapterHonours();
+  const actual = parseExecutorHonours();
   const factsFile = display(state, state.factsFile);
 
   for (const context of model.contexts) {
@@ -2678,7 +2678,7 @@ function checkHonours(state) {
           10,
           factsFile,
           line,
-          `honourTable.${context.name}.${role} is missing; the ${context.name}${role}Adapter honours ${found.join(', ') || 'nothing'}`
+          `honourTable.${context.name}.${role} is missing; the ${context.name}.${role}Executor honours ${found.join(', ') || 'nothing'}`
         );
         continue;
       }
@@ -2688,7 +2688,7 @@ function checkHonours(state) {
           10,
           factsFile,
           line,
-          `honourTable.${context.name}.${role} leaves out ${addOn}, but ${context.name}${role}Adapter (or a helper it builds) checks instanceof ${context.name}.${addOn}`
+          `honourTable.${context.name}.${role} leaves out ${addOn}, but ${context.name}.${role}Executor (or a helper it builds) checks instanceof ${context.name}.${addOn}`
         );
       }
       for (const addOn of listed.filter(name => !found.includes(name))) {
@@ -2697,7 +2697,7 @@ function checkHonours(state) {
           10,
           factsFile,
           line,
-          `honourTable.${context.name}.${role} lists ${addOn}, but ${context.name}${role}Adapter never checks instanceof ${context.name}.${addOn}; the docs would claim an add-on the adapter ignores`
+          `honourTable.${context.name}.${role} lists ${addOn}, but ${context.name}.${role}Executor never checks instanceof ${context.name}.${addOn}; the docs would claim an add-on the executor ignores`
         );
       }
     }

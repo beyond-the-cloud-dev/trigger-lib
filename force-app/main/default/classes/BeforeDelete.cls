@@ -48,32 +48,32 @@ public class BeforeDelete {
 
     // Implementation
 
-    public class ExecutionStrategy extends TriggerOrchestrator.ExecutionStrategy {
-        public override List<TriggerOrchestrator.HandlerAdapter> adaptHandlers(TriggerOrchestrator orchestrator) {
-            List<TriggerOrchestrator.HandlerAdapter> adapters = new List<TriggerOrchestrator.HandlerAdapter>();
+    public class Operation extends TriggerOrchestrator.Operation {
+        public override List<TriggerOrchestrator.HandlerExecutor> buildExecutors(TriggerOrchestrator orchestrator) {
+            List<TriggerOrchestrator.HandlerExecutor> executors = new List<TriggerOrchestrator.HandlerExecutor>();
 
             for (BeforeDelete.Handler handler : ((TriggerOrchestrator.BeforeDelete) orchestrator.orchestrator).beforeDeleteHandlers()) {
                 if (handler instanceof BeforeDelete.Validator) {
-                    adapters.add(new BeforeDelete.ValidatorAdapter((BeforeDelete.Validator) handler, orchestrator));
+                    executors.add(new BeforeDelete.ValidatorExecutor((BeforeDelete.Validator) handler, orchestrator));
                 } else if (handler instanceof BeforeDelete.Writer) {
-                    adapters.add(new BeforeDelete.WriterAdapter((BeforeDelete.Writer) handler, orchestrator));
+                    executors.add(new BeforeDelete.WriterExecutor((BeforeDelete.Writer) handler, orchestrator));
                 }
             }
 
-            return adapters;
+            return executors;
         }
     }
 
-    public class ValidatorAdapter extends TriggerOrchestrator.HandlerAdapter {
+    public class ValidatorExecutor extends TriggerOrchestrator.HandlerExecutor {
         private BeforeDelete.Validator validator;
 
-        public ValidatorAdapter(BeforeDelete.Validator validator, TriggerOrchestrator orchestrator) {
+        public ValidatorExecutor(BeforeDelete.Validator validator, TriggerOrchestrator orchestrator) {
             super(validator, orchestrator);
 
             this.validator = validator;
             this.parentDeclaration = new BeforeDelete.ParentDeclaration(this.validator);
             this.relatedLoader = new BeforeDelete.RelatedLoader(this.validator);
-            this.handlerLifecycle = new BeforeDelete.HandlerLifecycle(this.validator);
+            this.handlerHooks = new BeforeDelete.HandlerHooks(this.validator);
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -84,41 +84,41 @@ public class BeforeDelete {
                     this.validate(record);
                 }
 
-                this.handlerLifecycle.finalize(this.qualifiedRecords);
+                this.handlerHooks.finalize(this.qualifiedRecords);
             } catch (Exception e) {
                 this.handleException(e);
             }
         }
 
         private void validate(TriggerTypes.TriggerRecord record) {
-            if (!this.validator.addErrorOnBeforeDeleteWhen(record)) {
-                return;
-            }
+            if (this.validator.addErrorOnBeforeDeleteWhen(record)) {
+                this.qualifiedRecords.add(record);
 
-            this.qualifiedRecords.add(record);
+                Integer errorsBefore = record.getOldSObject().getErrors().size();
 
-            Integer errorsBefore = record.getOldSObject().getErrors().size();
+                this.validator.addErrorOnBeforeDelete(record);
 
-            this.validator.addErrorOnBeforeDelete(record);
-
-            if (record.getOldSObject().getErrors().size() == errorsBefore) {
-                throw new TriggerTypes.TriggerLibException(this.handlerName + ' qualified a record in addErrorOnBeforeDeleteWhen but attached no error in addErrorOnBeforeDelete.');
+                if (record.getOldSObject().getErrors().size() == errorsBefore) {
+                    throw new TriggerTypes.TriggerLibException(
+                        this.handlerName + ' qualified a record in addErrorOnBeforeDeleteWhen but attached no error in addErrorOnBeforeDelete.'
+                    );
+                }
             }
         }
     }
 
-    public class WriterAdapter extends TriggerOrchestrator.HandlerAdapter {
+    public class WriterExecutor extends TriggerOrchestrator.HandlerExecutor {
         private BeforeDelete.Writer writer;
         private TriggerOrchestrator.UnitOfWork unitOfWork;
 
-        public WriterAdapter(BeforeDelete.Writer writer, TriggerOrchestrator orchestrator) {
+        public WriterExecutor(BeforeDelete.Writer writer, TriggerOrchestrator orchestrator) {
             super(writer, orchestrator);
 
             this.writer = writer;
             this.parentDeclaration = new BeforeDelete.ParentDeclaration(this.writer);
             this.relatedLoader = new BeforeDelete.RelatedLoader(this.writer);
             this.unitOfWork = new BeforeDelete.UnitOfWorkResolver(this.writer).resolve(this.orchestrator.sharedUnitOfWork);
-            this.handlerLifecycle = new BeforeDelete.HandlerLifecycle(this.writer);
+            this.handlerHooks = new BeforeDelete.HandlerHooks(this.writer);
         }
 
         public override void execute(List<TriggerTypes.TriggerRecord> records) {
@@ -129,7 +129,7 @@ public class BeforeDelete {
                     this.write(record);
                 }
 
-                this.handlerLifecycle.finalize(this.qualifiedRecords);
+                this.handlerHooks.finalize(this.qualifiedRecords);
                 this.commitOwnUnitOfWork();
             } catch (Exception e) {
                 this.handleException(e);
@@ -137,12 +137,10 @@ public class BeforeDelete {
         }
 
         private void write(TriggerTypes.TriggerRecord record) {
-            if (!this.writer.writeOnBeforeDeleteWhen(record)) {
-                return;
+            if (this.writer.writeOnBeforeDeleteWhen(record)) {
+                this.qualifiedRecords.add(record);
+                this.writer.writeOnBeforeDelete(record, this.unitOfWork);
             }
-
-            this.qualifiedRecords.add(record);
-            this.writer.writeOnBeforeDelete(record, this.unitOfWork);
         }
 
         private void commitOwnUnitOfWork() {
@@ -212,16 +210,22 @@ public class BeforeDelete {
         }
 
         public override TriggerOrchestrator.UnitOfWork resolve(TriggerOrchestrator.UnitOfWork sharedUnitOfWork) {
-            return this.writer instanceof BeforeDelete.OwnUnitOfWork
-                ? new TriggerOrchestrator.UnitOfWork(((BeforeDelete.OwnUnitOfWork) this.writer).ownUnitOfWorkOnBeforeDelete())
-                : this.writer instanceof BeforeDelete.ContinueOnError ? new TriggerOrchestrator.UnitOfWork() : sharedUnitOfWork;
+            if (this.writer instanceof BeforeDelete.OwnUnitOfWork) {
+                return new TriggerOrchestrator.UnitOfWork(((BeforeDelete.OwnUnitOfWork) this.writer).ownUnitOfWorkOnBeforeDelete());
+            }
+
+            if (this.writer instanceof BeforeDelete.ContinueOnError) {
+                return new TriggerOrchestrator.UnitOfWork();
+            }
+
+            return sharedUnitOfWork;
         }
     }
 
-    public class HandlerLifecycle extends TriggerOrchestrator.HandlerLifecycle {
+    public class HandlerHooks extends TriggerOrchestrator.HandlerHooks {
         private BeforeDelete.Handler handler;
 
-        public HandlerLifecycle(BeforeDelete.Handler handler) {
+        public HandlerHooks(BeforeDelete.Handler handler) {
             this.handler = handler;
         }
 
@@ -266,9 +270,11 @@ public class BeforeDelete {
         }
 
         public List<BeforeDelete.Handler> beforeDeleteHandlers() {
-            return this.handlerOrOrchestrator instanceof TriggerOrchestrator.BeforeDelete
-                ? ((TriggerOrchestrator.BeforeDelete) this.handlerOrOrchestrator).beforeDeleteHandlers()
-                : new List<BeforeDelete.Handler>{ (BeforeDelete.Handler) this.handlerOrOrchestrator };
+            if (this.handlerOrOrchestrator instanceof TriggerOrchestrator.BeforeDelete) {
+                return ((TriggerOrchestrator.BeforeDelete) this.handlerOrOrchestrator).beforeDeleteHandlers();
+            }
+
+            return new List<BeforeDelete.Handler>{ (BeforeDelete.Handler) this.handlerOrOrchestrator };
         }
     }
 }

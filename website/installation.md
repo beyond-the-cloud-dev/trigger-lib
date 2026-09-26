@@ -10,9 +10,9 @@ description: Install Trigger Lib in a Salesforce org - deploy via button, or cop
  sf package version promote --package "Trigger Lib@1.0.0-1"  --target-dev-hub beyondthecloud-prod
 -->
 
-## Install via Unlocked Package
+## Install via Unlocked Package {#install-via-unlocked-package}
 
-Install the SOQL Lib unlocked package with `btcdev` namespace to your Salesforce environment:
+Install the Trigger Lib unlocked package with `btcdev` namespace to your Salesforce environment:
 
 `/packaging/installPackage.apexp?p0=04tP6000003jdrVIAQ`
 
@@ -30,7 +30,7 @@ Click the button below to deploy Trigger Lib to your environment.
 </a>
 
 ::: warning
-The button also deploys [SOQL Lib](https://soql.beyondthecloud.dev) 6.11.0 and [DML Lib](https://dml.beyondthecloud.dev) 3.2.0, replacing the org's `SOQL` and `DML` classes. If the org has the same or a newer version, use [Copy and Deploy](#copy-and-deploy) and skip them.
+The button also deploys [SOQL Lib](https://soql.beyondthecloud.dev) 6.12.0 and [DML Lib](https://dml.beyondthecloud.dev) 4.0.0, replacing the org's `SOQL` and `DML` classes. If the org has the same or a newer version, use [Copy and Deploy](#copy-and-deploy) and skip them.
 :::
 
 ## Copy and Deploy {#copy-and-deploy}

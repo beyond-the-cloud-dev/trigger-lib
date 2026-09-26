@@ -16,13 +16,9 @@ Install the SOQL Lib unlocked package with `btcdev` namespace to your Salesforce
 
 `/packaging/installPackage.apexp?p0=04tP6000003jdrVIAQ`
 
-<a href="https://test.salesforce.com/packaging/installPackage.apexp?p0=04tP6000003jdrVIAQ" target="_blank" style={{display: 'inline-block', backgroundColor: '#1976d2', color: 'white', padding: '10px 20px', textDecoration: 'none', borderRadius: '4px', marginRight: '10px'}}>
-    <p style={{margin: '0px'}}>Install on Sandbox</p>
-</a>
+[Install on Sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tP6000003jdrVIAQ)
 
-<a href="https://login.salesforce.com/packaging/installPackage.apexp?p0=04tP6000003jdrVIAQ" target="_blank" style={{display: 'inline-block', backgroundColor: '#d32f2f', color: 'white', padding: '10px 20px', textDecoration: 'none', borderRadius: '4px'}}>
-    <p style={{margin: '0px'}}>Install on Production</p>
-</a>
+[Install on Production](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tP6000003jdrVIAQ)
 
 ## Deploy via Button {#deploy-via-button}
 

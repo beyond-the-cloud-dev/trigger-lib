@@ -139,7 +139,7 @@ public interface Error {
 ```
 
 - **`getHandlerName()`** is the handler's class name without the outer class.
-- **`getRecordIds()`** holds every record of the chunk, not only the qualified ones. It is empty in before insert.
+- **`getRecordIds()`** holds every record of the chunk, not only the qualified ones. It is empty in before insert and for platform events.
 
 ## TriggerLibException {#triggerlibexception}
 

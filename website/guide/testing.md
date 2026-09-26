@@ -77,7 +77,7 @@ static void populateOnBeforeUpdateWithSmallAmount() {
 - **Assert on your own rows.** The handler gets the same instances, so the fields a Populator set and the errors a Validator added are on them after the run.
 - **The predicate, the add-ons and the Finalizer run too.** A row the predicate rejects is skipped, as in a real save.
 - **Mock the class you run.** `beforeInsertFor(X.class)` pairs with `runTestFor(new X())` by class name. Without a mock, `runTestFor` throws a `TriggerTypes.TriggerLibException`.
-- **Rows get Ids where the context has them.** In after insert, after undelete and both delete contexts, a row without an Id gets a fake one. In the update contexts, the new and the old row share one Id.
+- **Rows get Ids where the context has them.** In after insert, after undelete and both delete contexts, a row without an Id gets a fake one. In the update contexts, the new and the old row share one Id. Objects without an `Id` field, such as platform events, keep their rows as they are.
 - **Queue several contexts before the first run.** Each `runTestFor` takes the next context queued for the class, and the last one stays for every later call.
 
 ## Parents {#parents}
@@ -109,6 +109,7 @@ static void writeOnAfterInsertWithActiveAccountOwner() {
 - **Nest a grandparent** inside the parent, as `Owner` above.
 - **Pass the old parents too for a PriorParentQuery.** Set the lookup on the old row and pass both parents, such as `withParent(Account.OwnerId, new List<User>{ newOwner, oldOwner })`.
 - **Parents of one type share one mock.** Each lookup still picks its parent by Id, so two lookups to Account work side by side.
+- **No query reaches the org.** In after insert, after update and after undelete, parents are normally read through one query on the saved rows. `runTestFor` mocks that query too, so every parent comes from `withParent`.
 
 ## Related Records {#related}
 

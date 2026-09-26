@@ -3,7 +3,7 @@
  * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
  *
- * v.0.1.0
+ * v0.2.0
  *
  * PMD False Positives:
  * - CyclomaticComplexity: It is a library and we tried to put everything into ONE test class
@@ -144,6 +144,54 @@ private class TriggerTypesTest {
 
         // Verify
         Assert.isTrue(result, 'The field should be reported as changed to the value.');
+    }
+
+    @IsTest
+    static void isChangedToNotNullWhenValueWasSet() {
+        // Setup
+        TriggerTypes.UpdateRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'Doe', Title = 'Manager'), new Contact(LastName = 'Doe', Title = null));
+
+        // Test
+        Boolean result = record.isChangedToNotNull(Contact.Title);
+
+        // Verify
+        Assert.isTrue(result, 'The field should be reported as changed to a value.');
+    }
+
+    @IsTest
+    static void isChangedToNotNullWhenValueWasReplaced() {
+        // Setup
+        TriggerTypes.UpdateRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'Doe', Title = 'Director'), new Contact(LastName = 'Doe', Title = 'Manager'));
+
+        // Test
+        Boolean result = record.isChangedToNotNull(Contact.Title);
+
+        // Verify
+        Assert.isTrue(result, 'The field should be reported as changed to a value.');
+    }
+
+    @IsTest
+    static void isChangedToNotNullWhenValueWasCleared() {
+        // Setup
+        TriggerTypes.UpdateRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'Doe', Title = null), new Contact(LastName = 'Doe', Title = 'Manager'));
+
+        // Test
+        Boolean result = record.isChangedToNotNull(Contact.Title);
+
+        // Verify
+        Assert.isFalse(result, 'The field should not be reported as changed to a value.');
+    }
+
+    @IsTest
+    static void isChangedToNotNullWhenValueIsUnchanged() {
+        // Setup
+        TriggerTypes.UpdateRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'Doe', Title = 'Manager'), new Contact(LastName = 'Doe', Title = 'Manager'));
+
+        // Test
+        Boolean result = record.isChangedToNotNull(Contact.Title);
+
+        // Verify
+        Assert.isFalse(result, 'The field should not be reported as changed to a value.');
     }
 
     @IsTest
@@ -1323,6 +1371,90 @@ private class TriggerTypesTest {
 
         // Verify
         Assert.isFalse(result, 'The field should equal the value.');
+    }
+
+    @IsTest
+    static void isInWhenValueIsInSet() {
+        // Setup
+        TriggerTypes.InsertRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'Doe'), null);
+
+        // Test
+        Boolean result = record.isIn(Contact.LastName, new Set<String>{ 'Doe', 'Roe' });
+
+        // Verify
+        Assert.isTrue(result, 'The field should be in the values.');
+    }
+
+    @IsTest
+    static void isInWhenValueIsNotInSet() {
+        // Setup
+        TriggerTypes.InsertRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'Doe'), null);
+
+        // Test
+        Boolean result = record.isIn(Contact.LastName, new Set<String>{ 'Roe', 'Smith' });
+
+        // Verify
+        Assert.isFalse(result, 'The field should not be in the values.');
+    }
+
+    @IsTest
+    static void isInWhenOnlyLetterCaseDiffers() {
+        // Setup
+        TriggerTypes.InsertRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'Doe'), null);
+
+        // Test
+        Boolean result = record.isIn(Contact.LastName, new Set<String>{ 'DOE' });
+
+        // Verify
+        Assert.isTrue(result, 'The field should be in the values.');
+    }
+
+    @IsTest
+    static void isInWithList() {
+        // Setup
+        TriggerTypes.InsertRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'Doe'), null);
+
+        // Test
+        Boolean result = record.isIn(Contact.LastName, new List<String>{ 'Roe', 'Doe' });
+
+        // Verify
+        Assert.isTrue(result, 'The field should be in the values.');
+    }
+
+    @IsTest
+    static void isInWhenFieldIsNull() {
+        // Setup
+        TriggerTypes.InsertRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'Doe'), null);
+
+        // Test
+        Boolean result = record.isIn(Contact.Description, new Set<String>{ 'Anything' });
+
+        // Verify
+        Assert.isFalse(result, 'The field should not be in the values.');
+    }
+
+    @IsTest
+    static void isNotInWhenValueIsNotInSet() {
+        // Setup
+        TriggerTypes.InsertRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'Doe'), null);
+
+        // Test
+        Boolean result = record.isNotIn(Contact.LastName, new Set<String>{ 'Roe', 'Smith' });
+
+        // Verify
+        Assert.isTrue(result, 'The field should not be in the values.');
+    }
+
+    @IsTest
+    static void isNotInWhenValueIsInSet() {
+        // Setup
+        TriggerTypes.InsertRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'Doe'), null);
+
+        // Test
+        Boolean result = record.isNotIn(Contact.LastName, new Set<String>{ 'Doe', 'Roe' });
+
+        // Verify
+        Assert.isFalse(result, 'The field should be in the values.');
     }
 
     @IsTest

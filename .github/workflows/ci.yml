@@ -11,10 +11,12 @@ jobs:
   salesforce-ci:
     uses: beyond-the-cloud-dev/cicd-template/.github/workflows/salesforce-ci.yml@main
     with:
-      node-version: "22"
-      sf-cli-version: "latest"
+      # package/ needs SOQL Lib and DML Lib installed; force-app/ vendors both
+      source-dirs: 'force-app examples'
+      node-version: '22'
+      sf-cli-version: 'latest'
       scratch-org-duration: 1
-      test-level: "RunLocalTests"
+      test-level: 'RunLocalTests'
       upload-to-codecov: true
       codecov-slug: ${{ github.repository }} # Automatically uses current repository
     secrets:

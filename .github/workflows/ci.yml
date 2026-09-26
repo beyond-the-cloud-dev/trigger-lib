@@ -9,9 +9,8 @@ on:
 
 jobs:
   salesforce-ci:
-    uses: beyond-the-cloud-dev/cicd-template/.github/workflows/salesforce-ci.yml@feat/source-dirs-input
+    uses: beyond-the-cloud-dev/cicd-template/.github/workflows/salesforce-ci.yml@main
     with:
-      template-ref: feat/source-dirs-input
       # package/ needs SOQL Lib and DML Lib installed; force-app/ vendors both
       source-dirs: 'force-app examples'
       node-version: '22'

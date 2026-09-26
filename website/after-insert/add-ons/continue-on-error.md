@@ -30,5 +30,5 @@ Log and swallow the handler's exceptions, so later handlers still run and the in
 - **Add a [Logger](/guide/error-handling#logger).** Without one, a swallowed exception leaves no trace.
 
 ::: warning
-Some errors still fail the insert. [Library exceptions](/api/trigger-orchestrator#triggerlibexception), `System.LimitException`, the `FinalException` from writing a trigger row and exceptions outside the handler's own methods, such as `bypassOnAfterInsertWhen()` or the final commit, are never swallowed.
+Some errors still fail the insert. [Library exceptions](/api/trigger-orchestrator#triggerlibexception), `System.LimitException`, `EventBus.RetryableException` (a platform event subscriber asking for redelivery), the `FinalException` from writing a trigger row and exceptions outside the handler's own methods, such as `bypassOnAfterInsertWhen()` or the final commit, are never swallowed.
 :::

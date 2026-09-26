@@ -614,6 +614,10 @@ const recordMethodGroups = [
     note: () => 'equal / different; text ignores case'
   },
   {
+    names: ['isIn', 'isNotIn'],
+    note: () => 'equal to one of the values / to none; text ignores case'
+  },
+  {
     names: ['contains', 'doesNotContain', 'startsWith', 'endsWith'],
     note: () => 'text match; case-sensitive'
   },
@@ -655,6 +659,10 @@ const recordMethodGroups = [
   {
     names: ['isChangedTo', 'isChangedFrom'],
     note: () => 'changed to / from the value'
+  },
+  {
+    names: ['isChangedToNotNull'],
+    note: () => 'changed, and the new value is not null'
   },
   {
     names: ['isChangedFromTo'],

@@ -3,7 +3,7 @@
  * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
  *
- * v.0.1.0
+ * v0.2.0
  *
  * PMD False Positives:
  * - ExcessiveClassLength: It is a library and we tried to put everything into ONE test class
@@ -345,6 +345,27 @@ private class AfterInsertTest {
     }
 
     @IsTest
+    static void writerWithContinueOnErrorWhenRetryIsRequested() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TriggerOrchestrator.mock().afterInsertFor(RetryingWriterWithContinueOnError.class).with(new Contact(LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new RetryingWriterWithContinueOnError());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.isInstanceOfType(expectedException, EventBus.RetryableException.class, 'The retry request should not be swallowed.');
+    }
+
+    @IsTest
     static void writerWhenHandlerPerformsDml() {
         // Setup
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
@@ -369,7 +390,7 @@ private class AfterInsertTest {
 
         Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
         Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe', AccountId = acme.Id);
-        SOQL.mock(Contact.SObjectType).thenReturn(new Contact(Id = doe.Id, Account = acme));
+        SOQL.mock('SavedTriggerRecords').thenReturn(new Contact(Id = doe.Id, Account = acme));
 
         TriggerOrchestrator.mock().afterInsertFor(AccountNameWriter.class).with(doe);
 
@@ -563,6 +584,20 @@ private class AfterInsertTest {
     }
 
     @IsTest
+    static void mockWithPlatformEvent() {
+        // Setup
+        EventCountingDispatcher dispatcher = new EventCountingDispatcher();
+
+        TriggerOrchestrator.mock().afterInsertFor(EventCountingDispatcher.class).with(new BatchApexErrorEvent());
+
+        // Test
+        TriggerOrchestrator.runTestFor(dispatcher);
+
+        // Verify
+        Assert.areEqual(1, dispatcher.dispatchedEvents, 'The mocked event should be dispatched.');
+    }
+
+    @IsTest
     static void mockWithParent() {
         // Setup
         DML.mock('triggerUow').allDmls();
@@ -577,6 +612,25 @@ private class AfterInsertTest {
 
         // Verify
         Assert.areEqual('Acme', DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records()[0].get(Task.Subject), 'The mocked parent should be served.');
+    }
+
+    @IsTest
+    static void mockWithParentWithoutRealQuery() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Account acme = new Account(Id = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType), Name = 'Acme');
+        Contact doe = new Contact(LastName = 'Doe', AccountId = acme.Id);
+
+        TriggerOrchestrator.mock().afterInsertFor(AccountNameWriter.class).with(doe).withParent(Contact.AccountId, acme);
+
+        // Test
+        TriggerOrchestrator.runTestFor(new AccountNameWriter());
+
+        // Verify
+        Assert.areEqual(0, Limits.getQueries(), 'The mocked context should not query the org.');
     }
 
     @IsTest
@@ -600,6 +654,18 @@ private class AfterInsertTest {
 
         public void writeOnAfterInsert(TriggerTypes.InsertRecord record, TriggerTypes.UnitOfWork unitOfWork) {
             record.getNewSObject().put(Contact.Description, 'AFTER_INSERT');
+        }
+    }
+
+    private class EventCountingDispatcher implements AfterInsert.Dispatcher {
+        public Integer dispatchedEvents = 0;
+
+        public Boolean dispatchOnAfterInsertWhen(TriggerTypes.InsertRecord record) {
+            return true;
+        }
+
+        public void dispatchOnAfterInsert(TriggerTypes.InsertRecords records) {
+            this.dispatchedEvents += records.size();
         }
     }
 
@@ -675,6 +741,16 @@ private class AfterInsertTest {
     }
 
     private class FailingDispatcherWithContinueOnError extends FailingDispatcher implements AfterInsert.ContinueOnError {
+    }
+
+    private class RetryingWriterWithContinueOnError implements AfterInsert.Writer, AfterInsert.ContinueOnError {
+        public Boolean writeOnAfterInsertWhen(TriggerTypes.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterInsert(TriggerTypes.InsertRecord record, TriggerTypes.UnitOfWork unitOfWork) {
+            throw new EventBus.RetryableException('The writer asked for a retry.');
+        }
     }
 
     private class DmlAccountWriter implements AfterInsert.Writer {

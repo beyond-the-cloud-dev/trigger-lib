@@ -2,7 +2,7 @@
  * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
  *
- * v.0.1.0
+ * v0.2.0
  *
  * PMD False Positives:
  * - ExcessiveClassLength: It is a library and we tried to put everything into ONE class
@@ -505,7 +505,7 @@ global with sharing class TriggerOrchestrator {
         protected void handleException(Exception e) {
             this.logError(e);
 
-            if (e instanceof TriggerTypes.TriggerLibException || !this.handlerHooks.continuesOnError()) {
+            if (e instanceof TriggerTypes.TriggerLibException || e instanceof EventBus.RetryableException || !this.handlerHooks.continuesOnError()) {
                 throw e;
             }
         }
@@ -614,7 +614,13 @@ global with sharing class TriggerOrchestrator {
                 fieldsToQuery.addAll(this.getFieldPathsForLookup(lookupField));
             }
 
-            List<SObject> savedRecords = SOQL.of(this.context.sObjectType).with(fieldsToQuery).byIds(this.context.newRecords).systemMode().withoutSharing().toList();
+            List<SObject> savedRecords = SOQL.of(this.context.sObjectType)
+                .with(fieldsToQuery)
+                .byIds(this.context.newRecords)
+                .systemMode()
+                .withoutSharing()
+                .mockId('SavedTriggerRecords')
+                .toList();
 
             for (SObjectField lookupField : this.lookupsForNewParents) {
                 Map<Id, SObject> cachedParentById = this.cachedParentsByLookup.get(lookupField);
@@ -955,6 +961,8 @@ global with sharing class TriggerOrchestrator {
                 SOQL.mock(parentType).thenReturn(this.typed(this.parentsByType.get(parentType)));
             }
 
+            SOQL.mock('SavedTriggerRecords').thenReturn(new List<SObject>());
+
             TriggerOrchestrator orchestrator = new TriggerOrchestrator(this);
 
             orchestrator.context.triggerOperation = this.triggerOperation;
@@ -973,6 +981,10 @@ global with sharing class TriggerOrchestrator {
         }
 
         protected List<SObject> assignIds(List<SObject> records) {
+            if (records.isEmpty() || !records[0].getSObjectType().getDescribe().fields.getMap().containsKey('Id')) {
+                return records;
+            }
+
             for (SObject record : records) {
                 record.put('Id', record.Id ?? new TriggerTypes.RandomIdGenerator().get(record.getSObjectType()));
             }

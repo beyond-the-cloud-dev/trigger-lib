@@ -2,7 +2,7 @@
  * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
  *
- * v.0.1.0
+ * v0.2.0
  *
  * PMD False Positives:
  * - ExcessivePublicCount: It is a library class and exposes all necessary methods to evaluate a trigger record
@@ -29,6 +29,9 @@ public with sharing class TriggerTypes {
 
         Boolean equals(SObjectField field, Object value);
         Boolean doesNotEqual(SObjectField field, Object value);
+
+        Boolean isIn(SObjectField field, Iterable<Object> values);
+        Boolean isNotIn(SObjectField field, Iterable<Object> values);
 
         Boolean contains(SObjectField field, String value);
         Boolean doesNotContain(SObjectField field, String value);
@@ -92,6 +95,9 @@ public with sharing class TriggerTypes {
 
         Boolean equals(SObjectField field, Object value);
         Boolean doesNotEqual(SObjectField field, Object value);
+
+        Boolean isIn(SObjectField field, Iterable<Object> values);
+        Boolean isNotIn(SObjectField field, Iterable<Object> values);
 
         Boolean contains(SObjectField field, String value);
         Boolean doesNotContain(SObjectField field, String value);
@@ -157,6 +163,9 @@ public with sharing class TriggerTypes {
         Boolean equals(SObjectField field, Object value);
         Boolean doesNotEqual(SObjectField field, Object value);
 
+        Boolean isIn(SObjectField field, Iterable<Object> values);
+        Boolean isNotIn(SObjectField field, Iterable<Object> values);
+
         Boolean contains(SObjectField field, String value);
         Boolean doesNotContain(SObjectField field, String value);
         Boolean startsWith(SObjectField field, String value);
@@ -186,6 +195,7 @@ public with sharing class TriggerTypes {
         Boolean areAllChanged(Iterable<SObjectField> fields);
 
         Boolean isChangedTo(SObjectField field, Object expectedValue);
+        Boolean isChangedToNotNull(SObjectField field);
         Boolean isChangedFrom(SObjectField field, Object priorValue);
         Boolean isChangedFromTo(SObjectField field, Object fromValue, Object toValue);
 
@@ -240,6 +250,9 @@ public with sharing class TriggerTypes {
         Boolean equals(SObjectField field, Object value);
         Boolean doesNotEqual(SObjectField field, Object value);
 
+        Boolean isIn(SObjectField field, Iterable<Object> values);
+        Boolean isNotIn(SObjectField field, Iterable<Object> values);
+
         Boolean contains(SObjectField field, String value);
         Boolean doesNotContain(SObjectField field, String value);
         Boolean startsWith(SObjectField field, String value);
@@ -269,6 +282,7 @@ public with sharing class TriggerTypes {
         Boolean areAllChanged(Iterable<SObjectField> fields);
 
         Boolean isChangedTo(SObjectField field, Object expectedValue);
+        Boolean isChangedToNotNull(SObjectField field);
         Boolean isChangedFrom(SObjectField field, Object priorValue);
         Boolean isChangedFromTo(SObjectField field, Object fromValue, Object toValue);
 
@@ -323,6 +337,9 @@ public with sharing class TriggerTypes {
 
         Boolean equals(SObjectField field, Object value);
         Boolean doesNotEqual(SObjectField field, Object value);
+
+        Boolean isIn(SObjectField field, Iterable<Object> values);
+        Boolean isNotIn(SObjectField field, Iterable<Object> values);
 
         Boolean contains(SObjectField field, String value);
         Boolean doesNotContain(SObjectField field, String value);
@@ -384,6 +401,9 @@ public with sharing class TriggerTypes {
 
         Boolean equals(SObjectField field, Object value);
         Boolean doesNotEqual(SObjectField field, Object value);
+
+        Boolean isIn(SObjectField field, Iterable<Object> values);
+        Boolean isNotIn(SObjectField field, Iterable<Object> values);
 
         Boolean contains(SObjectField field, String value);
         Boolean doesNotContain(SObjectField field, String value);
@@ -448,6 +468,9 @@ public with sharing class TriggerTypes {
 
         Boolean equals(SObjectField field, Object value);
         Boolean doesNotEqual(SObjectField field, Object value);
+
+        Boolean isIn(SObjectField field, Iterable<Object> values);
+        Boolean isNotIn(SObjectField field, Iterable<Object> values);
 
         Boolean contains(SObjectField field, String value);
         Boolean doesNotContain(SObjectField field, String value);
@@ -674,6 +697,20 @@ public with sharing class TriggerTypes {
             return !this.equals(field, value);
         }
 
+        public Boolean isIn(SObjectField field, Iterable<Object> values) {
+            for (Object value : values) {
+                if (this.equals(field, value)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public Boolean isNotIn(SObjectField field, Iterable<Object> values) {
+            return !this.isIn(field, values);
+        }
+
         public Boolean contains(SObjectField field, String value) {
             return this.isNotNull(field) && this.getFieldValue(field).toString().contains(value);
         }
@@ -772,6 +809,10 @@ public with sharing class TriggerTypes {
 
         public Boolean isChangedTo(SObjectField field, Object value) {
             return this.getFieldValue(field) == value && this.getOldFieldValue(field) != value;
+        }
+
+        public Boolean isChangedToNotNull(SObjectField field) {
+            return this.isNotNull(field) && this.isChanged(field);
         }
 
         public Boolean isChangedFrom(SObjectField field, Object value) {

@@ -43,17 +43,17 @@ A missing member is a compile error, such as `isChanged` in an insert handler.
 
 ## Value Checks {#value-checks}
 
-`equals`, `doesNotEqual`, `contains`, `doesNotContain`, `startsWith`, `endsWith`, `isNull`, `isNotNull`, `isEmpty`, `isNotEmpty`, `isBlank`, `isNotBlank`, `isTrue`, `isFalse`, `greaterThan`, `greaterThanOrEqualTo`, `lessThan`, `lessThanOrEqualTo`.
+`equals`, `doesNotEqual`, `isIn`, `isNotIn`, `contains`, `doesNotContain`, `startsWith`, `endsWith`, `isNull`, `isNotNull`, `isEmpty`, `isNotEmpty`, `isBlank`, `isNotBlank`, `isTrue`, `isFalse`, `greaterThan`, `greaterThanOrEqualTo`, `lessThan`, `lessThanOrEqualTo`.
 
 - **They read the new row.** In the delete contexts they read the old row.
 - **They see earlier changes.** In before contexts, a value set by an earlier handler with `put` counts.
 - **They never throw on null.** Comparisons such as `lessThan` are false for null.
-- **Case.** `equals` ignores case for text. `contains`, `startsWith` and `endsWith` are case-sensitive.
+- **Case.** `equals` and `isIn` ignore case for text. `contains`, `startsWith` and `endsWith` are case-sensitive.
 - **`0` and `false` are values.** They are not null, empty or blank.
 
 ## Change Detection {#change-detection}
 
-Update contexts only: `isChanged`, `isAnyChanged`, `areAllChanged`, `isChangedTo`, `isChangedFrom`, `isChangedFromTo`.
+Update contexts only: `isChanged`, `isAnyChanged`, `areAllChanged`, `isChangedTo`, `isChangedToNotNull`, `isChangedFrom`, `isChangedFromTo`.
 
 - **`isAnyChanged` and `areAllChanged`** take 2 to 5 fields or an `Iterable<SObjectField>`.
 - **Text comparison ignores case.** `'Doe'` to `'DOE'` is not a change.

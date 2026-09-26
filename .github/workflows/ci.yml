@@ -12,8 +12,10 @@ jobs:
     uses: beyond-the-cloud-dev/cicd-template/.github/workflows/salesforce-ci.yml@feat/source-dirs-input
     with:
       template-ref: feat/source-dirs-input
-      # package/ needs SOQL Lib and DML Lib installed; force-app/ vendors both
-      source-dirs: 'force-app examples'
+      dependencies: |
+        beyond-the-cloud-dev/soql-lib@v6.12.0
+        beyond-the-cloud-dev/dml-lib@v4.0.0
+      source-dirs: 'package examples'
       node-version: '22'
       sf-cli-version: 'latest'
       scratch-org-duration: 1

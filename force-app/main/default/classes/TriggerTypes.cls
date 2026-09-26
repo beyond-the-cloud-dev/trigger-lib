@@ -812,7 +812,8 @@ public with sharing class TriggerTypes {
         }
 
         public Boolean isChangedToNotNull(SObjectField field) {
-            return this.isNotNull(field) && this.isChanged(field);
+            Object fieldValue = this.getFieldValue(field);
+            return fieldValue != null && fieldValue != this.getOldFieldValue(field);
         }
 
         public Boolean isChangedFrom(SObjectField field, Object value) {

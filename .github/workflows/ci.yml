@@ -14,7 +14,8 @@ jobs:
       template-ref: feat/deps-from-sfdx-project
       # SOQL Lib and DML Lib come from the dependencies in sfdx-project.json
       deploy-dependencies: true
-      source-dirs: 'package examples'
+      # unpackaged/ is generated from force-app/, see the unpackaged job
+      source-dirs: 'force-app examples'
       node-version: '22'
       sf-cli-version: 'latest'
       scratch-org-duration: 1
@@ -24,3 +25,19 @@ jobs:
     secrets:
       SFDX_AUTH_URL_DEVHUB: ${{ secrets.SFDX_AUTH_URL_DEVHUB }}
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  unpackaged:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run build:unpackaged
+      - name: Check unpackaged/ is up to date
+        run: |
+          if [ -n "$(git status --porcelain -- unpackaged)" ]; then
+            git status --short -- unpackaged
+            echo "::error::unpackaged/ is out of date. Run npm run build:unpackaged and commit the result."
+            exit 1
+          fi

@@ -1,0 +1,5 @@
+# Coverage counts force-app/ only. examples/ is docs code and unpackaged/ is a
+# generated copy of force-app/, so neither should move the number.
+ignore:
+  - 'examples/**'
+  - 'unpackaged/**'

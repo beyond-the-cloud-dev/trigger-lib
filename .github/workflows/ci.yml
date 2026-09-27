@@ -9,10 +9,12 @@ on:
 
 jobs:
   salesforce-ci:
-    uses: beyond-the-cloud-dev/cicd-template/.github/workflows/salesforce-ci.yml@main
+    uses: beyond-the-cloud-dev/cicd-template/.github/workflows/salesforce-ci.yml@feat/deps-from-sfdx-project
     with:
-      # package/ needs SOQL Lib and DML Lib installed; force-app/ vendors both
-      source-dirs: 'force-app examples'
+      template-ref: feat/deps-from-sfdx-project
+      # SOQL Lib and DML Lib come from the dependencies in sfdx-project.json
+      deploy-dependencies: true
+      source-dirs: 'package examples'
       node-version: '22'
       sf-cli-version: 'latest'
       scratch-org-duration: 1

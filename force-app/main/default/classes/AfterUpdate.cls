@@ -1,57 +1,57 @@
-public class AfterUpdate {
+global class AfterUpdate {
     // Roles - pick one
 
-    public interface Writer extends Handler {
+    global interface Writer extends Handler {
         Boolean writeOnAfterUpdateWhen(TriggerTypes.UpdateRecord record);
         void writeOnAfterUpdate(TriggerTypes.UpdateRecord record, TriggerTypes.UnitOfWork unitOfWork);
     }
 
-    public interface Dispatcher extends Handler {
+    global interface Dispatcher extends Handler {
         Boolean dispatchOnAfterUpdateWhen(TriggerTypes.UpdateRecord record);
         void dispatchOnAfterUpdate(TriggerTypes.UpdateRecords records);
     }
 
     // Add-ons - pick as many as you need
 
-    public interface ParentQuery {
+    global interface ParentQuery {
         Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnAfterUpdate();
     }
 
-    public interface PriorParentQuery {
+    global interface PriorParentQuery {
         Map<SObjectField, TriggerTypes.ParentFields> queryPriorParentsOnAfterUpdate();
     }
 
-    public interface RelatedQuery {
+    global interface RelatedQuery {
         Map<String, AfterUpdate.RecordsProvider> queryRelatedOnAfterUpdate();
     }
 
-    public interface RecordsProvider {
+    global interface RecordsProvider {
         List<SObject> query(TriggerTypes.UpdateRecords records);
         String keyOf(SObject row);
     }
 
-    public interface OwnUnitOfWork {
+    global interface OwnUnitOfWork {
         DML.Committable ownUnitOfWorkOnAfterUpdate();
     }
 
-    public interface Bypassable {
+    global interface Bypassable {
         Boolean bypassOnAfterUpdateWhen();
     }
 
-    public interface RecursionGuard {
+    global interface RecursionGuard {
         Integer maxRunsPerRecordOnAfterUpdate();
     }
 
-    public interface Finalizer {
+    global interface Finalizer {
         void finalizeOnAfterUpdate(TriggerTypes.UpdateRecords records);
     }
 
-    public interface ContinueOnError {
+    global interface ContinueOnError {
     }
 
     // Marker
 
-    public interface Handler {
+    global interface Handler {
     }
 
     // Implementation

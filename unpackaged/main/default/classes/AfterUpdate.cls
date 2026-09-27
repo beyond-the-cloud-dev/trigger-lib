@@ -1,57 +1,57 @@
-global class AfterUpdate {
+public class AfterUpdate {
     // Roles - pick one
 
-    global interface Writer extends Handler {
+    public interface Writer extends Handler {
         Boolean writeOnAfterUpdateWhen(TriggerTypes.UpdateRecord record);
         void writeOnAfterUpdate(TriggerTypes.UpdateRecord record, TriggerTypes.UnitOfWork unitOfWork);
     }
 
-    global interface Dispatcher extends Handler {
+    public interface Dispatcher extends Handler {
         Boolean dispatchOnAfterUpdateWhen(TriggerTypes.UpdateRecord record);
         void dispatchOnAfterUpdate(TriggerTypes.UpdateRecords records);
     }
 
     // Add-ons - pick as many as you need
 
-    global interface ParentQuery {
+    public interface ParentQuery {
         Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnAfterUpdate();
     }
 
-    global interface PriorParentQuery {
+    public interface PriorParentQuery {
         Map<SObjectField, TriggerTypes.ParentFields> queryPriorParentsOnAfterUpdate();
     }
 
-    global interface RelatedQuery {
+    public interface RelatedQuery {
         Map<String, AfterUpdate.RecordsProvider> queryRelatedOnAfterUpdate();
     }
 
-    global interface RecordsProvider {
+    public interface RecordsProvider {
         List<SObject> query(TriggerTypes.UpdateRecords records);
         String keyOf(SObject row);
     }
 
-    global interface OwnUnitOfWork {
+    public interface OwnUnitOfWork {
         DML.Committable ownUnitOfWorkOnAfterUpdate();
     }
 
-    global interface Bypassable {
+    public interface Bypassable {
         Boolean bypassOnAfterUpdateWhen();
     }
 
-    global interface RecursionGuard {
+    public interface RecursionGuard {
         Integer maxRunsPerRecordOnAfterUpdate();
     }
 
-    global interface Finalizer {
+    public interface Finalizer {
         void finalizeOnAfterUpdate(TriggerTypes.UpdateRecords records);
     }
 
-    global interface ContinueOnError {
+    public interface ContinueOnError {
     }
 
     // Marker
 
-    global interface Handler {
+    public interface Handler {
     }
 
     // Implementation

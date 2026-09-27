@@ -1,53 +1,53 @@
-public class BeforeUpdate {
+global class BeforeUpdate {
     // Roles - pick one
 
-    public interface Populator extends Handler {
+    global interface Populator extends Handler {
         Boolean populateOnBeforeUpdateWhen(TriggerTypes.UpdateRecord record);
         void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record);
     }
 
-    public interface Validator extends Handler {
+    global interface Validator extends Handler {
         Boolean addErrorOnBeforeUpdateWhen(TriggerTypes.UpdateRecord record);
         void addErrorOnBeforeUpdate(TriggerTypes.RejectableUpdateRecord record);
     }
 
     // Add-ons - pick as many as you need
 
-    public interface ParentQuery {
+    global interface ParentQuery {
         Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnBeforeUpdate();
     }
 
-    public interface PriorParentQuery {
+    global interface PriorParentQuery {
         Map<SObjectField, TriggerTypes.ParentFields> queryPriorParentsOnBeforeUpdate();
     }
 
-    public interface RelatedQuery {
+    global interface RelatedQuery {
         Map<String, BeforeUpdate.RecordsProvider> queryRelatedOnBeforeUpdate();
     }
 
-    public interface RecordsProvider {
+    global interface RecordsProvider {
         List<SObject> query(TriggerTypes.UpdateRecords records);
         String keyOf(SObject row);
     }
 
-    public interface Bypassable {
+    global interface Bypassable {
         Boolean bypassOnBeforeUpdateWhen();
     }
 
-    public interface RecursionGuard {
+    global interface RecursionGuard {
         Integer maxRunsPerRecordOnBeforeUpdate();
     }
 
-    public interface Finalizer {
+    global interface Finalizer {
         void finalizeOnBeforeUpdate(TriggerTypes.UpdateRecords records);
     }
 
-    public interface ContinueOnError {
+    global interface ContinueOnError {
     }
 
     // Marker
 
-    public interface Handler {
+    global interface Handler {
     }
 
     // Implementation

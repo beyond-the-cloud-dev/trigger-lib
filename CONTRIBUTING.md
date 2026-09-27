@@ -133,8 +133,21 @@ npm run docs:dev
 
 # Create scratch org for testing
 sf org create scratch -f config/project-scratch-def.json -a dev
-sf project deploy start -o dev
+
+# Deploy SOQL Lib and DML Lib at the versions pinned in sfdx-project.json
+curl -fsSL https://raw.githubusercontent.com/beyond-the-cloud-dev/cicd-template/main/scripts/deploy-dependencies.sh | bash -s -- dev
+
+# Deploy Trigger Lib and the examples
+sf project deploy start -d force-app -d examples -o dev
 ```
+
+### Project layout
+
+- `force-app/` is the source of the package (`global` API). Edit Trigger Lib here, and only here.
+- `unpackaged/` is generated from `force-app/`: the same classes as `public`, plus the SOQL Lib and DML Lib classes they need. It is what the Deploy button and the Copy and Deploy docs give to orgs that do not install the package. After changing `force-app/` or bumping a dependency, run `npm run build:unpackaged` and commit the result. CI fails when it is out of date.
+- `examples/` holds the example handlers used in the docs.
+
+Always pass `-d` when deploying: `force-app/` and `unpackaged/` hold the same classes, so a plain `sf project deploy start` mixes them.
 
 ## 📚 Resources
 

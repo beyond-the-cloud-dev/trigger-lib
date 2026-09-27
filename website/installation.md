@@ -4,6 +4,15 @@ description: Install Trigger Lib in a Salesforce org - deploy via button, or cop
 
 # Installation
 
+::: info Dependencies
+Trigger Lib is built on two other Apex Fluently libs, so they have to be in the org too:
+
+- [SOQL Lib](https://soql.beyondthecloud.dev) 6.12.0
+- [DML Lib](https://dml.beyondthecloud.dev) 4.0.0
+
+Every install option below says how to get them.
+:::
+
 <!--
  sf package version create --package "Trigger Lib" --target-dev-hub beyondthecloud-prod --installation-key-bypass --wait 30 --code-coverage
 
@@ -12,13 +21,23 @@ description: Install Trigger Lib in a Salesforce org - deploy via button, or cop
 
 ## Install via Unlocked Package {#install-via-unlocked-package}
 
-Install the Trigger Lib unlocked package with `btcdev` namespace to your Salesforce environment:
+All three are unlocked packages with the `btcdev` namespace. Salesforce does not install dependencies for you, so install them in this order:
 
-`/packaging/installPackage.apexp?p0=04tP6000003jhdNIAQ`
+| Step | Package           | Sandbox                                                                                     | Production                                                                                   |
+| ---- | ----------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| 1    | SOQL Lib 6.12.0   | [Install](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tP6000003dX2PIAU) | [Install](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tP6000003dX2PIAU) |
+| 2    | DML Lib 4.0.0     | [Install](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tP6000003jdptIAA) | [Install](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tP6000003jdptIAA) |
+| 3    | Trigger Lib 0.2.0 | [Install](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tP6000003jhdNIAQ) | [Install](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tP6000003jhdNIAQ) |
 
-[Install on Sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=04tP6000003jhdNIAQ)
+Skip step 1 or 2 if the org already has that package in the same or a newer version.
 
-[Install on Production](https://login.salesforce.com/packaging/installPackage.apexp?p0=04tP6000003jhdNIAQ)
+Or with the Salesforce CLI:
+
+```bash
+sf package install --package 04tP6000003dX2PIAU --target-org your-org-alias --wait 10
+sf package install --package 04tP6000003jdptIAA --target-org your-org-alias --wait 10
+sf package install --package 04tP6000003jhdNIAQ --target-org your-org-alias --wait 10
+```
 
 ## Deploy via Button {#deploy-via-button}
 

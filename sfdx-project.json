@@ -4,7 +4,7 @@
       "versionName": "ver 0.2",
       "versionNumber": "0.2.0.NEXT",
       "path": "force-app",
-      "default": false,
+      "default": true,
       "package": "Trigger Lib",
       "versionDescription": "",
       "dependencies": [
@@ -20,10 +20,6 @@
     {
       "path": "examples",
       "default": false
-    },
-    {
-      "path": "unpackaged",
-      "default": true
     }
   ],
   "name": "trigger-lib",

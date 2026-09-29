@@ -1,49 +1,60 @@
-global class AfterDelete {
+// global
+public class AfterDelete {
     // Roles - pick one
 
-    global interface Writer extends Handler {
+    // global
+    public interface Writer extends Handler {
         Boolean writeOnAfterDeleteWhen(TriggerTypes.DeleteRecord record);
         void writeOnAfterDelete(TriggerTypes.DeleteRecord record, TriggerTypes.UnitOfWork unitOfWork);
     }
 
-    global interface Dispatcher extends Handler {
+    // global
+    public interface Dispatcher extends Handler {
         Boolean dispatchOnAfterDeleteWhen(TriggerTypes.DeleteRecord record);
         void dispatchOnAfterDelete(TriggerTypes.DeleteRecords records);
     }
 
     // Add-ons - pick as many as you need
 
-    global interface PriorParentQuery {
+    // global
+    public interface PriorParentQuery {
         Map<SObjectField, TriggerTypes.ParentFields> queryPriorParentsOnAfterDelete();
     }
 
-    global interface RelatedQuery {
+    // global
+    public interface RelatedQuery {
         Map<String, AfterDelete.RecordsProvider> queryRelatedOnAfterDelete();
     }
 
-    global interface RecordsProvider {
+    // global
+    public interface RecordsProvider {
         List<SObject> query(TriggerTypes.DeleteRecords records);
         String keyOf(SObject row);
     }
 
-    global interface OwnUnitOfWork {
+    // global
+    public interface OwnUnitOfWork {
         DML.Committable ownUnitOfWorkOnAfterDelete();
     }
 
-    global interface Bypassable {
+    // global
+    public interface Bypassable {
         Boolean bypassOnAfterDeleteWhen();
     }
 
-    global interface Finalizer {
+    // global
+    public interface Finalizer {
         void finalizeOnAfterDelete(TriggerTypes.DeleteRecords records);
     }
 
-    global interface ContinueOnError {
+    // global
+    public interface ContinueOnError {
     }
 
     // Marker
 
-    global interface Handler {
+    // global
+    public interface Handler {
     }
 
     // Implementation

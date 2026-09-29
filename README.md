@@ -25,16 +25,8 @@ Trigger Lib is part of [Apex Fluently](https://apexfluently.beyondthecloud.dev/)
 **Trigger**
 
 ```apex
-trigger AccountTrigger on Account(
-  before insert,
-  after insert,
-  before update,
-  after update,
-  before delete,
-  after delete,
-  after undelete
-) {
-  TriggerOrchestrator.run(new AccountTriggerOrchestrator());
+trigger AccountTrigger on Account(before insert, after insert, before update, after update, before delete, after delete, after undelete) {
+    TriggerOrchestrator.run(new AccountTriggerOrchestrator());
 }
 ```
 
@@ -42,16 +34,13 @@ trigger AccountTrigger on Account(
 
 ```apex
 public with sharing class AccountTriggerOrchestrator implements TriggerOrchestrator.BeforeInsert, TriggerOrchestrator.AfterInsert {
-  public List<BeforeInsert.Handler> beforeInsertHandlers() {
-    return new List<BeforeInsert.Handler>{
-      new AccountRatingPopulator(),
-      new AccountCustomerDataValidator()
-    };
-  }
+    public List<BeforeInsert.Handler> beforeInsertHandlers() {
+        return new List<BeforeInsert.Handler>{ new AccountRatingPopulator(), new AccountCustomerDataValidator() };
+    }
 
-  public List<AfterInsert.Handler> afterInsertHandlers() {
-    return new List<AfterInsert.Handler>{ new AccountWelcomeTaskWriter() };
-  }
+    public List<AfterInsert.Handler> afterInsertHandlers() {
+        return new List<AfterInsert.Handler>{ new AccountWelcomeTaskWriter() };
+    }
 }
 ```
 
@@ -59,19 +48,13 @@ public with sharing class AccountTriggerOrchestrator implements TriggerOrchestra
 
 ```apex
 public with sharing class AccountRatingPopulator implements BeforeInsert.Populator {
-  public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
-    return record.isBlank(Account.Rating) &&
-      record.isNotNull(Account.AnnualRevenue);
-  }
+    public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
+        return record.isBlank(Account.Rating) && record.isNotNull(Account.AnnualRevenue);
+    }
 
-  public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
-    record.put(
-      Account.Rating,
-      record.greaterThanOrEqualTo(Account.AnnualRevenue, 5000000)
-        ? 'Hot'
-        : 'Warm'
-    );
-  }
+    public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
+        record.put(Account.Rating, record.greaterThanOrEqualTo(Account.AnnualRevenue, 5000000) ? 'Hot' : 'Warm');
+    }
 }
 ```
 
@@ -79,16 +62,13 @@ public with sharing class AccountRatingPopulator implements BeforeInsert.Populat
 
 ```apex
 public with sharing class AccountCustomerDataValidator implements BeforeInsert.Validator {
-  public Boolean addErrorOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
-    return record.startsWith(Account.Type, 'Customer') &&
-      record.isBlank(Account.Industry);
-  }
+    public Boolean addErrorOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
+        return record.startsWith(Account.Type, 'Customer') && record.isBlank(Account.Industry);
+    }
 
-  public void addErrorOnBeforeInsert(
-    TriggerTypes.RejectableInsertRecord record
-  ) {
-    record.addError(Account.Industry, 'A customer account requires Industry.');
-  }
+    public void addErrorOnBeforeInsert(TriggerTypes.RejectableInsertRecord record) {
+        record.addError(Account.Industry, 'A customer account requires Industry.');
+    }
 }
 ```
 
@@ -96,32 +76,20 @@ public with sharing class AccountCustomerDataValidator implements BeforeInsert.V
 
 ```apex
 public with sharing class AccountWelcomeTaskWriter implements AfterInsert.Writer, AfterInsert.ParentQuery, AfterInsert.ContinueOnError {
-  public Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnAfterInsert() {
-    return new Map<SObjectField, TriggerTypes.ParentFields>{
-      Account.OwnerId => TriggerTypes.ParentFields.with(User.Name)
-    };
-  }
+    public Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnAfterInsert() {
+        return new Map<SObjectField, TriggerTypes.ParentFields>{ Account.OwnerId => TriggerTypes.ParentFields.with(User.Name) };
+    }
 
-  public Boolean writeOnAfterInsertWhen(TriggerTypes.InsertRecord record) {
-    return record.startsWith(Account.Type, 'Customer');
-  }
+    public Boolean writeOnAfterInsertWhen(TriggerTypes.InsertRecord record) {
+        return record.startsWith(Account.Type, 'Customer');
+    }
 
-  public void writeOnAfterInsert(
-    TriggerTypes.InsertRecord record,
-    TriggerTypes.UnitOfWork unitOfWork
-  ) {
-    Account newAccount = (Account) record.getNewSObject();
-    User owner = (User) record.getNewParent(Account.OwnerId);
+    public void writeOnAfterInsert(TriggerTypes.InsertRecord record, TriggerTypes.UnitOfWork unitOfWork) {
+        Account newAccount = (Account) record.getNewSObject();
+        User owner = (User) record.getNewParent(Account.OwnerId);
 
-    unitOfWork.toInsert(
-      new Task(
-        WhatId = record.getId(),
-        OwnerId = newAccount.OwnerId,
-        Subject = 'Onboarding call - ' + newAccount.Name,
-        Description = 'Assigned to ' + owner?.Name
-      )
-    );
-  }
+        unitOfWork.toInsert(new Task(WhatId = record.getId(), OwnerId = newAccount.OwnerId, Subject = 'Onboarding call - ' + newAccount.Name, Description = 'Assigned to ' + owner?.Name));
+    }
 }
 ```
 
@@ -132,7 +100,7 @@ Trigger Lib is built on two other Apex Fluently libs, so they have to be in the 
 - [SOQL Lib](https://soql.beyondthecloud.dev) 6.12.0
 - [DML Lib](https://dml.beyondthecloud.dev) 4.0.0
 
-Installing the packages? Install SOQL Lib and DML Lib first. The [installation guide](https://trigger.beyondthecloud.dev/installation) has the links in the right order. The button below deploys both together with Trigger Lib.
+Installing the packages? Install SOQL Lib and DML Lib first. The [installation guide](https://trigger.beyondthecloud.dev/installation) has the links in the right order. The button below and a plain `git clone` deploy both together with Trigger Lib, from `force-app/main/default/dependencies/`.
 
 ## Deploy to Salesforce
 

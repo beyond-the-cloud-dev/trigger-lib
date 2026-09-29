@@ -17,41 +17,51 @@
 @SuppressWarnings(
     'PMD.ExcessiveClassLength,PMD.NcssTypeCount,PMD.NcssMethodCount,PMD.CyclomaticComplexity,PMD.StdCyclomaticComplexity,PMD.CognitiveComplexity,PMD.AvoidNonRestrictiveQueries,PMD.FieldDeclarationsShouldBeAtStart'
 )
-global with sharing class TriggerOrchestrator {
-    global interface BeforeInsert {
+// global
+public with sharing class TriggerOrchestrator {
+    // global
+    public interface BeforeInsert {
         List<BeforeInsert.Handler> beforeInsertHandlers();
     }
 
-    global interface AfterInsert {
+    // global
+    public interface AfterInsert {
         List<AfterInsert.Handler> afterInsertHandlers();
     }
 
-    global interface BeforeUpdate {
+    // global
+    public interface BeforeUpdate {
         List<BeforeUpdate.Handler> beforeUpdateHandlers();
     }
 
-    global interface AfterUpdate {
+    // global
+    public interface AfterUpdate {
         List<AfterUpdate.Handler> afterUpdateHandlers();
     }
 
-    global interface BeforeDelete {
+    // global
+    public interface BeforeDelete {
         List<BeforeDelete.Handler> beforeDeleteHandlers();
     }
 
-    global interface AfterDelete {
+    // global
+    public interface AfterDelete {
         List<AfterDelete.Handler> afterDeleteHandlers();
     }
 
-    global interface AfterUndelete {
+    // global
+    public interface AfterUndelete {
         List<AfterUndelete.Handler> afterUndeleteHandlers();
     }
 
-    global interface Logger {
+    // global
+    public interface Logger {
         void log(TriggerOrchestrator.Error error);
         void flush();
     }
 
-    global interface Error {
+    // global
+    public interface Error {
         String getHandlerName();
         SObjectType getSObjectType();
         System.Exception getException();
@@ -59,15 +69,18 @@ global with sharing class TriggerOrchestrator {
         Set<Id> getRecordIds();
     }
 
-    global static void run(Object orchestrator) {
+    // global
+    public static void run(Object orchestrator) {
         new TriggerOrchestrator(orchestrator).run();
     }
 
-    global static Bypassable bypass() {
+    // global
+    public static Bypassable bypass() {
         return TriggerOrchestrator.triggerBypass;
     }
 
-    global interface Bypassable {
+    // global
+    public interface Bypassable {
         Bypassable sObject(SObjectType sObjectType);
         Bypassable orchestrator(System.Type orchestrator);
         Bypassable handler(System.Type handler);
@@ -75,15 +88,21 @@ global with sharing class TriggerOrchestrator {
         void clear();
     }
 
-    global static Mockable mock() {
+    // global
+    @TestVisible
+    private static Mockable mock() {
         return TriggerOrchestrator.triggerMock;
     }
 
-    global static void runTestFor(Object handlerOrOrchestrator) {
+    // global
+    @TestVisible
+    private static void runTestFor(Object handlerOrOrchestrator) {
         TriggerOrchestrator.triggerMock.nextContextFor(handlerOrOrchestrator).run(handlerOrOrchestrator);
     }
 
-    global interface Mockable {
+    // global
+    @TestVisible
+    private interface Mockable {
         BeforeInsertMockable beforeInsertFor(System.Type handlerOrOrchestratorType);
         AfterInsertMockable afterInsertFor(System.Type handlerOrOrchestratorType);
         BeforeUpdateMockable beforeUpdateFor(System.Type handlerOrOrchestratorType);
@@ -93,49 +112,56 @@ global with sharing class TriggerOrchestrator {
         AfterUndeleteMockable afterUndeleteFor(System.Type handlerOrOrchestratorType);
     }
 
-    global interface BeforeInsertMockable {
+    // global
+    public interface BeforeInsertMockable {
         BeforeInsertMockable with(SObject row);
         BeforeInsertMockable with(List<SObject> rows);
         BeforeInsertMockable withParent(SObjectField lookupField, SObject parent);
         BeforeInsertMockable withParent(SObjectField lookupField, List<SObject> parents);
     }
 
-    global interface AfterInsertMockable {
+    // global
+    public interface AfterInsertMockable {
         AfterInsertMockable with(SObject row);
         AfterInsertMockable with(List<SObject> rows);
         AfterInsertMockable withParent(SObjectField lookupField, SObject parent);
         AfterInsertMockable withParent(SObjectField lookupField, List<SObject> parents);
     }
 
-    global interface BeforeUpdateMockable {
+    // global
+    public interface BeforeUpdateMockable {
         BeforeUpdateMockable with(SObject newRow, SObject oldRow);
         BeforeUpdateMockable with(List<SObject> newRows, List<SObject> oldRows);
         BeforeUpdateMockable withParent(SObjectField lookupField, SObject parent);
         BeforeUpdateMockable withParent(SObjectField lookupField, List<SObject> parents);
     }
 
-    global interface AfterUpdateMockable {
+    // global
+    public interface AfterUpdateMockable {
         AfterUpdateMockable with(SObject newRow, SObject oldRow);
         AfterUpdateMockable with(List<SObject> newRows, List<SObject> oldRows);
         AfterUpdateMockable withParent(SObjectField lookupField, SObject parent);
         AfterUpdateMockable withParent(SObjectField lookupField, List<SObject> parents);
     }
 
-    global interface BeforeDeleteMockable {
+    // global
+    public interface BeforeDeleteMockable {
         BeforeDeleteMockable with(SObject row);
         BeforeDeleteMockable with(List<SObject> rows);
         BeforeDeleteMockable withParent(SObjectField lookupField, SObject parent);
         BeforeDeleteMockable withParent(SObjectField lookupField, List<SObject> parents);
     }
 
-    global interface AfterDeleteMockable {
+    // global
+    public interface AfterDeleteMockable {
         AfterDeleteMockable with(SObject row);
         AfterDeleteMockable with(List<SObject> rows);
         AfterDeleteMockable withParent(SObjectField lookupField, SObject parent);
         AfterDeleteMockable withParent(SObjectField lookupField, List<SObject> parents);
     }
 
-    global interface AfterUndeleteMockable {
+    // global
+    public interface AfterUndeleteMockable {
         AfterUndeleteMockable with(SObject row);
         AfterUndeleteMockable with(List<SObject> rows);
         AfterUndeleteMockable withParent(SObjectField lookupField, SObject parent);

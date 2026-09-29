@@ -1,53 +1,65 @@
-global class BeforeUpdate {
+// global
+public class BeforeUpdate {
     // Roles - pick one
 
-    global interface Populator extends Handler {
+    // global
+    public interface Populator extends Handler {
         Boolean populateOnBeforeUpdateWhen(TriggerTypes.UpdateRecord record);
         void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record);
     }
 
-    global interface Validator extends Handler {
+    // global
+    public interface Validator extends Handler {
         Boolean addErrorOnBeforeUpdateWhen(TriggerTypes.UpdateRecord record);
         void addErrorOnBeforeUpdate(TriggerTypes.RejectableUpdateRecord record);
     }
 
     // Add-ons - pick as many as you need
 
-    global interface ParentQuery {
+    // global
+    public interface ParentQuery {
         Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnBeforeUpdate();
     }
 
-    global interface PriorParentQuery {
+    // global
+    public interface PriorParentQuery {
         Map<SObjectField, TriggerTypes.ParentFields> queryPriorParentsOnBeforeUpdate();
     }
 
-    global interface RelatedQuery {
+    // global
+    public interface RelatedQuery {
         Map<String, BeforeUpdate.RecordsProvider> queryRelatedOnBeforeUpdate();
     }
 
-    global interface RecordsProvider {
+    // global
+    public interface RecordsProvider {
         List<SObject> query(TriggerTypes.UpdateRecords records);
         String keyOf(SObject row);
     }
 
-    global interface Bypassable {
+    // global
+    public interface Bypassable {
         Boolean bypassOnBeforeUpdateWhen();
     }
 
-    global interface RecursionGuard {
+    // global
+    public interface RecursionGuard {
         Integer maxRunsPerRecordOnBeforeUpdate();
     }
 
-    global interface Finalizer {
+    // global
+    public interface Finalizer {
         void finalizeOnBeforeUpdate(TriggerTypes.UpdateRecords records);
     }
 
-    global interface ContinueOnError {
+    // global
+    public interface ContinueOnError {
     }
 
     // Marker
 
-    global interface Handler {
+    // global
+    public interface Handler {
     }
 
     // Implementation

@@ -58,36 +58,36 @@ The button also deploys [SOQL Lib](https://soql.beyondthecloud.dev) 6.12.0 and [
 
 **Apex**
 
-- [`TriggerOrchestrator.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/unpackaged/main/default/classes/TriggerOrchestrator.cls)
-- [`TriggerOrchestratorTest.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/unpackaged/main/default/classes/TriggerOrchestratorTest.cls)
-- [`TriggerTypes.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/unpackaged/main/default/classes/TriggerTypes.cls)
-- [`TriggerTypesTest.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/unpackaged/main/default/classes/TriggerTypesTest.cls)
-- [`BeforeInsert.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/unpackaged/main/default/classes/BeforeInsert.cls)
-- [`AfterInsert.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/unpackaged/main/default/classes/AfterInsert.cls)
-- [`BeforeUpdate.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/unpackaged/main/default/classes/BeforeUpdate.cls)
-- [`AfterUpdate.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/unpackaged/main/default/classes/AfterUpdate.cls)
-- [`BeforeDelete.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/unpackaged/main/default/classes/BeforeDelete.cls)
-- [`AfterDelete.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/unpackaged/main/default/classes/AfterDelete.cls)
-- [`AfterUndelete.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/unpackaged/main/default/classes/AfterUndelete.cls)
+- [`TriggerOrchestrator.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/TriggerOrchestrator.cls)
+- [`TriggerOrchestratorTest.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/TriggerOrchestratorTest.cls)
+- [`TriggerTypes.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/TriggerTypes.cls)
+- [`TriggerTypesTest.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/TriggerTypesTest.cls)
+- [`BeforeInsert.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/BeforeInsert.cls)
+- [`AfterInsert.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/AfterInsert.cls)
+- [`BeforeUpdate.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/BeforeUpdate.cls)
+- [`AfterUpdate.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/AfterUpdate.cls)
+- [`BeforeDelete.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/BeforeDelete.cls)
+- [`AfterDelete.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/AfterDelete.cls)
+- [`AfterUndelete.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/AfterUndelete.cls)
 
 **Custom Metadata Types**
 
-- [`TriggerObject__mdt`](https://github.com/beyond-the-cloud-dev/trigger-lib/tree/main/unpackaged/main/default/objects/TriggerObject__mdt)
-- [`TriggerHandler__mdt`](https://github.com/beyond-the-cloud-dev/trigger-lib/tree/main/unpackaged/main/default/objects/TriggerHandler__mdt)
+- [`TriggerObject__mdt`](https://github.com/beyond-the-cloud-dev/trigger-lib/tree/main/force-app/main/default/objects/TriggerObject__mdt)
+- [`TriggerHandler__mdt`](https://github.com/beyond-the-cloud-dev/trigger-lib/tree/main/force-app/main/default/objects/TriggerHandler__mdt)
 
 ### SOQL Lib _(required)_ {#soql-lib}
 
 **Apex**
 
-- [`SOQL.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/unpackaged/main/default/dependencies/soql-lib/SOQL.cls)
-- [`SOQL_Test.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/unpackaged/main/default/dependencies/soql-lib/SOQL_Test.cls)
+- [`SOQL.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/dependencies/soql-lib/SOQL.cls)
+- [`SOQL_Test.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/dependencies/soql-lib/SOQL_Test.cls)
 
 ### DML Lib _(required)_ {#dml-lib}
 
 **Apex**
 
-- [`DML.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/unpackaged/main/default/dependencies/dml-lib/DML.cls)
-- [`DML_Test.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/unpackaged/main/default/dependencies/dml-lib/DML_Test.cls)
+- [`DML.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/dependencies/dml-lib/DML.cls)
+- [`DML_Test.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/dependencies/dml-lib/DML_Test.cls)
 
 ::: tip
 The button skips the examples. To add them to a scratch org or sandbox, run `sf project deploy start -d examples -o your-org-alias` in a clone of the repo.

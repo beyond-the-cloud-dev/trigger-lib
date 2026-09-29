@@ -1,49 +1,60 @@
-global class AfterInsert {
+// global
+public class AfterInsert {
     // Roles - pick one
 
-    global interface Writer extends Handler {
+    // global
+    public interface Writer extends Handler {
         Boolean writeOnAfterInsertWhen(TriggerTypes.InsertRecord record);
         void writeOnAfterInsert(TriggerTypes.InsertRecord record, TriggerTypes.UnitOfWork unitOfWork);
     }
 
-    global interface Dispatcher extends Handler {
+    // global
+    public interface Dispatcher extends Handler {
         Boolean dispatchOnAfterInsertWhen(TriggerTypes.InsertRecord record);
         void dispatchOnAfterInsert(TriggerTypes.InsertRecords records);
     }
 
     // Add-ons - pick as many as you need
 
-    global interface ParentQuery {
+    // global
+    public interface ParentQuery {
         Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnAfterInsert();
     }
 
-    global interface RelatedQuery {
+    // global
+    public interface RelatedQuery {
         Map<String, AfterInsert.RecordsProvider> queryRelatedOnAfterInsert();
     }
 
-    global interface RecordsProvider {
+    // global
+    public interface RecordsProvider {
         List<SObject> query(TriggerTypes.InsertRecords records);
         String keyOf(SObject row);
     }
 
-    global interface OwnUnitOfWork {
+    // global
+    public interface OwnUnitOfWork {
         DML.Committable ownUnitOfWorkOnAfterInsert();
     }
 
-    global interface Bypassable {
+    // global
+    public interface Bypassable {
         Boolean bypassOnAfterInsertWhen();
     }
 
-    global interface Finalizer {
+    // global
+    public interface Finalizer {
         void finalizeOnAfterInsert(TriggerTypes.InsertRecords records);
     }
 
-    global interface ContinueOnError {
+    // global
+    public interface ContinueOnError {
     }
 
     // Marker
 
-    global interface Handler {
+    // global
+    public interface Handler {
     }
 
     // Implementation

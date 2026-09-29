@@ -1,57 +1,70 @@
-global class AfterUpdate {
+// global
+public class AfterUpdate {
     // Roles - pick one
 
-    global interface Writer extends Handler {
+    // global
+    public interface Writer extends Handler {
         Boolean writeOnAfterUpdateWhen(TriggerTypes.UpdateRecord record);
         void writeOnAfterUpdate(TriggerTypes.UpdateRecord record, TriggerTypes.UnitOfWork unitOfWork);
     }
 
-    global interface Dispatcher extends Handler {
+    // global
+    public interface Dispatcher extends Handler {
         Boolean dispatchOnAfterUpdateWhen(TriggerTypes.UpdateRecord record);
         void dispatchOnAfterUpdate(TriggerTypes.UpdateRecords records);
     }
 
     // Add-ons - pick as many as you need
 
-    global interface ParentQuery {
+    // global
+    public interface ParentQuery {
         Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnAfterUpdate();
     }
 
-    global interface PriorParentQuery {
+    // global
+    public interface PriorParentQuery {
         Map<SObjectField, TriggerTypes.ParentFields> queryPriorParentsOnAfterUpdate();
     }
 
-    global interface RelatedQuery {
+    // global
+    public interface RelatedQuery {
         Map<String, AfterUpdate.RecordsProvider> queryRelatedOnAfterUpdate();
     }
 
-    global interface RecordsProvider {
+    // global
+    public interface RecordsProvider {
         List<SObject> query(TriggerTypes.UpdateRecords records);
         String keyOf(SObject row);
     }
 
-    global interface OwnUnitOfWork {
+    // global
+    public interface OwnUnitOfWork {
         DML.Committable ownUnitOfWorkOnAfterUpdate();
     }
 
-    global interface Bypassable {
+    // global
+    public interface Bypassable {
         Boolean bypassOnAfterUpdateWhen();
     }
 
-    global interface RecursionGuard {
+    // global
+    public interface RecursionGuard {
         Integer maxRunsPerRecordOnAfterUpdate();
     }
 
-    global interface Finalizer {
+    // global
+    public interface Finalizer {
         void finalizeOnAfterUpdate(TriggerTypes.UpdateRecords records);
     }
 
-    global interface ContinueOnError {
+    // global
+    public interface ContinueOnError {
     }
 
     // Marker
 
-    global interface Handler {
+    // global
+    public interface Handler {
     }
 
     // Implementation

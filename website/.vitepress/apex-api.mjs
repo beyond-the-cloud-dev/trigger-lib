@@ -13,7 +13,7 @@ export const CLASSES_DIR = join(
 );
 
 const INTERFACE_PATTERN =
-  /(?:public|global)\s+interface\s+(\w+)(?:\s+extends\s+([\w.]+))?\s*\{([^}]*)\}/g;
+  /public\s+interface\s+(\w+)(?:\s+extends\s+([\w.]+))?\s*\{([^}]*)\}/g;
 const METHOD_PATTERN = /^([\w.<>,\s[\]]+?)\s+(\w+)\s*\(([\s\S]*)\)$/;
 const CONTEXT_NAME_PATTERN = /^(Before|After)([A-Z]\w*)$/;
 const REGISTRATION_RETURN_PATTERN = /^List<(\w+)\.(\w+)>$/;

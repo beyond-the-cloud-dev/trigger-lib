@@ -134,20 +134,26 @@ npm run docs:dev
 # Create scratch org for testing
 sf org create scratch -f config/project-scratch-def.json -a dev
 
-# Deploy SOQL Lib and DML Lib at the versions pinned in sfdx-project.json
-curl -fsSL https://raw.githubusercontent.com/beyond-the-cloud-dev/cicd-template/main/scripts/deploy-dependencies.sh | bash -s -- dev
-
-# Deploy Trigger Lib and the examples
-sf project deploy start -d force-app -d examples -o dev
+# Deploy Trigger Lib (SOQL Lib and DML Lib come along from force-app/main/default/dependencies/)
+sf project deploy start -d force-app -o dev
 ```
 
 ### Project layout
 
-- `force-app/` is the source of the package (`global` API). Edit Trigger Lib here, and only here.
-- `unpackaged/` is generated from `force-app/`: the same classes as `public`, plus the SOQL Lib and DML Lib classes they need. It is what the Deploy button and the Copy and Deploy docs give to orgs that do not install the package. After changing `force-app/` or bumping a dependency, run `npm run build:unpackaged` and commit the result. CI fails when it is out of date.
-- `examples/` holds the example handlers used in the docs.
+- `force-app/` is the source, with `public` classes, so a plain clone deploys to any org.
+- `force-app/main/default/dependencies/` holds the SOQL Lib and DML Lib classes Trigger Lib needs, at the versions pinned in `sfdx-project.json`. It is generated: never edit it by hand. After bumping a dependency, run `npm run build:dependencies` and commit the result. CI fails when it does not match.
+- `examples/` holds the example handlers used in the docs. It is not deployed by CI.
 
-Always pass `-d` when deploying: `force-app/` and `unpackaged/` hold the same classes, so a plain `sf project deploy start` mixes them.
+### Package API
+
+The package is built from `force-app/` by `scripts/prepare-package.mjs`: it leaves out `dependencies/` and turns every declaration with a `// global` line right above it into `global`. Those markers are the package API. When you add a type or member that orgs installing the package must use, put `// global` above it:
+
+```apex
+// global
+public interface Writer extends Handler {
+```
+
+The `package-check` CI job builds the package form on every PR and runs the tests on it, so a missing marker on a type used in a global signature fails there. New versions are created with the **Package version** workflow (Actions tab).
 
 ## 📚 Resources
 

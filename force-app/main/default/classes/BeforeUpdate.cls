@@ -1,11 +1,14 @@
+// global
 public class BeforeUpdate {
     // Roles - pick one
 
+    // global
     public interface Populator extends Handler {
         Boolean populateOnBeforeUpdateWhen(TriggerTypes.UpdateRecord record);
         void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record);
     }
 
+    // global
     public interface Validator extends Handler {
         Boolean addErrorOnBeforeUpdateWhen(TriggerTypes.UpdateRecord record);
         void addErrorOnBeforeUpdate(TriggerTypes.RejectableUpdateRecord record);
@@ -13,40 +16,49 @@ public class BeforeUpdate {
 
     // Add-ons - pick as many as you need
 
+    // global
     public interface ParentQuery {
         Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnBeforeUpdate();
     }
 
+    // global
     public interface PriorParentQuery {
         Map<SObjectField, TriggerTypes.ParentFields> queryPriorParentsOnBeforeUpdate();
     }
 
+    // global
     public interface RelatedQuery {
         Map<String, BeforeUpdate.RecordsProvider> queryRelatedOnBeforeUpdate();
     }
 
+    // global
     public interface RecordsProvider {
         List<SObject> query(TriggerTypes.UpdateRecords records);
         String keyOf(SObject row);
     }
 
+    // global
     public interface Bypassable {
         Boolean bypassOnBeforeUpdateWhen();
     }
 
+    // global
     public interface RecursionGuard {
         Integer maxRunsPerRecordOnBeforeUpdate();
     }
 
+    // global
     public interface Finalizer {
         void finalizeOnBeforeUpdate(TriggerTypes.UpdateRecords records);
     }
 
+    // global
     public interface ContinueOnError {
     }
 
     // Marker
 
+    // global
     public interface Handler {
     }
 

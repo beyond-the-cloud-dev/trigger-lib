@@ -1,11 +1,14 @@
+// global
 public class AfterUpdate {
     // Roles - pick one
 
+    // global
     public interface Writer extends Handler {
         Boolean writeOnAfterUpdateWhen(TriggerTypes.UpdateRecord record);
         void writeOnAfterUpdate(TriggerTypes.UpdateRecord record, TriggerTypes.UnitOfWork unitOfWork);
     }
 
+    // global
     public interface Dispatcher extends Handler {
         Boolean dispatchOnAfterUpdateWhen(TriggerTypes.UpdateRecord record);
         void dispatchOnAfterUpdate(TriggerTypes.UpdateRecords records);
@@ -13,44 +16,54 @@ public class AfterUpdate {
 
     // Add-ons - pick as many as you need
 
+    // global
     public interface ParentQuery {
         Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnAfterUpdate();
     }
 
+    // global
     public interface PriorParentQuery {
         Map<SObjectField, TriggerTypes.ParentFields> queryPriorParentsOnAfterUpdate();
     }
 
+    // global
     public interface RelatedQuery {
         Map<String, AfterUpdate.RecordsProvider> queryRelatedOnAfterUpdate();
     }
 
+    // global
     public interface RecordsProvider {
         List<SObject> query(TriggerTypes.UpdateRecords records);
         String keyOf(SObject row);
     }
 
+    // global
     public interface OwnUnitOfWork {
         DML.Committable ownUnitOfWorkOnAfterUpdate();
     }
 
+    // global
     public interface Bypassable {
         Boolean bypassOnAfterUpdateWhen();
     }
 
+    // global
     public interface RecursionGuard {
         Integer maxRunsPerRecordOnAfterUpdate();
     }
 
+    // global
     public interface Finalizer {
         void finalizeOnAfterUpdate(TriggerTypes.UpdateRecords records);
     }
 
+    // global
     public interface ContinueOnError {
     }
 
     // Marker
 
+    // global
     public interface Handler {
     }
 

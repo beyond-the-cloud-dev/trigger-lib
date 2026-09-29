@@ -1,0 +1,5 @@
+# Coverage counts Trigger Lib only. dependencies/ is a generated copy of SOQL Lib
+# and DML Lib, examples/ is docs code.
+ignore:
+  - 'force-app/main/default/dependencies/**'
+  - 'examples/**'

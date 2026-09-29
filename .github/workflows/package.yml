@@ -1,0 +1,51 @@
+name: Package version
+
+# Builds a new Trigger Lib package version from force-app/: declarations marked
+# `// global` become global and dependencies/ is left out (SOQL Lib and DML Lib are
+# package dependencies). Bump versionNumber in sfdx-project.json first. Promote the
+# version by hand once it is tested.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Salesforce CLI
+        run: npm install @salesforce/cli --global
+
+      - name: Authorize Dev Hub
+        env:
+          SFDX_AUTH_URL_DEVHUB: ${{ secrets.SFDX_AUTH_URL_DEVHUB }}
+        run: echo "$SFDX_AUTH_URL_DEVHUB" | sf org login sfdx-url --alias DevHub --set-default-dev-hub --sfdx-url-stdin
+
+      - name: Prepare package source
+        run: node scripts/prepare-package.mjs
+
+      - name: Create package version
+        run: |
+          sf package version create \
+            --package "Trigger Lib" \
+            --installation-key-bypass \
+            --code-coverage \
+            --wait 60 \
+            --json > result.json || { cat result.json; exit 1; }
+          {
+            echo "## Trigger Lib package version"
+            echo ""
+            echo "- Subscriber package version: \`$(jq -r '.result.SubscriberPackageVersionId' result.json)\`"
+            echo "- Install: https://login.salesforce.com/packaging/installPackage.apexp?p0=$(jq -r '.result.SubscriberPackageVersionId' result.json)"
+            echo ""
+            echo "Add the new alias to \`packageAliases\` in \`sfdx-project.json\`:"
+            echo ""
+            echo '```diff'
+            git diff -U0 sfdx-project.json | grep '^[+-] ' || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

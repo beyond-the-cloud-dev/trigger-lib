@@ -8,11 +8,12 @@ on:
   workflow_dispatch:
 
 jobs:
+  # The repo as people clone it: public classes plus SOQL Lib and DML Lib from dependencies/
   salesforce-ci:
-    uses: beyond-the-cloud-dev/cicd-template/.github/workflows/salesforce-ci.yml@main
+    uses: beyond-the-cloud-dev/cicd-template/.github/workflows/salesforce-ci.yml@feat/deps-from-sfdx-project
     with:
-      # package/ needs SOQL Lib and DML Lib installed; force-app/ vendors both
-      source-dirs: 'force-app examples'
+      template-ref: feat/deps-from-sfdx-project
+      source-dirs: 'force-app'
       node-version: '22'
       sf-cli-version: 'latest'
       scratch-org-duration: 1
@@ -22,3 +23,36 @@ jobs:
     secrets:
       SFDX_AUTH_URL_DEVHUB: ${{ secrets.SFDX_AUTH_URL_DEVHUB }}
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  # The package as it gets built: `// global` declarations made global, SOQL Lib and
+  # DML Lib from the tags pinned in sfdx-project.json
+  package-check:
+    uses: beyond-the-cloud-dev/cicd-template/.github/workflows/salesforce-ci.yml@feat/deps-from-sfdx-project
+    with:
+      template-ref: feat/deps-from-sfdx-project
+      pre-deploy-command: 'node scripts/prepare-package.mjs'
+      deploy-dependencies: true
+      source-dirs: 'force-app'
+      pr-comment: false
+      node-version: '22'
+      sf-cli-version: 'latest'
+      scratch-org-duration: 1
+      test-level: 'RunLocalTests'
+    secrets:
+      SFDX_AUTH_URL_DEVHUB: ${{ secrets.SFDX_AUTH_URL_DEVHUB }}
+
+  dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run build:dependencies
+      - name: Check dependencies/ matches sfdx-project.json
+        run: |
+          if [ -n "$(git status --porcelain -- force-app/main/default/dependencies)" ]; then
+            git status --short -- force-app/main/default/dependencies
+            echo "::error::force-app/main/default/dependencies/ does not match the dependencies in sfdx-project.json. Run npm run build:dependencies and commit the result."
+            exit 1
+          fi

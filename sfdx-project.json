@@ -3,7 +3,7 @@
     {
       "versionName": "ver 0.2",
       "versionNumber": "0.2.0.NEXT",
-      "path": "package",
+      "path": "force-app",
       "default": true,
       "package": "Trigger Lib",
       "versionDescription": "",
@@ -19,10 +19,6 @@
     },
     {
       "path": "examples",
-      "default": false
-    },
-    {
-      "path": "force-app",
       "default": false
     }
   ],

@@ -16,13 +16,16 @@
 @SuppressWarnings(
     'PMD.ExcessivePublicCount,PMD.CyclomaticComplexity,PMD.CognitiveComplexity,PMD.ExcessiveParameterList,PMD.PropertyNamingConventions,PMD.FieldNamingConventions,PMD.FieldDeclarationsShouldBeAtStart'
 )
+// global
 public with sharing class TriggerTypes {
+    // global
     public static ParentFields ParentFields {
         get {
             return new TriggerParentFields();
         }
     }
 
+    // global
     public interface InsertRecord {
         Boolean isRecordType(String recordTypeDeveloperName);
         Boolean isNotRecordType(String recordTypeDeveloperName);
@@ -89,6 +92,7 @@ public with sharing class TriggerTypes {
         void put(SObjectField field, Object value);
     }
 
+    // global
     public interface RejectableInsertRecord {
         Boolean isRecordType(String recordTypeDeveloperName);
         Boolean isNotRecordType(String recordTypeDeveloperName);
@@ -156,6 +160,7 @@ public with sharing class TriggerTypes {
         void addError(SObjectField field, String error);
     }
 
+    // global
     public interface UpdateRecord {
         Boolean isRecordType(String recordTypeDeveloperName);
         Boolean isNotRecordType(String recordTypeDeveloperName);
@@ -243,6 +248,7 @@ public with sharing class TriggerTypes {
         void put(SObjectField field, Object value);
     }
 
+    // global
     public interface RejectableUpdateRecord {
         Boolean isRecordType(String recordTypeDeveloperName);
         Boolean isNotRecordType(String recordTypeDeveloperName);
@@ -331,6 +337,7 @@ public with sharing class TriggerTypes {
         void addError(SObjectField field, String error);
     }
 
+    // global
     public interface DeleteRecord {
         Boolean isRecordType(String recordTypeDeveloperName);
         Boolean isNotRecordType(String recordTypeDeveloperName);
@@ -395,6 +402,7 @@ public with sharing class TriggerTypes {
         TriggerTypes.RelatedRecords getRelated(String providerName);
     }
 
+    // global
     public interface RejectableDeleteRecord {
         Boolean isRecordType(String recordTypeDeveloperName);
         Boolean isNotRecordType(String recordTypeDeveloperName);
@@ -462,6 +470,7 @@ public with sharing class TriggerTypes {
         void addError(SObjectField field, String error);
     }
 
+    // global
     public interface UndeleteRecord {
         Boolean isRecordType(String recordTypeDeveloperName);
         Boolean isNotRecordType(String recordTypeDeveloperName);
@@ -526,6 +535,7 @@ public with sharing class TriggerTypes {
         TriggerTypes.RelatedRecords getRelated(String providerName);
     }
 
+    // global
     public interface InsertRecords {
         Set<Id> getIds();
 
@@ -540,6 +550,7 @@ public with sharing class TriggerTypes {
         Integer size();
     }
 
+    // global
     public interface UpdateRecords {
         Set<Id> getIds();
 
@@ -558,6 +569,7 @@ public with sharing class TriggerTypes {
         Integer size();
     }
 
+    // global
     public interface DeleteRecords {
         Set<Id> getIds();
 
@@ -572,6 +584,7 @@ public with sharing class TriggerTypes {
         Integer size();
     }
 
+    // global
     public interface UndeleteRecords {
         Set<Id> getIds();
 
@@ -586,6 +599,7 @@ public with sharing class TriggerTypes {
         Integer size();
     }
 
+    // global
     public interface UnitOfWork {
         UnitOfWork toInsert(SObject record);
         UnitOfWork toInsert(DML.Record record);
@@ -600,6 +614,7 @@ public with sharing class TriggerTypes {
         UnitOfWork toPublish(SObject event);
     }
 
+    // global
     public interface ParentFields {
         ParentFields with(SObjectField field);
         ParentFields with(SObjectField field1, SObjectField field2);
@@ -619,6 +634,7 @@ public with sharing class TriggerTypes {
         List<String> getFields();
     }
 
+    // global
     public interface RelatedRecords {
         SObject getFirstWhereKeyEquals(Object key);
 
@@ -1505,13 +1521,16 @@ public with sharing class TriggerTypes {
         }
     }
 
+    // global
     public class RandomIdGenerator {
         private final String RANDOM_STRING_CHARACTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz';
 
+        // global
         public Id get(SObjectType objectType) {
             return this.get(objectType.getDescribe(SObjectDescribeOptions.DEFERRED).getKeyPrefix());
         }
 
+        // global
         public Id get(String prefix) {
             String randomPart = '';
 
@@ -1524,6 +1543,7 @@ public with sharing class TriggerTypes {
         }
     }
 
+    // global
     public class TriggerLibException extends Exception {
     }
 }

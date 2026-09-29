@@ -1,11 +1,14 @@
+// global
 public class BeforeDelete {
     // Roles - pick one
 
+    // global
     public interface Validator extends Handler {
         Boolean addErrorOnBeforeDeleteWhen(TriggerTypes.DeleteRecord record);
         void addErrorOnBeforeDelete(TriggerTypes.RejectableDeleteRecord record);
     }
 
+    // global
     public interface Writer extends Handler {
         Boolean writeOnBeforeDeleteWhen(TriggerTypes.DeleteRecord record);
         void writeOnBeforeDelete(TriggerTypes.DeleteRecord record, TriggerTypes.UnitOfWork unitOfWork);
@@ -13,36 +16,44 @@ public class BeforeDelete {
 
     // Add-ons - pick as many as you need
 
+    // global
     public interface PriorParentQuery {
         Map<SObjectField, TriggerTypes.ParentFields> queryPriorParentsOnBeforeDelete();
     }
 
+    // global
     public interface RelatedQuery {
         Map<String, BeforeDelete.RecordsProvider> queryRelatedOnBeforeDelete();
     }
 
+    // global
     public interface RecordsProvider {
         List<SObject> query(TriggerTypes.DeleteRecords records);
         String keyOf(SObject row);
     }
 
+    // global
     public interface OwnUnitOfWork {
         DML.Committable ownUnitOfWorkOnBeforeDelete();
     }
 
+    // global
     public interface Bypassable {
         Boolean bypassOnBeforeDeleteWhen();
     }
 
+    // global
     public interface Finalizer {
         void finalizeOnBeforeDelete(TriggerTypes.DeleteRecords records);
     }
 
+    // global
     public interface ContinueOnError {
     }
 
     // Marker
 
+    // global
     public interface Handler {
     }
 

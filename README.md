@@ -93,6 +93,15 @@ public with sharing class AccountWelcomeTaskWriter implements AfterInsert.Writer
 }
 ```
 
+## Dependencies
+
+Trigger Lib is built on two other Apex Fluently libs, so they have to be in the org too:
+
+- [SOQL Lib](https://soql.beyondthecloud.dev) 6.12.0
+- [DML Lib](https://dml.beyondthecloud.dev) 4.0.0
+
+Installing the packages? Install SOQL Lib and DML Lib first. The [installation guide](https://trigger.beyondthecloud.dev/installation) has the links in the right order. The button below and a plain `git clone` deploy both together with Trigger Lib, from `force-app/main/default/dependencies/`.
+
 ## Deploy to Salesforce
 
 <a href="https://githubsfdeploy.herokuapp.com?owner=beyond-the-cloud-dev&repo=trigger-lib&ref=main">

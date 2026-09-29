@@ -133,8 +133,27 @@ npm run docs:dev
 
 # Create scratch org for testing
 sf org create scratch -f config/project-scratch-def.json -a dev
-sf project deploy start -o dev
+
+# Deploy Trigger Lib (SOQL Lib and DML Lib come along from force-app/main/default/dependencies/)
+sf project deploy start -d force-app -o dev
 ```
+
+### Project layout
+
+- `force-app/` is the source, with `public` classes, so a plain clone deploys to any org.
+- `force-app/main/default/dependencies/` holds the SOQL Lib and DML Lib classes Trigger Lib needs, at the versions pinned in `sfdx-project.json`. It is generated: never edit it by hand. After bumping a dependency, run `npm run build:dependencies` and commit the result. CI fails when it does not match.
+- `examples/` holds the example handlers used in the docs. It is not deployed by CI.
+
+### Package API
+
+The package is built from `force-app/` by `scripts/prepare-package.mjs`: it leaves out `dependencies/` and turns every declaration with a `// global` line right above it into `global`. Those markers are the package API. When you add a type or member that orgs installing the package must use, put `// global` above it:
+
+```apex
+// global
+public interface Writer extends Handler {
+```
+
+The `package-check` CI job builds the package form on every PR and runs the tests on it, so a missing marker on a type used in a global signature fails there. New versions are created with the **Package version** workflow (Actions tab).
 
 ## 📚 Resources
 

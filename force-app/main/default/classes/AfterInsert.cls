@@ -1,11 +1,14 @@
+// global
 public class AfterInsert {
     // Roles - pick one
 
+    // global
     public interface Writer extends Handler {
         Boolean writeOnAfterInsertWhen(TriggerTypes.InsertRecord record);
         void writeOnAfterInsert(TriggerTypes.InsertRecord record, TriggerTypes.UnitOfWork unitOfWork);
     }
 
+    // global
     public interface Dispatcher extends Handler {
         Boolean dispatchOnAfterInsertWhen(TriggerTypes.InsertRecord record);
         void dispatchOnAfterInsert(TriggerTypes.InsertRecords records);
@@ -13,36 +16,44 @@ public class AfterInsert {
 
     // Add-ons - pick as many as you need
 
+    // global
     public interface ParentQuery {
         Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnAfterInsert();
     }
 
+    // global
     public interface RelatedQuery {
         Map<String, AfterInsert.RecordsProvider> queryRelatedOnAfterInsert();
     }
 
+    // global
     public interface RecordsProvider {
         List<SObject> query(TriggerTypes.InsertRecords records);
         String keyOf(SObject row);
     }
 
+    // global
     public interface OwnUnitOfWork {
         DML.Committable ownUnitOfWorkOnAfterInsert();
     }
 
+    // global
     public interface Bypassable {
         Boolean bypassOnAfterInsertWhen();
     }
 
+    // global
     public interface Finalizer {
         void finalizeOnAfterInsert(TriggerTypes.InsertRecords records);
     }
 
+    // global
     public interface ContinueOnError {
     }
 
     // Marker
 
+    // global
     public interface Handler {
     }
 

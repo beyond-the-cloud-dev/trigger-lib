@@ -17,40 +17,50 @@
 @SuppressWarnings(
     'PMD.ExcessiveClassLength,PMD.NcssTypeCount,PMD.NcssMethodCount,PMD.CyclomaticComplexity,PMD.StdCyclomaticComplexity,PMD.CognitiveComplexity,PMD.AvoidNonRestrictiveQueries,PMD.FieldDeclarationsShouldBeAtStart'
 )
+// global
 public with sharing class TriggerOrchestrator {
+    // global
     public interface BeforeInsert {
         List<BeforeInsert.Handler> beforeInsertHandlers();
     }
 
+    // global
     public interface AfterInsert {
         List<AfterInsert.Handler> afterInsertHandlers();
     }
 
+    // global
     public interface BeforeUpdate {
         List<BeforeUpdate.Handler> beforeUpdateHandlers();
     }
 
+    // global
     public interface AfterUpdate {
         List<AfterUpdate.Handler> afterUpdateHandlers();
     }
 
+    // global
     public interface BeforeDelete {
         List<BeforeDelete.Handler> beforeDeleteHandlers();
     }
 
+    // global
     public interface AfterDelete {
         List<AfterDelete.Handler> afterDeleteHandlers();
     }
 
+    // global
     public interface AfterUndelete {
         List<AfterUndelete.Handler> afterUndeleteHandlers();
     }
 
+    // global
     public interface Logger {
         void log(TriggerOrchestrator.Error error);
         void flush();
     }
 
+    // global
     public interface Error {
         String getHandlerName();
         SObjectType getSObjectType();
@@ -59,14 +69,17 @@ public with sharing class TriggerOrchestrator {
         Set<Id> getRecordIds();
     }
 
+    // global
     public static void run(Object orchestrator) {
         new TriggerOrchestrator(orchestrator).run();
     }
 
+    // global
     public static Bypassable bypass() {
         return TriggerOrchestrator.triggerBypass;
     }
 
+    // global
     public interface Bypassable {
         Bypassable sObject(SObjectType sObjectType);
         Bypassable orchestrator(System.Type orchestrator);
@@ -75,16 +88,19 @@ public with sharing class TriggerOrchestrator {
         void clear();
     }
 
+    // global
     @TestVisible
     private static Mockable mock() {
         return TriggerOrchestrator.triggerMock;
     }
 
+    // global
     @TestVisible
     private static void runTestFor(Object handlerOrOrchestrator) {
         TriggerOrchestrator.triggerMock.nextContextFor(handlerOrOrchestrator).run(handlerOrOrchestrator);
     }
 
+    // global
     @TestVisible
     private interface Mockable {
         BeforeInsertMockable beforeInsertFor(System.Type handlerOrOrchestratorType);
@@ -96,6 +112,7 @@ public with sharing class TriggerOrchestrator {
         AfterUndeleteMockable afterUndeleteFor(System.Type handlerOrOrchestratorType);
     }
 
+    // global
     public interface BeforeInsertMockable {
         BeforeInsertMockable with(SObject row);
         BeforeInsertMockable with(List<SObject> rows);
@@ -103,6 +120,7 @@ public with sharing class TriggerOrchestrator {
         BeforeInsertMockable withParent(SObjectField lookupField, List<SObject> parents);
     }
 
+    // global
     public interface AfterInsertMockable {
         AfterInsertMockable with(SObject row);
         AfterInsertMockable with(List<SObject> rows);
@@ -110,6 +128,7 @@ public with sharing class TriggerOrchestrator {
         AfterInsertMockable withParent(SObjectField lookupField, List<SObject> parents);
     }
 
+    // global
     public interface BeforeUpdateMockable {
         BeforeUpdateMockable with(SObject newRow, SObject oldRow);
         BeforeUpdateMockable with(List<SObject> newRows, List<SObject> oldRows);
@@ -117,6 +136,7 @@ public with sharing class TriggerOrchestrator {
         BeforeUpdateMockable withParent(SObjectField lookupField, List<SObject> parents);
     }
 
+    // global
     public interface AfterUpdateMockable {
         AfterUpdateMockable with(SObject newRow, SObject oldRow);
         AfterUpdateMockable with(List<SObject> newRows, List<SObject> oldRows);
@@ -124,6 +144,7 @@ public with sharing class TriggerOrchestrator {
         AfterUpdateMockable withParent(SObjectField lookupField, List<SObject> parents);
     }
 
+    // global
     public interface BeforeDeleteMockable {
         BeforeDeleteMockable with(SObject row);
         BeforeDeleteMockable with(List<SObject> rows);
@@ -131,6 +152,7 @@ public with sharing class TriggerOrchestrator {
         BeforeDeleteMockable withParent(SObjectField lookupField, List<SObject> parents);
     }
 
+    // global
     public interface AfterDeleteMockable {
         AfterDeleteMockable with(SObject row);
         AfterDeleteMockable with(List<SObject> rows);
@@ -138,6 +160,7 @@ public with sharing class TriggerOrchestrator {
         AfterDeleteMockable withParent(SObjectField lookupField, List<SObject> parents);
     }
 
+    // global
     public interface AfterUndeleteMockable {
         AfterUndeleteMockable with(SObject row);
         AfterUndeleteMockable with(List<SObject> rows);

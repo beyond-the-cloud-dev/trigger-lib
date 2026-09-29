@@ -1,11 +1,14 @@
+// global
 public class BeforeInsert {
     // Roles - pick one
 
+    // global
     public interface Populator extends Handler {
         Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record);
         void populateOnBeforeInsert(TriggerTypes.InsertRecord record);
     }
 
+    // global
     public interface Validator extends Handler {
         Boolean addErrorOnBeforeInsertWhen(TriggerTypes.InsertRecord record);
         void addErrorOnBeforeInsert(TriggerTypes.RejectableInsertRecord record);
@@ -13,32 +16,39 @@ public class BeforeInsert {
 
     // Add-ons - pick as many as you need
 
+    // global
     public interface ParentQuery {
         Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnBeforeInsert();
     }
 
+    // global
     public interface RelatedQuery {
         Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert();
     }
 
+    // global
     public interface RecordsProvider {
         List<SObject> query(TriggerTypes.InsertRecords records);
         String keyOf(SObject row);
     }
 
+    // global
     public interface Bypassable {
         Boolean bypassOnBeforeInsertWhen();
     }
 
+    // global
     public interface Finalizer {
         void finalizeOnBeforeInsert(TriggerTypes.InsertRecords records);
     }
 
+    // global
     public interface ContinueOnError {
     }
 
     // Marker
 
+    // global
     public interface Handler {
     }
 

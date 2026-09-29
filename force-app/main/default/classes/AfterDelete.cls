@@ -1,11 +1,14 @@
+// global
 public class AfterDelete {
     // Roles - pick one
 
+    // global
     public interface Writer extends Handler {
         Boolean writeOnAfterDeleteWhen(TriggerTypes.DeleteRecord record);
         void writeOnAfterDelete(TriggerTypes.DeleteRecord record, TriggerTypes.UnitOfWork unitOfWork);
     }
 
+    // global
     public interface Dispatcher extends Handler {
         Boolean dispatchOnAfterDeleteWhen(TriggerTypes.DeleteRecord record);
         void dispatchOnAfterDelete(TriggerTypes.DeleteRecords records);
@@ -13,36 +16,44 @@ public class AfterDelete {
 
     // Add-ons - pick as many as you need
 
+    // global
     public interface PriorParentQuery {
         Map<SObjectField, TriggerTypes.ParentFields> queryPriorParentsOnAfterDelete();
     }
 
+    // global
     public interface RelatedQuery {
         Map<String, AfterDelete.RecordsProvider> queryRelatedOnAfterDelete();
     }
 
+    // global
     public interface RecordsProvider {
         List<SObject> query(TriggerTypes.DeleteRecords records);
         String keyOf(SObject row);
     }
 
+    // global
     public interface OwnUnitOfWork {
         DML.Committable ownUnitOfWorkOnAfterDelete();
     }
 
+    // global
     public interface Bypassable {
         Boolean bypassOnAfterDeleteWhen();
     }
 
+    // global
     public interface Finalizer {
         void finalizeOnAfterDelete(TriggerTypes.DeleteRecords records);
     }
 
+    // global
     public interface ContinueOnError {
     }
 
     // Marker
 
+    // global
     public interface Handler {
     }
 

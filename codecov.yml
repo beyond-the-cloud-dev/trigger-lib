@@ -1,5 +1,5 @@
-# Coverage counts force-app/ only. examples/ is docs code and unpackaged/ is a
-# generated copy of force-app/, so neither should move the number.
+# Coverage counts Trigger Lib only. dependencies/ is a generated copy of SOQL Lib
+# and DML Lib, examples/ is docs code.
 ignore:
+  - 'force-app/main/default/dependencies/**'
   - 'examples/**'
-  - 'unpackaged/**'

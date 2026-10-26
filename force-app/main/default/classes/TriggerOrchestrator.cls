@@ -63,6 +63,10 @@ public with sharing class TriggerOrchestrator {
         new TriggerOrchestrator(orchestrator).run();
     }
 
+    public static void runFromMetadata() {
+        new TriggerOrchestrator(new MetadataOrchestrator((Trigger.new ?? Trigger.old)?.getSObjectType())).run();
+    }
+
     public static Bypassable bypass() {
         return TriggerOrchestrator.triggerBypass;
     }
@@ -300,6 +304,10 @@ public with sharing class TriggerOrchestrator {
             return this.metadataByObjectName.get(context.sObjectType.toString().toLowerCase())?.handlerRowByName.get(handlerName.toLowerCase())?.Bypass__c == true;
         }
 
+        public List<TriggerHandler__mdt> getHandlerRows(SObjectType sObjectType) {
+            return this.metadataByObjectName.get(sObjectType.toString().toLowerCase())?.objectRow.TriggerHandlers__r ?? new List<TriggerHandler__mdt>();
+        }
+
         private Map<String, ObjectMetadata> resolveObjectMetadata() {
             Map<String, ObjectMetadata> metadataByObjectName = new Map<String, ObjectMetadata>();
             String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
@@ -307,7 +315,13 @@ public with sharing class TriggerOrchestrator {
             for (
                 TriggerObject__mdt triggerObject : (List<TriggerObject__mdt>) SOQL.of(TriggerObject__mdt.SObjectType)
                     .with(TriggerObject__mdt.ObjectAPIName__c, TriggerObject__mdt.Bypass__c)
-                    .with(SOQL.SubQuery.of(namespacePrefix + 'TriggerHandlers__r').with(TriggerHandler__mdt.ApexClassName__c, TriggerHandler__mdt.Bypass__c))
+                    .with(
+                        SOQL.SubQuery.of(namespacePrefix + 'TriggerHandlers__r')
+                            .with(TriggerHandler__mdt.ApexClassName__c, TriggerHandler__mdt.Bypass__c, TriggerHandler__mdt.Order__c)
+                            .orderBy(TriggerHandler__mdt.Order__c)
+                            .nullsLast()
+                            .orderBy(TriggerHandler__mdt.ApexClassName__c)
+                    )
                     .systemMode()
                     .mockId('TriggerObject__mdt')
                     .toList()
@@ -343,6 +357,141 @@ public with sharing class TriggerOrchestrator {
             if (handlerName.contains('.')) {
                 this.handlerRowByName.put(handlerName.substringAfterLast('.'), triggerHandler);
             }
+        }
+    }
+
+    @TestVisible
+    private class MetadataOrchestrator implements TriggerOrchestrator.BeforeInsert, TriggerOrchestrator.AfterInsert, TriggerOrchestrator.BeforeUpdate, TriggerOrchestrator.AfterUpdate, TriggerOrchestrator.BeforeDelete, TriggerOrchestrator.AfterDelete, TriggerOrchestrator.AfterUndelete {
+        private SObjectType sObjectType;
+
+        public MetadataOrchestrator(SObjectType sObjectType) {
+            this.sObjectType = sObjectType;
+        }
+
+        public List<BeforeInsert.Handler> beforeInsertHandlers() {
+            List<BeforeInsert.Handler> handlers = new List<BeforeInsert.Handler>();
+
+            for (Object handler : this.newHandlers()) {
+                if (handler instanceof BeforeInsert.Handler) {
+                    handlers.add((BeforeInsert.Handler) handler);
+                }
+            }
+
+            return handlers;
+        }
+
+        public List<AfterInsert.Handler> afterInsertHandlers() {
+            List<AfterInsert.Handler> handlers = new List<AfterInsert.Handler>();
+
+            for (Object handler : this.newHandlers()) {
+                if (handler instanceof AfterInsert.Handler) {
+                    handlers.add((AfterInsert.Handler) handler);
+                }
+            }
+
+            return handlers;
+        }
+
+        public List<BeforeUpdate.Handler> beforeUpdateHandlers() {
+            List<BeforeUpdate.Handler> handlers = new List<BeforeUpdate.Handler>();
+
+            for (Object handler : this.newHandlers()) {
+                if (handler instanceof BeforeUpdate.Handler) {
+                    handlers.add((BeforeUpdate.Handler) handler);
+                }
+            }
+
+            return handlers;
+        }
+
+        public List<AfterUpdate.Handler> afterUpdateHandlers() {
+            List<AfterUpdate.Handler> handlers = new List<AfterUpdate.Handler>();
+
+            for (Object handler : this.newHandlers()) {
+                if (handler instanceof AfterUpdate.Handler) {
+                    handlers.add((AfterUpdate.Handler) handler);
+                }
+            }
+
+            return handlers;
+        }
+
+        public List<BeforeDelete.Handler> beforeDeleteHandlers() {
+            List<BeforeDelete.Handler> handlers = new List<BeforeDelete.Handler>();
+
+            for (Object handler : this.newHandlers()) {
+                if (handler instanceof BeforeDelete.Handler) {
+                    handlers.add((BeforeDelete.Handler) handler);
+                }
+            }
+
+            return handlers;
+        }
+
+        public List<AfterDelete.Handler> afterDeleteHandlers() {
+            List<AfterDelete.Handler> handlers = new List<AfterDelete.Handler>();
+
+            for (Object handler : this.newHandlers()) {
+                if (handler instanceof AfterDelete.Handler) {
+                    handlers.add((AfterDelete.Handler) handler);
+                }
+            }
+
+            return handlers;
+        }
+
+        public List<AfterUndelete.Handler> afterUndeleteHandlers() {
+            List<AfterUndelete.Handler> handlers = new List<AfterUndelete.Handler>();
+
+            for (Object handler : this.newHandlers()) {
+                if (handler instanceof AfterUndelete.Handler) {
+                    handlers.add((AfterUndelete.Handler) handler);
+                }
+            }
+
+            return handlers;
+        }
+
+        private List<Object> newHandlers() {
+            List<Object> handlers = new List<Object>();
+
+            for (TriggerHandler__mdt handlerRow : TriggerOrchestrator.metadataBypass.getHandlerRows(this.sObjectType)) {
+                if (handlerRow.Bypass__c != true) {
+                    handlers.add(this.newHandler(handlerRow.ApexClassName__c.trim()));
+                }
+            }
+
+            return handlers;
+        }
+
+        private Object newHandler(String className) {
+            System.Type handlerType = Type.forName(className) ?? Type.forName(null, className);
+
+            if (handlerType == null) {
+                throw new TriggerTypes.TriggerLibException('Handler class ' + className + ' was not found.');
+            }
+
+            Object handler;
+
+            try {
+                handler = handlerType.newInstance();
+            } catch (Exception e) {
+                throw new TriggerTypes.TriggerLibException('Handler class ' + className + ' could not be instantiated.', e);
+            }
+
+            if (
+                handler instanceof BeforeInsert.Handler ||
+                handler instanceof AfterInsert.Handler ||
+                handler instanceof BeforeUpdate.Handler ||
+                handler instanceof AfterUpdate.Handler ||
+                handler instanceof BeforeDelete.Handler ||
+                handler instanceof AfterDelete.Handler ||
+                handler instanceof AfterUndelete.Handler
+            ) {
+                return handler;
+            }
+
+            throw new TriggerTypes.TriggerLibException('Handler class ' + className + ' does not implement a handler interface.');
         }
     }
 
@@ -454,6 +603,10 @@ public with sharing class TriggerOrchestrator {
     public abstract class Operation {
         public void execute(TriggerOrchestrator orchestrator) {
             List<HandlerExecutor> activeExecutors = this.getActiveExecutors(orchestrator);
+
+            if (activeExecutors.isEmpty()) {
+                return;
+            }
 
             orchestrator.parentLoader.collectDeclarations(activeExecutors);
 

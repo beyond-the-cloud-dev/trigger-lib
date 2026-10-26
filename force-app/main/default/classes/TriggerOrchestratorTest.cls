@@ -1226,6 +1226,696 @@ private class TriggerOrchestratorTest {
     }
 
     @IsTest
+    static void runFromMetadataOutsideTriggerContext() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runFromMetadata();
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual('Called outside of a trigger context.', expectedException?.getMessage(), 'The exception message should match the expected one.');
+    }
+
+    @IsTest
+    static void runFromMetadataOnBeforeInsert() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.OperationStamper',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeInsertFor(TriggerOrchestrator.MetadataOrchestrator.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.runTestFor(new TriggerOrchestrator.MetadataOrchestrator(Contact.SObjectType));
+
+        // Verify
+        Assert.areEqual('BEFORE_INSERT', doe.Description, 'The registered handler should run.');
+    }
+
+    @IsTest
+    static void runFromMetadataOnAfterInsert() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.OperationStamper',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterInsertFor(TriggerOrchestrator.MetadataOrchestrator.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.runTestFor(new TriggerOrchestrator.MetadataOrchestrator(Contact.SObjectType));
+
+        // Verify
+        Assert.areEqual('AFTER_INSERT', doe.Description, 'The registered handler should run.');
+    }
+
+    @IsTest
+    static void runFromMetadataOnBeforeUpdate() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.OperationStamper',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeUpdateFor(TriggerOrchestrator.MetadataOrchestrator.class).with(doe, new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(new TriggerOrchestrator.MetadataOrchestrator(Contact.SObjectType));
+
+        // Verify
+        Assert.areEqual('BEFORE_UPDATE', doe.Description, 'The registered handler should run.');
+    }
+
+    @IsTest
+    static void runFromMetadataOnAfterUpdate() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.OperationStamper',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterUpdateFor(TriggerOrchestrator.MetadataOrchestrator.class).with(doe, new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(new TriggerOrchestrator.MetadataOrchestrator(Contact.SObjectType));
+
+        // Verify
+        Assert.areEqual('AFTER_UPDATE', doe.Description, 'The registered handler should run.');
+    }
+
+    @IsTest
+    static void runFromMetadataOnBeforeDelete() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.OperationStamper',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeDeleteFor(TriggerOrchestrator.MetadataOrchestrator.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.runTestFor(new TriggerOrchestrator.MetadataOrchestrator(Contact.SObjectType));
+
+        // Verify
+        Assert.areEqual('BEFORE_DELETE', doe.Description, 'The registered handler should run.');
+    }
+
+    @IsTest
+    static void runFromMetadataOnAfterDelete() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.OperationStamper',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterDeleteFor(TriggerOrchestrator.MetadataOrchestrator.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.runTestFor(new TriggerOrchestrator.MetadataOrchestrator(Contact.SObjectType));
+
+        // Verify
+        Assert.areEqual('AFTER_DELETE', doe.Description, 'The registered handler should run.');
+    }
+
+    @IsTest
+    static void runFromMetadataOnAfterUndelete() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.OperationStamper',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterUndeleteFor(TriggerOrchestrator.MetadataOrchestrator.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.runTestFor(new TriggerOrchestrator.MetadataOrchestrator(Contact.SObjectType));
+
+        // Verify
+        Assert.areEqual('AFTER_UNDELETE', doe.Description, 'The registered handler should run.');
+    }
+
+    @IsTest
+    static void runFromMetadataInQueryOrder() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 2,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.TitlePopulator',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
+                            },
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.CeoDepartmentPopulator',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeInsertFor(TriggerOrchestrator.MetadataOrchestrator.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.runTestFor(new TriggerOrchestrator.MetadataOrchestrator(Contact.SObjectType));
+
+        // Verify
+        Assert.areEqual('Management', doe.Department, 'The handlers should run in the order of their records.');
+    }
+
+    @IsTest
+    static void runFromMetadataWithPaddedName() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => ' TriggerOrchestratorTest.TitlePopulator ',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeInsertFor(TriggerOrchestrator.MetadataOrchestrator.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.runTestFor(new TriggerOrchestrator.MetadataOrchestrator(Contact.SObjectType));
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The padded class name should be resolved.');
+    }
+
+    @IsTest
+    static void runFromMetadataWithBypassedRow() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.TitlePopulator',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => true
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeInsertFor(TriggerOrchestrator.MetadataOrchestrator.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.runTestFor(new TriggerOrchestrator.MetadataOrchestrator(Contact.SObjectType));
+
+        // Verify
+        Assert.isNull(doe.Title, 'The bypassed handler should not run.');
+    }
+
+    @IsTest
+    static void runFromMetadataWithBypassedUnknownClass() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.MissingHandler',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => true
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeInsertFor(TriggerOrchestrator.MetadataOrchestrator.class).with(doe);
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new TriggerOrchestrator.MetadataOrchestrator(Contact.SObjectType));
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.isNull(expectedException, 'The run should not throw an exception.');
+    }
+
+    @IsTest
+    static void runFromMetadataWithHandlerOfOtherContext() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.TitlePopulator',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterInsertFor(TriggerOrchestrator.MetadataOrchestrator.class).with(doe);
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new TriggerOrchestrator.MetadataOrchestrator(Contact.SObjectType));
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.isNull(expectedException, 'The run should not throw an exception.');
+    }
+
+    @IsTest
+    static void runFromMetadataWithRowsOfOtherObject() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt accountSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Account',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.TitlePopulator',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ accountSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeInsertFor(TriggerOrchestrator.MetadataOrchestrator.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.runTestFor(new TriggerOrchestrator.MetadataOrchestrator(Contact.SObjectType));
+
+        // Verify
+        Assert.isNull(doe.Title, 'The handler of another object should not run.');
+    }
+
+    @IsTest
+    static void runFromMetadataWithUnknownClass() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.MissingHandler',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeInsertFor(TriggerOrchestrator.MetadataOrchestrator.class).with(doe);
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new TriggerOrchestrator.MetadataOrchestrator(Contact.SObjectType));
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'Handler class TriggerOrchestratorTest.MissingHandler was not found.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void runFromMetadataWithoutNoArgConstructor() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.NestedRunPopulator',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeInsertFor(TriggerOrchestrator.MetadataOrchestrator.class).with(doe);
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new TriggerOrchestrator.MetadataOrchestrator(Contact.SObjectType));
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'Handler class TriggerOrchestratorTest.NestedRunPopulator could not be instantiated.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void runFromMetadataWithClassThatIsNotHandler() {
+        // Setup
+        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
+        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
+            JSON.serialize(
+                new Map<String, Object>{
+                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
+                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
+                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
+                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
+                        'totalSize' => 1,
+                        'done' => true,
+                        'records' => new List<Object>{
+                            new Map<String, Object>{
+                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
+                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.TestLogger',
+                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
+                            }
+                        }
+                    }
+                }
+            ),
+            TriggerObject__mdt.class
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeInsertFor(TriggerOrchestrator.MetadataOrchestrator.class).with(doe);
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new TriggerOrchestrator.MetadataOrchestrator(Contact.SObjectType));
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'Handler class TriggerOrchestratorTest.TestLogger does not implement a handler interface.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
     static void finalizerAfterLastRecord() {
         // Setup
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
@@ -2150,7 +2840,7 @@ private class TriggerOrchestratorTest {
         Assert.isInstanceOfType(expectedException, System.TypeException.class, 'The unimplemented context should fail.');
     }
 
-    private class OperationStamper implements BeforeInsert.Populator, AfterInsert.Writer, BeforeUpdate.Populator, AfterUpdate.Writer, BeforeDelete.Writer, AfterDelete.Writer, AfterUndelete.Writer {
+    public class OperationStamper implements BeforeInsert.Populator, AfterInsert.Writer, BeforeUpdate.Populator, AfterUpdate.Writer, BeforeDelete.Writer, AfterDelete.Writer, AfterUndelete.Writer {
         public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
             return record.equals(Contact.LastName, 'Doe');
         }
@@ -2230,7 +2920,7 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private class CeoDepartmentPopulator implements BeforeInsert.Populator {
+    public class CeoDepartmentPopulator implements BeforeInsert.Populator {
         public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
             return record.equals(Contact.Title, 'CEO');
         }
@@ -2243,7 +2933,7 @@ private class TriggerOrchestratorTest {
     private class RolelessHandler implements BeforeInsert.Handler {
     }
 
-    private class NestedRunPopulator implements BeforeInsert.Populator {
+    public class NestedRunPopulator implements BeforeInsert.Populator {
         private Object nestedOrchestrator;
 
         public NestedRunPopulator(Object nestedOrchestrator) {
@@ -2807,7 +3497,7 @@ private class TriggerOrchestratorTest {
         }
     }
 
-    private virtual class TitlePopulator implements BeforeInsert.Populator, BeforeUpdate.Populator {
+    public virtual class TitlePopulator implements BeforeInsert.Populator, BeforeUpdate.Populator {
         public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
             return record.equals(Contact.LastName, 'Doe');
         }

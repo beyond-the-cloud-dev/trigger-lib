@@ -24,7 +24,7 @@ try {
 
 ## From Custom Metadata {#metadata}
 
-Check `Bypass__c` on a `TriggerObject__mdt` record to switch off every handler on an object for every user, or on a `TriggerHandler__mdt` record under it to switch off one class. Changes apply from the next transaction. Fields, deployment and test mocks: [Custom Metadata](/api/custom-metadata).
+Check `Bypass__c` on a `TriggerObject__mdt` record to switch off every handler on an object for every user, or on a `TriggerHandler__mdt` record under it to switch off one class. Under `runFromMetadata()`, a bypassed record's class is not even created. Changes apply from the next transaction. Fields, deployment and test mocks: [Custom Metadata](/api/custom-metadata).
 
 ## From the Handler {#bypassable}
 
@@ -34,7 +34,7 @@ Implement the context's Bypassable. `bypassOn<Ctx>When()` runs once per handler 
 
 - **Checked last.** The Apex and metadata bypasses win.
 - **Checked before the first handler runs.** A flag set by an earlier handler in the same run applies from the next run.
-- **One context only.** The other bypasses cover every context. To skip a class in one context, use Bypassable or leave it out of that context's list.
+- **One context only.** The other bypasses cover every context. To skip a class in one context, use Bypassable, or leave it out of that context's list when an orchestrator lists the handlers.
 - **To skip only some records,** return false from the predicate instead.
 
 ## Per User {#per-user}

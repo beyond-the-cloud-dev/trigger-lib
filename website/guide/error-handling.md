@@ -64,7 +64,7 @@ Implement the context's ContinueOnError to let the save go on when the handler f
 
 This code runs outside every handler. An exception there is not logged, ContinueOnError does not apply, and the save fails:
 
-- `<ctx>Handlers()`;
+- `<ctx>Handlers()`, and under `runFromMetadata()`, creating the registered classes;
 - `bypassOn<Ctx>When()`, `ownUnitOfWorkOn<Ctx>()` and `maxRunsPerRecordOn<Ctx>()`;
 - the ParentQuery and PriorParentQuery methods, and the parent query after a Populator changes a lookup;
 - the shared unit of work's commit.

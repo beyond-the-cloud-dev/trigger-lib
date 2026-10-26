@@ -1,10 +1,10 @@
 ---
-description: Wire a Salesforce trigger to Trigger Lib - the one-line trigger, the orchestrator and its handler lists, run order, one class in several contexts, handler instances per chunk and the before to after handoff.
+description: Wire a Salesforce trigger to Trigger Lib - the one-line trigger, the orchestrator and its handler lists, handlers registered in custom metadata, run order, one class in several contexts, handler instances per chunk and the before to after handoff.
 ---
 
 # Trigger & Orchestrator
 
-The trigger passes an orchestrator to `TriggerOrchestrator.run(…)`. The orchestrator lists the handlers of each context in run order.
+The trigger passes an orchestrator to `TriggerOrchestrator.run(…)`. The orchestrator lists the handlers of each context in run order. A trigger can instead call `TriggerOrchestrator.runFromMetadata()` and take its handlers from [custom metadata](#from-metadata).
 
 ## Trigger {#trigger}
 
@@ -24,9 +24,27 @@ Implement one registration interface per context, such as `TriggerOrchestrator.B
 - **List classes that implement a role.** A class that implements only the context's `Handler` interface compiles and never runs.
 - **One role per class.** A class that implements both roles of a context runs only as the first: Populator over Validator, Validator over Writer, Writer over Dispatcher.
 
+## Handlers in Custom Metadata {#from-metadata}
+
+When the trigger's package can't compile against every handler, call `runFromMetadata()` instead of `run(…)`. A core package, for example, can't refer to handlers that live in packages that depend on it:
+
+```apex
+trigger AccountTrigger on Account(before insert, after insert, before update, after update, before delete, after delete, after undelete) {
+    TriggerOrchestrator.runFromMetadata();
+}
+```
+
+Each [`TriggerHandler__mdt`](/api/custom-metadata#trigger-handler) record under the object's `TriggerObject__mdt` record registers one class.
+
+- **No orchestrator class.** The trigger's package never refers to the handlers.
+- **The class decides the contexts.** It runs in every context whose role it implements.
+- **`Order__c` is the list order,** as below.
+- **A record whose class can't run fails the save.** Test that every record resolves: see [Registration Tests](/guide/testing#registration).
+
 ## Handler Order {#order}
 
 - **List order is run order**, whatever the role. Each handler finishes before the next one starts.
+- **Under `runFromMetadata()`, `Order__c` is the list order.** Lowest runs first, records without it run last, and ties run in class name order.
 - **Later handlers see earlier changes.** List Populators before Validators.
 - **Writers commit last.** By default, the Writers' DML commits once, after the last handler.
 
@@ -59,7 +77,7 @@ public with sharing class ContactBirthdateRangeValidator implements BeforeInsert
 ```
 
 - **Method names carry the context**, so they never clash.
-- **Register the class in each context's list.**
+- **Register the class in each context's list.** Under `runFromMetadata()`, one record covers every context.
 - **Add-ons are per context too**, such as `BeforeInsert.ParentQuery` and `BeforeUpdate.ParentQuery`.
 - **Bypasses cover every context.** A `TriggerHandler__mdt` record switches the class off in every context of its object. To skip one context, use that context's Bypassable.
 
@@ -71,6 +89,7 @@ The library calls the handler list method on every run: per context, per chunk o
 - **Static fields last the whole transaction.**
 - **A static "already ran" flag skips later chunks.** Gate the predicate on a change such as `isChanged` instead, or use RecursionGuard in the update contexts.
 - **Constructor arguments are allowed.** They are evaluated on every run, so keep SOQL out of them.
+- **Under `runFromMetadata()`, there are no constructor arguments.** The library creates every registered class in every context with its public no-argument constructor, so keep that constructor cheap.
 
 ## Before to After Handoff {#before-after-handoff}
 

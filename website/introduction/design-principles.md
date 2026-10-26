@@ -18,7 +18,7 @@ Handlers run in list order, or in `Order__c` order under `runFromMetadata()`. Ea
 
 ## No Loops, No SOQL per Record {#no-loops}
 
-The library loops over the records. Handlers declare the parents and related records they need, and the library loads them in bulk, never per record.
+The library loops over the records. Handlers declare the parents and related records they need, and the library loads them in bulk, never per record. A predicate or an action that runs its own SOQL throws.
 
 ## Before Contexts Populate, After Contexts Act {#before-populates-after-acts}
 

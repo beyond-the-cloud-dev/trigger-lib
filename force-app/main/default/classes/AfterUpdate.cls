@@ -92,8 +92,19 @@ public class AfterUpdate {
             try {
                 this.relatedLoader.attachTo(records);
 
+                Integer queriesBefore = this.getUndeclaredQueries();
+
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.write(record);
+                }
+
+                Integer queriesAfter = this.getUndeclaredQueries();
+
+                if (queriesAfter > queriesBefore) {
+                    throw new TriggerTypes.TriggerLibException(
+                        this.handlerName +
+                        ' performed SOQL in writeOnAfterUpdateWhen or writeOnAfterUpdate. Move that query to a ParentQuery, a PriorParentQuery or a RelatedQuery.'
+                    );
                 }
 
                 this.handlerHooks.finalize(this.qualifiedRecords);
@@ -138,8 +149,18 @@ public class AfterUpdate {
             try {
                 this.relatedLoader.attachTo(records);
 
+                Integer queriesBefore = this.getUndeclaredQueries();
+
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.qualify(record);
+                }
+
+                Integer queriesAfter = this.getUndeclaredQueries();
+
+                if (queriesAfter > queriesBefore) {
+                    throw new TriggerTypes.TriggerLibException(
+                        this.handlerName + ' performed SOQL in dispatchOnAfterUpdateWhen. Move that query to a ParentQuery, a PriorParentQuery or a RelatedQuery.'
+                    );
                 }
 
                 this.dispatch();

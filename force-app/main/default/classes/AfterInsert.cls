@@ -82,8 +82,18 @@ public class AfterInsert {
             try {
                 this.relatedLoader.attachTo(records);
 
+                Integer queriesBefore = this.getUndeclaredQueries();
+
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.write(record);
+                }
+
+                Integer queriesAfter = this.getUndeclaredQueries();
+
+                if (queriesAfter > queriesBefore) {
+                    throw new TriggerTypes.TriggerLibException(
+                        this.handlerName + ' performed SOQL in writeOnAfterInsertWhen or writeOnAfterInsert. Move that query to a ParentQuery or a RelatedQuery.'
+                    );
                 }
 
                 this.handlerHooks.finalize(this.qualifiedRecords);
@@ -125,8 +135,18 @@ public class AfterInsert {
             try {
                 this.relatedLoader.attachTo(records);
 
+                Integer queriesBefore = this.getUndeclaredQueries();
+
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.qualify(record);
+                }
+
+                Integer queriesAfter = this.getUndeclaredQueries();
+
+                if (queriesAfter > queriesBefore) {
+                    throw new TriggerTypes.TriggerLibException(
+                        this.handlerName + ' performed SOQL in dispatchOnAfterInsertWhen. Move that query to a ParentQuery or a RelatedQuery.'
+                    );
                 }
 
                 this.dispatch();

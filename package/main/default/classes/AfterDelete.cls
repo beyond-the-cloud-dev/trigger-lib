@@ -82,8 +82,18 @@ global class AfterDelete {
             try {
                 this.relatedLoader.attachTo(records);
 
+                Integer queriesBefore = this.getUndeclaredQueries();
+
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.write(record);
+                }
+
+                Integer queriesAfter = this.getUndeclaredQueries();
+
+                if (queriesAfter > queriesBefore) {
+                    throw new TriggerTypes.TriggerLibException(
+                        this.handlerName + ' performed SOQL in writeOnAfterDeleteWhen or writeOnAfterDelete. Move that query to a PriorParentQuery or a RelatedQuery.'
+                    );
                 }
 
                 this.handlerHooks.finalize(this.qualifiedRecords);
@@ -125,8 +135,18 @@ global class AfterDelete {
             try {
                 this.relatedLoader.attachTo(records);
 
+                Integer queriesBefore = this.getUndeclaredQueries();
+
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.qualify(record);
+                }
+
+                Integer queriesAfter = this.getUndeclaredQueries();
+
+                if (queriesAfter > queriesBefore) {
+                    throw new TriggerTypes.TriggerLibException(
+                        this.handlerName + ' performed SOQL in dispatchOnAfterDeleteWhen. Move that query to a PriorParentQuery or a RelatedQuery.'
+                    );
                 }
 
                 this.dispatch();

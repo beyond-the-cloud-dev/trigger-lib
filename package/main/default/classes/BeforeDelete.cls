@@ -80,8 +80,18 @@ global class BeforeDelete {
             try {
                 this.relatedLoader.attachTo(records);
 
+                Integer queriesBefore = this.getUndeclaredQueries();
+
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.validate(record);
+                }
+
+                Integer queriesAfter = this.getUndeclaredQueries();
+
+                if (queriesAfter > queriesBefore) {
+                    throw new TriggerTypes.TriggerLibException(
+                        this.handlerName + ' performed SOQL in addErrorOnBeforeDeleteWhen or addErrorOnBeforeDelete. Move that query to a PriorParentQuery or a RelatedQuery.'
+                    );
                 }
 
                 this.handlerHooks.finalize(this.qualifiedRecords);
@@ -125,8 +135,18 @@ global class BeforeDelete {
             try {
                 this.relatedLoader.attachTo(records);
 
+                Integer queriesBefore = this.getUndeclaredQueries();
+
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.write(record);
+                }
+
+                Integer queriesAfter = this.getUndeclaredQueries();
+
+                if (queriesAfter > queriesBefore) {
+                    throw new TriggerTypes.TriggerLibException(
+                        this.handlerName + ' performed SOQL in writeOnBeforeDeleteWhen or writeOnBeforeDelete. Move that query to a PriorParentQuery or a RelatedQuery.'
+                    );
                 }
 
                 this.handlerHooks.finalize(this.qualifiedRecords);

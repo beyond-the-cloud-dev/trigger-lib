@@ -3,7 +3,7 @@
  * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
  *
- * v0.3.0
+ * v0.4.0
  *
  * PMD False Positives:
  * - ExcessiveClassLength: It is a library and we tried to put everything into ONE test class
@@ -379,6 +379,128 @@ private class AfterInsertTest {
 
         // Verify
         Assert.areEqual(1, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The writer should register the account.');
+    }
+
+    @IsTest
+    static void writerWhenHandlerPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        TriggerOrchestrator.mock().afterInsertFor(SoqlAccountWriter.class).with(new Contact(LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new SoqlAccountWriter());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'SoqlAccountWriter performed SOQL in writeOnAfterInsertWhen or writeOnAfterInsert. Move that query to a ParentQuery or a RelatedQuery.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void dispatcherWhenQualificationPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TriggerOrchestrator.mock().afterInsertFor(SoqlQualificationDispatcher.class).with(new Contact(LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new SoqlQualificationDispatcher());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'SoqlQualificationDispatcher performed SOQL in dispatchOnAfterInsertWhen. Move that query to a ParentQuery or a RelatedQuery.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void writerWhenFinalizerPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        AccountWriterWithSoqlFinalizer writer = new AccountWriterWithSoqlFinalizer();
+
+        TriggerOrchestrator.mock().afterInsertFor(AccountWriterWithSoqlFinalizer.class).with(new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(writer);
+
+        // Verify
+        Assert.areEqual(0, writer.accounts, 'The finalizer should be allowed to query.');
+    }
+
+    @IsTest
+    static void dispatcherWhenDispatchPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        SoqlDispatcher dispatcher = new SoqlDispatcher();
+
+        TriggerOrchestrator.mock().afterInsertFor(SoqlDispatcher.class).with(new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(dispatcher);
+
+        // Verify
+        Assert.areEqual(0, dispatcher.accounts, 'The dispatcher should be allowed to query.');
+    }
+
+    @IsTest
+    static void writerWhenRelatedQueryPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        TriggerOrchestrator.mock()
+            .afterInsertFor(RelatedAccountNameWriter.class)
+            .with(new Contact(LastName = 'Doe', AccountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType)));
+
+        // Test
+        TriggerOrchestrator.runTestFor(new RelatedAccountNameWriter());
+
+        // Verify
+        Assert.areEqual(1, DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records().size(), 'The writer should read what its provider queried.');
+    }
+
+    @IsTest
+    static void writerWhenParentQueryPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        TriggerOrchestrator.mock()
+            .afterInsertFor(AccountNameWriter.class)
+            .with(new Contact(LastName = 'Doe', AccountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType)));
+
+        // Test
+        TriggerOrchestrator.runTestFor(new AccountNameWriter());
+
+        // Verify
+        Assert.areEqual(1, DML.retrieveResultFor('triggerUow').insertsOf(Task.SObjectType).records().size(), 'The writer should read the parent the library queried.');
     }
 
     @IsTest
@@ -761,6 +883,45 @@ private class AfterInsertTest {
         public void writeOnAfterInsert(TriggerTypes.InsertRecord record, TriggerTypes.UnitOfWork unitOfWork) {
             Database.setSavepoint();
             unitOfWork.toInsert(new Account(Name = (String) record.getNewSObject().get(Contact.LastName)));
+        }
+    }
+
+    private class SoqlAccountWriter implements AfterInsert.Writer {
+        public Boolean writeOnAfterInsertWhen(TriggerTypes.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterInsert(TriggerTypes.InsertRecord record, TriggerTypes.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(new Account(Name = 'Accounts: ' + [SELECT COUNT() FROM Account]));
+        }
+    }
+
+    private class SoqlQualificationDispatcher implements AfterInsert.Dispatcher {
+        public Boolean dispatchOnAfterInsertWhen(TriggerTypes.InsertRecord record) {
+            return [SELECT COUNT() FROM Account] == 0;
+        }
+
+        public void dispatchOnAfterInsert(TriggerTypes.InsertRecords records) {
+        }
+    }
+
+    private class SoqlDispatcher implements AfterInsert.Dispatcher {
+        public Integer accounts;
+
+        public Boolean dispatchOnAfterInsertWhen(TriggerTypes.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterInsert(TriggerTypes.InsertRecords records) {
+            this.accounts = [SELECT COUNT() FROM Account];
+        }
+    }
+
+    private class AccountWriterWithSoqlFinalizer extends AccountWriter implements AfterInsert.Finalizer {
+        public Integer accounts;
+
+        public void finalizeOnAfterInsert(TriggerTypes.InsertRecords records) {
+            this.accounts = [SELECT COUNT() FROM Account];
         }
     }
 

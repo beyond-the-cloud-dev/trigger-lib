@@ -3,7 +3,7 @@
  * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
  *
- * v0.3.0
+ * v0.4.0
  *
  * PMD False Positives:
  * - ExcessiveClassLength: It is a library and we tried to put everything into ONE test class
@@ -584,6 +584,100 @@ private class AfterUpdateTest {
     }
 
     @IsTest
+    static void writerWhenHandlerPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterUpdateFor(SoqlAccountWriter.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new SoqlAccountWriter());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'SoqlAccountWriter performed SOQL in writeOnAfterUpdateWhen or writeOnAfterUpdate. Move that query to a ParentQuery, a PriorParentQuery or a RelatedQuery.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void dispatcherWhenQualificationPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterUpdateFor(SoqlQualificationDispatcher.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new SoqlQualificationDispatcher());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'SoqlQualificationDispatcher performed SOQL in dispatchOnAfterUpdateWhen. Move that query to a ParentQuery, a PriorParentQuery or a RelatedQuery.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void writerWhenFinalizerPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        AccountWriterWithSoqlFinalizer writer = new AccountWriterWithSoqlFinalizer();
+
+        TriggerOrchestrator.mock().afterUpdateFor(AccountWriterWithSoqlFinalizer.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(writer);
+
+        // Verify
+        Assert.areEqual(0, writer.accounts, 'The finalizer should be allowed to query.');
+    }
+
+    @IsTest
+    static void dispatcherWhenDispatchPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        SoqlDispatcher dispatcher = new SoqlDispatcher();
+
+        TriggerOrchestrator.mock().afterUpdateFor(SoqlDispatcher.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(dispatcher);
+
+        // Verify
+        Assert.areEqual(0, dispatcher.accounts, 'The dispatcher should be allowed to query.');
+    }
+
+    @IsTest
     static void parentQuery() {
         // Setup
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
@@ -911,6 +1005,45 @@ private class AfterUpdateTest {
 
         public void finalizeOnAfterUpdate(TriggerTypes.UpdateRecords records) {
             this.finalizeCalls++;
+        }
+    }
+
+    private class SoqlAccountWriter implements AfterUpdate.Writer {
+        public Boolean writeOnAfterUpdateWhen(TriggerTypes.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterUpdate(TriggerTypes.UpdateRecord record, TriggerTypes.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(new Account(Name = 'Accounts: ' + [SELECT COUNT() FROM Account]));
+        }
+    }
+
+    private class SoqlQualificationDispatcher implements AfterUpdate.Dispatcher {
+        public Boolean dispatchOnAfterUpdateWhen(TriggerTypes.UpdateRecord record) {
+            return [SELECT COUNT() FROM Account] == 0;
+        }
+
+        public void dispatchOnAfterUpdate(TriggerTypes.UpdateRecords records) {
+        }
+    }
+
+    private class SoqlDispatcher implements AfterUpdate.Dispatcher {
+        public Integer accounts;
+
+        public Boolean dispatchOnAfterUpdateWhen(TriggerTypes.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterUpdate(TriggerTypes.UpdateRecords records) {
+            this.accounts = [SELECT COUNT() FROM Account];
+        }
+    }
+
+    private class AccountWriterWithSoqlFinalizer extends AccountWriter implements AfterUpdate.Finalizer {
+        public Integer accounts;
+
+        public void finalizeOnAfterUpdate(TriggerTypes.UpdateRecords records) {
+            this.accounts = [SELECT COUNT() FROM Account];
         }
     }
 

@@ -179,6 +179,7 @@ public interface Error {
 | `Handler class <Class> does not implement a handler interface.` | the class implements no context's handler interface |
 | `<Handler> performed DML in before insert. Move that work to an after insert Writer.` | a before insert Populator or Validator ran DML or published an immediate event |
 | `<Handler> performed DML in before update. Move that work to an after update Writer.` | the same in before update |
+| `<Handler> performed SOQL in <predicate> or <action>. Move that query to a ParentQuery or a RelatedQuery.` | a predicate or a per-record action ran its own SOQL, in any context. A Dispatcher's message names only its predicate. Update contexts add PriorParentQuery, and delete contexts name it instead of ParentQuery. Parents and providers the library loads do not count |
 | `<Handler> qualified a record in addErrorOn<Ctx>When but attached no error in addErrorOn<Ctx>.` | a Validator's predicate returned true and its error method attached no error |
 | `<Object> has no record types, so isRecordType cannot be used on it.` | `isRecordType` or `isNotRecordType` on an object without record types; the message names the method |
 | `No related records provider named <name> is declared. Return it from the queryRelatedOn method of the handler first.` | `getRelated` with a name the handler's RelatedQuery did not return |

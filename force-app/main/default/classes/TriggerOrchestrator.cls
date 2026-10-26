@@ -2,7 +2,7 @@
  * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
  *
- * v0.3.0
+ * v0.4.0
  *
  * PMD False Positives:
  * - ExcessiveClassLength: It is a library and we tried to put everything into ONE class
@@ -669,6 +669,10 @@ public with sharing class TriggerOrchestrator {
         protected void logError(Exception e) {
             TriggerOrchestrator.triggerLogger.log(new TriggerError().withException(e).withHandlerName(this.handlerName).withContext(this.orchestrator.context));
         }
+
+        protected Integer getUndeclaredQueries() {
+            return Limits.getQueries() - this.orchestrator.parentLoader.queries - this.relatedLoader.queries;
+        }
     }
 
     public abstract class ParentDeclaration {
@@ -682,6 +686,8 @@ public with sharing class TriggerOrchestrator {
     }
 
     public class ParentLoader implements TriggerTypes.ParentLoader {
+        public Integer queries = 0;
+
         private Set<SObjectField> lookupsForNewParents = new Set<SObjectField>();
         private Set<SObjectField> lookupsForOldParents = new Set<SObjectField>();
         private Set<SObjectField> loadedLookups = new Set<SObjectField>();
@@ -716,12 +722,16 @@ public with sharing class TriggerOrchestrator {
                 return;
             }
 
+            Integer queriesBefore = Limits.getQueries();
+
             if (this.lookupsForNewParents.contains(lookupField)) {
                 this.queryNewParentsFromSavedRecords();
             }
 
             this.queryAndAttachParents(lookupField);
             this.loadedLookups.add(lookupField);
+
+            this.queries += Limits.getQueries() - queriesBefore;
         }
 
         public void refreshNewParents(List<TriggerTypes.TriggerRecord> records) {
@@ -910,6 +920,8 @@ public with sharing class TriggerOrchestrator {
     }
 
     public abstract class RelatedLoader implements TriggerTypes.RelatedLoader {
+        public Integer queries = 0;
+
         protected List<TriggerTypes.TriggerRecord> records = new List<TriggerTypes.TriggerRecord>();
 
         private Map<String, TriggerTypes.RelatedRecords> relatedByProviderName = new Map<String, TriggerTypes.RelatedRecords>();
@@ -928,7 +940,11 @@ public with sharing class TriggerOrchestrator {
                 return;
             }
 
+            Integer queriesBefore = Limits.getQueries();
+
             TriggerTypes.RelatedRecords related = this.queryRelated(providerName);
+
+            this.queries += Limits.getQueries() - queriesBefore;
 
             if (related != null) {
                 this.relatedByProviderName.put(providerName, related);

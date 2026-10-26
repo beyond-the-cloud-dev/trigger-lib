@@ -62,4 +62,5 @@ All settings: [DML Lib](https://dml.beyondthecloud.dev).
 ## Without a Unit {#direct-dml}
 
 - **Before insert and before update** allow no DML. Set fields with `put` in a Populator.
-- **A Dispatcher** runs direct DML at its turn, before the commit after the last handler.
+- **Predicates and actions** in before delete and the after contexts throw on DML. Register the work instead.
+- **A Dispatcher** runs direct DML in its dispatch method, at its turn, before the commit after the last handler. A Finalizer may run DML too.

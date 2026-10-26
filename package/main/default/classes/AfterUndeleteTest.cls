@@ -361,6 +361,90 @@ private class AfterUndeleteTest {
     }
 
     @IsTest
+    static void writerWhenHandlerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        TriggerOrchestrator.mock().afterUndeleteFor(DmlAccountWriter.class).with(new Contact(LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new DmlAccountWriter());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'DmlAccountWriter performed DML in writeOnAfterUndeleteWhen or writeOnAfterUndelete. Register that work in the unit of work.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void dispatcherWhenQualificationPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TriggerOrchestrator.mock().afterUndeleteFor(DmlQualificationDispatcher.class).with(new Contact(LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new DmlQualificationDispatcher());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'DmlQualificationDispatcher performed DML in dispatchOnAfterUndeleteWhen. Move that work to an after undelete Writer.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void writerWhenFinalizerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        TriggerOrchestrator.mock().afterUndeleteFor(AccountWriterWithDmlFinalizer.class).with(new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(new AccountWriterWithDmlFinalizer());
+
+        // Verify
+        Assert.areEqual('Doe', DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The Finalizer should be allowed to run DML.');
+    }
+
+    @IsTest
+    static void dispatcherWhenDispatchPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        DmlDispatcher dispatcher = new DmlDispatcher();
+
+        TriggerOrchestrator.mock().afterUndeleteFor(DmlDispatcher.class).with(new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(dispatcher);
+
+        // Verify
+        Assert.areEqual(1, dispatcher.dispatchedIds.size(), 'The dispatcher should be allowed to run DML.');
+    }
+
+    @IsTest
     static void writerWhenHandlerPerformsSoql() {
         // Setup
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
@@ -684,6 +768,46 @@ private class AfterUndeleteTest {
     }
 
     private class FailingDispatcherWithContinueOnError extends FailingDispatcher implements AfterUndelete.ContinueOnError {
+    }
+
+    private class DmlAccountWriter implements AfterUndelete.Writer {
+        public Boolean writeOnAfterUndeleteWhen(TriggerTypes.UndeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterUndelete(TriggerTypes.UndeleteRecord record, TriggerTypes.UnitOfWork unitOfWork) {
+            Database.setSavepoint();
+            unitOfWork.toInsert(new Account(Name = 'Doe'));
+        }
+    }
+
+    private class AccountWriterWithDmlFinalizer extends AccountWriter implements AfterUndelete.Finalizer {
+        public void finalizeOnAfterUndelete(TriggerTypes.UndeleteRecords records) {
+            Database.setSavepoint();
+        }
+    }
+
+    private class DmlQualificationDispatcher implements AfterUndelete.Dispatcher {
+        public Boolean dispatchOnAfterUndeleteWhen(TriggerTypes.UndeleteRecord record) {
+            Database.setSavepoint();
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterUndelete(TriggerTypes.UndeleteRecords records) {
+        }
+    }
+
+    private class DmlDispatcher implements AfterUndelete.Dispatcher {
+        public Set<Id> dispatchedIds;
+
+        public Boolean dispatchOnAfterUndeleteWhen(TriggerTypes.UndeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterUndelete(TriggerTypes.UndeleteRecords records) {
+            Database.setSavepoint();
+            this.dispatchedIds = records.getIds();
+        }
     }
 
     private class SoqlAccountWriter implements AfterUndelete.Writer {

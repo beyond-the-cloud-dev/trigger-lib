@@ -24,7 +24,7 @@ Make one bulk call per chunk with the records that qualify, such as enqueueing a
 ## Rules {#rules}
 
 - **Pass Ids to async work.** Let the job query what it needs.
-- **No unit of work.** A Dispatcher never gets one, and OwnUnitOfWork is ignored. DML here runs at once and is not merged. Use a [Writer](/after-insert/writer) for record writes.
+- **No unit of work.** A Dispatcher never gets one, and OwnUnitOfWork is ignored. DML in `dispatchOnAfterInsert` runs at once and is not merged. DML in the predicate throws. Use a [Writer](/after-insert/writer) for record writes.
 - **Publish with `EventBus.publish(events)`.** It runs at once, before the shared unit of work commits.
 - **Writer wins.** A class that also implements `AfterInsert.Writer` runs only as a Writer.
 

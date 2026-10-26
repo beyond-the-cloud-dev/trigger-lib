@@ -47,7 +47,7 @@ SOQL queries a run spends outside your code:
 - **Before insert and before update:** none. DML or an event publish throws.
 - **Shared unit of work:** one commit per run. It costs one statement per operation and object type. An empty unit costs nothing.
 - **A Writer with OwnUnitOfWork or ContinueOnError:** one more commit per run, when a record qualified.
-- **Direct DML** in a Dispatcher or a Finalizer costs what it runs.
+- **Direct DML** in a Dispatcher's dispatch method or a Finalizer costs what it runs. In a predicate or an action it throws.
 - **Events:** a Publish After Commit event counts as a DML statement. A Publish Immediately event counts toward `Limits.getPublishImmediateDML()`.
 
 ## Nested Runs {#nested}

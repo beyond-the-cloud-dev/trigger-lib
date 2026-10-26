@@ -25,7 +25,7 @@ Make one bulk call per chunk with the records that qualify, such as enqueueing a
 
 - **Pass Ids, not rows.** Hand `records.getIds()` to async work and query the records there.
 - **Call out from a Queueable.** Give the job `Database.AllowsCallouts` and make the callout in `execute`.
-- **No unit of work.** DML here runs at once and is not merged. Change records from a [Writer](/after-undelete/writer).
+- **No unit of work.** DML in `dispatchOnAfterUndelete` runs at once and is not merged. DML in the predicate throws. Change records from a [Writer](/after-undelete/writer).
 - **Writer wins.** A class that also implements `AfterUndelete.Writer` runs only as a Writer.
 
 ::: warning

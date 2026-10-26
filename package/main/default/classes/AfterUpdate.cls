@@ -93,12 +93,22 @@ global class AfterUpdate {
                 this.relatedLoader.attachTo(records);
 
                 Integer queriesBefore = this.getUndeclaredQueries();
+                Integer dmlStatementsBefore = Limits.getDmlStatements();
+                Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.write(record);
                 }
 
                 Integer queriesAfter = this.getUndeclaredQueries();
+                Integer dmlStatementsAfter = Limits.getDmlStatements();
+                Integer immediateEventsAfter = Limits.getPublishImmediateDML();
+
+                if (dmlStatementsAfter > dmlStatementsBefore || immediateEventsAfter > immediateEventsBefore) {
+                    throw new TriggerTypes.TriggerLibException(
+                        this.handlerName + ' performed DML in writeOnAfterUpdateWhen or writeOnAfterUpdate. Register that work in the unit of work.'
+                    );
+                }
 
                 if (queriesAfter > queriesBefore) {
                     throw new TriggerTypes.TriggerLibException(
@@ -150,12 +160,20 @@ global class AfterUpdate {
                 this.relatedLoader.attachTo(records);
 
                 Integer queriesBefore = this.getUndeclaredQueries();
+                Integer dmlStatementsBefore = Limits.getDmlStatements();
+                Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.qualify(record);
                 }
 
                 Integer queriesAfter = this.getUndeclaredQueries();
+                Integer dmlStatementsAfter = Limits.getDmlStatements();
+                Integer immediateEventsAfter = Limits.getPublishImmediateDML();
+
+                if (dmlStatementsAfter > dmlStatementsBefore || immediateEventsAfter > immediateEventsBefore) {
+                    throw new TriggerTypes.TriggerLibException(this.handlerName + ' performed DML in dispatchOnAfterUpdateWhen. Move that work to an after update Writer.');
+                }
 
                 if (queriesAfter > queriesBefore) {
                     throw new TriggerTypes.TriggerLibException(

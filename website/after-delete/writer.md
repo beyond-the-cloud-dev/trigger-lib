@@ -44,7 +44,7 @@ public with sharing class ContactRemovalTaskWriter implements AfterDelete.Writer
 
 - **Read the old row, not SOQL.** SOQL no longer finds the deleted row. Read its values from `getOldSObject()`, which is read-only.
 - **Merge losers qualify.** Skip them as `[Skip merge losers]` does.
-- **Register with `toInsert`, `toUpdate`, `toUpsert`, `toDelete` or `toPublish` (platform events).** They commit after the last handler, or right after this Writer with [OwnUnitOfWork](/after-delete/add-ons/own-unit-of-work) or [ContinueOnError](/after-delete/add-ons/continue-on-error).
+- **Register with `toInsert`, `toUpdate`, `toUpsert`, `toDelete` or `toPublish` (platform events).** They commit after the last handler, or right after this Writer with [OwnUnitOfWork](/after-delete/add-ons/own-unit-of-work) or [ContinueOnError](/after-delete/add-ons/continue-on-error). DML in the predicate or the action throws.
 - **Writer wins.** A class that also implements `AfterDelete.Dispatcher` runs only as a Writer.
 
 ::: warning

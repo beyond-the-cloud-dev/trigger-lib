@@ -584,6 +584,98 @@ private class AfterUpdateTest {
     }
 
     @IsTest
+    static void writerWhenHandlerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterUpdateFor(DmlAccountWriter.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new DmlAccountWriter());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'DmlAccountWriter performed DML in writeOnAfterUpdateWhen or writeOnAfterUpdate. Register that work in the unit of work.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void dispatcherWhenQualificationPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterUpdateFor(DmlQualificationDispatcher.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new DmlQualificationDispatcher());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'DmlQualificationDispatcher performed DML in dispatchOnAfterUpdateWhen. Move that work to an after update Writer.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void writerWhenFinalizerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterUpdateFor(AccountWriterWithDmlFinalizer.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(new AccountWriterWithDmlFinalizer());
+
+        // Verify
+        Assert.areEqual('Doe', DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The Finalizer should be allowed to run DML.');
+    }
+
+    @IsTest
+    static void dispatcherWhenDispatchPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        DmlDispatcher dispatcher = new DmlDispatcher();
+
+        TriggerOrchestrator.mock().afterUpdateFor(DmlDispatcher.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(dispatcher);
+
+        // Verify
+        Assert.areEqual(1, dispatcher.dispatchedIds.size(), 'The dispatcher should be allowed to run DML.');
+    }
+
+    @IsTest
     static void writerWhenHandlerPerformsSoql() {
         // Setup
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
@@ -1005,6 +1097,46 @@ private class AfterUpdateTest {
 
         public void finalizeOnAfterUpdate(TriggerTypes.UpdateRecords records) {
             this.finalizeCalls++;
+        }
+    }
+
+    private class DmlAccountWriter implements AfterUpdate.Writer {
+        public Boolean writeOnAfterUpdateWhen(TriggerTypes.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterUpdate(TriggerTypes.UpdateRecord record, TriggerTypes.UnitOfWork unitOfWork) {
+            Database.setSavepoint();
+            unitOfWork.toInsert(new Account(Name = 'Doe'));
+        }
+    }
+
+    private class AccountWriterWithDmlFinalizer extends AccountWriter implements AfterUpdate.Finalizer {
+        public void finalizeOnAfterUpdate(TriggerTypes.UpdateRecords records) {
+            Database.setSavepoint();
+        }
+    }
+
+    private class DmlQualificationDispatcher implements AfterUpdate.Dispatcher {
+        public Boolean dispatchOnAfterUpdateWhen(TriggerTypes.UpdateRecord record) {
+            Database.setSavepoint();
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterUpdate(TriggerTypes.UpdateRecords records) {
+        }
+    }
+
+    private class DmlDispatcher implements AfterUpdate.Dispatcher {
+        public Set<Id> dispatchedIds;
+
+        public Boolean dispatchOnAfterUpdateWhen(TriggerTypes.UpdateRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterUpdate(TriggerTypes.UpdateRecords records) {
+            Database.setSavepoint();
+            this.dispatchedIds = records.getIds();
         }
     }
 

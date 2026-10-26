@@ -374,11 +374,122 @@ private class AfterInsertTest {
 
         TriggerOrchestrator.mock().afterInsertFor(DmlAccountWriter.class).with(new Contact(LastName = 'Doe'));
 
+        Exception expectedException = null;
+
         // Test
-        TriggerOrchestrator.runTestFor(new DmlAccountWriter());
+        try {
+            TriggerOrchestrator.runTestFor(new DmlAccountWriter());
+        } catch (Exception e) {
+            expectedException = e;
+        }
 
         // Verify
-        Assert.areEqual(1, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The writer should register the account.');
+        Assert.areEqual(
+            'DmlAccountWriter performed DML in writeOnAfterInsertWhen or writeOnAfterInsert. Register that work in the unit of work.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void dispatcherWhenQualificationPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TriggerOrchestrator.mock().afterInsertFor(DmlQualificationDispatcher.class).with(new Contact(LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new DmlQualificationDispatcher());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'DmlQualificationDispatcher performed DML in dispatchOnAfterInsertWhen. Move that work to an after insert Writer.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void writerWhenFinalizerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        TriggerOrchestrator.mock().afterInsertFor(AccountWriterWithDmlFinalizer.class).with(new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(new AccountWriterWithDmlFinalizer());
+
+        // Verify
+        Assert.areEqual('Doe', DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The Finalizer should be allowed to run DML.');
+    }
+
+    @IsTest
+    static void dispatcherWhenDispatchPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        DmlDispatcher dispatcher = new DmlDispatcher();
+
+        TriggerOrchestrator.mock().afterInsertFor(DmlDispatcher.class).with(new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(dispatcher);
+
+        // Verify
+        Assert.areEqual(1, dispatcher.dispatchedIds.size(), 'The dispatcher should be allowed to run DML.');
+    }
+
+    @IsTest
+    static void writerWithLoggerWhenHandlerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TriggerOrchestrator.mock().afterInsertFor(DmlAccountWriter.class).with(new Contact(LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new DmlAccountWriter());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(expectedException, logger.errors[0].getException(), 'The guard should log the exception it throws.');
+    }
+
+    @IsTest
+    static void writerWhenDmlIsPerformedBeforeRun() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Database.setSavepoint();
+
+        TriggerOrchestrator.mock().afterInsertFor(AccountWriter.class).with(new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(new AccountWriter());
+
+        // Verify
+        Assert.areEqual('Doe', DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The writer should register the account.');
     }
 
     @IsTest
@@ -883,6 +994,35 @@ private class AfterInsertTest {
         public void writeOnAfterInsert(TriggerTypes.InsertRecord record, TriggerTypes.UnitOfWork unitOfWork) {
             Database.setSavepoint();
             unitOfWork.toInsert(new Account(Name = (String) record.getNewSObject().get(Contact.LastName)));
+        }
+    }
+
+    private class AccountWriterWithDmlFinalizer extends AccountWriter implements AfterInsert.Finalizer {
+        public void finalizeOnAfterInsert(TriggerTypes.InsertRecords records) {
+            Database.setSavepoint();
+        }
+    }
+
+    private class DmlQualificationDispatcher implements AfterInsert.Dispatcher {
+        public Boolean dispatchOnAfterInsertWhen(TriggerTypes.InsertRecord record) {
+            Database.setSavepoint();
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterInsert(TriggerTypes.InsertRecords records) {
+        }
+    }
+
+    private class DmlDispatcher implements AfterInsert.Dispatcher {
+        public Set<Id> dispatchedIds;
+
+        public Boolean dispatchOnAfterInsertWhen(TriggerTypes.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterInsert(TriggerTypes.InsertRecords records) {
+            Database.setSavepoint();
+            this.dispatchedIds = records.getIds();
         }
     }
 

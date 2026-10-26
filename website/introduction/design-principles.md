@@ -22,7 +22,7 @@ The library loops over the records. Handlers declare the parents and related rec
 
 ## Before Contexts Populate, After Contexts Act {#before-populates-after-acts}
 
-In before insert and before update, DML or an event publish fails the save. Change other records from a Writer in before delete or an after context.
+In before insert and before update, DML or an event publish fails the save. Change other records from a Writer in before delete or an after context, through its unit of work: DML in a predicate or an action fails there too.
 
 ## Qualification Is Explicit {#qualification-is-explicit}
 

@@ -13,8 +13,8 @@ Each run calls `<ctx>Handlers()`, loads parents, runs providers and commits agai
 ## Order of a Run {#order}
 
 1. **Run bypasses.** `TriggerOrchestrator.bypass()` (`all()`, `sObject(…)`, `orchestrator(…)`) or a checked `TriggerObject__mdt.Bypass__c` ends the run before any of your code. So does an orchestrator that does not implement the context.
-2. **Handler list.** `<ctx>Handlers()` runs. A class that implements two roles runs only as the first: Populator over Validator, Validator over Writer, Writer over Dispatcher.
-3. **Handler bypasses.** `bypass().handler(…)`, then `TriggerHandler__mdt.Bypass__c`, then `bypassOn<Ctx>When()`. A skipped handler declares no parents.
+2. **Handler list.** `<ctx>Handlers()` runs. Under `runFromMetadata()`, the library instead creates the class of every unbypassed `TriggerHandler__mdt` record of the object, in `Order__c` order, and keeps those that implement the context. A class that implements two roles runs only as the first: Populator over Validator, Validator over Writer, Writer over Dispatcher.
+3. **Handler bypasses.** `bypass().handler(…)`, then `TriggerHandler__mdt.Bypass__c`, then `bypassOn<Ctx>When()`. A skipped handler declares no parents. When no handler is left, the run ends here, and only the Logger step follows.
 4. **Parent declarations.** The remaining handlers declare their parents. A lookup is queried the first time a handler reads its parent.
 5. **Each handler runs, in list order.**
    - Each RelatedQuery provider runs over all records the first time the handler reads it.
@@ -30,7 +30,7 @@ SOQL queries a run spends outside your code:
 
 | Source | SOQL queries |
 |---|---|
-| Bypass metadata | 0, once per transaction |
+| Bypass and registration metadata | 0, once per transaction |
 | Logger discovery | 1, once per transaction |
 | Parents in before contexts and after delete | 1 per lookup read |
 | Parents in after insert, update and undelete | 1 on the trigger object at the first ParentQuery read, plus 1 per lookup read that it missed and, in after update, per PriorParentQuery lookup read |

@@ -166,6 +166,8 @@ static void beforeInsertHandlersCopyBillingAddress() {
 }
 ```
 
+A trigger that calls `runFromMetadata()` has no orchestrator class to run. Test its handlers one by one, and its records with a [registration test](#registration).
+
 ## Registration Tests {#registration}
 
 A handler missing from the orchestrator never runs. Test the list:
@@ -181,6 +183,26 @@ static void afterInsertHandlersContainsWelcomeTaskWriter() {
 }
 ```
 
+Under `runFromMetadata()`, a record whose class can't be found fails every save on the object. Test that the deployed records resolve:
+
+```apex
+@IsTest
+static void accountHandlerRecordsResolve() {
+    // Setup
+    List<String> missingClasses = new List<String>();
+
+    // Test
+    for (TriggerHandler__mdt handlerRecord : [SELECT ApexClassName__c FROM TriggerHandler__mdt WHERE TriggerObject__r.ObjectAPIName__c = 'Account']) {
+        if (Type.forName(handlerRecord.ApexClassName__c.trim()) == null) {
+            missingClasses.add(handlerRecord.ApexClassName__c);
+        }
+    }
+
+    // Verify
+    Assert.areEqual(new List<String>(), missingClasses, 'Every registered class should exist.');
+}
+```
+
 ## Mock the Metadata and the Logger {#mock-metadata}
 
 Mock the bypass metadata and the Logger search before anything refers to `TriggerOrchestrator`, so before `TriggerOrchestrator.mock()`. Otherwise the org's deployed bypass records and its real Logger apply to your test:
@@ -191,6 +213,7 @@ SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 ```
 
 - **A metadata bypass.** Return `new TriggerObject__mdt(ObjectAPIName__c = 'Account', Bypass__c = true)` instead of the empty list.
+- **Handler records.** `TriggerHandler__mdt` rows, with `Order__c`, sit in the parent's `TriggerHandlers__r` relationship. A plain constructor can't set it, so build the parent with `JSON.deserialize`.
 - **An Apex bypass.** Call `TriggerOrchestrator.bypass().handler(…)` or `.sObject(…)` before `runTestFor`. `.orchestrator(…)` does not apply under `runTestFor`.
 - **A Logger.** Set `TriggerOrchestrator.triggerLogger.logger` to a class of your own that collects the errors. Use it to test ContinueOnError.
 

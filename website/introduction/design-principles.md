@@ -6,7 +6,7 @@ description: The rules behind Trigger Lib's API - one handler per concern, one r
 
 ## One Handler per Concern {#one-handler-per-concern}
 
-Each object has one trigger and one orchestrator. Each handler does one thing, so it is easy to name, test and switch off.
+Each object has one trigger and one orchestrator, or handlers registered in custom metadata. Each handler does one thing, so it is easy to name, test and switch off.
 
 ## One Role per Context {#one-role-per-context}
 
@@ -14,7 +14,7 @@ A role says what a class does. Keep one role per class in each context: a class 
 
 ## List Order Is the Dependency {#registration-order}
 
-Handlers run in list order. Each predicate runs at its handler's turn, so it sees what earlier handlers wrote.
+Handlers run in list order, or in `Order__c` order under `runFromMetadata()`. Each predicate runs at its handler's turn, so it sees what earlier handlers wrote.
 
 ## No Loops, No SOQL per Record {#no-loops}
 
@@ -38,4 +38,4 @@ In the update contexts, a Populator, Writer or Dispatcher acts on the same recor
 
 ## No Required Metadata {#no-required-metadata}
 
-The library works with zero custom metadata records. Metadata only switches an object or a handler off.
+The library works with zero custom metadata records. Metadata switches an object or a handler off. It registers handlers only for a trigger that calls `runFromMetadata()`.

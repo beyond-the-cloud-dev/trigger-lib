@@ -14,7 +14,7 @@ A handler's work is its providers, predicates, actions, dispatch, Finalizer and 
 2. **Is rethrown,** unless the handler implements ContinueOnError. Every record in the chunk fails. With all-or-none DML, the whole statement fails.
 3. **Is always rethrown** when it is the library's own [`TriggerTypes.TriggerLibException`](/api/trigger-orchestrator#triggerlibexception), such as DML in a before insert handler.
 
-Platform exceptions such as `System.LimitException` cannot be caught. They fail the save, and the Logger never sees them.
+Platform exceptions such as `System.LimitException` cannot be caught. They end the transaction at once: the save fails, and neither `log()` nor `flush()` runs.
 
 ## Logger {#logger}
 
@@ -48,7 +48,7 @@ public with sharing class TriggerErrorLogger implements TriggerOrchestrator.Logg
 }
 ```
 
-- **One instance per transaction.** `flush()` runs at the end of each outermost run. Clear your buffer there.
+- **One instance per transaction.** `flush()` runs at the end of each outermost run, also when the run fails. Clear your buffer there.
 - **Exactly one class.** With two implementations, every Trigger Lib trigger in the org throws.
 - **Never throw from a Logger.** Its exception replaces the handler's and fails the save.
 

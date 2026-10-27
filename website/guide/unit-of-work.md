@@ -4,7 +4,7 @@ description: How Writers insert, update, upsert, delete and publish platform eve
 
 # Unit of Work
 
-A Writer, in before delete and in the after contexts, does not run DML. It registers writes on [`TriggerTypes.UnitOfWork`](/api/unit-of-work), and the library commits them in bulk: one statement per operation and object type.
+Every DML statement runs the automation of the records it saves, on the same transaction limits. So a Writer, in before delete and in the after contexts, does not run DML. It registers writes on [`TriggerTypes.UnitOfWork`](/api/unit-of-work), and the library commits them in bulk: one statement per operation and object type. Twenty Writers that each insert Tasks in one run cost a single insert.
 
 ## Which Unit a Writer Gets {#which-unit}
 

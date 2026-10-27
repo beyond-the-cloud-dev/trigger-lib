@@ -24,11 +24,11 @@ try {
 
 ## From Custom Metadata {#metadata}
 
-Check `Bypass__c` on a `TriggerObject__mdt` record to switch off every handler on an object for every user, or on a `TriggerHandler__mdt` record under it to switch off one class. Under `runFromMetadata()`, a bypassed record's class is not even created. Changes apply from the next transaction. Fields, deployment and test mocks: [Custom Metadata](/api/custom-metadata).
+Check `Bypass__c` on a `TriggerObject__mdt` record to switch off every handler on an object for every user, or on a `TriggerHandler__mdt` record under it to switch off one class. Under `runFromMetadata()`, a bypassed record's class is not even created. Changes apply from the next transaction. To ship a handler switched off, deploy it with its `TriggerHandler__mdt` record checked, then uncheck `Bypass__c` when it should go live. Fields, deployment and test mocks: [Custom Metadata](/api/custom-metadata).
 
 ## From the Handler {#bypassable}
 
-Implement the context's Bypassable. `bypassOn<Ctx>When()` runs once per handler per run and takes no records. When it returns true, the handler is skipped for that run.
+Implement the context's Bypassable for feature flags and other conditions that don't depend on the records. `bypassOn<Ctx>When()` runs once per handler per run and takes no records. When it returns true, the handler is skipped for that run.
 
 <<< @/../examples/main/default/classes/contact/before-insert/validator/ContactReachabilityValidator.cls
 

@@ -112,11 +112,11 @@ public String keyOf(SObject row) {
 
 ### Configuration {#configuration}
 
-Rows that do not depend on the trigger records, such as custom metadata:
+Configuration rows that depend on the trigger records, such as the region of each billing country. Configuration that doesn't depend on them belongs in a [static variable](/guide/queries#configuration):
 
 ```apex
 public List<SObject> query(TriggerTypes.InsertRecords records) {
-    return [SELECT Country__c, Region__c FROM RegionMapping__mdt];
+    return [SELECT Country__c, Region__c FROM RegionMapping__mdt WHERE Country__c IN :records.getValuesOf(Account.BillingCountry)];
 }
 
 public String keyOf(SObject row) {

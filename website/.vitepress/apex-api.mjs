@@ -651,6 +651,7 @@ const advanced = {
   items: [
     { text: 'Execution Order & Cost', link: '/guide/execution-order' },
     { text: 'Bypassing', link: '/guide/bypasses' },
+    { text: 'Queries', link: '/guide/queries' },
     { text: 'Unit of Work', link: '/guide/unit-of-work' },
     { text: 'Errors & Logging', link: '/guide/error-handling' },
     { text: 'RelatedQuery Recipes', link: '/guide/related-query' },

@@ -29,8 +29,8 @@ features:
     details: Populator, Validator, Writer or Dispatcher, each acting only on the records its predicate picks.
     link: /contexts
   - title: Declared Queries
-    details: Declare parent fields and related records, with no SOQL in your handler.
-    link: /api/parent-fields
+    details: Declare parent fields and related records, and the library loads them in bulk, with no SOQL in your handler.
+    link: /guide/queries
   - title: Unit of Work
     details: Writers register DML, committed once after the last handler by default.
     link: /guide/unit-of-work

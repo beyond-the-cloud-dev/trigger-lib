@@ -40,14 +40,14 @@ SOQL queries a run spends outside your code:
 - **Declarations merge.** Handlers that declare the same lookup share one query.
 - **Parents load on the first read.** A declared lookup whose parent no handler reads costs no query.
 - **Providers run on the first read.** A provider its handler never reads costs no query. A read in a predicate runs it even when no record qualifies.
-- **Never query in a predicate or an action.** They run once per record. Declare a ParentQuery or a RelatedQuery, or query once in a Finalizer.
+- **Never query in a predicate or an action.** They run once per record, so a query there throws. Declare a ParentQuery or a RelatedQuery, or query once in a Finalizer. The parents and providers the library loads for them do not count.
 
 ## DML Cost {#dml-cost}
 
 - **Before insert and before update:** none. DML or an event publish throws.
 - **Shared unit of work:** one commit per run. It costs one statement per operation and object type. An empty unit costs nothing.
 - **A Writer with OwnUnitOfWork or ContinueOnError:** one more commit per run, when a record qualified.
-- **Direct DML** in a Dispatcher or a Finalizer costs what it runs.
+- **Direct DML** in a Dispatcher's dispatch method or a Finalizer costs what it runs. In a predicate or an action it throws.
 - **Events:** a Publish After Commit event counts as a DML statement. A Publish Immediately event counts toward `Limits.getPublishImmediateDML()`.
 
 ## Nested Runs {#nested}

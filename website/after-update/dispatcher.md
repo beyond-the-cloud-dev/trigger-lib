@@ -52,7 +52,7 @@ public with sharing class OpportunityWonSyncDispatcher implements AfterUpdate.Di
 ## Rules {#rules}
 
 - **One dispatch per chunk.** An update of 1,000 records dispatches 5 times, so the example enqueues 5 jobs. A synchronous transaction can enqueue at most 50 Queueable jobs.
-- **No unit of work.** DML here runs at once and is not merged with the Writers' changes. Use a [Writer](/after-update/writer) for record changes that commit with the save.
+- **No unit of work.** DML in `dispatchOnAfterUpdate` runs at once and is not merged with the Writers' changes. DML in the predicate throws. Use a [Writer](/after-update/writer) for record changes that commit with the save.
 - **Writers' changes may not be saved yet.** By default, their registrations commit after the last handler, so a query here does not see them.
 - **Writer wins.** A class that also implements `AfterUpdate.Writer` runs only as a Writer.
 

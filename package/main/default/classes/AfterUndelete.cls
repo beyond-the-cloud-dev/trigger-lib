@@ -82,8 +82,28 @@ global class AfterUndelete {
             try {
                 this.relatedLoader.attachTo(records);
 
+                Integer queriesBefore = this.getUndeclaredQueries();
+                Integer dmlStatementsBefore = Limits.getDmlStatements();
+                Integer immediateEventsBefore = Limits.getPublishImmediateDML();
+
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.write(record);
+                }
+
+                Integer queriesAfter = this.getUndeclaredQueries();
+                Integer dmlStatementsAfter = Limits.getDmlStatements();
+                Integer immediateEventsAfter = Limits.getPublishImmediateDML();
+
+                if (dmlStatementsAfter > dmlStatementsBefore || immediateEventsAfter > immediateEventsBefore) {
+                    throw new TriggerTypes.TriggerLibException(
+                        this.handlerName + ' performed DML in writeOnAfterUndeleteWhen or writeOnAfterUndelete. Register that work in the unit of work.'
+                    );
+                }
+
+                if (queriesAfter > queriesBefore) {
+                    throw new TriggerTypes.TriggerLibException(
+                        this.handlerName + ' performed SOQL in writeOnAfterUndeleteWhen or writeOnAfterUndelete. Move that query to a ParentQuery or a RelatedQuery.'
+                    );
                 }
 
                 this.handlerHooks.finalize(this.qualifiedRecords);
@@ -125,8 +145,26 @@ global class AfterUndelete {
             try {
                 this.relatedLoader.attachTo(records);
 
+                Integer queriesBefore = this.getUndeclaredQueries();
+                Integer dmlStatementsBefore = Limits.getDmlStatements();
+                Integer immediateEventsBefore = Limits.getPublishImmediateDML();
+
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.qualify(record);
+                }
+
+                Integer queriesAfter = this.getUndeclaredQueries();
+                Integer dmlStatementsAfter = Limits.getDmlStatements();
+                Integer immediateEventsAfter = Limits.getPublishImmediateDML();
+
+                if (dmlStatementsAfter > dmlStatementsBefore || immediateEventsAfter > immediateEventsBefore) {
+                    throw new TriggerTypes.TriggerLibException(this.handlerName + ' performed DML in dispatchOnAfterUndeleteWhen. Move that work to an after undelete Writer.');
+                }
+
+                if (queriesAfter > queriesBefore) {
+                    throw new TriggerTypes.TriggerLibException(
+                        this.handlerName + ' performed SOQL in dispatchOnAfterUndeleteWhen. Move that query to a ParentQuery or a RelatedQuery.'
+                    );
                 }
 
                 this.dispatch();

@@ -3,7 +3,7 @@
  * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
  *
- * v0.3.0
+ * v0.4.0
  *
  * PMD False Positives:
  * - ExcessiveClassLength: It is a library and we tried to put everything into ONE test class
@@ -369,6 +369,192 @@ private class AfterDeleteTest {
     }
 
     @IsTest
+    static void writerWhenHandlerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterDeleteFor(DmlAccountWriter.class).with(doe);
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new DmlAccountWriter());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'DmlAccountWriter performed DML in writeOnAfterDeleteWhen or writeOnAfterDelete. Register that work in the unit of work.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void dispatcherWhenQualificationPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterDeleteFor(DmlQualificationDispatcher.class).with(doe);
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new DmlQualificationDispatcher());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'DmlQualificationDispatcher performed DML in dispatchOnAfterDeleteWhen. Move that work to an after delete Writer.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void writerWhenFinalizerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterDeleteFor(AccountWriterWithDmlFinalizer.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.runTestFor(new AccountWriterWithDmlFinalizer());
+
+        // Verify
+        Assert.areEqual('Doe', DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The Finalizer should be allowed to run DML.');
+    }
+
+    @IsTest
+    static void dispatcherWhenDispatchPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        DmlDispatcher dispatcher = new DmlDispatcher();
+
+        TriggerOrchestrator.mock().afterDeleteFor(DmlDispatcher.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.runTestFor(dispatcher);
+
+        // Verify
+        Assert.areEqual(1, dispatcher.dispatchedIds.size(), 'The dispatcher should be allowed to run DML.');
+    }
+
+    @IsTest
+    static void writerWhenHandlerPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterDeleteFor(SoqlAccountWriter.class).with(doe);
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new SoqlAccountWriter());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'SoqlAccountWriter performed SOQL in writeOnAfterDeleteWhen or writeOnAfterDelete. Move that query to a PriorParentQuery or a RelatedQuery.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void dispatcherWhenQualificationPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterDeleteFor(SoqlQualificationDispatcher.class).with(doe);
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new SoqlQualificationDispatcher());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'SoqlQualificationDispatcher performed SOQL in dispatchOnAfterDeleteWhen. Move that query to a PriorParentQuery or a RelatedQuery.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void writerWhenFinalizerPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        AccountWriterWithSoqlFinalizer writer = new AccountWriterWithSoqlFinalizer();
+
+        TriggerOrchestrator.mock().afterDeleteFor(AccountWriterWithSoqlFinalizer.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.runTestFor(writer);
+
+        // Verify
+        Assert.areEqual(0, writer.accounts, 'The finalizer should be allowed to query.');
+    }
+
+    @IsTest
+    static void dispatcherWhenDispatchPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        SoqlDispatcher dispatcher = new SoqlDispatcher();
+
+        TriggerOrchestrator.mock().afterDeleteFor(SoqlDispatcher.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.runTestFor(dispatcher);
+
+        // Verify
+        Assert.areEqual(0, dispatcher.accounts, 'The dispatcher should be allowed to query.');
+    }
+
+    @IsTest
     static void priorParentQuery() {
         // Setup
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
@@ -603,6 +789,85 @@ private class AfterDeleteTest {
     }
 
     private class FailingDispatcherWithContinueOnError extends FailingDispatcher implements AfterDelete.ContinueOnError {
+    }
+
+    private class DmlAccountWriter implements AfterDelete.Writer {
+        public Boolean writeOnAfterDeleteWhen(TriggerTypes.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterDelete(TriggerTypes.DeleteRecord record, TriggerTypes.UnitOfWork unitOfWork) {
+            Database.setSavepoint();
+            unitOfWork.toInsert(new Account(Name = 'Doe'));
+        }
+    }
+
+    private class AccountWriterWithDmlFinalizer extends AccountWriter implements AfterDelete.Finalizer {
+        public void finalizeOnAfterDelete(TriggerTypes.DeleteRecords records) {
+            Database.setSavepoint();
+        }
+    }
+
+    private class DmlQualificationDispatcher implements AfterDelete.Dispatcher {
+        public Boolean dispatchOnAfterDeleteWhen(TriggerTypes.DeleteRecord record) {
+            Database.setSavepoint();
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterDelete(TriggerTypes.DeleteRecords records) {
+        }
+    }
+
+    private class DmlDispatcher implements AfterDelete.Dispatcher {
+        public Set<Id> dispatchedIds;
+
+        public Boolean dispatchOnAfterDeleteWhen(TriggerTypes.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterDelete(TriggerTypes.DeleteRecords records) {
+            Database.setSavepoint();
+            this.dispatchedIds = records.getIds();
+        }
+    }
+
+    private class SoqlAccountWriter implements AfterDelete.Writer {
+        public Boolean writeOnAfterDeleteWhen(TriggerTypes.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnAfterDelete(TriggerTypes.DeleteRecord record, TriggerTypes.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(new Account(Name = 'Accounts: ' + [SELECT COUNT() FROM Account]));
+        }
+    }
+
+    private class SoqlQualificationDispatcher implements AfterDelete.Dispatcher {
+        public Boolean dispatchOnAfterDeleteWhen(TriggerTypes.DeleteRecord record) {
+            return [SELECT COUNT() FROM Account] == 0;
+        }
+
+        public void dispatchOnAfterDelete(TriggerTypes.DeleteRecords records) {
+        }
+    }
+
+    private class SoqlDispatcher implements AfterDelete.Dispatcher {
+        public Integer accounts;
+
+        public Boolean dispatchOnAfterDeleteWhen(TriggerTypes.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void dispatchOnAfterDelete(TriggerTypes.DeleteRecords records) {
+            this.accounts = [SELECT COUNT() FROM Account];
+        }
+    }
+
+    private class AccountWriterWithSoqlFinalizer extends AccountWriter implements AfterDelete.Finalizer {
+        public Integer accounts;
+
+        public void finalizeOnAfterDelete(TriggerTypes.DeleteRecords records) {
+            this.accounts = [SELECT COUNT() FROM Account];
+        }
     }
 
     private class PriorAccountNameWriter implements AfterDelete.Writer, AfterDelete.PriorParentQuery {

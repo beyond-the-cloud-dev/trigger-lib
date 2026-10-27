@@ -35,7 +35,7 @@ public with sharing class AccountRestoreGuardWriter implements AfterUndelete.Wri
 
 ## Rules {#rules}
 
-- **Register, don't run DML.** Call `toInsert`, `toUpdate`, `toUpsert`, `toDelete` or `toPublish` (platform events) on `unitOfWork`. Direct DML runs at once, outside the unit.
+- **Register, don't run DML.** Call `toInsert`, `toUpdate`, `toUpsert`, `toDelete` or `toPublish` (platform events) on `unitOfWork`. DML in the predicate or the action throws.
 - **A self-update is a second save.** `unitOfWork.toUpdate(new Account(Id = record.getId(), …))` fires BeforeUpdate and AfterUpdate for the restored record.
 - **Block a restore with `addError`.** There is no Validator here. List the blocking Writer first. The record stays in the Recycle Bin.
 - **Writer wins.** A class that also implements `AfterUndelete.Dispatcher` runs only as a Writer.

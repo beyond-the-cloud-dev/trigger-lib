@@ -18,11 +18,11 @@ Handlers run in list order, or in `Order__c` order under `runFromMetadata()`. Ea
 
 ## No Loops, No SOQL per Record {#no-loops}
 
-The library loops over the records. Handlers declare the parents and related records they need, and the library loads them in bulk, never per record.
+The library loops over the records. Handlers declare the parents and related records they need, and the library loads them in bulk, never per record. A predicate or an action that runs its own SOQL throws.
 
 ## Before Contexts Populate, After Contexts Act {#before-populates-after-acts}
 
-In before insert and before update, DML or an event publish fails the save. Change other records from a Writer in before delete or an after context.
+In before insert and before update, DML or an event publish fails the save. Change other records from a Writer in before delete or an after context, through its unit of work: DML in a predicate or an action fails there too.
 
 ## Qualification Is Explicit {#qualification-is-explicit}
 

@@ -3,7 +3,7 @@
  * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
  *
- * v0.3.0
+ * v0.4.0
  *
  * PMD False Positives:
  * - ExcessiveClassLength: It is a library and we tried to put everything into ONE test class
@@ -841,6 +841,198 @@ private class BeforeInsertTest {
     }
 
     @IsTest
+    static void populatorWhenHandlerPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TriggerOrchestrator.mock().beforeInsertFor(SoqlPopulator.class).with(new Contact(LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new SoqlPopulator());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'SoqlPopulator performed SOQL in populateOnBeforeInsertWhen or populateOnBeforeInsert. Move that query to a ParentQuery or a RelatedQuery.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void validatorWhenHandlerPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TriggerOrchestrator.mock().beforeInsertFor(SoqlValidator.class).with(new Contact(LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new SoqlValidator());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'SoqlValidator performed SOQL in addErrorOnBeforeInsertWhen or addErrorOnBeforeInsert. Move that query to a ParentQuery or a RelatedQuery.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void populatorWhenQualificationPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TriggerOrchestrator.mock().beforeInsertFor(SoqlQualificationPopulator.class).with(new Contact(LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new SoqlQualificationPopulator());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'SoqlQualificationPopulator performed SOQL in populateOnBeforeInsertWhen or populateOnBeforeInsert. Move that query to a ParentQuery or a RelatedQuery.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void populatorWithLoggerWhenHandlerPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        TriggerOrchestrator.mock().beforeInsertFor(SoqlPopulator.class).with(new Contact(LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new SoqlPopulator());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(expectedException, logger.errors[0].getException(), 'The guard should log the exception it throws.');
+    }
+
+    @IsTest
+    static void populatorWithContinueOnErrorWhenHandlerPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TriggerOrchestrator.mock().beforeInsertFor(SoqlPopulatorWithContinueOnError.class).with(new Contact(LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new SoqlPopulatorWithContinueOnError());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'SoqlPopulatorWithContinueOnError performed SOQL in populateOnBeforeInsertWhen or populateOnBeforeInsert. Move that query to a ParentQuery or a RelatedQuery.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void populatorWhenFinalizerPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TitlePopulatorWithSoqlFinalizer populator = new TitlePopulatorWithSoqlFinalizer();
+
+        TriggerOrchestrator.mock().beforeInsertFor(TitlePopulatorWithSoqlFinalizer.class).with(new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(populator);
+
+        // Verify
+        Assert.areEqual(0, populator.accounts, 'The finalizer should be allowed to query.');
+    }
+
+    @IsTest
+    static void validatorWhenFinalizerPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        DoeValidatorWithSoqlFinalizer validator = new DoeValidatorWithSoqlFinalizer();
+
+        TriggerOrchestrator.mock().beforeInsertFor(DoeValidatorWithSoqlFinalizer.class).with(new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(validator);
+
+        // Verify
+        Assert.areEqual(0, validator.accounts, 'The finalizer should be allowed to query.');
+    }
+
+    @IsTest
+    static void populatorWhenRelatedQueryPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe', AccountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType));
+
+        TriggerOrchestrator.mock().beforeInsertFor(TitlePopulatorWithRelatedQuery.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.runTestFor(new TitlePopulatorWithRelatedQuery());
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The populator should read what its provider queried.');
+    }
+
+    @IsTest
+    static void populatorWhenParentQueryPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe', AccountId = new TriggerTypes.RandomIdGenerator().get(Account.SObjectType));
+
+        TriggerOrchestrator.mock().beforeInsertFor(TitlePopulatorWithParentQuery.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.runTestFor(new TitlePopulatorWithParentQuery());
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The populator should read the parent the library queried.');
+    }
+
+    @IsTest
     static void parentQuery() {
         // Setup
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
@@ -1222,6 +1414,83 @@ private class BeforeInsertTest {
     }
 
     private class FailingDmlValidatorWithContinueOnError extends FailingDmlValidator implements BeforeInsert.ContinueOnError {
+    }
+
+    private virtual class SoqlPopulator implements BeforeInsert.Populator {
+        public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
+            record.put(Contact.Description, 'Accounts: ' + [SELECT COUNT() FROM Account]);
+        }
+    }
+
+    private class SoqlPopulatorWithContinueOnError extends SoqlPopulator implements BeforeInsert.ContinueOnError {
+    }
+
+    private class SoqlValidator implements BeforeInsert.Validator {
+        public Boolean addErrorOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeInsert(TriggerTypes.RejectableInsertRecord record) {
+            record.addError('Accounts: ' + [SELECT COUNT() FROM Account]);
+        }
+    }
+
+    private class SoqlQualificationPopulator implements BeforeInsert.Populator {
+        public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
+            return [SELECT COUNT() FROM Account] == 0;
+        }
+
+        public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
+            record.put(Contact.Title, 'CEO');
+        }
+    }
+
+    private class TitlePopulatorWithSoqlFinalizer extends TitlePopulator implements BeforeInsert.Finalizer {
+        public Integer accounts;
+
+        public void finalizeOnBeforeInsert(TriggerTypes.InsertRecords records) {
+            this.accounts = [SELECT COUNT() FROM Account];
+        }
+    }
+
+    private class DoeValidatorWithSoqlFinalizer extends DoeValidator implements BeforeInsert.Finalizer {
+        public Integer accounts;
+
+        public void finalizeOnBeforeInsert(TriggerTypes.InsertRecords records) {
+            this.accounts = [SELECT COUNT() FROM Account];
+        }
+    }
+
+    private class TitlePopulatorWithRelatedQuery implements BeforeInsert.Populator, BeforeInsert.RelatedQuery {
+        public Map<String, BeforeInsert.RecordsProvider> queryRelatedOnBeforeInsert() {
+            return new Map<String, BeforeInsert.RecordsProvider>{ 'accounts' => new RelatedAccountProvider() };
+        }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
+            record.put(Contact.Title, record.getRelated('accounts').isEmpty() ? 'CEO' : 'CFO');
+        }
+    }
+
+    private class TitlePopulatorWithParentQuery implements BeforeInsert.Populator, BeforeInsert.ParentQuery {
+        public Map<SObjectField, TriggerTypes.ParentFields> queryParentsOnBeforeInsert() {
+            return new Map<SObjectField, TriggerTypes.ParentFields>{ Contact.AccountId => TriggerTypes.ParentFields.with(Account.Name) };
+        }
+
+        public Boolean populateOnBeforeInsertWhen(TriggerTypes.InsertRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void populateOnBeforeInsert(TriggerTypes.InsertRecord record) {
+            record.put(Contact.Title, record.getNewParent(Contact.AccountId) == null ? 'CEO' : 'CFO');
+        }
     }
 
     private class AccountRepointingPopulator implements BeforeInsert.Populator {

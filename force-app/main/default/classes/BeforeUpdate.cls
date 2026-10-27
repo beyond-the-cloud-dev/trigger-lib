@@ -89,8 +89,19 @@ public class BeforeUpdate {
             try {
                 this.relatedLoader.attachTo(records);
 
+                Integer queriesBefore = this.getUndeclaredQueries();
+
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.populate(record);
+                }
+
+                Integer queriesAfter = this.getUndeclaredQueries();
+
+                if (queriesAfter > queriesBefore) {
+                    throw new TriggerTypes.TriggerLibException(
+                        this.handlerName +
+                        ' performed SOQL in populateOnBeforeUpdateWhen or populateOnBeforeUpdate. Move that query to a ParentQuery, a PriorParentQuery or a RelatedQuery.'
+                    );
                 }
 
                 this.handlerHooks.finalize(this.qualifiedRecords);
@@ -142,8 +153,19 @@ public class BeforeUpdate {
             try {
                 this.relatedLoader.attachTo(records);
 
+                Integer queriesBefore = this.getUndeclaredQueries();
+
                 for (TriggerTypes.TriggerRecord record : records) {
                     this.validate(record);
+                }
+
+                Integer queriesAfter = this.getUndeclaredQueries();
+
+                if (queriesAfter > queriesBefore) {
+                    throw new TriggerTypes.TriggerLibException(
+                        this.handlerName +
+                        ' performed SOQL in addErrorOnBeforeUpdateWhen or addErrorOnBeforeUpdate. Move that query to a ParentQuery, a PriorParentQuery or a RelatedQuery.'
+                    );
                 }
 
                 this.handlerHooks.finalize(this.qualifiedRecords);

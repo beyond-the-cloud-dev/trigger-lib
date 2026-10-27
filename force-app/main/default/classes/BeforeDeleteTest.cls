@@ -3,7 +3,7 @@
  * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
  *
- * v0.3.0
+ * v0.4.0
  *
  * PMD False Positives:
  * - ExcessiveClassLength: It is a library and we tried to put everything into ONE test class
@@ -233,20 +233,156 @@ private class BeforeDeleteTest {
     }
 
     @IsTest
-    static void handlerWhenHandlerPerformsDml() {
+    static void validatorWhenHandlerPerformsDml() {
         // Setup
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
-        Contact doe = new Contact(LastName = 'Doe');
+        TriggerOrchestrator.mock().beforeDeleteFor(DmlDeletionBlocker.class).with(new Contact(LastName = 'Doe'));
 
-        TriggerOrchestrator.mock().beforeDeleteFor(DmlDeletionBlocker.class).with(doe);
+        Exception expectedException = null;
 
         // Test
-        TriggerOrchestrator.runTestFor(new DmlDeletionBlocker());
+        try {
+            TriggerOrchestrator.runTestFor(new DmlDeletionBlocker());
+        } catch (Exception e) {
+            expectedException = e;
+        }
 
         // Verify
-        Assert.areEqual('Doe cannot be deleted.', doe.getErrors()[0].getMessage(), 'The handler should block the deletion.');
+        Assert.areEqual(
+            'DmlDeletionBlocker performed DML in addErrorOnBeforeDeleteWhen or addErrorOnBeforeDelete. Move that work to a before delete Writer.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void writerWhenHandlerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        TriggerOrchestrator.mock().beforeDeleteFor(DmlAccountWriter.class).with(new Contact(LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new DmlAccountWriter());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'DmlAccountWriter performed DML in writeOnBeforeDeleteWhen or writeOnBeforeDelete. Register that work in the unit of work.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void writerWhenFinalizerPerformsDml() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        TriggerOrchestrator.mock().beforeDeleteFor(AccountWriterWithDmlFinalizer.class).with(new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(new AccountWriterWithDmlFinalizer());
+
+        // Verify
+        Assert.areEqual('Doe', DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records()[0].get(Account.Name), 'The Finalizer should be allowed to run DML.');
+    }
+
+    @IsTest
+    static void validatorWhenHandlerPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TriggerOrchestrator.mock().beforeDeleteFor(SoqlDeletionBlocker.class).with(new Contact(LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new SoqlDeletionBlocker());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'SoqlDeletionBlocker performed SOQL in addErrorOnBeforeDeleteWhen or addErrorOnBeforeDelete. Move that query to a PriorParentQuery or a RelatedQuery.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void writerWhenHandlerPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        TriggerOrchestrator.mock().beforeDeleteFor(SoqlAccountWriter.class).with(new Contact(LastName = 'Doe'));
+
+        Exception expectedException = null;
+
+        // Test
+        try {
+            TriggerOrchestrator.runTestFor(new SoqlAccountWriter());
+        } catch (Exception e) {
+            expectedException = e;
+        }
+
+        // Verify
+        Assert.areEqual(
+            'SoqlAccountWriter performed SOQL in writeOnBeforeDeleteWhen or writeOnBeforeDelete. Move that query to a PriorParentQuery or a RelatedQuery.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void validatorWhenFinalizerPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        DeletionBlockerWithSoqlFinalizer blocker = new DeletionBlockerWithSoqlFinalizer();
+
+        TriggerOrchestrator.mock().beforeDeleteFor(DeletionBlockerWithSoqlFinalizer.class).with(new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(blocker);
+
+        // Verify
+        Assert.areEqual(0, blocker.accounts, 'The finalizer should be allowed to query.');
+    }
+
+    @IsTest
+    static void writerWhenFinalizerPerformsSoql() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        AccountWriterWithSoqlFinalizer writer = new AccountWriterWithSoqlFinalizer();
+
+        TriggerOrchestrator.mock().beforeDeleteFor(AccountWriterWithSoqlFinalizer.class).with(new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(writer);
+
+        // Verify
+        Assert.areEqual(0, writer.accounts, 'The finalizer should be allowed to query.');
     }
 
     @IsTest
@@ -373,6 +509,59 @@ private class BeforeDeleteTest {
         public void addErrorOnBeforeDelete(TriggerTypes.RejectableDeleteRecord record) {
             Database.setSavepoint();
             record.addError('Doe cannot be deleted.');
+        }
+    }
+
+    private class DmlAccountWriter implements BeforeDelete.Writer {
+        public Boolean writeOnBeforeDeleteWhen(TriggerTypes.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnBeforeDelete(TriggerTypes.DeleteRecord record, TriggerTypes.UnitOfWork unitOfWork) {
+            Database.setSavepoint();
+            unitOfWork.toInsert(new Account(Name = 'Doe'));
+        }
+    }
+
+    private class AccountWriterWithDmlFinalizer extends AccountWriter implements BeforeDelete.Finalizer {
+        public void finalizeOnBeforeDelete(TriggerTypes.DeleteRecords records) {
+            Database.setSavepoint();
+        }
+    }
+
+    private class SoqlDeletionBlocker implements BeforeDelete.Validator {
+        public Boolean addErrorOnBeforeDeleteWhen(TriggerTypes.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void addErrorOnBeforeDelete(TriggerTypes.RejectableDeleteRecord record) {
+            record.addError('Accounts: ' + [SELECT COUNT() FROM Account]);
+        }
+    }
+
+    private class SoqlAccountWriter implements BeforeDelete.Writer {
+        public Boolean writeOnBeforeDeleteWhen(TriggerTypes.DeleteRecord record) {
+            return record.equals(Contact.LastName, 'Doe');
+        }
+
+        public void writeOnBeforeDelete(TriggerTypes.DeleteRecord record, TriggerTypes.UnitOfWork unitOfWork) {
+            unitOfWork.toInsert(new Account(Name = 'Accounts: ' + [SELECT COUNT() FROM Account]));
+        }
+    }
+
+    private class DeletionBlockerWithSoqlFinalizer extends DeletionBlocker implements BeforeDelete.Finalizer {
+        public Integer accounts;
+
+        public void finalizeOnBeforeDelete(TriggerTypes.DeleteRecords records) {
+            this.accounts = [SELECT COUNT() FROM Account];
+        }
+    }
+
+    private class AccountWriterWithSoqlFinalizer extends AccountWriter implements BeforeDelete.Finalizer {
+        public Integer accounts;
+
+        public void finalizeOnBeforeDelete(TriggerTypes.DeleteRecords records) {
+            this.accounts = [SELECT COUNT() FROM Account];
         }
     }
 

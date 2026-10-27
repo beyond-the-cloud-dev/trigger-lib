@@ -28,7 +28,7 @@ Set fields on new records before they are saved.
 ## Rules {#rules}
 
 - **`put` writes to the row being saved.** Handlers listed later see the value.
-- **No SOQL in the loop.** The predicate and the action run once per record. Read parents with a [ParentQuery](/before-insert/add-ons/parent-query) and other records with a [RelatedQuery](/before-insert/add-ons/related-query).
+- **No SOQL in the loop.** The predicate and the action run once per record, so a query there throws. Read parents with a [ParentQuery](/before-insert/add-ons/parent-query) and other records with a [RelatedQuery](/before-insert/add-ons/related-query).
 - **Populator wins.** A class that also implements `BeforeInsert.Validator` runs only as a Populator.
 - **Exceptions fail the save.** Without [ContinueOnError](/before-insert/add-ons/continue-on-error), an exception fails every record in the chunk. With it, the exception is logged and the save goes on.
 

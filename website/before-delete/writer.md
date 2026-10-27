@@ -53,7 +53,7 @@ public with sharing class ContactReportsReassignWriter implements BeforeDelete.W
 
 ## Rules {#rules}
 
-- **Register, do not run DML.** `toInsert`, `toUpdate`, `toUpsert`, `toDelete` and `toPublish` (platform events) take one record each.
+- **Register, do not run DML.** `toInsert`, `toUpdate`, `toUpsert`, `toDelete` and `toPublish` (platform events) take one record each. DML in the predicate or the action throws.
 - **Commits before the delete.** The shared unit of work commits once, after the last handler of the run, while the records still exist. A Writer with [ContinueOnError](/before-delete/add-ons/continue-on-error) gets an automatic unit, committed right after it. [OwnUnitOfWork](/before-delete/add-ons/own-unit-of-work) supplies your own.
 - **Links still point at the rows.** Records that look up to the deleted rows still hold the Ids here, so a query by `records.getIds()` finds them.
 - **Validator wins.** A class that also implements `BeforeDelete.Validator` runs only as a Validator.

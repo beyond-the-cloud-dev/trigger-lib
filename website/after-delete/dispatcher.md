@@ -47,7 +47,7 @@ public with sharing class ContactRemovalSyncDispatcher implements AfterDelete.Di
 ## Rules {#rules}
 
 - **No synchronous callouts.** A callout from a trigger throws a `System.CalloutException`. Call out from a Queueable that implements `Database.AllowsCallouts`.
-- **No unit of work.** DML here runs at once and is not merged with the Writers' unit. Use a [Writer](/after-delete/writer) for record writes.
+- **No unit of work.** DML in `dispatchOnAfterDelete` runs at once and is not merged with the Writers' unit. DML in the predicate throws. Use a [Writer](/after-delete/writer) for record writes.
 - **Merge losers arrive here too.** Skip them with `record.isNull(Contact.MasterRecordId)` when a merge should not count as a removal.
 - **Writer wins.** A class that also implements `AfterDelete.Writer` runs only as a Writer.
 

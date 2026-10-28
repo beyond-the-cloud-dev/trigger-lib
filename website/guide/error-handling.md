@@ -48,7 +48,8 @@ public with sharing class TriggerErrorLogger implements TriggerOrchestrator.Logg
 }
 ```
 
-- **One instance per transaction.** `flush()` runs at the end of each outermost run, also when the run fails. Clear your buffer there.
+- **One instance per transaction.** `flush()` runs at the end of each outermost run, also when the run fails, except after a [`maximum trigger depth exceeded`](#recursion) failure. Clear your buffer there.
+- **Only buffer in `log()`.** A recursion error is logged inside the record loop, where SOQL or DML trips the library's guards. Write in `flush()`.
 - **Exactly one class.** With two implementations, every Trigger Lib trigger in the org throws.
 - **Never throw from a Logger.** Its exception replaces the handler's and fails the save.
 
@@ -59,6 +60,14 @@ Implement the context's ContinueOnError to let the save go on when the handler f
 - **The failed handler stops.** Its remaining records and its Finalizer are skipped. Later handlers still run.
 - **A Writer that throws before its commit saves nothing.** Its registrations go to the automatic unit of work, which is skipped after a failure. If the commit itself fails, statements that already ran stay: there is no savepoint.
 - **Use it for nice-to-have work,** such as a notification. Without a Logger, a swallowed failure leaves no trace.
+
+## Recursion {#recursion}
+
+In the update contexts, when a record comes back to a Populator, Writer or Dispatcher that already acted on it 3 times in the transaction, the library logs one `TriggerTypes.TriggerLibException` for that record, throws nothing, and the handler keeps running. Without a Logger, the error leaves no trace.
+
+- **Fix the cause.** Gate the predicate on a change, such as `isChanged`, so a nested update does not qualify the record again.
+- **Or cap it.** A [RecursionGuard](/after-update/add-ons/recursion-guard) sets the depth and skips the record there. The error is logged too.
+- **An endless loop fails the save** with `maximum trigger depth exceeded` at the platform's limit of 16 nested triggers. `flush()` does not run for that save or for any later one in the transaction, so a Logger that writes only in `flush()` loses these errors.
 
 ## Never Logged {#never-logged}
 

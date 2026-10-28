@@ -70,7 +70,7 @@ public with sharing class OpportunityTriggerOrchestrator implements TriggerOrche
 
 - List order is run order, whatever the role. Each handler finishes all records of the chunk before the next one starts, and its predicate sees what earlier handlers set with `put`.
 - The Writers' DML on the shared unit of work commits once, after the last handler, so later handlers never see it. A Writer with OwnUnitOfWork or ContinueOnError commits right after itself.
-- In the update contexts, a Populator, Writer or Dispatcher acts on the same record at most 3 times per transaction by default, and later passes skip the record without an error. A handler's RecursionGuard add-on changes its limit.
+- In the update contexts, when a record comes back to a Populator, Writer or Dispatcher that already acted on it 3 times in the transaction, the run logs an error and the handler keeps running. A handler's RecursionGuard add-on sets its own depth, and there the record is also skipped.
 
 ## Handlers in custom metadata
 
@@ -82,7 +82,7 @@ trigger AccountTrigger on Account(before insert, after insert, before update, af
 }
 ```
 
-Deploy one `TriggerObject__mdt` record for the object and one `TriggerHandler__mdt` record per handler class, in `customMetadata/<Type>.<DeveloperName>.md-meta.xml`:
+Deploy one `TriggerObject__mdt` record for the object and one `TriggerHandler__mdt` record per handler class and context, in `customMetadata/<Type>.<DeveloperName>.md-meta.xml`:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -100,15 +100,15 @@ Deploy one `TriggerObject__mdt` record for the object and one `TriggerHandler__m
 </CustomMetadata>
 ```
 
-That is `TriggerObject.Account.md-meta.xml`. Next to it, `TriggerHandler.AccountRatingPopulator.md-meta.xml`:
+That is `TriggerObject.Account.md-meta.xml`. Next to it, `TriggerHandler.AccountRatingPopulator_BeforeInsert.md-meta.xml`:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-    <label>AccountRatingPopulator</label>
+    <label>AccountRatingPopulator_BeforeInsert</label>
     <protected>false</protected>
     <values>
-        <field>TriggerObject__c</field>
+        <field>BeforeInsert__c</field>
         <value xsi:type="xsd:string">Account</value>
     </values>
     <values>
@@ -123,25 +123,32 @@ That is `TriggerObject.Account.md-meta.xml`. Next to it, `TriggerHandler.Account
         <field>Order__c</field>
         <value xsi:type="xsd:double">10</value>
     </values>
+    <values>
+        <field>Description__c</field>
+        <value xsi:type="xsd:string">Sets Rating from AnnualRevenue.</value>
+    </values>
 </CustomMetadata>
 ```
 
+The same class in before update is a second record, `TriggerHandler.AccountRatingPopulator_BeforeUpdate.md-meta.xml`, with `BeforeUpdate__c` in place of `BeforeInsert__c` and its own `Order__c`.
+
 - Declare `xmlns:xsd`. Without it, the deployment fails with an `UNKNOWN_EXCEPTION` that names no component.
-- `TriggerObject__c` holds the `TriggerObject__mdt` record's DeveloperName alone, such as `Account`, not `TriggerObject.Account`.
-- `ObjectAPIName__c` is the object's API name, such as `Account` or `Invoice__c`. Keep one `TriggerObject__mdt` record per object: with several, only one is read.
-- `Order__c` is an `xsd:double`. The lowest runs first, a blank order runs last (leave its `<values>` block out), and ties run in class name order.
+- The seven context fields are `BeforeInsert__c`, `AfterInsert__c`, `BeforeUpdate__c`, `AfterUpdate__c`, `BeforeDelete__c`, `AfterDelete__c` and `AfterUndelete__c`. A record fills exactly one of them, with the `TriggerObject__mdt` record's DeveloperName alone, such as `Account`, not `TriggerObject.Account`, and the other six stay blank. That registers the class in that one context on that object. A class that runs in several contexts has one record per context, each with its own `Order__c`, and a class on two objects has records for each object. The validation rule `OneContextRequired` rejects a record with no context field filled or with more than one, in Setup and in deployments.
+- `ObjectAPIName__c` is the object's API name, such as `Account` or `Invoice__c`. Keep one `TriggerObject__mdt` record per object: with several, the library uses one, and the handler records that name another are ignored.
+- `Order__c` is a required `xsd:double`: the run order within the record's context. The lowest runs first, and ties run in class name order.
 - `ApexClassName__c` holds the full class name: `AccountRules.RatingPopulator` for an inner class, or `ns.AccountRatingPopulator` for a class in another namespace.
-- A record's DeveloperName, the part of the file name after the type, holds at most 40 characters: letters, digits and single underscores, starting with a letter. Shorten it when the class name is longer, and keep the full name in `ApexClassName__c`.
-- The class needs a public no-argument constructor. The library creates every registered class in every context of the object and runs it in each context whose role it implements, so keep the constructor cheap.
-- A record whose class can't be found or created, or that implements no handler interface, fails every save on the object with a `TriggerTypes.TriggerLibException`. Add a registration test with the `trigger-lib-testing` skill.
-- With the `btcdev` package, the type and field names carry the prefix and the values don't: the files are `btcdev__TriggerObject.Account.md-meta.xml` and `btcdev__TriggerHandler.AccountRatingPopulator.md-meta.xml`, each field is written like `<field>btcdev__Bypass__c</field>`, and `btcdev__TriggerObject__c` and `btcdev__ApexClassName__c` hold `Account` and `AccountRatingPopulator` as above.
+- `Description__c` is free text for admins, such as what the handler does. The library never reads it.
+- A record's DeveloperName, the part of the file name after the type, is `<ClassName>_<Context>`, such as `AccountRatingPopulator_BeforeUpdate`, and holds at most 40 characters: letters, digits and single underscores, starting with a letter. Shorten the class part when the name is longer, and keep the full name in `ApexClassName__c`. The label is free text.
+- The class needs a public no-argument constructor. The library creates it on every run of each context its records name, so keep the constructor cheap.
+- A record fails every save on the object in its context, with a `TriggerTypes.TriggerLibException`, when its class can't be found or created, or doesn't implement that context's `Handler`, such as `BeforeInsert.Handler` for `BeforeInsert__c`. Add a registration test with the `trigger-lib-testing` skill.
+- With the `btcdev` package, the type and field names carry the prefix and the values don't: the files are `btcdev__TriggerObject.Account.md-meta.xml` and `btcdev__TriggerHandler.AccountRatingPopulator_BeforeInsert.md-meta.xml`, each field is written like `<field>btcdev__Bypass__c</field>`, and `btcdev__BeforeInsert__c` and `btcdev__ApexClassName__c` hold `Account` and `AccountRatingPopulator` as above.
 
 ## Bypasses
 
 | You need to | Use |
 |---|---|
 | Skip handlers in one transaction from Apex, such as a data fix, a batch or test setup | `TriggerOrchestrator.bypass()` with `sObject(...)`, `handler(...)`, `orchestrator(...)` or `all()`, and `clear()` in `finally` |
-| Let admins switch an object or one handler off for the whole org without a deployment | `Bypass__c` on the object's `TriggerObject__mdt` record, which switches off every handler on the object, or on a `TriggerHandler__mdt` record under it, which switches off one class |
+| Let admins switch an object or one handler off for the whole org without a deployment | `Bypass__c` on the object's `TriggerObject__mdt` record, which switches off every handler on the object, or on a `TriggerHandler__mdt` record, which switches off one class in the one context the record names |
 | Skip one handler in one context on a condition that doesn't depend on the records, such as a feature flag, `System.isBatch()` or a custom permission | The context's Bypassable add-on, `bypassOn<Ctx>When()` (see `trigger-lib-handler`) |
 | Skip some records | Return false from the handler's predicate |
 | Skip handlers for some users | There is no built-in per-user bypass. Check a custom permission in `bypassOn<Ctx>When()`, or return an empty list from `<ctx>Handlers()` under the same check |
@@ -157,10 +164,10 @@ try {
 
 - An Apex bypass lasts until `clear()` or the end of the transaction, nested saves included. `clear()` removes every bypass, also those a caller set, so call it only in the code that set the bypass. A Queueable, a future method or the next batch `execute` starts without it.
 - `handler(X.class)` and `orchestrator(X.class)` never match an inner class. For an inner handler, use a `TriggerHandler__mdt` record or the Bypassable add-on. `orchestrator(...)` has no effect under `runFromMetadata()`.
-- To give admins a switch for one handler, deploy its `TriggerHandler__mdt` record with `Bypass__c` unchecked, together with the object's `TriggerObject__mdt` record. The object's record alone switches off every handler on the object, which suits a data load.
+- To give admins a switch for one handler, deploy its `TriggerHandler__mdt` records with `Bypass__c` unchecked, one record per context the class runs in, together with the object's `TriggerObject__mdt` record. The object's record alone switches off every handler on the object, which suits a data load.
 - An admin flips the switch in Setup: Custom Metadata Types, then Manage Records next to Trigger Handler (or Trigger Object), then Edit on the record, then the Bypass checkbox. Metadata is read once per transaction, so the change applies from the next transaction.
-- A `TriggerHandler__mdt` record needs its object's `TriggerObject__mdt` record, even with `Bypass__c` unchecked. A record covers every context of its object; to skip one context only, use that context's Bypassable. A class used on two objects needs a record under each.
-- Under `run(orchestrator)`, a `TriggerHandler__mdt` record only switches its class off, and `Order__c` is ignored. Deleting the record doesn't switch the class off.
+- A `TriggerHandler__mdt` record needs its object's `TriggerObject__mdt` record, even with `Bypass__c` unchecked. Its `Bypass__c` switches the class off only in the record's context on that object, so one checked record switches off one context, and the class's other records keep running. A class used on two objects needs records for each object.
+- Under `run(orchestrator)`, a `TriggerHandler__mdt` record only switches its class off, in its context, and `Order__c` is ignored, though it is still required. Deleting the record doesn't switch the class off.
 - A deployment that includes the records sets `Bypass__c` back to the deployed value. Once admins flip switches in production, leave the records out of later deployments or keep the files in step with production. To ship a handler switched off, deploy its record checked and uncheck it when it should go live.
 - A bypass skips only Trigger Lib handlers. Flows, validation rules and other triggers still run.
 
@@ -205,7 +212,7 @@ public with sharing class TriggerErrorLogger implements TriggerOrchestrator.Logg
 }
 ```
 
-- `log(error)` runs for every exception in a handler's turn, before the library rethrows it or ContinueOnError swallows it. `flush()` runs at the end of each outermost run, also when the run failed, so clear your buffer there.
+- `log(error)` runs for every exception in a handler's turn, before the library rethrows it or ContinueOnError swallows it. It also gets one `TriggerTypes.TriggerLibException`, never thrown, for each record that comes back to an update handler at its recursion depth: 3, or the RecursionGuard's number. That call happens inside the record loop, so keep `log()` free of SOQL and DML. `flush()` runs at the end of each outermost run, also when the run failed, so clear your buffer there. The exception is a save that fails with `maximum trigger depth exceeded`: `flush()` doesn't run for it or for any later save in that transaction.
 - With two Logger classes in the org, every Trigger Lib trigger throws. Never throw from a Logger: its exception replaces the handler's and fails the save.
 - ContinueOnError never swallows a `TriggerTypes.TriggerLibException` or an `EventBus.RetryableException`, which asks for redelivery of a platform event.
 - Not logged, and never swallowed by ContinueOnError: exceptions in `<ctx>Handlers()`, in creating `runFromMetadata()` classes, in `bypassOn<Ctx>When()`, `ownUnitOfWorkOn<Ctx>()` and `maxRunsPerRecordOn<Ctx>()`, in the ParentQuery and PriorParentQuery methods, and in the shared unit of work's commit.
@@ -242,6 +249,8 @@ Then replace the trigger's body with the `run(...)` line, remove or deactivate t
 | `bypass()` without `clear()` in a `finally` block | Wrap the DML in `try` / `finally` |
 | `bypass().handler(...)` with an inner class | A top-level class, or a `TriggerHandler__mdt` record |
 | Custom metadata XML without `xmlns:xsd` | Copy the header above |
-| `TriggerObject__c` set to `TriggerObject.Account` | The DeveloperName alone: `Account` |
+| A context field such as `BeforeInsert__c` set to `TriggerObject.Account` | The DeveloperName alone: `Account` |
+| A `TriggerHandler__mdt` record in a context whose `Handler` the class doesn't implement | A record only for a context whose `Handler` the class implements |
+| A `TriggerHandler__mdt` record with two context fields filled, or none, which `OneContextRequired` rejects | One record per context, each with exactly one context field filled |
 | A second class implementing `TriggerOrchestrator.Logger` | Keep exactly one |
 | A metadata handler with constructor arguments | A public no-argument constructor |

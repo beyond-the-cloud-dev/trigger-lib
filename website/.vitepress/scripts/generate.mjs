@@ -188,7 +188,7 @@ function methodLine(context, item, method) {
       ? roleCalls[item.name].predicate
       : roleCalls[item.name].action;
     if (isPredicate && honours(context, item.name).includes('RecursionGuard'))
-      called += '; a record past its recursion limit is skipped without a call';
+      called += '; with a RecursionGuard, a record past its limit is skipped without a call';
     parts.push(`called ${called}.`);
     if (isPredicate)
       parts.push(`Return ${code('true')} ${predicateReturns[item.name]}.`);

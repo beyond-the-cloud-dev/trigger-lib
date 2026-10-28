@@ -4,7 +4,7 @@
     <fieldManageability>SubscriberControlled</fieldManageability>
     <label>Order</label>
     <precision>18</precision>
-    <required>false</required>
+    <required>true</required>
     <scale>0</scale>
     <type>Number</type>
     <unique>false</unique>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>BeforeUpdate__c</fullName>
+    <description>The trigger object this record applies to in before update. runFromMetadata() runs the class there, and Bypass switches it off there. Left empty, the record has no effect in before update.</description>
+    <fieldManageability>SubscriberControlled</fieldManageability>
+    <inlineHelpText>The trigger object this record applies to in before update. runFromMetadata() runs the class there, and Bypass switches it off there. Left empty, the record has no effect in before update.</inlineHelpText>
+    <label>Before Update</label>
+    <referenceTo>TriggerObject__mdt</referenceTo>
+    <relationshipLabel>Before Update Handlers</relationshipLabel>
+    <relationshipName>BeforeUpdateHandlers</relationshipName>
+    <required>false</required>
+    <type>MetadataRelationship</type>
+</CustomField>

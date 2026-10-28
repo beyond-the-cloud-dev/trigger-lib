@@ -30,11 +30,11 @@ Every role declares which records it wants. An action never runs for a record it
 
 ## Library Errors Always Surface {#library-errors}
 
-ContinueOnError swallows a handler's own exception. It never swallows a `TriggerTypes.TriggerLibException`: a broken contract is a bug.
+ContinueOnError swallows a handler's own exception. It never swallows a `TriggerTypes.TriggerLibException`: a broken contract is a bug. The one library error that is only logged, never thrown, is the recursion error.
 
-## Safe by Default {#safe-by-default}
+## Recursion Is Reported {#recursion-is-reported}
 
-In the update contexts, a Populator, Writer or Dispatcher acts on the same record at most three times per transaction by default.
+In the update contexts, a record that comes back to a Populator, Writer or Dispatcher after three runs in the transaction logs an error, and the handler keeps running. The library never skips a record on its own: only a RecursionGuard on the handler does, and it logs the error too.
 
 ## No Required Metadata {#no-required-metadata}
 

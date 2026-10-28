@@ -3,7 +3,7 @@
  * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
  *
- * v0.4.0
+ * v1.1.0
  *
  * PMD False Positives:
  * - ExcessiveClassLength: It is a library and we tried to put everything into ONE test class
@@ -398,7 +398,121 @@ private class AfterUpdateTest {
         TriggerOrchestrator.runTestFor(new AccountWriter());
 
         // Verify
-        Assert.areEqual(3, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The writer should not run beyond the recursion depth.');
+        Assert.areEqual(4, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The writer should run beyond the default recursion depth.');
+    }
+
+    @IsTest
+    static void writerWithLoggerWhenDefaultRecursionDepthIsReached() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterUpdateFor(AccountWriter.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+
+        for (Integer run = 0; run < 3; run++) {
+            TriggerOrchestrator.runTestFor(new AccountWriter());
+        }
+
+        // Test
+        TriggerOrchestrator.runTestFor(new AccountWriter());
+
+        // Verify
+        Assert.areEqual(
+            'AccountWriter reached the recursion depth of 3 on record ' + doe.Id + ' in after update.',
+            logger.errors[0].getException().getMessage(),
+            'The logged exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void writerWithLoggerWithinDefaultRecursionDepth() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterUpdateFor(AccountWriter.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+
+        for (Integer run = 0; run < 2; run++) {
+            TriggerOrchestrator.runTestFor(new AccountWriter());
+        }
+
+        // Test
+        TriggerOrchestrator.runTestFor(new AccountWriter());
+
+        // Verify
+        Assert.isTrue(logger.errors.isEmpty(), 'Nothing should be logged within the recursion depth.');
+    }
+
+    @IsTest
+    static void writerWithLoggerWhenRecordAtDefaultDepthDoesNotQualify() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        for (Integer run = 0; run < 3; run++) {
+            TriggerOrchestrator.mock().afterUpdateFor(AccountWriter.class).with(new Contact(Id = doe.Id, LastName = 'Doe'), new Contact(Id = doe.Id, LastName = 'Doe'));
+        }
+
+        TriggerOrchestrator.mock().afterUpdateFor(AccountWriter.class).with(new Contact(Id = doe.Id, LastName = 'Roe'), new Contact(Id = doe.Id, LastName = 'Doe'));
+
+        for (Integer run = 0; run < 3; run++) {
+            TriggerOrchestrator.runTestFor(new AccountWriter());
+        }
+
+        // Test
+        TriggerOrchestrator.runTestFor(new AccountWriter());
+
+        // Verify
+        Assert.areEqual(1, logger.errors.size(), 'The record should be logged when it comes back at the recursion depth.');
+    }
+
+    @IsTest
+    static void writerWithLoggerWhenDefaultRecursionDepthIsReachedForTwoRecords() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+        Contact janeDoe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), FirstName = 'Jane', LastName = 'Doe');
+
+        TriggerOrchestrator.mock()
+            .afterUpdateFor(AccountWriter.class)
+            .with(
+                new List<Contact>{ doe, janeDoe },
+                new List<Contact>{ new Contact(Id = doe.Id, LastName = 'Doe'), new Contact(Id = janeDoe.Id, FirstName = 'Jane', LastName = 'Doe') }
+            );
+
+        for (Integer run = 0; run < 3; run++) {
+            TriggerOrchestrator.runTestFor(new AccountWriter());
+        }
+
+        // Test
+        TriggerOrchestrator.runTestFor(new AccountWriter());
+
+        // Verify
+        Assert.areEqual(2, logger.errors.size(), 'Each record at the recursion depth should be logged.');
     }
 
     @IsTest
@@ -421,7 +535,37 @@ private class AfterUpdateTest {
         TriggerOrchestrator.runTestFor(dispatcher);
 
         // Verify
-        Assert.areEqual(3, dispatcher.dispatchedIds.size(), 'The dispatcher should not run beyond the recursion depth.');
+        Assert.areEqual(4, dispatcher.dispatchedIds.size(), 'The dispatcher should run beyond the default recursion depth.');
+    }
+
+    @IsTest
+    static void dispatcherWithLoggerWhenDefaultRecursionDepthIsReached() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        IdDispatcher dispatcher = new IdDispatcher();
+
+        TriggerOrchestrator.mock().afterUpdateFor(IdDispatcher.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+
+        for (Integer run = 0; run < 3; run++) {
+            TriggerOrchestrator.runTestFor(dispatcher);
+        }
+
+        // Test
+        TriggerOrchestrator.runTestFor(dispatcher);
+
+        // Verify
+        Assert.areEqual(
+            'IdDispatcher reached the recursion depth of 3 on record ' + doe.Id + ' in after update.',
+            logger.errors[0].getException().getMessage(),
+            'The logged exception message should match the expected one.'
+        );
     }
 
     @IsTest
@@ -442,6 +586,120 @@ private class AfterUpdateTest {
 
         // Verify
         Assert.areEqual(1, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The writer should not run beyond its recursion depth.');
+    }
+
+    @IsTest
+    static void writerWithLoggerWhenRecursionGuardDepthIsReached() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterUpdateFor(AccountWriterWithRecursionGuard.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+
+        TriggerOrchestrator.runTestFor(new AccountWriterWithRecursionGuard());
+
+        // Test
+        TriggerOrchestrator.runTestFor(new AccountWriterWithRecursionGuard());
+
+        // Verify
+        Assert.areEqual(
+            'AccountWriterWithRecursionGuard reached the recursion depth of 1 on record ' + doe.Id + ' in after update.',
+            logger.errors[0].getException().getMessage(),
+            'The logged exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void writerWithRecursionGuardOfTwo() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterUpdateFor(AccountWriterWithRecursionGuardOfTwo.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+
+        for (Integer run = 0; run < 2; run++) {
+            TriggerOrchestrator.runTestFor(new AccountWriterWithRecursionGuardOfTwo());
+        }
+
+        // Test
+        TriggerOrchestrator.runTestFor(new AccountWriterWithRecursionGuardOfTwo());
+
+        // Verify
+        Assert.areEqual(2, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The writer should not run beyond its recursion depth.');
+    }
+
+    @IsTest
+    static void writerWithRecursionGuardOfNull() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterUpdateFor(AccountWriterWithRecursionGuardOfNull.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+
+        for (Integer run = 0; run < 3; run++) {
+            TriggerOrchestrator.runTestFor(new AccountWriterWithRecursionGuardOfNull());
+        }
+
+        // Test
+        TriggerOrchestrator.runTestFor(new AccountWriterWithRecursionGuardOfNull());
+
+        // Verify
+        Assert.areEqual(4, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The writer should run without a recursion depth.');
+    }
+
+    @IsTest
+    static void writerWithLoggerAndRecursionGuardOfNull() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterUpdateFor(AccountWriterWithRecursionGuardOfNull.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+
+        for (Integer run = 0; run < 3; run++) {
+            TriggerOrchestrator.runTestFor(new AccountWriterWithRecursionGuardOfNull());
+        }
+
+        // Test
+        TriggerOrchestrator.runTestFor(new AccountWriterWithRecursionGuardOfNull());
+
+        // Verify
+        Assert.isTrue(logger.errors.isEmpty(), 'Nothing should be logged without a recursion depth.');
+    }
+
+    @IsTest
+    static void writerWithRecursionGuardOfZero() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+        DML.mock('triggerUow').allDmls();
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        TriggerOrchestrator.mock().afterUpdateFor(AccountWriterWithRecursionGuardOfZero.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(new AccountWriterWithRecursionGuardOfZero());
+
+        // Verify
+        Assert.areEqual(0, DML.retrieveResultFor('triggerUow').insertsOf(Account.SObjectType).records().size(), 'The writer should skip every record.');
     }
 
     @IsTest
@@ -466,6 +724,34 @@ private class AfterUpdateTest {
     }
 
     @IsTest
+    static void dispatcherWithLoggerWhenRecursionGuardDepthIsReached() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        IdDispatcherWithRecursionGuard dispatcher = new IdDispatcherWithRecursionGuard();
+
+        TriggerOrchestrator.mock().afterUpdateFor(IdDispatcherWithRecursionGuard.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+
+        TriggerOrchestrator.runTestFor(dispatcher);
+
+        // Test
+        TriggerOrchestrator.runTestFor(dispatcher);
+
+        // Verify
+        Assert.areEqual(
+            'IdDispatcherWithRecursionGuard reached the recursion depth of 1 on record ' + doe.Id + ' in after update.',
+            logger.errors[0].getException().getMessage(),
+            'The logged exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
     static void writerQualificationWhenRecursionDepthIsExceeded() {
         // Setup
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
@@ -474,19 +760,17 @@ private class AfterUpdateTest {
 
         Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
 
-        QualificationCountingWriter writer = new QualificationCountingWriter();
+        QualificationCountingWriterWithRecursionGuard writer = new QualificationCountingWriterWithRecursionGuard();
 
-        TriggerOrchestrator.mock().afterUpdateFor(QualificationCountingWriter.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+        TriggerOrchestrator.mock().afterUpdateFor(QualificationCountingWriterWithRecursionGuard.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
 
-        for (Integer run = 0; run < 3; run++) {
-            TriggerOrchestrator.runTestFor(writer);
-        }
+        TriggerOrchestrator.runTestFor(writer);
 
         // Test
         TriggerOrchestrator.runTestFor(writer);
 
         // Verify
-        Assert.areEqual(3, writer.qualificationCalls, 'The qualification should not be asked beyond the recursion depth.');
+        Assert.areEqual(1, writer.qualificationCalls, 'The qualification should not be asked beyond the recursion depth.');
     }
 
     @IsTest
@@ -497,19 +781,17 @@ private class AfterUpdateTest {
 
         Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
 
-        QualificationCountingDispatcher dispatcher = new QualificationCountingDispatcher();
+        QualificationCountingDispatcherWithRecursionGuard dispatcher = new QualificationCountingDispatcherWithRecursionGuard();
 
-        TriggerOrchestrator.mock().afterUpdateFor(QualificationCountingDispatcher.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+        TriggerOrchestrator.mock().afterUpdateFor(QualificationCountingDispatcherWithRecursionGuard.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
 
-        for (Integer run = 0; run < 3; run++) {
-            TriggerOrchestrator.runTestFor(dispatcher);
-        }
+        TriggerOrchestrator.runTestFor(dispatcher);
 
         // Test
         TriggerOrchestrator.runTestFor(dispatcher);
 
         // Verify
-        Assert.areEqual(3, dispatcher.qualificationCalls, 'The qualification should not be asked beyond the recursion depth.');
+        Assert.areEqual(1, dispatcher.qualificationCalls, 'The qualification should not be asked beyond the recursion depth.');
     }
 
     @IsTest
@@ -568,19 +850,17 @@ private class AfterUpdateTest {
 
         Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
 
-        FinalizeCountingWriter writer = new FinalizeCountingWriter();
+        FinalizeCountingWriterWithRecursionGuard writer = new FinalizeCountingWriterWithRecursionGuard();
 
-        TriggerOrchestrator.mock().afterUpdateFor(FinalizeCountingWriter.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+        TriggerOrchestrator.mock().afterUpdateFor(FinalizeCountingWriterWithRecursionGuard.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
 
-        for (Integer run = 0; run < 3; run++) {
-            TriggerOrchestrator.runTestFor(writer);
-        }
+        TriggerOrchestrator.runTestFor(writer);
 
         // Test
         TriggerOrchestrator.runTestFor(writer);
 
         // Verify
-        Assert.areEqual(3, writer.finalizeCalls, 'The finalizer should not run beyond the recursion depth.');
+        Assert.areEqual(1, writer.finalizeCalls, 'The finalizer should not run beyond the recursion depth.');
     }
 
     @IsTest
@@ -1061,13 +1341,31 @@ private class AfterUpdateTest {
         }
     }
 
+    private class AccountWriterWithRecursionGuardOfTwo extends AccountWriter implements AfterUpdate.RecursionGuard {
+        public Integer maxRunsPerRecordOnAfterUpdate() {
+            return 2;
+        }
+    }
+
+    private class AccountWriterWithRecursionGuardOfNull extends AccountWriter implements AfterUpdate.RecursionGuard {
+        public Integer maxRunsPerRecordOnAfterUpdate() {
+            return null;
+        }
+    }
+
+    private class AccountWriterWithRecursionGuardOfZero extends AccountWriter implements AfterUpdate.RecursionGuard {
+        public Integer maxRunsPerRecordOnAfterUpdate() {
+            return 0;
+        }
+    }
+
     private class IdDispatcherWithRecursionGuard extends IdDispatcher implements AfterUpdate.RecursionGuard {
         public Integer maxRunsPerRecordOnAfterUpdate() {
             return 1;
         }
     }
 
-    private class QualificationCountingWriter implements AfterUpdate.Writer {
+    private virtual class QualificationCountingWriter implements AfterUpdate.Writer {
         public Integer qualificationCalls = 0;
 
         public Boolean writeOnAfterUpdateWhen(TriggerTypes.UpdateRecord record) {
@@ -1080,7 +1378,13 @@ private class AfterUpdateTest {
         }
     }
 
-    private class QualificationCountingDispatcher implements AfterUpdate.Dispatcher {
+    private class QualificationCountingWriterWithRecursionGuard extends QualificationCountingWriter implements AfterUpdate.RecursionGuard {
+        public Integer maxRunsPerRecordOnAfterUpdate() {
+            return 1;
+        }
+    }
+
+    private virtual class QualificationCountingDispatcher implements AfterUpdate.Dispatcher {
         public Integer qualificationCalls = 0;
 
         public Boolean dispatchOnAfterUpdateWhen(TriggerTypes.UpdateRecord record) {
@@ -1092,11 +1396,23 @@ private class AfterUpdateTest {
         }
     }
 
-    private class FinalizeCountingWriter extends AccountWriter implements AfterUpdate.Finalizer {
+    private class QualificationCountingDispatcherWithRecursionGuard extends QualificationCountingDispatcher implements AfterUpdate.RecursionGuard {
+        public Integer maxRunsPerRecordOnAfterUpdate() {
+            return 1;
+        }
+    }
+
+    private virtual class FinalizeCountingWriter extends AccountWriter implements AfterUpdate.Finalizer {
         public Integer finalizeCalls = 0;
 
         public void finalizeOnAfterUpdate(TriggerTypes.UpdateRecords records) {
             this.finalizeCalls++;
+        }
+    }
+
+    private class FinalizeCountingWriterWithRecursionGuard extends FinalizeCountingWriter implements AfterUpdate.RecursionGuard {
+        public Integer maxRunsPerRecordOnAfterUpdate() {
+            return 1;
         }
     }
 

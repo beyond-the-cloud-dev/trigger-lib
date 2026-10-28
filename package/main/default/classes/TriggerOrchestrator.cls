@@ -2,7 +2,7 @@
  * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
  *
- * v0.4.0
+ * v1.1.0
  *
  * PMD False Positives:
  * - ExcessiveClassLength: It is a library and we tried to put everything into ONE class
@@ -298,32 +298,48 @@ global with sharing class TriggerOrchestrator {
         }
 
         public Boolean isHandlerBypassed(TriggerContext context, String handlerName) {
-            return this.metadataByObjectName.get(context.sObjectType.toString().toLowerCase())?.handlerRowByName.get(handlerName.toLowerCase())?.Bypass__c == true;
+            return this.metadataByObjectName.get(context.sObjectType.toString().toLowerCase())?.getHandlerRow(context.triggerOperation, handlerName)?.Bypass__c == true;
         }
 
-        public List<TriggerHandler__mdt> getHandlerRows(SObjectType sObjectType) {
-            return this.metadataByObjectName.get(sObjectType.toString().toLowerCase())?.objectRow.TriggerHandlers__r ?? new List<TriggerHandler__mdt>();
+        public List<TriggerHandler__mdt> getHandlerRows(SObjectType sObjectType, System.TriggerOperation triggerOperation) {
+            return this.metadataByObjectName.get(sObjectType.toString().toLowerCase())?.getHandlerRows(triggerOperation) ?? new List<TriggerHandler__mdt>();
         }
 
         private Map<String, ObjectMetadata> resolveObjectMetadata() {
+            Map<Id, ObjectMetadata> metadataByObjectId = new Map<Id, ObjectMetadata>();
             Map<String, ObjectMetadata> metadataByObjectName = new Map<String, ObjectMetadata>();
-            String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
 
             for (
                 TriggerObject__mdt triggerObject : (List<TriggerObject__mdt>) SOQL.of(TriggerObject__mdt.SObjectType)
                     .with(TriggerObject__mdt.ObjectAPIName__c, TriggerObject__mdt.Bypass__c)
-                    .with(
-                        SOQL.SubQuery.of(namespacePrefix + 'TriggerHandlers__r')
-                            .with(TriggerHandler__mdt.ApexClassName__c, TriggerHandler__mdt.Bypass__c, TriggerHandler__mdt.Order__c)
-                            .orderBy(TriggerHandler__mdt.Order__c)
-                            .nullsLast()
-                            .orderBy(TriggerHandler__mdt.ApexClassName__c)
-                    )
                     .systemMode()
                     .mockId('TriggerObject__mdt')
                     .toList()
             ) {
-                metadataByObjectName.put(triggerObject.ObjectAPIName__c.trim().toLowerCase(), new ObjectMetadata(triggerObject));
+                ObjectMetadata objectMetadata = new ObjectMetadata(triggerObject);
+
+                metadataByObjectId.put(triggerObject.Id, objectMetadata);
+                metadataByObjectName.put(triggerObject.ObjectAPIName__c.trim().toLowerCase(), objectMetadata);
+            }
+
+            for (
+                TriggerHandler__mdt handlerRow : (List<TriggerHandler__mdt>) SOQL.of(TriggerHandler__mdt.SObjectType)
+                    .with(TriggerHandler__mdt.ApexClassName__c, TriggerHandler__mdt.Bypass__c, TriggerHandler__mdt.Order__c)
+                    .with(TriggerHandler__mdt.BeforeInsert__c, TriggerHandler__mdt.AfterInsert__c, TriggerHandler__mdt.BeforeUpdate__c, TriggerHandler__mdt.AfterUpdate__c)
+                    .with(TriggerHandler__mdt.BeforeDelete__c, TriggerHandler__mdt.AfterDelete__c, TriggerHandler__mdt.AfterUndelete__c)
+                    .orderBy(TriggerHandler__mdt.Order__c)
+                    .orderBy(TriggerHandler__mdt.ApexClassName__c)
+                    .systemMode()
+                    .mockId('TriggerHandler__mdt')
+                    .toList()
+            ) {
+                metadataByObjectId.get(handlerRow.BeforeInsert__c)?.addHandlerRow(System.TriggerOperation.BEFORE_INSERT, handlerRow);
+                metadataByObjectId.get(handlerRow.AfterInsert__c)?.addHandlerRow(System.TriggerOperation.AFTER_INSERT, handlerRow);
+                metadataByObjectId.get(handlerRow.BeforeUpdate__c)?.addHandlerRow(System.TriggerOperation.BEFORE_UPDATE, handlerRow);
+                metadataByObjectId.get(handlerRow.AfterUpdate__c)?.addHandlerRow(System.TriggerOperation.AFTER_UPDATE, handlerRow);
+                metadataByObjectId.get(handlerRow.BeforeDelete__c)?.addHandlerRow(System.TriggerOperation.BEFORE_DELETE, handlerRow);
+                metadataByObjectId.get(handlerRow.AfterDelete__c)?.addHandlerRow(System.TriggerOperation.AFTER_DELETE, handlerRow);
+                metadataByObjectId.get(handlerRow.AfterUndelete__c)?.addHandlerRow(System.TriggerOperation.AFTER_UNDELETE, handlerRow);
             }
 
             return metadataByObjectName;
@@ -332,27 +348,35 @@ global with sharing class TriggerOrchestrator {
 
     @TestVisible
     private class ObjectMetadata {
-        public TriggerObject__mdt objectRow = new TriggerObject__mdt();
-        public Map<String, TriggerHandler__mdt> handlerRowByName = new Map<String, TriggerHandler__mdt>();
+        public TriggerObject__mdt objectRow;
+        private Map<System.TriggerOperation, List<TriggerHandler__mdt>> handlerRowsByOperation = new Map<System.TriggerOperation, List<TriggerHandler__mdt>>();
+        private Map<System.TriggerOperation, Map<String, TriggerHandler__mdt>> handlerRowByNameByOperation = new Map<System.TriggerOperation, Map<String, TriggerHandler__mdt>>();
 
-        public ObjectMetadata(TriggerObject__mdt triggerObject) {
-            this.objectRow = triggerObject;
-            this.addHandlerRows();
+        public ObjectMetadata(TriggerObject__mdt objectRow) {
+            this.objectRow = objectRow;
         }
 
-        private void addHandlerRows() {
-            for (TriggerHandler__mdt triggerHandler : this.objectRow.TriggerHandlers__r ?? new List<TriggerHandler__mdt>()) {
-                this.addHandlerRow(triggerHandler);
+        public List<TriggerHandler__mdt> getHandlerRows(System.TriggerOperation triggerOperation) {
+            return this.handlerRowsByOperation.get(triggerOperation) ?? new List<TriggerHandler__mdt>();
+        }
+
+        public TriggerHandler__mdt getHandlerRow(System.TriggerOperation triggerOperation, String handlerName) {
+            return this.handlerRowByNameByOperation.get(triggerOperation)?.get(handlerName.toLowerCase());
+        }
+
+        public void addHandlerRow(System.TriggerOperation triggerOperation, TriggerHandler__mdt handlerRow) {
+            String handlerName = handlerRow.ApexClassName__c.trim().toLowerCase();
+
+            if (!this.handlerRowsByOperation.containsKey(triggerOperation)) {
+                this.handlerRowsByOperation.put(triggerOperation, new List<TriggerHandler__mdt>());
+                this.handlerRowByNameByOperation.put(triggerOperation, new Map<String, TriggerHandler__mdt>());
             }
-        }
 
-        private void addHandlerRow(TriggerHandler__mdt triggerHandler) {
-            String handlerName = triggerHandler.ApexClassName__c.trim().toLowerCase();
-
-            this.handlerRowByName.put(handlerName, triggerHandler);
+            this.handlerRowsByOperation.get(triggerOperation).add(handlerRow);
+            this.handlerRowByNameByOperation.get(triggerOperation).put(handlerName, handlerRow);
 
             if (handlerName.contains('.')) {
-                this.handlerRowByName.put(handlerName.substringAfterLast('.'), triggerHandler);
+                this.handlerRowByNameByOperation.get(triggerOperation).put(handlerName.substringAfterLast('.'), handlerRow);
             }
         }
     }
@@ -368,10 +392,8 @@ global with sharing class TriggerOrchestrator {
         public List<BeforeInsert.Handler> beforeInsertHandlers() {
             List<BeforeInsert.Handler> handlers = new List<BeforeInsert.Handler>();
 
-            for (Object handler : this.newHandlers()) {
-                if (handler instanceof BeforeInsert.Handler) {
-                    handlers.add((BeforeInsert.Handler) handler);
-                }
+            for (Object handler : this.newHandlers(System.TriggerOperation.BEFORE_INSERT, BeforeInsert.Handler.class)) {
+                handlers.add((BeforeInsert.Handler) handler);
             }
 
             return handlers;
@@ -380,10 +402,8 @@ global with sharing class TriggerOrchestrator {
         public List<AfterInsert.Handler> afterInsertHandlers() {
             List<AfterInsert.Handler> handlers = new List<AfterInsert.Handler>();
 
-            for (Object handler : this.newHandlers()) {
-                if (handler instanceof AfterInsert.Handler) {
-                    handlers.add((AfterInsert.Handler) handler);
-                }
+            for (Object handler : this.newHandlers(System.TriggerOperation.AFTER_INSERT, AfterInsert.Handler.class)) {
+                handlers.add((AfterInsert.Handler) handler);
             }
 
             return handlers;
@@ -392,10 +412,8 @@ global with sharing class TriggerOrchestrator {
         public List<BeforeUpdate.Handler> beforeUpdateHandlers() {
             List<BeforeUpdate.Handler> handlers = new List<BeforeUpdate.Handler>();
 
-            for (Object handler : this.newHandlers()) {
-                if (handler instanceof BeforeUpdate.Handler) {
-                    handlers.add((BeforeUpdate.Handler) handler);
-                }
+            for (Object handler : this.newHandlers(System.TriggerOperation.BEFORE_UPDATE, BeforeUpdate.Handler.class)) {
+                handlers.add((BeforeUpdate.Handler) handler);
             }
 
             return handlers;
@@ -404,10 +422,8 @@ global with sharing class TriggerOrchestrator {
         public List<AfterUpdate.Handler> afterUpdateHandlers() {
             List<AfterUpdate.Handler> handlers = new List<AfterUpdate.Handler>();
 
-            for (Object handler : this.newHandlers()) {
-                if (handler instanceof AfterUpdate.Handler) {
-                    handlers.add((AfterUpdate.Handler) handler);
-                }
+            for (Object handler : this.newHandlers(System.TriggerOperation.AFTER_UPDATE, AfterUpdate.Handler.class)) {
+                handlers.add((AfterUpdate.Handler) handler);
             }
 
             return handlers;
@@ -416,10 +432,8 @@ global with sharing class TriggerOrchestrator {
         public List<BeforeDelete.Handler> beforeDeleteHandlers() {
             List<BeforeDelete.Handler> handlers = new List<BeforeDelete.Handler>();
 
-            for (Object handler : this.newHandlers()) {
-                if (handler instanceof BeforeDelete.Handler) {
-                    handlers.add((BeforeDelete.Handler) handler);
-                }
+            for (Object handler : this.newHandlers(System.TriggerOperation.BEFORE_DELETE, BeforeDelete.Handler.class)) {
+                handlers.add((BeforeDelete.Handler) handler);
             }
 
             return handlers;
@@ -428,10 +442,8 @@ global with sharing class TriggerOrchestrator {
         public List<AfterDelete.Handler> afterDeleteHandlers() {
             List<AfterDelete.Handler> handlers = new List<AfterDelete.Handler>();
 
-            for (Object handler : this.newHandlers()) {
-                if (handler instanceof AfterDelete.Handler) {
-                    handlers.add((AfterDelete.Handler) handler);
-                }
+            for (Object handler : this.newHandlers(System.TriggerOperation.AFTER_DELETE, AfterDelete.Handler.class)) {
+                handlers.add((AfterDelete.Handler) handler);
             }
 
             return handlers;
@@ -440,55 +452,41 @@ global with sharing class TriggerOrchestrator {
         public List<AfterUndelete.Handler> afterUndeleteHandlers() {
             List<AfterUndelete.Handler> handlers = new List<AfterUndelete.Handler>();
 
-            for (Object handler : this.newHandlers()) {
-                if (handler instanceof AfterUndelete.Handler) {
-                    handlers.add((AfterUndelete.Handler) handler);
-                }
+            for (Object handler : this.newHandlers(System.TriggerOperation.AFTER_UNDELETE, AfterUndelete.Handler.class)) {
+                handlers.add((AfterUndelete.Handler) handler);
             }
 
             return handlers;
         }
 
-        private List<Object> newHandlers() {
+        private List<Object> newHandlers(System.TriggerOperation triggerOperation, System.Type handlerInterface) {
             List<Object> handlers = new List<Object>();
 
-            for (TriggerHandler__mdt handlerRow : TriggerOrchestrator.metadataBypass.getHandlerRows(this.sObjectType)) {
+            for (TriggerHandler__mdt handlerRow : TriggerOrchestrator.metadataBypass.getHandlerRows(this.sObjectType, triggerOperation)) {
                 if (handlerRow.Bypass__c != true) {
-                    handlers.add(this.newHandler(handlerRow.ApexClassName__c.trim()));
+                    handlers.add(this.newHandler(handlerRow.ApexClassName__c.trim(), handlerInterface));
                 }
             }
 
             return handlers;
         }
 
-        private Object newHandler(String className) {
+        private Object newHandler(String className, System.Type handlerInterface) {
             System.Type handlerType = Type.forName(className) ?? Type.forName(null, className);
 
             if (handlerType == null) {
                 throw new TriggerTypes.TriggerLibException('Handler class ' + className + ' was not found.');
             }
 
-            Object handler;
+            if (!handlerInterface.isAssignableFrom(handlerType)) {
+                throw new TriggerTypes.TriggerLibException('Handler class ' + className + ' does not implement ' + handlerInterface.getName() + '.');
+            }
 
             try {
-                handler = handlerType.newInstance();
+                return handlerType.newInstance();
             } catch (Exception e) {
                 throw new TriggerTypes.TriggerLibException('Handler class ' + className + ' could not be instantiated.', e);
             }
-
-            if (
-                handler instanceof BeforeInsert.Handler ||
-                handler instanceof AfterInsert.Handler ||
-                handler instanceof BeforeUpdate.Handler ||
-                handler instanceof AfterUpdate.Handler ||
-                handler instanceof BeforeDelete.Handler ||
-                handler instanceof AfterDelete.Handler ||
-                handler instanceof AfterUndelete.Handler
-            ) {
-                return handler;
-            }
-
-            throw new TriggerTypes.TriggerLibException('Handler class ' + className + ' does not implement a handler interface.');
         }
     }
 
@@ -1013,21 +1011,27 @@ global with sharing class TriggerOrchestrator {
     }
 
     public abstract class RecursionTracker {
+        public Integer maxRunsPerRecord = 3;
         private Map<Id, Integer> runCountByRecordId;
-        protected Integer maxRunsPerRecord = 3;
 
         public RecursionTracker(String recursionScope) {
             TriggerOrchestrator.runCounter.registerScope(recursionScope);
             this.runCountByRecordId = TriggerOrchestrator.runCounter.getForRecursionScope(recursionScope);
         }
 
-        public Boolean isLimitReached(TriggerTypes.TriggerRecord record) {
+        public Boolean isDepthReached(TriggerTypes.TriggerRecord record) {
             return (this.runCountByRecordId.get(record.getId()) ?? 0) >= this.maxRunsPerRecord;
+        }
+
+        public Boolean isSkippedByRecursionGuard(TriggerTypes.TriggerRecord record) {
+            return this.hasRecursionGuard() && this.isDepthReached(record);
         }
 
         public void countRun(TriggerTypes.TriggerRecord record) {
             this.runCountByRecordId.put(record.getId(), (this.runCountByRecordId.get(record.getId()) ?? 0) + 1);
         }
+
+        public abstract Boolean hasRecursionGuard();
     }
 
     private class RunCounter {

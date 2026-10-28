@@ -13,8 +13,8 @@ Each run calls `<ctx>Handlers()`, loads parents, runs providers and commits agai
 ## Order of a Run {#order}
 
 1. **Run bypasses.** `TriggerOrchestrator.bypass()` (`all()`, `sObject(…)`, `orchestrator(…)`) or a checked `TriggerObject__mdt.Bypass__c` ends the run before any of your code. So does an orchestrator that does not implement the context.
-2. **Handler list.** `<ctx>Handlers()` runs. Under `runFromMetadata()`, the library instead creates the class of every unbypassed `TriggerHandler__mdt` record of the object, in `Order__c` order, and keeps those that implement the context. A class that implements two roles runs only as the first: Populator over Validator, Validator over Writer, Writer over Dispatcher.
-3. **Handler bypasses.** `bypass().handler(…)`, then `TriggerHandler__mdt.Bypass__c`, then `bypassOn<Ctx>When()`. A skipped handler declares no parents. When no handler is left, the run ends here, and only the Logger step follows.
+2. **Handler list.** `<ctx>Handlers()` runs. Under `runFromMetadata()`, the library instead creates the class of every unbypassed `TriggerHandler__mdt` record whose field for the context names the object, in `Order__c` order. A class without the context's `Handler` interface throws. A class that implements two roles runs only as the first: Populator over Validator, Validator over Writer, Writer over Dispatcher.
+3. **Handler bypasses.** `bypass().handler(…)`, then `TriggerHandler__mdt.Bypass__c` for this context, then `bypassOn<Ctx>When()`. A skipped handler declares no parents. When no handler is left, the run ends here, and only the Logger step follows.
 4. **Parent declarations.** The remaining handlers declare their parents. A lookup is queried the first time a handler reads its parent.
 5. **Each handler runs, in list order.**
    - Each RelatedQuery provider runs over all records the first time the handler reads it.
@@ -22,7 +22,7 @@ Each run calls `<ctx>Handlers()`, loads parents, runs providers and commits agai
    - The Finalizer runs when at least one record qualified.
    - A Writer with OwnUnitOfWork or ContinueOnError commits its own unit of work.
 6. **Shared commit.** In before delete and the after contexts, the [shared unit of work](/guide/unit-of-work#which-unit) commits once.
-7. **Logger.** The outermost run calls `flush()` on the org's Logger.
+7. **Logger.** The outermost run calls `flush()` on the org's Logger. After a `maximum trigger depth exceeded` failure, no later run in the transaction does.
 
 ## Query Cost {#query-cost}
 
@@ -54,5 +54,5 @@ SOQL queries a run spends outside your code:
 
 A commit or direct DML fires the triggers of the saved records at once. Each is a full nested run with its own parents, providers and commit.
 
-- **Recursion counts are shared.** In the update contexts, a Populator, Writer or Dispatcher skips a record after acting on it 3 times in the transaction. Change the limit with a [RecursionGuard](/after-update/add-ons/recursion-guard).
+- **Recursion counts are shared.** In the update contexts, when a record comes back to a Populator, Writer or Dispatcher that already acted on it 3 times in the transaction, the run logs an error and the handler keeps running. A [RecursionGuard](/after-update/add-ons/recursion-guard) sets its own depth and also skips the record there.
 - **Salesforce allows 16 levels.** The next one fails with "maximum trigger depth exceeded".

@@ -3,7 +3,7 @@
  * Copyright (c) 2026 Beyond The Cloud Sp. z o.o. (BeyondTheCloud.Dev)
  * Licensed under the MIT License (https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/LICENSE)
  *
- * v0.4.0
+ * v1.1.0
  *
  * PMD False Positives:
  * - ExcessiveClassLength: It is a library and we tried to put everything into ONE test class
@@ -508,6 +508,7 @@ private class TriggerOrchestratorTest {
     static void configurationQueriesWhenRunTwice() {
         // Setup
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('TriggerHandler__mdt').thenReturn(new List<TriggerHandler__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         TriggerOrchestrator.mock().beforeInsertFor(TitlePopulator.class).with(new Contact(LastName = 'Doe'));
@@ -518,7 +519,7 @@ private class TriggerOrchestratorTest {
         TriggerOrchestrator.runTestFor(new TitlePopulator());
 
         // Verify
-        Assert.areEqual(2, SOQL.getQueries(), 'The framework should query its configuration once per transaction.');
+        Assert.areEqual(3, SOQL.getQueries(), 'The framework should query its configuration once per transaction.');
     }
 
     @IsTest
@@ -951,29 +952,14 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void bypassHandlerByMetadata() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TitlePopulator',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => true
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(new List<TriggerHandler__mdt>{ new TriggerHandler__mdt(ApexClassName__c = 'TitlePopulator', Bypass__c = true, BeforeInsert__c = contactSetting.Id) });
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -988,31 +974,40 @@ private class TriggerOrchestratorTest {
     }
 
     @IsTest
-    static void bypassHandlerByMetadataWithOtherHandlers() {
+    static void bypassHandlerByMetadataInOtherContext() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'DoeValidator',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => true
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(new List<TriggerHandler__mdt>{ new TriggerHandler__mdt(ApexClassName__c = 'TitlePopulator', Bypass__c = true, AfterInsert__c = contactSetting.Id) });
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeInsertFor(TitlePopulator.class).with(doe);
+
+        // Test
+        TriggerOrchestrator.runTestFor(new TitlePopulator());
+
+        // Verify
+        Assert.areEqual('CEO', doe.Title, 'The handler should be bypassed only in the contexts its record names.');
+    }
+
+    @IsTest
+    static void bypassHandlerByMetadataWithOtherHandlers() {
+        // Setup
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(new List<TriggerHandler__mdt>{ new TriggerHandler__mdt(ApexClassName__c = 'DoeValidator', Bypass__c = true, BeforeInsert__c = contactSetting.Id) });
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1033,29 +1028,18 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void bypassHandlerByMetadataWithQualifiedName() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.TitlePopulator',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => true
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(
+                new List<TriggerHandler__mdt>{
+                    new TriggerHandler__mdt(ApexClassName__c = 'TriggerOrchestratorTest.TitlePopulator', Bypass__c = true, BeforeInsert__c = contactSetting.Id)
+                }
+            );
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1072,29 +1056,14 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void bypassHandlerByMetadataWhenObjectDoesNotMatch() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt accountSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Account',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TitlePopulator',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => true
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt accountSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Account',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ accountSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(new List<TriggerHandler__mdt>{ new TriggerHandler__mdt(ApexClassName__c = 'TitlePopulator', Bypass__c = true, BeforeInsert__c = accountSetting.Id) });
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1111,29 +1080,18 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void bypassHandlerByMetadataWithBypassable() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TitlePopulatorWithBypassCounter',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => true
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(
+                new List<TriggerHandler__mdt>{
+                    new TriggerHandler__mdt(ApexClassName__c = 'TitlePopulatorWithBypassCounter', Bypass__c = true, BeforeInsert__c = contactSetting.Id)
+                }
+            );
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         TitlePopulatorWithBypassCounter populator = new TitlePopulatorWithBypassCounter();
@@ -1150,29 +1108,14 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void bypassHandlerByMetadataWithPaddedName() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => ' TitlePopulator ',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => true
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(new List<TriggerHandler__mdt>{ new TriggerHandler__mdt(ApexClassName__c = ' TitlePopulator ', Bypass__c = true, BeforeInsert__c = contactSetting.Id) });
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1189,29 +1132,14 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void bypassHandlerByMetadataWithUpperCaseName() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TITLEPOPULATOR',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => true
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(new List<TriggerHandler__mdt>{ new TriggerHandler__mdt(ApexClassName__c = 'TITLEPOPULATOR', Bypass__c = true, BeforeInsert__c = contactSetting.Id) });
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1247,29 +1175,18 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void runFromMetadataOnBeforeInsert() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.OperationStamper',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(
+                new List<TriggerHandler__mdt>{
+                    new TriggerHandler__mdt(ApexClassName__c = 'TriggerOrchestratorTest.OperationStamper', Bypass__c = false, BeforeInsert__c = contactSetting.Id)
+                }
+            );
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1286,29 +1203,18 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void runFromMetadataOnAfterInsert() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.OperationStamper',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(
+                new List<TriggerHandler__mdt>{
+                    new TriggerHandler__mdt(ApexClassName__c = 'TriggerOrchestratorTest.OperationStamper', Bypass__c = false, AfterInsert__c = contactSetting.Id)
+                }
+            );
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1325,29 +1231,18 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void runFromMetadataOnBeforeUpdate() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.OperationStamper',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(
+                new List<TriggerHandler__mdt>{
+                    new TriggerHandler__mdt(ApexClassName__c = 'TriggerOrchestratorTest.OperationStamper', Bypass__c = false, BeforeUpdate__c = contactSetting.Id)
+                }
+            );
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1364,29 +1259,18 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void runFromMetadataOnAfterUpdate() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.OperationStamper',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(
+                new List<TriggerHandler__mdt>{
+                    new TriggerHandler__mdt(ApexClassName__c = 'TriggerOrchestratorTest.OperationStamper', Bypass__c = false, AfterUpdate__c = contactSetting.Id)
+                }
+            );
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1403,29 +1287,18 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void runFromMetadataOnBeforeDelete() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.OperationStamper',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(
+                new List<TriggerHandler__mdt>{
+                    new TriggerHandler__mdt(ApexClassName__c = 'TriggerOrchestratorTest.OperationStamper', Bypass__c = false, BeforeDelete__c = contactSetting.Id)
+                }
+            );
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1442,29 +1315,18 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void runFromMetadataOnAfterDelete() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.OperationStamper',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(
+                new List<TriggerHandler__mdt>{
+                    new TriggerHandler__mdt(ApexClassName__c = 'TriggerOrchestratorTest.OperationStamper', Bypass__c = false, AfterDelete__c = contactSetting.Id)
+                }
+            );
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1481,29 +1343,18 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void runFromMetadataOnAfterUndelete() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.OperationStamper',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(
+                new List<TriggerHandler__mdt>{
+                    new TriggerHandler__mdt(ApexClassName__c = 'TriggerOrchestratorTest.OperationStamper', Bypass__c = false, AfterUndelete__c = contactSetting.Id)
+                }
+            );
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1520,34 +1371,19 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void runFromMetadataInQueryOrder() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 2,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.TitlePopulator',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
-                            },
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.CeoDepartmentPopulator',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(
+                new List<TriggerHandler__mdt>{
+                    new TriggerHandler__mdt(ApexClassName__c = 'TriggerOrchestratorTest.TitlePopulator', Bypass__c = false, BeforeInsert__c = contactSetting.Id),
+                    new TriggerHandler__mdt(ApexClassName__c = 'TriggerOrchestratorTest.CeoDepartmentPopulator', Bypass__c = false, BeforeInsert__c = contactSetting.Id)
+                }
+            );
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1564,29 +1400,18 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void runFromMetadataWithPaddedName() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => ' TriggerOrchestratorTest.TitlePopulator ',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(
+                new List<TriggerHandler__mdt>{
+                    new TriggerHandler__mdt(ApexClassName__c = ' TriggerOrchestratorTest.TitlePopulator ', Bypass__c = false, BeforeInsert__c = contactSetting.Id)
+                }
+            );
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1603,29 +1428,18 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void runFromMetadataWithBypassedRow() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.TitlePopulator',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => true
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(
+                new List<TriggerHandler__mdt>{
+                    new TriggerHandler__mdt(ApexClassName__c = 'TriggerOrchestratorTest.TitlePopulator', Bypass__c = true, BeforeInsert__c = contactSetting.Id)
+                }
+            );
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1642,29 +1456,18 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void runFromMetadataWithBypassedUnknownClass() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.MissingHandler',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => true
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(
+                new List<TriggerHandler__mdt>{
+                    new TriggerHandler__mdt(ApexClassName__c = 'TriggerOrchestratorTest.MissingHandler', Bypass__c = true, BeforeInsert__c = contactSetting.Id)
+                }
+            );
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1687,29 +1490,18 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void runFromMetadataWithHandlerOfOtherContext() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.TitlePopulator',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(
+                new List<TriggerHandler__mdt>{
+                    new TriggerHandler__mdt(ApexClassName__c = 'TriggerOrchestratorTest.TitlePopulator', Bypass__c = false, AfterInsert__c = contactSetting.Id)
+                }
+            );
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1726,35 +1518,56 @@ private class TriggerOrchestratorTest {
         }
 
         // Verify
-        Assert.isNull(expectedException, 'The run should not throw an exception.');
+        Assert.areEqual(
+            'Handler class TriggerOrchestratorTest.TitlePopulator does not implement ' + AfterInsert.Handler.class.getName() + '.',
+            expectedException?.getMessage(),
+            'The exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
+    static void runFromMetadataWithRowOfOtherContext() {
+        // Setup
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
+        );
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(
+                new List<TriggerHandler__mdt>{
+                    new TriggerHandler__mdt(ApexClassName__c = 'TriggerOrchestratorTest.TitlePopulator', Bypass__c = false, BeforeInsert__c = contactSetting.Id)
+                }
+            );
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        Contact doe = new Contact(LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeUpdateFor(TriggerOrchestrator.MetadataOrchestrator.class).with(doe, new Contact(LastName = 'Doe'));
+
+        // Test
+        TriggerOrchestrator.runTestFor(new TriggerOrchestrator.MetadataOrchestrator(Contact.SObjectType));
+
+        // Verify
+        Assert.isNull(doe.Title, 'The handler should run only in the contexts its record names.');
     }
 
     @IsTest
     static void runFromMetadataWithRowsOfOtherObject() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt accountSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Account',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.TitlePopulator',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt accountSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Account',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ accountSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(
+                new List<TriggerHandler__mdt>{
+                    new TriggerHandler__mdt(ApexClassName__c = 'TriggerOrchestratorTest.TitlePopulator', Bypass__c = false, BeforeInsert__c = accountSetting.Id)
+                }
+            );
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1771,29 +1584,18 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void runFromMetadataWithUnknownClass() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.MissingHandler',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(
+                new List<TriggerHandler__mdt>{
+                    new TriggerHandler__mdt(ApexClassName__c = 'TriggerOrchestratorTest.MissingHandler', Bypass__c = false, BeforeInsert__c = contactSetting.Id)
+                }
+            );
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1820,29 +1622,18 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void runFromMetadataWithoutNoArgConstructor() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.NestedRunPopulator',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(
+                new List<TriggerHandler__mdt>{
+                    new TriggerHandler__mdt(ApexClassName__c = 'TriggerOrchestratorTest.NestedRunPopulator', Bypass__c = false, BeforeInsert__c = contactSetting.Id)
+                }
+            );
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1869,29 +1660,18 @@ private class TriggerOrchestratorTest {
     @IsTest
     static void runFromMetadataWithClassThatIsNotHandler() {
         // Setup
-        String namespacePrefix = String.valueOf(TriggerObject__mdt.SObjectType).removeEnd('TriggerObject__mdt');
-        TriggerObject__mdt contactSetting = (TriggerObject__mdt) JSON.deserialize(
-            JSON.serialize(
-                new Map<String, Object>{
-                    'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerObject__mdt.SObjectType) },
-                    String.valueOf(TriggerObject__mdt.ObjectAPIName__c) => 'Contact',
-                    String.valueOf(TriggerObject__mdt.Bypass__c) => false,
-                    namespacePrefix + 'TriggerHandlers__r' => new Map<String, Object>{
-                        'totalSize' => 1,
-                        'done' => true,
-                        'records' => new List<Object>{
-                            new Map<String, Object>{
-                                'attributes' => new Map<String, Object>{ 'type' => String.valueOf(TriggerHandler__mdt.SObjectType) },
-                                String.valueOf(TriggerHandler__mdt.ApexClassName__c) => 'TriggerOrchestratorTest.TestLogger',
-                                String.valueOf(TriggerHandler__mdt.Bypass__c) => false
-                            }
-                        }
-                    }
-                }
-            ),
-            TriggerObject__mdt.class
+        TriggerObject__mdt contactSetting = new TriggerObject__mdt(
+            Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType),
+            ObjectAPIName__c = 'Contact',
+            Bypass__c = false
         );
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+        SOQL.mock('TriggerHandler__mdt')
+            .thenReturn(
+                new List<TriggerHandler__mdt>{
+                    new TriggerHandler__mdt(ApexClassName__c = 'TriggerOrchestratorTest.TestLogger', Bypass__c = false, BeforeInsert__c = contactSetting.Id)
+                }
+            );
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 
         Contact doe = new Contact(LastName = 'Doe');
@@ -1909,7 +1689,7 @@ private class TriggerOrchestratorTest {
 
         // Verify
         Assert.areEqual(
-            'Handler class TriggerOrchestratorTest.TestLogger does not implement a handler interface.',
+            'Handler class TriggerOrchestratorTest.TestLogger does not implement ' + BeforeInsert.Handler.class.getName() + '.',
             expectedException?.getMessage(),
             'The exception message should match the expected one.'
         );

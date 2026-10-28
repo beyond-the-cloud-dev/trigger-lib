@@ -99,7 +99,7 @@ export const addOnFacts = {
     returns: '`true` to skip this handler for this chunk'
   },
   RecursionGuard: {
-    summary: `Cap how often this handler acts on one record per transaction (default ${recursionDefault}).`,
+    summary: `Skip a record at your own recursion depth and log an error, instead of only logging at ${recursionDefault}.`,
     called:
       'once per chunk, when the handler list is built',
     returns:

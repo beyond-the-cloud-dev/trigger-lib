@@ -183,16 +183,16 @@ static void afterInsertHandlersContainsWelcomeTaskWriter() {
 }
 ```
 
-Under `runFromMetadata()`, a record whose class can't be found fails every save on the object. Test that the deployed records resolve:
+Under `runFromMetadata()`, a record whose class can't be found fails every save in its context. Test that the deployed records resolve:
 
 ```apex
 @IsTest
-static void accountHandlerRecordsResolve() {
+static void handlerRecordsResolve() {
     // Setup
     List<String> missingClasses = new List<String>();
 
     // Test
-    for (TriggerHandler__mdt handlerRecord : [SELECT ApexClassName__c FROM TriggerHandler__mdt WHERE TriggerObject__r.ObjectAPIName__c = 'Account']) {
+    for (TriggerHandler__mdt handlerRecord : [SELECT ApexClassName__c FROM TriggerHandler__mdt]) {
         if (Type.forName(handlerRecord.ApexClassName__c.trim()) == null) {
             missingClasses.add(handlerRecord.ApexClassName__c);
         }
@@ -207,13 +207,27 @@ static void accountHandlerRecordsResolve() {
 
 Mock the bypass metadata and the Logger search before anything refers to `TriggerOrchestrator`, so before `TriggerOrchestrator.mock()`. Otherwise the org's deployed bypass records and its real Logger apply to your test:
 
-```apex
+::: code-group
+
+```apex [Isolated]
 SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
 SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 ```
 
+```apex [Handler record]
+TriggerObject__mdt contactSetting = new TriggerObject__mdt(Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType), ObjectAPIName__c = 'Contact', Bypass__c = false);
+TriggerHandler__mdt populatorBypass = new TriggerHandler__mdt(ApexClassName__c = 'ContactEmailNormalizationPopulator', Bypass__c = true, BeforeInsert__c = contactSetting.Id);
+
+SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ contactSetting });
+SOQL.mock('TriggerHandler__mdt').thenReturn(new List<TriggerHandler__mdt>{ populatorBypass });
+SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+```
+
+:::
+
 - **A metadata bypass.** Return `new TriggerObject__mdt(ObjectAPIName__c = 'Account', Bypass__c = true)` instead of the empty list.
-- **Handler records.** `TriggerHandler__mdt` rows, with `Order__c`, sit in the parent's `TriggerHandlers__r` relationship. A plain constructor can't set it, so build the parent with `JSON.deserialize`.
+- **Handler records.** Mock `'TriggerHandler__mdt'` too, with plain constructors. A record's single context field, such as `BeforeInsert__c`, holds the Id of the mocked `TriggerObject__mdt` record, so give that record an Id. A class in several contexts gets a record per context. The list order is the run order, since a mock ignores `Order__c`.
+- **`'TriggerObject__mdt'` alone isolates a test.** The org's handler records name its own object records, so none of them matches a mocked one. With the `btcdev` package, the mock keys stay unprefixed.
 - **An Apex bypass.** Call `TriggerOrchestrator.bypass().handler(…)` or `.sObject(…)` before `runTestFor`. `.orchestrator(…)` does not apply under `runTestFor`.
 - **A Logger.** Set `TriggerOrchestrator.triggerLogger.logger` to a class of your own that collects the errors. Use it to test ContinueOnError.
 

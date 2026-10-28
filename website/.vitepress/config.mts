@@ -61,7 +61,7 @@ export default defineConfig({
           ]
         }
       })
-    ]
+    ],
     // Google Analytics (G-BEZCLFE9W9)
     [
       'script',

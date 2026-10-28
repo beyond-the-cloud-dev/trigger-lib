@@ -1,8 +1,8 @@
 {
   "packageDirectories": [
     {
-      "versionName": "ver 1.0",
-      "versionNumber": "1.0.0.NEXT",
+      "versionName": "ver 1.1",
+      "versionNumber": "1.1.0.NEXT",
       "path": "package",
       "default": true,
       "package": "Trigger Lib",
@@ -37,6 +37,7 @@
     "Trigger Lib@0.1.0-1": "04tP6000003jdrVIAQ",
     "Trigger Lib@0.2.0-1": "04tP6000003jhdNIAQ",
     "Trigger Lib@0.3.0-1": "04tP6000003oRhdIAE",
-    "Trigger Lib@1.0.0-1": "04tP6000003oRkrIAE"
+    "Trigger Lib@1.0.0-1": "04tP6000003oRkrIAE",
+    "Trigger Lib@1.1.0-1": "04tP6000003oZaLIAU"
   }
 }

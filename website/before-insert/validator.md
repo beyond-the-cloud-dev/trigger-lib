@@ -27,7 +27,7 @@ Reject new records before they are saved, like a validation rule written in Apex
 
 ## Rules {#rules}
 
-- **Errors add up.** `addError` does not stop the run. Later handlers still run for the record, and each Validator that rejects it adds its own message.
+- **Field errors add up.** `addError` does not stop the run. Later handlers still run for the record, and each Validator that rejects it on a field adds its own message. A second record-level error replaces the first, so the library sees no new error and throws.
 - **Name and address fields lose the field.** On `Name` or a compound address field such as `BillingCity`, `record.addError(field, message)` shows the message at record level. Use `((Account) record.getNewSObject()).Name.addError(message)` instead.
 - **Populator wins.** A class that also implements `BeforeInsert.Populator` runs only as a Populator. List Validators after the Populators, so they check the final values.
 - **No DML.** If the handler runs DML or publishes an event, the library throws.

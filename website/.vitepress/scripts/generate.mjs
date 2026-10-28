@@ -648,7 +648,7 @@ const recordMethodGroups = [
   },
   {
     names: ['isChanged'],
-    note: () => 'the new value differs from the old one'
+    note: () => 'the new value differs from the old one; text ignores case'
   },
   {
     names: ['isAnyChanged', 'areAllChanged'],

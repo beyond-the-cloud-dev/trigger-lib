@@ -24,5 +24,5 @@ Run code once per chunk with the records that qualified, such as one aggregate q
 ## Rules {#rules}
 
 - **Keep the unit of work in a field.** Store the `unitOfWork` from the action, as the Skeleton does. What you register here commits with the Writer's other writes.
-- **Not an end-of-restore hook.** Restoring 1,000 records runs it 5 times.
+- **Not an end-of-restore hook.** It runs at this handler's turn, before later handlers and before the unit of work commits.
 - **Direct DML runs at once.** It is not merged with any unit of work.

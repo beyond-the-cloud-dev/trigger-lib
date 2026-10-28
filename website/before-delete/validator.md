@@ -51,7 +51,7 @@ public with sharing class AccountDeletionGuardValidator implements BeforeDelete.
 
 - **Block with `record.addError`.** `addError(message)` or `addError(field, message)` attaches the error to the row being deleted, and its delete fails. DML in the predicate or the action throws.
 - **Every qualified record must get an error.** If `addErrorOnBeforeDelete` attaches none, the library throws a [`TriggerTypes.TriggerLibException`](/api/trigger-orchestrator#triggerlibexception), even with ContinueOnError.
-- **Errors add up.** A record with an error still reaches every later handler in the list.
+- **Field errors add up.** A record with an error still reaches every later handler in the list. A second record-level error replaces the first, so the library sees no new error and throws.
 - **Validator wins.** A class that also implements `BeforeDelete.Writer` runs only as a Validator.
 
 ::: warning

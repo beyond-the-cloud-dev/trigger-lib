@@ -17,7 +17,7 @@ Mock a trigger context with `TriggerOrchestrator.mock()`, then run a handler or 
 | `new TriggerTypes.RandomIdGenerator().get(SObjectType)` | builds a fake Id |
 
 ::: warning Test classes only
-`mock()` and `runTestFor()` are `@TestVisible` private members of TriggerOrchestrator.
+`mock()` and `runTestFor()` are `@TestVisible` private members of TriggerOrchestrator. The `btcdev` package makes them global.
 :::
 
 ## Test a Handler {#handler}
@@ -229,7 +229,7 @@ SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 - **Handler records.** Mock `'TriggerHandler__mdt'` too, with plain constructors. A record's single context field, such as `BeforeInsert__c`, holds the Id of the mocked `TriggerObject__mdt` record, so give that record an Id. A class in several contexts gets a record per context. The list order is the run order, since a mock ignores `Order__c`.
 - **`'TriggerObject__mdt'` alone isolates a test.** The org's handler records name its own object records, so none of them matches a mocked one. With the `btcdev` package, the mock keys stay unprefixed.
 - **An Apex bypass.** Call `TriggerOrchestrator.bypass().handler(…)` or `.sObject(…)` before `runTestFor`. `.orchestrator(…)` does not apply under `runTestFor`.
-- **A Logger.** Set `TriggerOrchestrator.triggerLogger.logger` to a class of your own that collects the errors. Use it to test ContinueOnError.
+- **A Logger.** Set `TriggerOrchestrator.triggerLogger.logger` to a class of your own that collects the errors. Use it to test ContinueOnError. This works only with the source: the `btcdev` package does not expose `triggerLogger` to your tests.
 
 ## Integration Tests {#integration}
 

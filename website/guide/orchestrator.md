@@ -77,13 +77,13 @@ public with sharing class ContactBirthdateRangeValidator implements BeforeInsert
 ```
 
 - **Method names carry the context**, so they never clash.
-- **Register the class in each context's list.** Under `runFromMetadata()`, create a record per context, such as `ContactBirthdateRangeValidator_BeforeInsert` and `ContactBirthdateRangeValidator_BeforeUpdate`, each with its own `Order__c`.
+- **Register the class in each context's list.** Under `runFromMetadata()`, create a record per context, such as `ContactBirthdateRange_BeforeInsert` and `ContactBirthdateRange_BeforeUpdate`, each with its own `Order__c`.
 - **Add-ons are per context too**, such as `BeforeInsert.ParentQuery` and `BeforeUpdate.ParentQuery`.
 - **`bypass().handler(…)` covers every context.** A `TriggerHandler__mdt` record switches the class off only in its context. To skip one context on a condition, use that context's Bypassable.
 
 ## Instances per Chunk {#instances-per-chunk}
 
-The library calls the handler list method on every run: per context, per chunk of up to 200 records and per nested run.
+The library calls the handler list method on every run: per context, per chunk and per nested run.
 
 - **Instance fields reset** on every run when the list returns `new` handlers.
 - **Static fields last the whole transaction.**

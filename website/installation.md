@@ -30,7 +30,7 @@ Click the button below to deploy Trigger Lib to your environment.
 </a>
 
 ::: warning
-The button also deploys [SOQL Lib](https://soql.beyondthecloud.dev) 6.12.0 and [DML Lib](https://dml.beyondthecloud.dev) 4.0.0, replacing the org's `SOQL` and `DML` classes. If the org has the same or a newer version, use [Copy and Deploy](#copy-and-deploy) and skip them.
+The button deploys only the repo's `package` folder: Trigger Lib with `global` modifiers, without [SOQL Lib](https://soql.beyondthecloud.dev) and [DML Lib](https://dml.beyondthecloud.dev). The deploy fails unless the org already has a `SOQL` class and a `global` `DML` class. Otherwise, use [Copy and Deploy](#copy-and-deploy).
 :::
 
 ## Copy and Deploy {#copy-and-deploy}
@@ -44,12 +44,19 @@ The button also deploys [SOQL Lib](https://soql.beyondthecloud.dev) 6.12.0 and [
 - [`TriggerTypes.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/TriggerTypes.cls)
 - [`TriggerTypesTest.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/TriggerTypesTest.cls)
 - [`BeforeInsert.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/BeforeInsert.cls)
+- [`BeforeInsertTest.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/BeforeInsertTest.cls)
 - [`AfterInsert.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/AfterInsert.cls)
+- [`AfterInsertTest.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/AfterInsertTest.cls)
 - [`BeforeUpdate.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/BeforeUpdate.cls)
+- [`BeforeUpdateTest.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/BeforeUpdateTest.cls)
 - [`AfterUpdate.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/AfterUpdate.cls)
+- [`AfterUpdateTest.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/AfterUpdateTest.cls)
 - [`BeforeDelete.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/BeforeDelete.cls)
+- [`BeforeDeleteTest.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/BeforeDeleteTest.cls)
 - [`AfterDelete.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/AfterDelete.cls)
+- [`AfterDeleteTest.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/AfterDeleteTest.cls)
 - [`AfterUndelete.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/AfterUndelete.cls)
+- [`AfterUndeleteTest.cls`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/classes/AfterUndeleteTest.cls)
 
 **Custom Metadata Types**
 

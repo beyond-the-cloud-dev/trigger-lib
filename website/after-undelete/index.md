@@ -22,7 +22,7 @@ Runs in **after undelete**, after records are restored from the Recycle Bin.
 - **No Validator.** Salesforce has no before undelete event. To block a restore, call `record.getNewSObject().addError(…)` from a Writer or Dispatcher and list that handler first. The record stays in the Recycle Bin.
 - **Lookups hold only the Id.** `((Contact) record.getNewSObject()).Account` is null. Declare a [ParentQuery](/after-undelete/add-ons/parent-query) and read `record.getNewParent(Contact.AccountId)`.
 - **Only the top-level record's trigger runs.** Salesforce restores cascade-deleted children with their parent, but runs only the parent's after undelete trigger. Handle the children from the parent's handlers.
-- **Called per chunk.** `afterUndeleteHandlers()` runs for every chunk of up to 200 records. Restoring 1,000 records means 5 runs and 5 Dispatcher calls.
+- **Called per trigger run.** `afterUndeleteHandlers()` runs once per trigger run. An Apex `undelete` of 1,000 records arrives in one run, not in chunks of 200.
 
 ::: warning
 The restored row is read-only. Writing to `getNewSObject()` throws a `FinalException` that no `catch` stops. To change the record, register a `toUpdate` of its Id, which fires BeforeUpdate and AfterUpdate again.

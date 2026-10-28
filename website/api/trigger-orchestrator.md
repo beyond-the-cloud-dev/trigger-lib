@@ -19,7 +19,7 @@ public static void run(Object orchestrator)
 <<< @/../examples/main/default/triggers/ContactTrigger.trigger
 
 - **List every event in the trigger.** `run` does nothing in a context your orchestrator does not register.
-- **Once per chunk.** Every context and every chunk of up to 200 records is a separate run. Each run calls your handler method again.
+- **Once per chunk.** Every context and every chunk of records (up to 200 in insert and update) is a separate run. Each run calls your handler method again.
 - **Handlers run in list order.** Each handler goes through every record of the chunk before the next handler starts.
 - **Switched off, it returns at once.** `bypass()` or a [`TriggerObject__mdt`](/api/custom-metadata) record can switch off the object or the orchestrator.
 

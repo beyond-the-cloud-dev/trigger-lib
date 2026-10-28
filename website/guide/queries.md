@@ -60,7 +60,7 @@ public with sharing class ContactDepartmentPopulator implements BeforeInsert.Pop
 }
 ```
 
-- **Static, not in the constructor.** A static variable is set once per transaction. The library calls `<ctx>Handlers()` on every run, per context, per chunk of up to 200 records and per nested run, so a query in the constructor runs every time. Under `runFromMetadata()`, the library creates each class the same way, in each context a record registers it in.
+- **Static, not in the constructor.** A static variable is set once per transaction. The library calls `<ctx>Handlers()` on every run, per context, per chunk and per nested run, so a query in the constructor runs every time. Under `runFromMetadata()`, the library creates each class the same way, in each context a record registers it in.
 - **Custom settings and custom metadata need no SOQL.** Read them with `getOrgDefaults()`, `getInstance()` or `getAll()`. SOQL on custom metadata doesn't count toward the 100-query limit either, unless it selects a long text area field.
 - **Outside the guard.** The static variable is set when the handler is created, before the record loop.
 

@@ -33,7 +33,7 @@ One record is one handler class in one context on one object. It names the class
 
 - **Two roles.** Under `runFromMetadata()`, a record runs its class in its context, unless `Bypass__c` is checked. Under `run(orchestrator)`, it only switches its class off in that context, and `Order__c` is ignored, though it is still required. Deleting a record switches nothing off.
 - **Exactly one context.** The validation rule `OneContextRequired` rejects a record with no context field filled, or with more than one, in Setup and in a deployment. A record with `BeforeInsert__c` filled neither runs nor switches off its class in after insert.
-- **One record per context.** A class that runs in several contexts has a record for each, with its own `Order__c`. Name them `<ClassName>_<Context>`, such as `AccountRatingPopulator_BeforeInsert` and `AccountRatingPopulator_BeforeUpdate`. To switch the class off everywhere, check `Bypass__c` on each.
+- **One record per context.** A class that runs in several contexts has a record for each, with its own `Order__c`. Name them `<ClassName>_<Context>`, such as `AccountRatingPopulator_BeforeInsert` and `AccountRatingPopulator_BeforeUpdate`, and shorten the class name when the result is longer than 40 characters, the limit of a record name. To switch the class off everywhere, check `Bypass__c` on each.
 - **One object per record.** The context field names one object, so a class used on Account and on Contact needs a record for each.
 
 ### ApexClassName__c Format {#class-name-format}

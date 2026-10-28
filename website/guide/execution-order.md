@@ -6,7 +6,7 @@ description: The order in which Trigger Lib runs bypasses, handlers, parent quer
 
 ## One Run per Chunk {#run}
 
-The platform fires a trigger once per context for each chunk of up to 200 records. Each firing is one run. An insert of 201 records makes four runs: before insert and after insert for the first 200 records, then both again for the last one.
+The platform fires a trigger once per context for each chunk of records, up to 200 in insert and update. Each firing is one run. An insert of 201 records makes four runs: before insert and after insert for the first 200 records, then both again for the last one.
 
 Each run calls `<ctx>Handlers()`, loads parents, runs providers and commits again. Handlers created in `<ctx>Handlers()` start with empty instance fields. Static fields, bypasses set with `TriggerOrchestrator.bypass()` and recursion counts last the whole transaction.
 

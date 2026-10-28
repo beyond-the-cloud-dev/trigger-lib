@@ -12,7 +12,7 @@ A handler's work is its providers, predicates, actions, dispatch, Finalizer and 
 
 1. **Is logged.** The org's Logger gets it under the handler's name.
 2. **Is rethrown,** unless the handler implements ContinueOnError. Every record in the chunk fails. With all-or-none DML, the whole statement fails.
-3. **Is always rethrown** when it is the library's own [`TriggerTypes.TriggerLibException`](/api/trigger-orchestrator#triggerlibexception), such as DML in a before insert handler.
+3. **Is always rethrown** when it is the library's own [`TriggerTypes.TriggerLibException`](/api/trigger-orchestrator#triggerlibexception), such as DML in a before insert handler, or an `EventBus.RetryableException`.
 
 Platform exceptions such as `System.LimitException` cannot be caught. They end the transaction at once: the save fails, and neither `log()` nor `flush()` runs.
 
@@ -58,7 +58,7 @@ public with sharing class TriggerErrorLogger implements TriggerOrchestrator.Logg
 Implement the context's ContinueOnError to let the save go on when the handler fails.
 
 - **The failed handler stops.** Its remaining records and its Finalizer are skipped. Later handlers still run.
-- **A Writer that throws before its commit saves nothing.** Its registrations go to the automatic unit of work, which is skipped after a failure. If the commit itself fails, statements that already ran stay: there is no savepoint.
+- **A Writer that throws before its commit saves nothing.** Its registrations go to its own unit of work, not the shared one, and that commit is skipped after a failure. If the commit itself fails, statements that already ran stay: there is no savepoint.
 - **Use it for nice-to-have work,** such as a notification. Without a Logger, a swallowed failure leaves no trace.
 
 ## Recursion {#recursion}

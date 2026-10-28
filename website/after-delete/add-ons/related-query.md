@@ -35,5 +35,5 @@ Query children, siblings or other records once per handler per run, and read the
 - **Set sharing on the provider.** Its SOQL runs under the provider class's own sharing keyword. An inner class does not inherit its outer class's keyword.
 
 ::: warning
-Deleted rows are invisible. A query by `records.getIds()` finds nothing, with no error. Key providers by the old lookups: `records.getIdsOf(Contact.AccountId)`.
+Deleted rows are invisible. A query of the deleted object by `records.getIds()` finds nothing, with no error. Key providers by the old lookups: `records.getIdsOf(Contact.AccountId)`.
 :::

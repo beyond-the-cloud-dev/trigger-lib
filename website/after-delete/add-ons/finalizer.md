@@ -28,5 +28,5 @@ Run code once per chunk with the records that qualified, such as one aggregate q
 - **A swallowed throw skips the commit, not the dispatch.** With ContinueOnError, a Writer's automatic unit commits after the Finalizer, so its writes are lost. A Dispatcher's call already ran.
 
 ::: info
-Not an end-of-statement hook. A delete of 1,000 records runs it once per chunk of up to 200.
+Not an end-of-statement hook. It runs at this handler's turn, before later handlers and before the unit of work commits.
 :::

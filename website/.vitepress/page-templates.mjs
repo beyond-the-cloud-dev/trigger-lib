@@ -87,7 +87,7 @@ export const leadPatterns = {
   Bypassable:
     'Skip a handler for the whole chunk when a condition holds, such as a static flag, a batch job or a custom permission.',
   RecursionGuard:
-    'Cap how many times a {…} acts on the same record in one transaction (default 3).',
+    'Cap how many times a {…} acts on the same record in one transaction.',
   Finalizer:
     'Run code once per chunk with the records that qualified, such as {…}.',
   ContinueOnError:

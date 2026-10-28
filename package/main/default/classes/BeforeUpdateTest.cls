@@ -525,7 +525,35 @@ private class BeforeUpdateTest {
         TriggerOrchestrator.runTestFor(new TitlePopulator());
 
         // Verify
-        Assert.isNull(doe.Title, 'The populator should not run beyond the recursion depth.');
+        Assert.areEqual('CEO', doe.Title, 'The populator should run beyond the default recursion depth.');
+    }
+
+    @IsTest
+    static void populatorWithLoggerWhenDefaultRecursionDepthIsReached() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeUpdateFor(TitlePopulator.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+
+        for (Integer run = 0; run < 3; run++) {
+            TriggerOrchestrator.runTestFor(new TitlePopulator());
+        }
+
+        // Test
+        TriggerOrchestrator.runTestFor(new TitlePopulator());
+
+        // Verify
+        Assert.areEqual(
+            'TitlePopulator reached the recursion depth of 3 on record ' + doe.Id + ' in before update.',
+            logger.errors[0].getException().getMessage(),
+            'The logged exception message should match the expected one.'
+        );
     }
 
     @IsTest
@@ -551,6 +579,32 @@ private class BeforeUpdateTest {
     }
 
     @IsTest
+    static void populatorWithLoggerWhenRecursionGuardDepthIsReached() {
+        // Setup
+        SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
+        SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
+
+        Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
+
+        TriggerOrchestrator.mock().beforeUpdateFor(TitlePopulatorWithRecursionGuard.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
+
+        TriggerOrchestrator.runTestFor(new TitlePopulatorWithRecursionGuard());
+
+        // Test
+        TriggerOrchestrator.runTestFor(new TitlePopulatorWithRecursionGuard());
+
+        // Verify
+        Assert.areEqual(
+            'TitlePopulatorWithRecursionGuard reached the recursion depth of 1 on record ' + doe.Id + ' in before update.',
+            logger.errors[0].getException().getMessage(),
+            'The logged exception message should match the expected one.'
+        );
+    }
+
+    @IsTest
     static void populatorQualificationWhenRecursionDepthIsExceeded() {
         // Setup
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
@@ -558,25 +612,17 @@ private class BeforeUpdateTest {
 
         Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
 
-        QualificationCountingPopulator populator = new QualificationCountingPopulator();
+        QualificationCountingPopulatorWithRecursionGuard populator = new QualificationCountingPopulatorWithRecursionGuard();
 
-        for (Integer run = 0; run < 3; run++) {
-            TriggerOrchestrator.mock()
-                .beforeUpdateFor(QualificationCountingPopulator.class)
-                .with(new Contact(Id = doe.Id, LastName = 'Doe'), new Contact(Id = doe.Id, LastName = 'Doe'));
-        }
+        TriggerOrchestrator.mock().beforeUpdateFor(QualificationCountingPopulatorWithRecursionGuard.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
 
-        TriggerOrchestrator.mock().beforeUpdateFor(QualificationCountingPopulator.class).with(doe, new Contact(Id = doe.Id, LastName = 'Doe'));
-
-        for (Integer run = 0; run < 3; run++) {
-            TriggerOrchestrator.runTestFor(populator);
-        }
+        TriggerOrchestrator.runTestFor(populator);
 
         // Test
         TriggerOrchestrator.runTestFor(populator);
 
         // Verify
-        Assert.areEqual(3, populator.qualificationCalls, 'The qualification should not be asked beyond the recursion depth.');
+        Assert.areEqual(1, populator.qualificationCalls, 'The qualification should not be asked beyond the recursion depth.');
     }
 
     @IsTest
@@ -602,10 +648,13 @@ private class BeforeUpdateTest {
     }
 
     @IsTest
-    static void validatorWhenRecursionDepthIsExceeded() {
+    static void validatorWithLoggerWhenDefaultRecursionDepthIsReached() {
         // Setup
         SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
         SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+
+        TestLogger logger = new TestLogger();
+        TriggerOrchestrator.triggerLogger.logger = logger;
 
         Contact doe = new Contact(Id = new TriggerTypes.RandomIdGenerator().get(Contact.SObjectType), LastName = 'Doe');
 
@@ -623,7 +672,7 @@ private class BeforeUpdateTest {
         TriggerOrchestrator.runTestFor(new DoeValidator());
 
         // Verify
-        Assert.areEqual('Doe is not allowed.', doe.getErrors()[0].getMessage(), 'The validator should not be limited by the recursion depth.');
+        Assert.isTrue(logger.errors.isEmpty(), 'A validator should not log a recursion error.');
     }
 
     @IsTest
@@ -1100,7 +1149,7 @@ private class BeforeUpdateTest {
         }
     }
 
-    private class QualificationCountingPopulator implements BeforeUpdate.Populator {
+    private virtual class QualificationCountingPopulator implements BeforeUpdate.Populator {
         public Integer qualificationCalls = 0;
 
         public Boolean populateOnBeforeUpdateWhen(TriggerTypes.UpdateRecord record) {
@@ -1110,6 +1159,12 @@ private class BeforeUpdateTest {
 
         public void populateOnBeforeUpdate(TriggerTypes.UpdateRecord record) {
             record.put(Contact.Title, 'CEO');
+        }
+    }
+
+    private class QualificationCountingPopulatorWithRecursionGuard extends QualificationCountingPopulator implements BeforeUpdate.RecursionGuard {
+        public Integer maxRunsPerRecordOnBeforeUpdate() {
+            return 1;
         }
     }
 

@@ -22,7 +22,7 @@ Each run calls `<ctx>Handlers()`, loads parents, runs providers and commits agai
    - The Finalizer runs when at least one record qualified.
    - A Writer with OwnUnitOfWork or ContinueOnError commits its own unit of work.
 6. **Shared commit.** In before delete and the after contexts, the [shared unit of work](/guide/unit-of-work#which-unit) commits once.
-7. **Logger.** The outermost run calls `flush()` on the org's Logger.
+7. **Logger.** The outermost run calls `flush()` on the org's Logger. After a `maximum trigger depth exceeded` failure, no later run in the transaction does.
 
 ## Query Cost {#query-cost}
 
@@ -54,5 +54,5 @@ SOQL queries a run spends outside your code:
 
 A commit or direct DML fires the triggers of the saved records at once. Each is a full nested run with its own parents, providers and commit.
 
-- **Recursion counts are shared.** In the update contexts, a Populator, Writer or Dispatcher skips a record after acting on it 3 times in the transaction. Change the limit with a [RecursionGuard](/after-update/add-ons/recursion-guard).
+- **Recursion counts are shared.** In the update contexts, when a record comes back to a Populator, Writer or Dispatcher that already acted on it 3 times in the transaction, the run logs an error and the handler keeps running. A [RecursionGuard](/after-update/add-ons/recursion-guard) sets its own depth and also skips the record there.
 - **Salesforce allows 16 levels.** The next one fails with "maximum trigger depth exceeded".

@@ -70,7 +70,7 @@ public with sharing class OpportunityTriggerOrchestrator implements TriggerOrche
 
 - List order is run order, whatever the role. Each handler finishes all records of the chunk before the next one starts, and its predicate sees what earlier handlers set with `put`.
 - The Writers' DML on the shared unit of work commits once, after the last handler, so later handlers never see it. A Writer with OwnUnitOfWork or ContinueOnError commits right after itself.
-- In the update contexts, a Populator, Writer or Dispatcher acts on the same record at most 3 times per transaction by default, and later passes skip the record without an error. A handler's RecursionGuard add-on changes its limit.
+- In the update contexts, when a record comes back to a Populator, Writer or Dispatcher that already acted on it 3 times in the transaction, the run logs an error and the handler keeps running. A handler's RecursionGuard add-on sets its own depth, and there the record is also skipped.
 
 ## Handlers in custom metadata
 
@@ -205,7 +205,7 @@ public with sharing class TriggerErrorLogger implements TriggerOrchestrator.Logg
 }
 ```
 
-- `log(error)` runs for every exception in a handler's turn, before the library rethrows it or ContinueOnError swallows it. `flush()` runs at the end of each outermost run, also when the run failed, so clear your buffer there.
+- `log(error)` runs for every exception in a handler's turn, before the library rethrows it or ContinueOnError swallows it. It also gets one `TriggerTypes.TriggerLibException`, never thrown, for each record that comes back to an update handler at its recursion depth: 3, or the RecursionGuard's number. That call happens inside the record loop, so keep `log()` free of SOQL and DML. `flush()` runs at the end of each outermost run, also when the run failed, so clear your buffer there. The exception is a save that fails with `maximum trigger depth exceeded`: `flush()` doesn't run for it or for any later save in that transaction.
 - With two Logger classes in the org, every Trigger Lib trigger throws. Never throw from a Logger: its exception replaces the handler's and fails the save.
 - ContinueOnError never swallows a `TriggerTypes.TriggerLibException` or an `EventBus.RetryableException`, which asks for redelivery of a platform event.
 - Not logged, and never swallowed by ContinueOnError: exceptions in `<ctx>Handlers()`, in creating `runFromMetadata()` classes, in `bypassOn<Ctx>When()`, `ownUnitOfWorkOn<Ctx>()` and `maxRunsPerRecordOn<Ctx>()`, in the ParentQuery and PriorParentQuery methods, and in the shared unit of work's commit.

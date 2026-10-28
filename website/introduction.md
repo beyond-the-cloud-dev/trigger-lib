@@ -13,7 +13,7 @@ Trigger Lib is an Apex trigger framework for Salesforce. You write one small cla
 - **Declared Queries** - Declare parent fields and related records, with no SOQL in your handler
 - **Unit of Work** - Writers register DML, committed once after the last handler by default
 - **Guard Rails** - SOQL or DML in a per-record method fails the save, whether a developer or an AI agent wrote it
-- **Bypasses and Recursion Control** - Switch handlers off in Apex or custom metadata, and cap recursion in the update contexts
+- **Bypasses and Recursion Control** - Switch handlers off in Apex or custom metadata, and log or cap recursion in the update contexts
 - **Testability** - Test handlers with in-memory records, no trigger and no DML
 
 ## Quick Example {#quick-example}
@@ -50,7 +50,7 @@ Around that loop, the library:
 - **Commits DML in bulk.** Writers register DML on a unit of work, which commits after the last handler by default. DML in a predicate or an action throws. See [Unit of Work](/guide/unit-of-work).
 - **Handles errors.** A handler's exception goes to your Logger and fails the save, unless the handler implements ContinueOnError. See [Errors & Logging](/guide/error-handling).
 - **Skips what you switch off** from Apex, custom metadata or the handler itself. See [Bypassing](/guide/bypasses).
-- **Caps recursion.** In the update contexts, a Populator, Writer or Dispatcher acts on the same record at most 3 times per transaction by default.
+- **Reports recursion.** In the update contexts, a record that comes back to a Populator, Writer or Dispatcher after 3 runs in the transaction logs an error. A RecursionGuard sets its own depth and also skips the record.
 
 Every step of a run, in order: [Execution Order & Cost](/guide/execution-order).
 
@@ -74,6 +74,6 @@ Pick one role per context and as many add-ons as you need. Each add-on exists on
 | RelatedQuery | Loads children, siblings or any other records with your own query. | [Every context](/contexts) |
 | OwnUnitOfWork | Gives a Writer its own unit of work and settings, committed right after it. | [AfterInsert](/after-insert/add-ons/own-unit-of-work), [AfterUpdate](/after-update/add-ons/own-unit-of-work), [BeforeDelete](/before-delete/add-ons/own-unit-of-work), [AfterDelete](/after-delete/add-ons/own-unit-of-work), [AfterUndelete](/after-undelete/add-ons/own-unit-of-work) |
 | Bypassable | Skips the handler for a run on a condition, such as a feature flag. | [Every context](/contexts) |
-| RecursionGuard | Changes how many times the handler acts on the same record. | [BeforeUpdate](/before-update/add-ons/recursion-guard), [AfterUpdate](/after-update/add-ons/recursion-guard) |
+| RecursionGuard | Skips a record after the handler acted on it a set number of times. | [BeforeUpdate](/before-update/add-ons/recursion-guard), [AfterUpdate](/after-update/add-ons/recursion-guard) |
 | Finalizer | Runs once after the loop when records qualified, with those records. | [Every context](/contexts) |
 | ContinueOnError | Logs the handler's exception and lets the save go on. | [Every context](/contexts) |

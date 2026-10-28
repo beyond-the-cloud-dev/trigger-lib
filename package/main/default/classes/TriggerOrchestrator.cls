@@ -1013,21 +1013,27 @@ global with sharing class TriggerOrchestrator {
     }
 
     public abstract class RecursionTracker {
+        public Integer maxRunsPerRecord = 3;
         private Map<Id, Integer> runCountByRecordId;
-        protected Integer maxRunsPerRecord = 3;
 
         public RecursionTracker(String recursionScope) {
             TriggerOrchestrator.runCounter.registerScope(recursionScope);
             this.runCountByRecordId = TriggerOrchestrator.runCounter.getForRecursionScope(recursionScope);
         }
 
-        public Boolean isLimitReached(TriggerTypes.TriggerRecord record) {
+        public Boolean isDepthReached(TriggerTypes.TriggerRecord record) {
             return (this.runCountByRecordId.get(record.getId()) ?? 0) >= this.maxRunsPerRecord;
+        }
+
+        public Boolean isSkippedByRecursionGuard(TriggerTypes.TriggerRecord record) {
+            return this.hasRecursionGuard() && this.isDepthReached(record);
         }
 
         public void countRun(TriggerTypes.TriggerRecord record) {
             this.runCountByRecordId.put(record.getId(), (this.runCountByRecordId.get(record.getId()) ?? 0) + 1);
         }
+
+        public abstract Boolean hasRecursionGuard();
     }
 
     private class RunCounter {

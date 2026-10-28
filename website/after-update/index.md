@@ -20,7 +20,7 @@ Runs in **after update**, after the records are saved and before the transaction
 ## Rules {#rules}
 
 - **Updating this object runs the update triggers again.** Gate the predicate on a change, such as `isChangedTo`, so the nested run skips the record.
-- **Recursion limit of 3.** Each handler acts on the same record at most 3 times per transaction. Change the limit with [RecursionGuard](/after-update/add-ons/recursion-guard).
+- **A recursion depth of 3 is logged.** When a record comes back to a handler that already acted on it 3 times in the transaction, the run logs an error and the handler keeps running. [RecursionGuard](/after-update/add-ons/recursion-guard) sets its own depth and also skips the record there.
 - **Writer wins.** A class that implements both roles runs only as a Writer.
 - **Called per chunk.** `afterUpdateHandlers()` runs for every chunk of up to 200 records, and each chunk commits its own unit of work.
 

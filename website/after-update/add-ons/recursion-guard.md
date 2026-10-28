@@ -2,12 +2,12 @@
 template: add-on
 context: AfterUpdate
 interface: RecursionGuard
-description: Cap how many times an after update Writer or Dispatcher acts on the same record in one transaction (default 3).
+description: Cap how many times an after update Writer or Dispatcher acts on the same record in one transaction. At the cap, the record is skipped and an error is logged.
 ---
 
 # AfterUpdate.RecursionGuard
 
-Cap how many times a Writer or Dispatcher acts on the same record in one transaction (default 3).
+Cap how many times a Writer or Dispatcher acts on the same record in one transaction.
 
 **Signature**
 
@@ -27,10 +27,10 @@ Cap how many times a Writer or Dispatcher acts on the same record in one transac
 
 ## Rules {#rules}
 
-- **It counts passes, not nesting depth.** The count goes up each time the predicate returns true and never resets during the transaction. Separate updates of the same record count too.
-- **Skipped silently.** A record at the limit is skipped before its predicate. Nothing is logged, and the Finalizer does not get it.
-- **Counted per class name and context.** Two instances of one class share one count. BeforeUpdate keeps a separate count.
-- **`0` or less stops the handler.** Every record is skipped. `null` means no limit.
+- **Without it, the depth is 3 and nothing is skipped.** When a record comes back after 3 runs, each run logs an error and the handler keeps acting. A loop that never ends fails the save at the platform's limit of 16 nested triggers.
+- **It counts passes per class name and context, not nesting depth.** The count goes up each time the predicate returns true and never resets during the transaction. Separate updates of the same record count too. Two instances of one class share one count, and BeforeUpdate keeps its own.
+- **Skipped and logged.** A record at the cap is skipped before its predicate, and the run logs an error. The Finalizer does not get the record.
+- **`0` or less stops the handler.** Every record is skipped, and every run logs an error. `null` means no cap and no error.
 
 ::: tip
 Prefer a change gate. `isChanged` or `isChangedTo` in the predicate stops re-entry without counting.

@@ -28,7 +28,7 @@ Set fields on records being updated before they are saved.
 ## Rules {#rules}
 
 - **`put` counts as a change.** Handlers listed later see the value, and `isChanged` is true for them. Putting the old value back makes the field unchanged.
-- **Gate on a change.** The Populator runs again when the same records are updated again in the transaction. There, `isChanged` compares with the values the previous update saved. The default limit is 3 passes per record; change it with a [RecursionGuard](/before-update/add-ons/recursion-guard).
+- **Gate on a change.** The Populator runs again when the same records are updated again in the transaction. There, `isChanged` compares with the values the previous update saved. When a record comes back after 3 passes, each run logs an error; a [RecursionGuard](/before-update/add-ons/recursion-guard) sets its own depth and also skips the record.
 - **Never write to `getOldSObject()`.** The `FinalException` cannot be caught and fails the update.
 - **Populator wins.** A class that also implements `BeforeUpdate.Validator` runs only as a Populator.
 

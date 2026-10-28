@@ -97,6 +97,19 @@ public class AfterUpdate {
                 Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
                 for (TriggerTypes.TriggerRecord record : records) {
+                    if (this.recursionTracker.isDepthReached(record)) {
+                        this.logError(
+                            new TriggerTypes.TriggerLibException(
+                                this.handlerName +
+                                    ' reached the recursion depth of ' +
+                                    this.recursionTracker.maxRunsPerRecord +
+                                    ' on record ' +
+                                    record.getId() +
+                                    ' in after update.'
+                            )
+                        );
+                    }
+
                     this.write(record);
                 }
 
@@ -125,7 +138,7 @@ public class AfterUpdate {
         }
 
         private void write(TriggerTypes.TriggerRecord record) {
-            if (!this.recursionTracker.isLimitReached(record) && this.writer.writeOnAfterUpdateWhen(record)) {
+            if (!this.recursionTracker.isSkippedByRecursionGuard(record) && this.writer.writeOnAfterUpdateWhen(record)) {
                 this.recursionTracker.countRun(record);
                 this.qualifiedRecords.add(record);
                 this.writer.writeOnAfterUpdate(record, this.unitOfWork);
@@ -164,6 +177,19 @@ public class AfterUpdate {
                 Integer immediateEventsBefore = Limits.getPublishImmediateDML();
 
                 for (TriggerTypes.TriggerRecord record : records) {
+                    if (this.recursionTracker.isDepthReached(record)) {
+                        this.logError(
+                            new TriggerTypes.TriggerLibException(
+                                this.handlerName +
+                                    ' reached the recursion depth of ' +
+                                    this.recursionTracker.maxRunsPerRecord +
+                                    ' on record ' +
+                                    record.getId() +
+                                    ' in after update.'
+                            )
+                        );
+                    }
+
                     this.qualify(record);
                 }
 
@@ -189,7 +215,7 @@ public class AfterUpdate {
         }
 
         private void qualify(TriggerTypes.TriggerRecord record) {
-            if (!this.recursionTracker.isLimitReached(record) && this.dispatcher.dispatchOnAfterUpdateWhen(record)) {
+            if (!this.recursionTracker.isSkippedByRecursionGuard(record) && this.dispatcher.dispatchOnAfterUpdateWhen(record)) {
                 this.recursionTracker.countRun(record);
                 this.qualifiedRecords.add(record);
             }
@@ -307,12 +333,20 @@ public class AfterUpdate {
     }
 
     public class RecursionTracker extends TriggerOrchestrator.RecursionTracker {
+        private AfterUpdate.Handler handler;
+
         public RecursionTracker(AfterUpdate.Handler handler, String handlerName) {
             super(handlerName + ':AFTER_UPDATE');
+
+            this.handler = handler;
 
             if (handler instanceof AfterUpdate.RecursionGuard) {
                 this.maxRunsPerRecord = ((AfterUpdate.RecursionGuard) handler).maxRunsPerRecordOnAfterUpdate();
             }
+        }
+
+        public override Boolean hasRecursionGuard() {
+            return this.handler instanceof AfterUpdate.RecursionGuard;
         }
     }
 

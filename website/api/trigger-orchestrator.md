@@ -143,7 +143,8 @@ public interface Logger {
 ```
 
 - **`log(error)`** runs for every exception in a handler's turn, before the library rethrows it or ContinueOnError swallows it.
-- **`flush()`** runs at the end of each outermost run, also when it failed.
+- **Recursion is logged, not thrown.** In the update contexts, each record that comes back to a handler at its recursion depth logs one [recursion error](#triggerlibexception), from inside the record loop. Keep `log()` free of SOQL and DML there, or the library's guards throw.
+- **`flush()`** runs at the end of each outermost run, also when it failed. After a save fails with `maximum trigger depth exceeded`, it does not run again in that transaction.
 - **Found automatically.** Implement it in one class and register nothing. With two implementations, the first call to `run`, `runFromMetadata` or `bypass()` throws.
 - **Not logged:** exceptions outside a handler's turn, listed in [Errors & Logging](/guide/error-handling#never-logged).
 
@@ -186,3 +187,5 @@ public interface Error {
 | `No related records provider named <name> is declared. Return it from the queryRelatedOn method of the handler first.` | `getRelated` with a name the handler's RelatedQuery did not return |
 
 Code that fires the trigger through DML gets a `DmlException` that contains the original message.
+
+One message is logged and never thrown: `<Handler> reached the recursion depth of <depth> on record <Id> in <context>.` A Populator, Writer or Dispatcher logs it for each record that comes back after `<depth>` runs in the transaction: 3, or what its RecursionGuard returns. Without RecursionGuard the handler keeps running. With it, the record is skipped.

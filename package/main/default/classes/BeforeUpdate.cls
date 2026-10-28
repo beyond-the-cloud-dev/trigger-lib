@@ -92,6 +92,19 @@ global class BeforeUpdate {
                 Integer queriesBefore = this.getUndeclaredQueries();
 
                 for (TriggerTypes.TriggerRecord record : records) {
+                    if (this.recursionTracker.isDepthReached(record)) {
+                        this.logError(
+                            new TriggerTypes.TriggerLibException(
+                                this.handlerName +
+                                    ' reached the recursion depth of ' +
+                                    this.recursionTracker.maxRunsPerRecord +
+                                    ' on record ' +
+                                    record.getId() +
+                                    ' in before update.'
+                            )
+                        );
+                    }
+
                     this.populate(record);
                 }
 
@@ -126,7 +139,7 @@ global class BeforeUpdate {
         }
 
         private void populate(TriggerTypes.TriggerRecord record) {
-            if (!this.recursionTracker.isLimitReached(record) && this.populator.populateOnBeforeUpdateWhen(record)) {
+            if (!this.recursionTracker.isSkippedByRecursionGuard(record) && this.populator.populateOnBeforeUpdateWhen(record)) {
                 this.recursionTracker.countRun(record);
                 this.qualifiedRecords.add(record);
                 this.populator.populateOnBeforeUpdate(record);
@@ -287,12 +300,20 @@ global class BeforeUpdate {
     }
 
     public class RecursionTracker extends TriggerOrchestrator.RecursionTracker {
+        private BeforeUpdate.Handler handler;
+
         public RecursionTracker(BeforeUpdate.Handler handler, String handlerName) {
             super(handlerName + ':BEFORE_UPDATE');
+
+            this.handler = handler;
 
             if (handler instanceof BeforeUpdate.RecursionGuard) {
                 this.maxRunsPerRecord = ((BeforeUpdate.RecursionGuard) handler).maxRunsPerRecordOnBeforeUpdate();
             }
+        }
+
+        public override Boolean hasRecursionGuard() {
+            return this.handler instanceof BeforeUpdate.RecursionGuard;
         }
     }
 

@@ -1,0 +1,21 @@
+---
+name: trigger-lib
+description: Apex triggers in this project run through Trigger Lib. For triggers, trigger handlers and their tests, load the trigger-lib project skills before the Salesforce Apex skills.
+alwaysApply: true
+---
+
+# Trigger Lib
+
+This project runs its Apex trigger logic through Trigger Lib (`TriggerOrchestrator.cls`).
+
+- Each object has one trigger that lists all seven events (only `after insert` on a platform event or change event), and its body is only `TriggerOrchestrator.run(new <Object>TriggerOrchestrator());` or `TriggerOrchestrator.runFromMetadata();`. Don't put logic in a trigger body, and don't write `Trigger.isBefore` or `Trigger.isInsert` branches, loops over `Trigger.new`, or handler classes of other trigger frameworks.
+- Write each concern as one top-level handler class with one role per context, and register it in run order: in the object's orchestrator, or as a `TriggerHandler__mdt` record with `Order__c` when the trigger calls `runFromMetadata()`. The roles: a Populator sets fields with `record.put` in before insert or before update, a Validator rejects with `record.addError` in before insert, before update or before delete, a Writer changes other records through `TriggerTypes.UnitOfWork` in before delete or an after context, and a Dispatcher makes one bulk call per chunk, such as `System.enqueueJob`, in an after context.
+- Never run SOQL or DML in a handler's predicate (`...When`) or action, because the library throws. Read parents with ParentQuery or PriorParentQuery, other records with RelatedQuery and configuration from static variables. Register writes with `unitOfWork.toInsert`, `toUpdate`, `toUpsert`, `toDelete` or `toPublish`, as new instances that hold the Id and the changed fields.
+- In the update contexts, make every predicate require a change, such as `record.isChanged(...)` or `isChangedTo(...)`.
+- Test handlers with `TriggerOrchestrator.mock().<ctx>For(X.class).with(...)` and `TriggerOrchestrator.runTestFor(new X())`, and mock the unit of work with `DML.mock('triggerUow').allDmls()`, instead of inserting records to fire the trigger. Keep one test per trigger that saves a record with DML, because a trigger without coverage can't be deployed to production.
+- Switch handlers off with `TriggerOrchestrator.bypass()`, the `Bypass__c` field of `TriggerObject__mdt` and `TriggerHandler__mdt`, or a Bypassable add-on, never with flags in the trigger.
+- If Trigger Lib is installed as the `btcdev` package (existing code calls `btcdev.TriggerOrchestrator`, or the project lists the Trigger Lib package), prefix its types with `btcdev.` and its custom metadata with `btcdev__`.
+- Before writing code, load the matching project skill by its exact name: `trigger-lib-handler` for handler classes, `trigger-lib-orchestrator` for triggers, orchestrators, bypasses and the Logger, `trigger-lib-testing` for test classes.
+- For triggers, trigger handlers and their tests, these project skills override `platform-apex-generate` and `platform-apex-test-generate`. Don't create `{Object}TriggerHandler` classes, Trigger Actions Framework classes or a TestDataFactory to fire triggers.
+
+These rules don't apply to Trigger Lib's own source: `TriggerOrchestrator.cls`, `TriggerTypes.cls`, the context classes `BeforeInsert.cls` to `AfterUndelete.cls`, and their test classes.

@@ -13,8 +13,8 @@ Each run calls `<ctx>Handlers()`, loads parents, runs providers and commits agai
 ## Order of a Run {#order}
 
 1. **Run bypasses.** `TriggerOrchestrator.bypass()` (`all()`, `sObject(…)`, `orchestrator(…)`) or a checked `TriggerObject__mdt.Bypass__c` ends the run before any of your code. So does an orchestrator that does not implement the context.
-2. **Handler list.** `<ctx>Handlers()` runs. Under `runFromMetadata()`, the library instead creates the class of every unbypassed `TriggerHandler__mdt` record of the object, in `Order__c` order, and keeps those that implement the context. A class that implements two roles runs only as the first: Populator over Validator, Validator over Writer, Writer over Dispatcher.
-3. **Handler bypasses.** `bypass().handler(…)`, then `TriggerHandler__mdt.Bypass__c`, then `bypassOn<Ctx>When()`. A skipped handler declares no parents. When no handler is left, the run ends here, and only the Logger step follows.
+2. **Handler list.** `<ctx>Handlers()` runs. Under `runFromMetadata()`, the library instead creates the class of every unbypassed `TriggerHandler__mdt` record whose field for the context names the object, in `Order__c` order. A class without the context's `Handler` interface throws. A class that implements two roles runs only as the first: Populator over Validator, Validator over Writer, Writer over Dispatcher.
+3. **Handler bypasses.** `bypass().handler(…)`, then `TriggerHandler__mdt.Bypass__c` for this context, then `bypassOn<Ctx>When()`. A skipped handler declares no parents. When no handler is left, the run ends here, and only the Logger step follows.
 4. **Parent declarations.** The remaining handlers declare their parents. A lookup is queried the first time a handler reads its parent.
 5. **Each handler runs, in list order.**
    - Each RelatedQuery provider runs over all records the first time the handler reads it.

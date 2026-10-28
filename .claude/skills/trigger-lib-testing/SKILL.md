@@ -16,7 +16,7 @@ Queue a mocked trigger context for a handler class with `TriggerOrchestrator.moc
 5. Give parents with `withParent(lookupField, parent)`. Each parent carries the Id that the row's lookup holds.
 6. Test one behaviour per method, including the records the predicate must skip. Name the method after the handler method it proves and the case, such as `populateOnBeforeInsertWithMixedCaseEmail`, `writeOnAfterInsertWithInactiveOwner` or `bypassOnAfterInsertWhenFlagIsSet`, and mark the parts with `// Setup`, `// Test` and `// Verify`.
 7. Add `Test.startTest()` and `Test.stopTest()` only when the test needs fresh limits or must run async work.
-8. If Trigger Lib is installed as the `btcdev` package (existing code calls `btcdev.TriggerOrchestrator`, or `sfdx-project.json` or `sf package installed list` shows the Trigger Lib package), prefix the library types and the custom metadata: `btcdev.TriggerOrchestrator.mock()`, `btcdev.TriggerTypes.RandomIdGenerator`, `btcdev.DML.mock('triggerUow')`, `btcdev.SOQL.mock(...)`, `btcdev__TriggerObject__mdt`, `btcdev__Bypass__c`. Keep the mock keys `'triggerUow'`, `'TriggerObject__mdt'` and `'ApexTypeImplementor'` unprefixed: they are text inside the package. Mock the library's queries and commit through `btcdev.SOQL` and `btcdev.DML` even when the project has its own `SOQL` or `DML` class, and mock a provider's query through the SOQL class the provider uses.
+8. If Trigger Lib is installed as the `btcdev` package (existing code calls `btcdev.TriggerOrchestrator`, or `sfdx-project.json` or `sf package installed list` shows the Trigger Lib package), prefix the library types and the custom metadata: `btcdev.TriggerOrchestrator.mock()`, `btcdev.TriggerTypes.RandomIdGenerator`, `btcdev.DML.mock('triggerUow')`, `btcdev.SOQL.mock(...)`, `btcdev__TriggerObject__mdt`, `btcdev__Bypass__c`. Keep the mock keys `'triggerUow'`, `'TriggerObject__mdt'`, `'TriggerHandler__mdt'` and `'ApexTypeImplementor'` unprefixed: they are text inside the package. Mock the library's queries and commit through `btcdev.SOQL` and `btcdev.DML` even when the project has its own `SOQL` or `DML` class, and mock a provider's query through the SOQL class the provider uses.
 
 ## Test API
 
@@ -220,25 +220,36 @@ static void afterInsertHandlersContainsWelcomeTaskWriter() {
 }
 ```
 
-A trigger that calls `runFromMetadata()` has no orchestrator to run. Test its handlers one by one, and test that every deployed `TriggerHandler__mdt` record names a class that exists, can be created with no arguments and implements a context's `Handler`:
+A trigger that calls `runFromMetadata()` has no orchestrator to run. Test its handlers one by one, and test that every deployed `TriggerHandler__mdt` record names a class that exists, can be created with no arguments and implements the `Handler` of the context whose field the record fills:
 
 ```apex
 @IsTest
-static void accountHandlerRecordsResolve() {
+static void handlerRecordsResolve() {
     // Setup
     List<String> brokenClasses = new List<String>();
 
     // Test
-    for (TriggerHandler__mdt handlerRecord : [SELECT ApexClassName__c FROM TriggerHandler__mdt WHERE TriggerObject__r.ObjectAPIName__c = 'Account']) {
+    for (TriggerHandler__mdt handlerRecord : [
+        SELECT ApexClassName__c, BeforeInsert__c, AfterInsert__c, BeforeUpdate__c, AfterUpdate__c, BeforeDelete__c, AfterDelete__c, AfterUndelete__c
+        FROM TriggerHandler__mdt
+    ]) {
         Object handler = Type.forName(handlerRecord.ApexClassName__c.trim())?.newInstance();
 
-        if (!(handler instanceof BeforeInsert.Handler || handler instanceof AfterInsert.Handler || handler instanceof BeforeUpdate.Handler || handler instanceof AfterUpdate.Handler || handler instanceof BeforeDelete.Handler || handler instanceof AfterDelete.Handler || handler instanceof AfterUndelete.Handler)) {
+        if (
+            (handlerRecord.BeforeInsert__c != null && !(handler instanceof BeforeInsert.Handler)) ||
+            (handlerRecord.AfterInsert__c != null && !(handler instanceof AfterInsert.Handler)) ||
+            (handlerRecord.BeforeUpdate__c != null && !(handler instanceof BeforeUpdate.Handler)) ||
+            (handlerRecord.AfterUpdate__c != null && !(handler instanceof AfterUpdate.Handler)) ||
+            (handlerRecord.BeforeDelete__c != null && !(handler instanceof BeforeDelete.Handler)) ||
+            (handlerRecord.AfterDelete__c != null && !(handler instanceof AfterDelete.Handler)) ||
+            (handlerRecord.AfterUndelete__c != null && !(handler instanceof AfterUndelete.Handler))
+        ) {
             brokenClasses.add(handlerRecord.ApexClassName__c);
         }
     }
 
     // Verify
-    Assert.areEqual(new List<String>(), brokenClasses, 'Every registered class should be a handler.');
+    Assert.areEqual(new List<String>(), brokenClasses, 'Every registered class should implement the context its record names.');
 }
 ```
 
@@ -253,9 +264,21 @@ SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>());
 SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
 ```
 
-With the `btcdev` package, the mock keys stay the same and the types get the prefix: `btcdev.SOQL.mock('TriggerObject__mdt').thenReturn(new List<btcdev__TriggerObject__mdt>());`.
+The handler records come from a second query, `'TriggerHandler__mdt'`. Each is attached to the object record whose Id its context field holds, and the org's records can't hold a mocked record's Id, so the `'TriggerObject__mdt'` mock above keeps them out of the test too. Mock `'TriggerHandler__mdt'` only when the test wants handler records. Each mocked row is a plain constructor with the object record's fake Id in its one context field, one row per context, and the list order is the run order:
 
-- To test a metadata bypass, return `new TriggerObject__mdt(ObjectAPIName__c = 'Account', Bypass__c = true)` instead of the empty list. `TriggerHandler__mdt` rows sit in the parent's `TriggerHandlers__r` relationship, which a constructor can't set, so build the parent with `JSON.deserialize`.
+```apex
+TriggerObject__mdt accountSetting = new TriggerObject__mdt(Id = new TriggerTypes.RandomIdGenerator().get(TriggerObject__mdt.SObjectType), ObjectAPIName__c = 'Account', Bypass__c = false);
+
+SOQL.mock('TriggerObject__mdt').thenReturn(new List<TriggerObject__mdt>{ accountSetting });
+SOQL.mock('TriggerHandler__mdt').thenReturn(new List<TriggerHandler__mdt>{ new TriggerHandler__mdt(ApexClassName__c = 'AccountHotRatingPopulator', Bypass__c = true, BeforeUpdate__c = accountSetting.Id) });
+SOQL.mock('ApexTypeImplementor').thenReturn(new List<ApexTypeImplementor>());
+```
+
+With the `btcdev` package, the mock keys stay the same and the types and fields get the prefix: `btcdev.SOQL.mock('TriggerObject__mdt').thenReturn(new List<btcdev__TriggerObject__mdt>());`, `btcdev__TriggerHandler__mdt`, `btcdev__BeforeUpdate__c`.
+
+- To test an object bypass, return `new TriggerObject__mdt(ObjectAPIName__c = 'Account', Bypass__c = true)` instead of the empty list.
+- To test a handler bypass, return a `TriggerHandler__mdt` row with `Bypass__c = true`, as above. It switches its class off only in the context whose field holds the object record's Id, and a row that holds no mocked Id is ignored.
+- A mock ignores `WHERE` and `ORDER BY`, so a save in an integration test of a `runFromMetadata()` trigger runs the mocked rows in list order, whatever their `Order__c`.
 - To test an Apex bypass, call `TriggerOrchestrator.bypass().handler(X.class)` or `.sObject(...)` before `runTestFor`. `.orchestrator(...)` has no effect under `runTestFor`.
 - To test a Bypassable that reads a static flag, set the flag in `// Setup` and assert that nothing happened.
 - To test ContinueOnError, set `TriggerOrchestrator.triggerLogger.logger` to a test class of your own that collects the errors. This works only when the Trigger Lib source is in the project: in the `btcdev` package that member isn't visible to your tests.
@@ -289,7 +312,8 @@ Name each unit test class `<Handler>Test` and keep it next to the handler, unles
 | A Writer test fails in the commit | The unit of work isn't mocked, so real DML runs with fake Ids | `DML.mock('triggerUow').allDmls()` |
 | `retrieveResultFor('triggerUow')` misses an OwnUnitOfWork Writer's records | It commits under its own identifier | Mock and read that identifier |
 | Provider rows never arrive | The provider uses inline SOQL, or the mock key differs from its `mockId` | SOQL Lib with `mockId`, and `SOQL.mock('<mock id>')` |
-| A handler is skipped in one org and runs in another | The org's bypass metadata applies to tests | Mock `'TriggerObject__mdt'` before the first reference to `TriggerOrchestrator` |
+| A handler is skipped in one org and runs in another | The org's `TriggerObject__mdt` and `TriggerHandler__mdt` records apply to tests | Mock `'TriggerObject__mdt'` before the first reference to `TriggerOrchestrator`. The org's handler records can't point at a mocked object record |
+| A mocked `TriggerHandler__mdt` row has no effect | Its context field doesn't hold the mocked object record's Id | Set a fake Id on the object record and put it in the row's context field, one row per context |
 | `bypass().orchestrator(...)` has no effect | It doesn't apply under `runTestFor` | `bypass().handler(...)` or `sObject(...)` |
 | The test fails after the last line with a callout error | A job the Dispatcher enqueued runs when the test ends | `Test.setMock(...)` for the callout |
 | A test inserts records to fire the trigger | Old trigger testing habit | Queue the context with `mock()` and run with `runTestFor`. Keep DML for integration tests |

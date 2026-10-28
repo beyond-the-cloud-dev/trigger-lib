@@ -1,5 +1,5 @@
 ---
-description: Install Trigger Lib in a Salesforce org - deploy via button, or copy the Apex classes and custom metadata types together with the SOQL Lib and DML Lib dependencies.
+description: Install Trigger Lib in a Salesforce org - deploy via button, or copy the Apex classes, custom metadata types and page layouts together with the SOQL Lib and DML Lib dependencies.
 ---
 
 # Installation
@@ -55,6 +55,11 @@ The button also deploys [SOQL Lib](https://soql.beyondthecloud.dev) 6.12.0 and [
 
 - [`TriggerObject__mdt`](https://github.com/beyond-the-cloud-dev/trigger-lib/tree/main/force-app/main/default/objects/TriggerObject__mdt)
 - [`TriggerHandler__mdt`](https://github.com/beyond-the-cloud-dev/trigger-lib/tree/main/force-app/main/default/objects/TriggerHandler__mdt)
+
+**Page Layouts**
+
+- [`TriggerObject__mdt-Trigger Object Layout`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/layouts/TriggerObject__mdt-Trigger%20Object%20Layout.layout-meta.xml)
+- [`TriggerHandler__mdt-Trigger Handler Layout`](https://github.com/beyond-the-cloud-dev/trigger-lib/blob/main/force-app/main/default/layouts/TriggerHandler__mdt-Trigger%20Handler%20Layout.layout-meta.xml)
 
 ### SOQL Lib _(required)_ {#soql-lib}
 

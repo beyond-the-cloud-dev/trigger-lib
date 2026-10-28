@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>BeforeDelete__c</fullName>
+    <description>The trigger object this record applies to in before delete. runFromMetadata() runs the class there, and Bypass switches it off there. Left empty, the record has no effect in before delete.</description>
+    <fieldManageability>SubscriberControlled</fieldManageability>
+    <inlineHelpText>The trigger object this record applies to in before delete. runFromMetadata() runs the class there, and Bypass switches it off there. Left empty, the record has no effect in before delete.</inlineHelpText>
+    <label>Before Delete</label>
+    <referenceTo>TriggerObject__mdt</referenceTo>
+    <relationshipLabel>Before Delete Handlers</relationshipLabel>
+    <relationshipName>BeforeDeleteHandlers</relationshipName>
+    <required>false</required>
+    <type>MetadataRelationship</type>
+</CustomField>

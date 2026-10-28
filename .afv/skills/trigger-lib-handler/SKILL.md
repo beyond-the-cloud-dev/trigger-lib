@@ -15,7 +15,7 @@ A handler is a small class with one role in one trigger context. For every recor
 4. Before insert and before update allow no DML and no event publish anywhere in a handler, its Finalizer included. Change other records from a Writer in before delete or an after context.
 5. In before update and after update, make the predicate require a change, with `isChanged`, `isChangedTo` or another change check. Every later update of the record in the transaction runs the update handlers again. After 3 actions on a record in the transaction, each later run logs an error, and only a RecursionGuard stops the loop.
 6. When a Validator's predicate returns true, its error method must call `record.addError(...)`, or the library throws for the whole chunk. Put the whole condition in the predicate.
-7. A new handler runs only once it is registered: add it to the object's orchestrator in run order (Populators before Validators), or add its `TriggerHandler__mdt` record when the trigger calls `runFromMetadata()`. The `trigger-lib-orchestrator` skill covers both.
+7. A new handler runs only once it is registered, and only in the contexts it is registered in: add it to the object's orchestrator in run order (Populators before Validators), or add one `TriggerHandler__mdt` record per context the class runs in, each naming the object in that context's field, such as `BeforeInsert__c`, when the trigger calls `runFromMetadata()`. A handler that gains a context needs the same registration for it. The `trigger-lib-orchestrator` skill covers both.
 8. Pass fields as `SObjectField` tokens (`Account.Rating`). Cast a row to read its fields: `(Account) record.getNewSObject()`.
 
 ## Before writing

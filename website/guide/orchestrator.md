@@ -34,17 +34,17 @@ trigger AccountTrigger on Account(before insert, after insert, before update, af
 }
 ```
 
-Each [`TriggerHandler__mdt`](/api/custom-metadata#trigger-handler) record under the object's `TriggerObject__mdt` record registers one class.
+Each [`TriggerHandler__mdt`](/api/custom-metadata#trigger-handler) record registers one class in one context: the one whose field, such as `BeforeInsert__c`, names the object's `TriggerObject__mdt` record.
 
 - **No orchestrator class.** The trigger's package never refers to the handlers.
-- **The class decides the contexts.** It runs in every context whose role it implements.
+- **The record decides the context.** The class runs only in the context its record names, and must implement it. A class that runs in several contexts has a record per context.
 - **`Order__c` is the list order,** as below.
 - **A record whose class can't run fails the save.** Test that every record resolves: see [Registration Tests](/guide/testing#registration).
 
 ## Handler Order {#order}
 
 - **List order is run order**, whatever the role. Each handler finishes before the next one starts.
-- **Under `runFromMetadata()`, `Order__c` is the list order.** Lowest runs first, records without it run last, and ties run in class name order.
+- **Under `runFromMetadata()`, `Order__c` is the list order** of each context. It is required. Lowest runs first, and ties run in class name order.
 - **Later handlers see earlier changes.** List Populators before Validators.
 - **Writers commit last.** By default, the Writers' DML commits once, after the last handler.
 
@@ -77,9 +77,9 @@ public with sharing class ContactBirthdateRangeValidator implements BeforeInsert
 ```
 
 - **Method names carry the context**, so they never clash.
-- **Register the class in each context's list.** Under `runFromMetadata()`, one record covers every context.
+- **Register the class in each context's list.** Under `runFromMetadata()`, create a record per context, such as `ContactBirthdateRangeValidator_BeforeInsert` and `ContactBirthdateRangeValidator_BeforeUpdate`, each with its own `Order__c`.
 - **Add-ons are per context too**, such as `BeforeInsert.ParentQuery` and `BeforeUpdate.ParentQuery`.
-- **Bypasses cover every context.** A `TriggerHandler__mdt` record switches the class off in every context of its object. To skip one context, use that context's Bypassable.
+- **`bypass().handler(…)` covers every context.** A `TriggerHandler__mdt` record switches the class off only in its context. To skip one context on a condition, use that context's Bypassable.
 
 ## Instances per Chunk {#instances-per-chunk}
 
@@ -89,7 +89,7 @@ The library calls the handler list method on every run: per context, per chunk o
 - **Static fields last the whole transaction.**
 - **A static "already ran" flag skips later chunks.** Gate the predicate on a change such as `isChanged` instead, or use RecursionGuard in the update contexts.
 - **Constructor arguments are allowed.** They are evaluated on every run, so keep SOQL out of them.
-- **Under `runFromMetadata()`, there are no constructor arguments.** The library creates every registered class in every context with its public no-argument constructor, so keep that constructor cheap.
+- **Under `runFromMetadata()`, there are no constructor arguments.** The library creates each registered class with its public no-argument constructor, on every run of the context its record names, so keep that constructor cheap.
 
 ## Before to After Handoff {#before-after-handoff}
 

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AfterUndelete__c</fullName>
+    <description>The trigger object this record applies to in after undelete. runFromMetadata() runs the class there, and Bypass switches it off there. Left empty, the record has no effect in after undelete.</description>
+    <fieldManageability>SubscriberControlled</fieldManageability>
+    <inlineHelpText>The trigger object this record applies to in after undelete. runFromMetadata() runs the class there, and Bypass switches it off there. Left empty, the record has no effect in after undelete.</inlineHelpText>
+    <label>After Undelete</label>
+    <referenceTo>TriggerObject__mdt</referenceTo>
+    <relationshipLabel>After Undelete Handlers</relationshipLabel>
+    <relationshipName>AfterUndeleteHandlers</relationshipName>
+    <required>false</required>
+    <type>MetadataRelationship</type>
+</CustomField>

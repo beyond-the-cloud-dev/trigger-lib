@@ -25,7 +25,7 @@ Skip a handler for the whole chunk when a condition holds, such as a static flag
 
 - **To skip single records, use the predicate.** Return false from `addErrorOnBeforeDeleteWhen` or `writeOnBeforeDeleteWhen`.
 - **Reset static flags.** A static flag lasts the whole transaction, nested saves included. Reset it in a `finally` block after the DML it was meant for.
-- **Only this context.** [Other bypasses](/guide/bypasses) cover every context, and `bypass().handler(X.class)` never matches an inner class.
+- **Only this context.** [Apex bypasses](/guide/bypasses#apex) cover every context, and `bypass().handler(X.class)` never matches an inner class. A [`TriggerHandler__mdt`](/api/custom-metadata#trigger-handler) record covers the one context it names, for every user.
 
 ::: warning
 The method runs outside the error handling. An exception in `bypassOnBeforeDeleteWhen()` is not logged, ContinueOnError does not apply, and the delete fails.

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>OneContextRequired</fullName>
+    <active>true</active>
+    <description>A handler record applies to one context on one object, so exactly one context field is filled.</description>
+    <errorConditionFormula>IF(ISBLANK(BeforeInsert__c), 0, 1) +
+IF(ISBLANK(AfterInsert__c), 0, 1) +
+IF(ISBLANK(BeforeUpdate__c), 0, 1) +
+IF(ISBLANK(AfterUpdate__c), 0, 1) +
+IF(ISBLANK(BeforeDelete__c), 0, 1) +
+IF(ISBLANK(AfterDelete__c), 0, 1) +
+IF(ISBLANK(AfterUndelete__c), 0, 1) &lt;&gt; 1</errorConditionFormula>
+    <errorMessage>Select the trigger object in exactly one context. For a class that runs in several contexts, create one record per context.</errorMessage>
+</ValidationRule>

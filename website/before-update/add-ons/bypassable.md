@@ -27,7 +27,7 @@ Skip a handler for the whole chunk when a condition holds, such as a static flag
 
 - **To skip single records, return false from the predicate.**
 - **Reset a static flag in `finally`.** The flag stays set for every chunk and every nested update in the transaction.
-- **Only this context.** [Other bypasses](/guide/bypasses) cover every context, and `bypass().handler(X.class)` never matches an inner class.
+- **Only this context.** [Apex bypasses](/guide/bypasses#apex) cover every context, and `bypass().handler(X.class)` never matches an inner class. A [`TriggerHandler__mdt`](/api/custom-metadata#trigger-handler) record covers the one context it names, for every user.
 
 ::: warning
 Exceptions here are not logged. `bypassOnBeforeUpdateWhen()` runs outside the handler's error handling. ContinueOnError does not apply, and the update fails.

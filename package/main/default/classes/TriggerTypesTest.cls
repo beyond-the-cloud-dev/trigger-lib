@@ -3447,6 +3447,55 @@ private class TriggerTypesTest {
     }
 
     @IsTest
+    static void getOnInsertRecord() {
+        // Setup
+        TriggerTypes.InsertRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'New', Title = 'Manager'), null);
+
+        // Test
+        Object result = record.get(Contact.Title);
+
+        // Verify
+        Assert.areEqual('Manager', result, 'The new field value should be returned.');
+    }
+
+    @IsTest
+    static void getOnUpdateRecord() {
+        // Setup
+        TriggerTypes.UpdateRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'New', Title = 'Manager'), new Contact(LastName = 'Old', Title = 'Intern'));
+
+        // Test
+        Object result = record.get(Contact.Title);
+
+        // Verify
+        Assert.areEqual('Manager', result, 'The new field value should be returned.');
+    }
+
+    @IsTest
+    static void getOnDeleteRecord() {
+        // Setup
+        TriggerTypes.DeleteRecord record = new TriggerTypes.TriggerRecord(null, new Contact(LastName = 'Old', Title = 'Intern'));
+
+        // Test
+        Object result = record.get(Contact.Title);
+
+        // Verify
+        Assert.areEqual('Intern', result, 'The old field value should be returned.');
+    }
+
+    @IsTest
+    static void getAfterPut() {
+        // Setup
+        TriggerTypes.InsertRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'New'), null);
+        record.put(Contact.Title, 'Manager');
+
+        // Test
+        Object result = record.get(Contact.Title);
+
+        // Verify
+        Assert.areEqual('Manager', result, 'The put value should be returned.');
+    }
+
+    @IsTest
     static void equalsAfterPut() {
         // Setup
         TriggerTypes.InsertRecord record = new TriggerTypes.TriggerRecord(new Contact(LastName = 'New'), null);

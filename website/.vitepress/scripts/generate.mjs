@@ -571,6 +571,13 @@ const recordMethodGroups = [
         : `${code('null')}: not saved yet`
   },
   {
+    names: ['get'],
+    note: context =>
+      contextFacts[context.name].rowSide === 'new'
+        ? `a field value of the ${code('Trigger.new')} row`
+        : `a field value of the ${code('Trigger.old')} row`
+  },
+  {
     names: ['getNewSObject'],
     note: context =>
       contextFacts[context.name].put === 'works'

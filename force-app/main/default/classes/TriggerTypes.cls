@@ -80,6 +80,8 @@ public with sharing class TriggerTypes {
 
         Id getId();
 
+        Object get(SObjectField field);
+
         SObject getNewSObject();
 
         SObject getNewParent(SObjectField lookupField);
@@ -145,6 +147,8 @@ public with sharing class TriggerTypes {
         Boolean lessThanOrEqualTo(SObjectField field, Long value);
 
         Id getId();
+
+        Object get(SObjectField field);
 
         SObject getNewSObject();
 
@@ -231,6 +235,8 @@ public with sharing class TriggerTypes {
         Boolean lessThanOrEqualTo(SObjectField field, Long value);
 
         Id getId();
+
+        Object get(SObjectField field);
 
         SObject getNewSObject();
         SObject getOldSObject();
@@ -319,6 +325,8 @@ public with sharing class TriggerTypes {
 
         Id getId();
 
+        Object get(SObjectField field);
+
         SObject getNewSObject();
         SObject getOldSObject();
 
@@ -388,6 +396,8 @@ public with sharing class TriggerTypes {
 
         Id getId();
 
+        Object get(SObjectField field);
+
         SObject getOldSObject();
 
         SObject getOldParent(SObjectField lookupField);
@@ -451,6 +461,8 @@ public with sharing class TriggerTypes {
         Boolean lessThanOrEqualTo(SObjectField field, Long value);
 
         Id getId();
+
+        Object get(SObjectField field);
 
         SObject getOldSObject();
 
@@ -518,6 +530,8 @@ public with sharing class TriggerTypes {
         Boolean lessThanOrEqualTo(SObjectField field, Long value);
 
         Id getId();
+
+        Object get(SObjectField field);
 
         SObject getNewSObject();
 
@@ -971,6 +985,10 @@ public with sharing class TriggerTypes {
 
         public Id getId() {
             return (this.newRecord ?? this.oldRecord).Id;
+        }
+
+        public Object get(SObjectField field) {
+            return this.getFieldValue(field);
         }
 
         public SObject getNewSObject() {

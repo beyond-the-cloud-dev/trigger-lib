@@ -24,7 +24,7 @@ All interfaces are nested in `TriggerTypes`.
 
 | Member | Insert | Rejectable Insert | Update | Rejectable Update | Delete | Rejectable Delete | Undelete |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| `getId()`, `getRelated(providerName)` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `getId()`, `get(field)`, `getRelated(providerName)` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `getNewSObject()`, `getNewParent(lookupField)` | ✓ | ✓ | ✓ | ✓ | | | ✓ |
 | `getOldSObject()`, `getOldParent(lookupField)` | | | ✓ | ✓ | ✓ | ✓ | |
 | `put(field, value)` | ✓ | | ✓ | | | | |
@@ -35,6 +35,7 @@ All interfaces are nested in `TriggerTypes`.
 A missing member is a compile error, such as `isChanged` in an insert handler.
 
 - **`getId()`** is null in before insert.
+- **`get(Contact.Email)`** reads one field without `getNewSObject()`. Like the value checks, it reads the new row, or the old row in the delete contexts, and sees values set with `put`. Cast the result: `(String) record.get(Contact.Email)`.
 - **`getNewSObject()`** is the live row in before insert and before update. In the after contexts it is read-only.
 - **`getOldSObject()`** is read-only. Stop a delete with `record.addError(…)` in a [BeforeDelete.Validator](/before-delete/validator).
 - **`getNewParent(Contact.AccountId)`** returns the parent a [ParentQuery](/api/parent-fields) loaded, or null. `getOldParent` reads PriorParentQuery. Pass the lookup field you declared. The row itself holds only the lookup Id: `getNewSObject().Account` is null.
